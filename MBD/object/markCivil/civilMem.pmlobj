@@ -1,0 +1,2208 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= December 22nd 2023
+--[Function]:
+------------------------------------------
+
+
+--
+--<<Method>>:
+--<<Public method>>:
+--civilMem(!item is any, !civilData is array, !height is real)  			$*
+--civilMem(!item is any, !civilData is array)   							$*
+--
+--<<Private method>>:
+--getmarkstring()   														$*
+--getJgo() is array 														$*
+--getowneratt() is array													$*
+--getowneratt(!att is string) is string 									$*
+--getNxtrLines(!item is any) is array   									$*
+--getBoxTwelveLines(!item is any) is array  								$*
+--getBoxTwelveLinesWithPoss(!poss is array) is array						$*
+--getEightPoss(!item is any) is array   									$*
+--getNpyrEightPoss(!item is any) is array   								$*
+--getBoxEightPossWithPos(!item is any,!pos is position) is array			$*
+--getBoxEightPoss(!item is any) is array									$*
+--getInterPoints(!lines is array) is array  								$*
+--getLines(!item is any) is array   										$*
+--getdata(!item is any) 													$*
+--setDataWithLines(!lines is array) 										$*
+--repairPointArr(!pointarr is array, !lines is array) is array  			$*
+--repairPoints(!profiles is array, !x is real, !oldpoints is array) is array	$* sometimes the opening is partly inside concrete
+--isinprofile(!profile is profile,!point is position) is boolean			$*
+--getSelfProfiles(!inputlines is array) is array							$*
+--getCataData(!item is any) 												$*
+--getShape()																$*
+--getABpanedata(!item is any)   											$*
+--getmindis(!cenpoint is position) is array 								$*
+--getAKpanedata(!item is any)   											$*
+--getFourpoints(!inputpoints is array) is array 							$*
+-------------------------------------
+
+define object civilMem
+
+	member .order is real
+	member .ref is string
+	member .name is string
+	member .code is string
+	member .markString is string
+	member .matstring is string
+	member .secondcon is string
+	member .memtype is string
+	member .spec is string
+	member .angle is real
+	member .remark is string
+
+	member .base is string
+	member .mat is string
+	member .note is string
+
+	member .checkxydis is boolean
+	member .axdis is real
+	member .aydis is real
+
+	member .bxdis is real
+	member .bydis is real
+
+	member .ori is orientation
+	member .zdir is direction
+	member .type is string
+	--$*AP/DP OR TUBE OR BOX
+
+
+	--member .point1 is position
+	--member .point2 is position
+
+	--member .points1 is array
+	--member .points2 is array
+
+	--member .profile1 is profile
+	--member .profile2 is profile
+
+
+	--member .length is real
+	--member .width is real
+
+	member .civilindex is real
+
+	member .civilData is array
+	member .civilHeight is real
+
+
+	member .cenpoints is array
+	member .profiles is array
+	member .pointArr is array
+	member .radiuss is array
+
+	member .civilholecenpoints is array
+	member .civilholeprofiles is array
+	member .civilholepointarr is array
+	member .civilholeradiuss is array
+
+
+	--member .startposs is array
+
+	member .xdir1 is direction
+	member .ydir1 is direction
+	member .xdir2 is direction
+	member .ydir2 is direction
+
+	member .form is form
+endobject
+define method .civilMem(!item is any, !civilindex is real, !form is form)
+	!this.form = !form
+	!this.civilmem(!item,!civilindex)
+endmethod
+define method .civilMem(!item is any, !civilindex is real)
+	!this.civilindex = !civilindex
+	!this.setform(!item)
+	if !this.form.civildatas[!civilindex].profiles.set() then
+		!civildata = !this.form.civildatas[!civilindex].profiles
+	else
+		!civildata = !this.form.civildatas[!civilindex].arcs
+		!this.civilheight = !this.form.civildatas[!civilindex].height
+	endif
+	!this.civilMem(!item,!civildata)
+endmethod
+
+define method .setform(!item is any)
+	if !this.form.unset() then
+		!sitename = name of site of $!item
+		if !sitename.match('ARCH') ne 0 then
+			!this.form = !!markarchform
+			handle any
+				!this.form = !!markcivilform
+			endhandle
+		else
+			!this.form = !!markcivilform
+			handle any
+				!this.form = !!markarchform
+			endhandle
+		endif
+	endif
+endmethod
+$(
+define method .civilMem(!item is any, !civilData is array, !height is real)
+	!this.civilHeight = !height
+	!this.civilMem(!item,!civildata)
+endmethod
+$)
+define method .civilMem(!item is any, !civilData is array)
+	!this.setform(!item)
+	!pos = pos of $!item wrt/*
+
+	var !ref ref of $!item
+	!this.ref = !ref
+	!this.type = type of $!item
+	!this.civilData = !civilData
+	!this.name = name of $!item
+
+	!this.getcode()
+
+	!this.gettypespec()
+	--!this.getspec()
+
+
+
+	$(
+	!jgo = :jgobjbase of $!this.name
+	if !jgo eq 'UNSET' then
+		!jgo = !this.getOwnerAtt(':jgobjbase')
+	endif
+
+	if !jgo.matchwild('*套管*') then
+		!this.makrString = !jgo.part(2,'|') + ' ' + !this.markstring
+
+		--if !jgo.match('Φ') ne 0 then
+		--	!this.markstring = 'Φ' + !jgo.after('Φ').before('|') + ' ' + !this.markstring
+		--else
+		--	!this.markstring = 'Φ' + !jgo.after('DN').before('|') + ' ' + !this.markstring
+		--endif
+	endif
+	$)
+
+
+	!this.ori = ori of $!item wrt/*
+	!this.zdir = !this.ori.zdir()
+
+	--!line = !pos.offset(!this.zdir,-1000).line(!pos.offset(!this.zdir,1000))		$* did not consider the opening is not opened at two plane of civil
+	!this.getShape()
+	!this.getmarkString()
+	!this.getxydir()
+	handle any
+	endhandle
+
+	!this.getangle()
+	handle any
+	endhandle
+	--!this.getxydis()
+	--$p asdfdasf
+endmethod
+
+define method .getxydir()
+	!civildata = !this.civildata
+	if !civildata[1].objecttype() eq 'PROFILE' then
+		do !x from 1 to 2
+			!ori = !this.form.civildatas[!this.civilindex].originori$!x
+			!this.xdir$!x = !ori.xdir()
+			!this.ydir$!x = !ori.ydir()
+		enddo
+	else
+		!cenpoint = !this.cenpoints[1]
+		handle any
+			!cenpoint = !this.cenpoints[2]
+			handle any
+				golabel /nocenpoint
+			endhandle
+		endhandle
+		!zdir = !civildata[1].angledirection(!civildata[1].near(!cenpoint))
+		!xdir1 = !zdir.orthogonal(u)
+
+
+		if !civildata[1].radius lt !civildata[2].radius then
+			!this.xdir1 = !xdir1
+		else
+			!this.xdir1 = !xdir1.opposite()
+		endif
+		!this.xdir2 = !this.xdir1.opposite()
+
+		!this.ydir1 = u
+		!this.ydir2 = u
+
+		label /nocenpoint
+	endif
+	$(
+	return
+	!item = !this.name
+	!civildata = !this.civildata
+	!floor = name of floor of $!item
+	handle any
+		if !civildata[1].objecttype() eq 'PROFILE' then
+			!this.ydir1 = !civildata[1].orientation.ydir()
+			!this.xdir1 = !civildata[1].orientation.xdir()
+
+			!this.ydir2 = !civildata[2].orientation.ydir()
+			!this.xdir2 = !civildata[2].orientation.xdir()
+		else
+			!cenpoint = !this.cenpoints[1]
+			handle any
+				!cenpoint = !this.cenpoints[2]
+				handle any
+					golabel /nocenpoint
+				endhandle
+			endhandle
+			!zdir = !civildata[1].angledirection(!civildata[1].near(!cenpoint))
+			!xdir1 = !zdir.orthogonal(u)
+			if !civildata[1].radius lt !civildata[2].radius then
+				!this.xdir1 = !xdir1
+			else
+				!this.xdir1 = !xdir1.opposite()
+			endif
+			!this.xdir2 = !this.xdir1.opposite()
+			!this.ydir1 = u
+			!this.ydir2 = u
+
+			label /nocenpoint
+		endif
+	elsehandle none
+
+		!ydir1 = !this.form.lookdir.displaytext().direction()
+		!xdir1 = !ydir1.orthogonal(u)
+
+		!ydir2 = !ydir1.opposite()
+		!xdir2 = !xdir1
+
+		if !civildata[1].position.up gt !civildata[2].position.up then
+			!this.xdir1 = !xdir1
+			!this.ydir1 = !ydir1
+
+			!this.xdir2 = !xdir2
+			!this.ydir2 = !ydir2
+		else
+			!this.xdir1 = !xdir2
+			!this.ydir1 = !ydir2
+
+			!this.xdir2 = !xdir1
+			!this.ydir2 = !ydir1
+		endif
+	endhandle
+	$)
+endmethod
+
+define method .getangle()
+	if !this.radiuss.set() then
+		!this.angle = 0
+	else
+		!edges = !this.profiles[1].edges()
+		handle any
+			!edges = !this.profiles[2].edges()
+			handle any
+				!this.angle = 0
+				return
+			endhandle
+		endhandle
+		!angles = array()
+		do !edge values !edges
+			!onedir = !edge.direction()
+			!minangle1 = !onedir.angle(!this.xdir1)
+			!minangle2 = !onedir.angle(!this.ydir1)
+			if !minangle1 gt 90 then
+				!minangle1 = 180 - !minangle1
+			endif
+			if !minangle2 gt 90 then
+				!minangle2 = 180 - !minangle2
+			endif
+			!angle = min(!minangle1,!minangle2)
+			!angles.append(!angle)
+		enddo
+		!angles.sort()
+		do !angle values !angles
+			!total = 0
+			do !angle1 values !angles
+				!total = !total + abs(!angle - !angle1)
+			enddo
+			if undefined(!mintotal) or !total lt !mintotal then
+				!goodangle = !angle
+				!mintotal = !total
+			endif
+		enddo
+		!this.angle = !goodangle.string('d1').real()
+	endif
+endmethod
+
+define method .getcode()
+	if !this.name.substring(1,1) ne '=' and !this.name.length() ge 9 then
+		--!this.markstring = !this.name.substring(-9,9)
+		!this.code = !this.name.substring(-9,9)
+	elseif !this.name.substring(1,1) eq '=' then
+
+		$(
+		!find = false
+		!ownername = !this.name
+		do
+			!ownername = name of owner of $!ownername
+			!ownertype = type of $!ownername
+			if !ownertype.match('FLOOR') ne 0 or !ownertype.match('WALL') ne 0 then
+				break
+			else
+				if !ownername.substring(1,1) ne '=' then
+					!find = true
+					break
+				endif
+			endif
+		enddo
+		if !find and !ownername.length() ge 9 then
+			!this.markstring = !ownername.substring(-9,9)
+		else
+			!this.markstring = !this.name
+		endif
+		$)
+		!ownername = !this.getOwnerAtt('name')
+
+		if !ownername.length() ge 9 then
+			--!this.markstring = !ownername.substring(-9,9)
+			!this.code = !ownername.substring(-9,9)
+		else
+			--!this.markstring = !this.name
+			!this.code = !this.name
+		endif
+	else
+		--!this.markstring = !this.name
+		!this.code = !this.name
+	endif
+endmethod
+
+define method .getxydis()
+	if !this.checkxydis.set() and !this.checkxydis then
+		return
+	endif
+	!this.checkxydis = true
+
+	!civiltype = !this.form.civildatas[!this.civilindex].type
+	if !civiltype ne 'WALL' then
+		do !times indices !this.civildata
+			if undefined(!this.cenpoints[!times]) then
+				skip
+			endif
+
+			--!ori = !this.form.civildatas[!this.civilindex].originori$!times
+			--!xdir = !ori.xdir()
+			--!ydir = !ori.ydir()
+			!xdir = !this.xdir$!times
+			!ydir = !this.ydir$!times
+			!startpos = !this.form.civildatas[!this.civilindex].originpoint$!times
+			!xdis = !!suidirdis(!startpos,!xdir,!this.cenpoints[!times])
+			!ydis = !!suidirdis(!startpos,!ydir,!this.cenpoints[!times])
+			--!xdis = abs(!xdis)
+			--!ydis = abs(!ydis)
+			if !times eq 1 then
+				!this.axdis = !xdis.string('D1').real()
+				!this.aydis = !ydis.string('D1').real()
+			else
+				!this.bxdis = !xdis.string('D1').real()
+				!this.bydis = !ydis.string('D1').real()
+			endif
+
+		enddo
+	else
+		!arcydir = !this.form.lookdir.displaytext().direction().opposite()
+		!ori = y is $!arcydir and z is d
+		!anglearc = object arc(!this.civildata[1].position,!ori,0,360,1000,true)
+		do !times indices !this.civildata
+			if undefined(!this.cenpoints[!times]) then
+				skip
+			endif
+			!xdis = !anglearc.near(!this.cenpoints[!times])
+			!bottompos = !this.form.civildatas[!this.civilindex].originpoint$!times
+			!ydis = !this.cenpoints[!times].up - !bottompos.up
+			if !times eq 1 then
+				!this.axdis = !xdis.string('D3').real().value()
+				!this.aydis = !ydis.string('D3').real()
+			else
+				!this.bxdis = !xdis.string('D3').real().value()
+				!this.bydis = !ydis.string('D3').real()
+			endif
+			--break
+		enddo
+	endif
+
+	$(
+	return
+	do !times indices !this.civildata
+		if undefined(!this.cenpoints[!times]) then
+			skip
+		endif
+		!civildata = !this.civildata[!times]
+		if !civildata.objecttype() eq 'PROFILE' then
+			!profile = !civildata
+
+			!xdir = !this.xdir$!times
+			!ydir = !this.ydir$!times
+
+			!edges = !profile.edges()
+			!cenpoint = !this.cenpoints[!times]
+			!xdiss = array()
+			!ydiss = array()
+			!poss = array()
+			do !edge values !edges
+				!pos = !edge.startposition
+				handle any
+					!pos = !edge.angleposition(!edge.startangle)
+				endhandle
+				!xdis = !!suidirdis(!cenpoint,!xdir,!pos)
+				!ydis = !!suidirdis(!cenpoint,!ydir,!pos)
+				!xdiss.append(!xdis)
+				!ydiss.append(!ydis)
+				!poss.append(!pos)
+			enddo
+			!indices = !xdiss.sortedindices()
+			!xdiss.reindex(!indices)
+			!ydiss.reindex(!indices)
+			!poss.reindex(!indices)
+
+
+			do !x indices !xdiss
+				if abs(!xdiss[!x] - !xdiss[!x + 1]) gt 1 then
+					!goodx = !x
+					break
+				endif
+			enddo
+
+			if !goodx eq 1 then
+				!startpos = !poss[1]
+			else
+				!ydiss.deletefrom(!goodx + 1)
+				!poss.deletefrom(!goodx + 1)
+				!indices = !ydiss.sortedindices()
+				!poss.reindex(!indices)
+				!startpos = !poss[1]
+				!this.startposs[!times] = !startpos
+			endif
+
+			!xdis = abs(!!suidirdis(!startpos,!xdir,!cenpoint))
+			!ydis = abs(!!suidirdis(!startpos,!ydir,!cenpoint))
+			if !times eq 1 then
+				!this.axdis = !xdis.string('D1').real()
+				!this.aydis = !ydis.string('D1').real()
+			else
+				!this.bxdis = !xdis.string('D1').real()
+				!this.bydis = !ydis.string('D1').real()
+			endif
+		endif
+	enddo
+	$)
+endmethod
+
+define method .gettypespec()
+	!jgoarr = !this.getjgo()
+	if !jgoarr.unset() then
+		!this.memtype = '预埋件'
+		!this.spec = 'X'
+		return
+	endif
+	!base = !jgoarr[1]
+	!mat = !jgoarr[2]
+	!note = !jgoarr[3]
+
+	if !base.match('套管') ne 0 and !mat.match('纤维水泥') ne 0 then
+		!this.memtype = !mat.before('|') + '套管'
+	else
+		!this.memtype = '预埋件'
+	endif
+
+	if !base.match('Φ') ne 0 then
+		!this.spec = 'Φ' & !base.after('Φ').before('|')
+	else
+		!this.spec = 'X'
+	endif
+
+
+	$(
+	if defined(!jgoarr[2]) and
+
+		if !jgoarr[1].matchwild('*套管*') then
+			!this.type = !jgoarr[1].part(2,'|')
+			--!this.markString = !jgoarr[1].part(2,'|') + ' ' + !this.markstring
+			!this.matstring = !jgoarr[2].part(1,'|') + '套管' + '|' + !jgoarr[2].part(2,'|') + '|' + !jgoarr[2].part(3,'|')
+		elseif !this.type eq 'NCYL' then
+			!dia = dia of $!this.name
+			--!this.markString = 'Φ' & !dia.string().before('mm') & ' ' + !this.markstring
+			!this.type = 'Φ' & !dia.string().before('mm')
+		endif
+		if !jgoarr[3].match('二次') ne 0 then
+			!this.secondcon = '二次浇注'
+			!this.type = '二次浇注'
+		endif
+		if !this.type.unset() then
+			!this.type = '预埋件'
+		endif
+	$)
+endmethod
+
+define method .getmarkstring()
+	if !this.radiuss.set() and !this.spec.match('Φ') eq 0 then
+		!dia = !this.radiuss.last() * 2
+		handle any
+
+		endhandle
+		!this.spec = 'Φ' & !dia.value().string('d0')
+	endif
+
+	if !this.spec ne 'X' then
+		--q var !this.spec !this.code
+		!this.markstring = !this.spec & ' ' & !this.code
+	else
+		!this.markstring = !this.code
+	endif
+	return
+	!jgoarr = !this.getjgo()
+	if !jgoarr.unset() then
+		return
+	endif
+	if !jgoarr[1].matchwild('*套管*') then
+		!this.type = !jgoarr[1].part(2,'|')
+		--!this.markString = !jgoarr[1].part(2,'|') + ' ' + !this.markstring
+		!this.matstring = !jgoarr[2].part(1,'|') + '套管' + '|' + !jgoarr[2].part(2,'|') + '|' + !jgoarr[2].part(3,'|')
+	elseif !this.type eq 'NCYL' then
+		!dia = dia of $!this.name
+		--!this.markString = 'Φ' & !dia.string().before('mm') & ' ' + !this.markstring
+		!this.type = 'Φ' & !dia.string().before('mm')
+	endif
+	if !jgoarr[3].match('二次') ne 0 then
+		!this.secondcon = '二次浇注'
+		!this.type = '二次浇注'
+	endif
+	if !this.type.unset() then
+		!this.type = '预埋件'
+	endif
+endmethod
+
+
+define method .getJgo() is array
+	!result = array()
+
+	!jgobjbase = :jgobjbase of $!this.name
+	if !jgobjbase eq 'UNSET' then
+		!result = !this.getOwnerAtt()
+	else
+		!jgobjmat = :jgobjmat of $!this.name
+		!jgobjnote = :jgobjnote of $!this.name
+		!result.append(!jgobjbase)
+		!result.append(!jgobjmat)
+		!result.append(!jgobjnote)
+	endif
+	return !result
+endmethod
+
+define method .getowneratt() is array
+	!result = array()
+	!owner = !this.name.dbref()
+	do
+		!owner = owner of $!owner
+		!ownertype = !owner.type
+		if !ownertype.match('FLOOR') ne 0 or !ownertype.match('WALL') ne 0 then
+			break
+		else
+			!com = '!jgobjbase = !owner.' + ':jgobjbase'
+			$!com
+			handle any
+				skip
+			elsehandle none
+				if !jgobjbase ne 'UNSET' and !jgobjbase.substring(1,1) ne '=' then
+					--if !attresult ne 'UNSET' and !attresult.substring(1,1) ne '=' then
+					!jgobjmat = !owner.:jgobjmat
+					!jgobjnote = !owner.:jgobjnote
+					!result.append(!jgobjbase)
+					!result.append(!jgobjmat)
+					!result.append(!jgobjnote)
+					break
+				endif
+			endhandle
+		endif
+	enddo
+	return !result
+endmethod
+
+
+define method .getowneratt(!att is string) is string
+	--!find = false
+	!result = ''
+	!owner = !this.name.dbref()
+	do
+		!owner = owner of $!owner
+		!ownertype = !owner.type
+		if !ownertype.match('FLOOR') ne 0 or !ownertype.match('WALL') ne 0 then
+			break
+		else
+			!com = '!attresult = !owner.' + !att
+			--q var !com
+			$!com
+			handle any
+				skip
+			elsehandle none
+				--q var !attresult
+				if !attresult ne 'UNSET' and !attresult.substring(1,1) ne '=' then
+					!result = !attresult
+					--!find = true
+					break
+				endif
+			endhandle
+		endif
+	enddo
+	--q var !result
+
+	return !result
+endmethod
+
+define method .getNxtrLines(!item is any) is array
+	!vertpoints = object vertpoints(!item)
+	!vertpoints.gettwoprofiles()
+	!edges = !vertpoints.twoprofiles[1].edges()
+	do !edge values !edges
+		if !edge.objecttype() eq 'ARC' then
+			!radius = !edge.radius
+			!arcpos = !edge.position
+			break
+		endif
+	enddo
+	!lines = array()
+	if defined(!radius) then
+		!lines.append(!arcpos.line(!arcpos.offset(!vertpoints.ori.zdir(),!vertpoints.height)))
+		!this.radiuss[1] = !radius
+		!this.radiuss[2] = !radius
+	else
+		do !x indices !vertpoints.points1
+			!lines.append(!vertpoints.points1[!x].line(!vertpoints.points2[!x]))
+		enddo
+	endif
+	return !lines
+
+
+	!ori = ori of $!item wrt/*
+	!pos = pos of $!item wrt/*
+	!height = height of $!item
+	!plane = object plane(!pos,!ori)
+	var !verts coll all vert for $!item
+	!points = array()
+	!cyli = false
+	do !vert values !verts
+		!onepos = pos of $!vert wrt/*
+		!points.append(!plane.near(!onepos))
+	enddo
+
+	!lines = array()
+	!zdir = !ori.zdir()
+	do !point values !points
+		!lines.append(!point.line(!point.offset(!zdir,!height)))
+	enddo
+	return !lines
+endmethod
+
+define method .getBoxTwelveLines(!item is any) is array
+	!poss = !this.getEightPoss(!item)
+	return !this.getBoxTwelveLinesWithPoss(!poss)
+endmethod
+define method .getBoxTwelveLinesWithPoss(!poss is array) is array
+	--if !poss.size() lt 8 then
+	--endif
+	!lines = array()
+	do !x from 1 to 8
+		if !x eq 4 or !x eq 8 then
+			!lines.append(!poss[!x].line(!poss[!x - 3]))
+		else
+			!lines.append(!poss[!x].line(!poss[!x + 1]))
+			--handle any
+
+			--	!lines.append(!poss[!x].line(!poss[!x + 1]))
+			--endhandle
+		endif
+	enddo
+	do !x from 1 to 4
+		!lines.append(!poss[!x].line(!poss[!x + 4]))
+	enddo
+	return !lines
+endmethod
+
+define method .getEightPoss(!item is any) is array
+	if !this.type eq 'NBOX' then
+		!poss = !this.getBoxEightPoss(!item)
+	else
+		!poss = !this.getNpyrEightPoss(!item)
+	endif
+	return !poss
+endmethod
+
+define method .getNpyrEightPoss(!item is any) is array
+	!p1pos = p1 pos of $!item wrt/*
+	!p2pos = p2 pos of $!item wrt/*
+	!ori = ori of $!item wrt/*
+	!xlen = xtop of $!item
+	!ylen = ytop of $!item
+	!xdir = !ori.xdir()
+	!ydir = !ori.ydir()
+	!poss[1] = !p1pos.offset(!xdir,!xlen / 2).offset(!ydir,!ylen / 2)
+	!poss[2] = !poss[1].offset(!xdir, - !xlen)
+	!poss[3] = !poss[2].offset(!ydir, - !ylen)
+	!poss[4] = !poss[3].offset(!xdir, !xlen)
+
+	!xlen = xbottom of $!item
+	!ylen = ybottom of $!item
+
+	!poss[5] = !p2pos.offset(!xdir,!xlen / 2).offset(!ydir,!ylen / 2)
+	!poss[6] = !poss[5].offset(!xdir, - !xlen)
+	!poss[7] = !poss[6].offset(!ydir, - !ylen)
+	!poss[8] = !poss[7].offset(!xdir, !xlen)
+	return !poss
+endmethod
+
+define method .getBoxEightPossWithPos(!item is any,!pos is position) is array
+	!ori = ori of $!item wrt/*
+	handle any
+		!ori = !this.ori	$*impossible
+		!pxle = pxle of $!item
+		!pyle = pyle of $!item
+		!pzle = pzle of $!item
+		!xlen = !!evalCata(!this.name,!pxle)
+		!ylen = !!evalCata(!this.name,!pyle)
+		!zlen = !!evalCata(!this.name,!pzle)
+	elsehandle none
+		!xlen = xlen of $!item
+		!ylen = ylen of $!item
+		!zlen = zlen of $!item
+	endhandle
+
+	!xdir = !ori.xdir()
+	!ydir = !ori.ydir()
+	!zdir = !ori.zdir()
+	!poss[1] = !pos.offset(!xdir,!xlen / 2).offset(!ydir,!ylen / 2).offset(!zdir,!zlen / 2)
+	!poss[2] = !poss[1].offset(!xdir, - !xlen)
+	!poss[3] = !poss[2].offset(!ydir, - !ylen)
+	!poss[4] = !poss[3].offset(!xdir, !xlen)
+
+	do !x from 5 to 8
+		!poss[!x] = !poss[!x - 4].offset(!zdir, - !zlen)
+	enddo
+	return !poss
+endmethod
+define method .getBoxEightPoss(!item is any) is array
+	!pos = pos of $!item wrt/*
+	return !this.getBoxEightPossWithPos(!item,!pos)
+endmethod
+
+define method .getInterPoints(!lines is array) is array	$*get inter points between lines of mem and profile of civil
+	!civildata = !this.civildata
+	!pointArr = array()
+
+	if !civildata[1].objecttype() eq 'PROFILE' then
+		--do !profile values !civildata
+		do !x indices !civildata
+			!profile = !civildata[!x]
+			!plane = !profile.plane()
+			!planedir = !profile.orientation.zdir()
+			!points = array()
+			do !line values !lines
+				--q var !planedir !line.direction()
+				--if !line.unset() then
+
+
+				--endif
+				!angle = !planedir.angle(!line.direction())
+				!angle = min(!angle,180 - !angle)
+
+				--q var !angle
+
+
+				if !angle lt 85 then
+					!temppos = !plane.intersection(!line)
+					if !line.onprojected(!temppos) and !!posinprofile(!temppos,!profile) then
+						--if !line.onprojected(!temppos) and !profile.iswithout(!temppos).not() then
+						!points.append(!temppos)
+					endif
+				endif
+			enddo
+			!pointarr[!x] = !points
+			--!pointarr.append(!points)
+		enddo
+
+	else
+
+		--do !arc values !civildata
+		do !x indices !civildata
+			!arc = !civildata[!x]
+			!tempzdir = !arc.orientation.zdir()
+			!points = array()
+
+			do !line values !lines
+				!temppoints = !line.intersections(!arc)
+
+				do !point values !temppoints
+					!templine = !point.line(!point.offset(!tempzdir,!this.civilheight))
+					!onepoint = !templine.intersection(!line)
+					handle any
+						skip
+					endhandle
+
+
+
+
+
+
+					--if !line.onprojected(!onepoint) and !arc.onprojected(!onepoint) and !onepoint.distance(!arc) le !this.civilheight then
+					if !line.onprojected(!onepoint) and !arc.onprojected(!onepoint) and !templine.onprojected(!onepoint) then
+						!points.append(!onepoint)
+						break
+					endif
+					$(
+					if !line.onprojected(!point) and !arc.onprojected(!point) and !point.distance(!arc) le !this.civilheight then
+						!points.append(!point)
+						break
+					endif
+					$)
+				enddo
+			enddo
+
+			!pointarr[!x] = !points
+			--!pointarr.append(!points)
+		enddo
+	endif
+
+	!result = array()
+	do !points values !pointArr
+		!newpoints = array()
+
+		if !points.size() ne 1 then
+			!px = 1
+			do !x from 1 to !points.size()
+				if !x eq 1 then
+					!px = !points.size()
+				endif
+				if !points[!x].distance(!points[!px]) lt 1 then
+					!points[!x].delete()
+				else
+					!px = !x
+				endif
+			enddo
+			!points.compress()
+			if !this.type ne 'NXTR' and !this.type ne 'NSEX' then
+				!result.append(!!sortRoundPoints(!points))
+			else
+				!result.append(!points)
+			endif
+		else
+			!result.append(!points)
+		endif
+	enddo
+	return !result
+	$(
+	!points1 = array()
+	!points2 = array()
+	if !civildata[1].objecttype() eq 'PROFILE' then
+		!plane1 = !civildata[1].plane()
+		!plane2 = !civildata[2].plane()
+		!planedir1 = !plane1.orientation.zdir()
+		!planedir2 = !plane2.orientation.zdir()
+		do !line values !lines
+			!angle1 = abs(!planedir1.angle(!line.direction()) - 90)
+			if !angle1 lt 85 then
+				!temppos = !civildata[1].plane().intersection(!line)
+				if !line.onprojected(!temppos) and !civildata[1].iswithin(!temppos) then
+					!points1.append(!temppos)
+				endif
+			endif
+
+			!angle2 = abs(!planedir2.angle(!line.direction()) - 90)
+			if !angle2 lt 85 then
+				!temppos = !civildata[2].plane().intersection(!line)
+				if !line.onprojected(!temppos) and !civildata[2].iswithin(!temppos) then
+					!points2.append(!temppos)
+				endif
+			endif
+		enddo
+	else
+		do !line values !lines
+			!points = !line.intersections(!civildata[1])
+			do !point values !points
+				if !line.onprojected(!point) and !civildata[1].onprojected(!point) then
+					!points1.append(!point)
+					break
+				endif
+			enddo
+
+			!points = !line.intersections(!civildata[2])
+			do !point values !points
+				if !line.onprojected(!point) and !civildata[2].onprojected(!point) then
+					!point2.append(!point)
+					break
+				endif
+			enddo
+		enddo
+	endif
+
+
+	!result = array()
+	!result.append(!!sortRoundPoints(!points1))
+	!result.append(!!sortRoundPoints(!points2))
+	return !result
+	$)
+endmethod
+
+define method .getLines(!item is any) is array
+	if !this.type eq 'NBOX' then
+		!lines = !this.getBoxTwelveLines(!item)
+	elseif !this.type eq 'NCYL' then
+		!pos = pos of $!this.name wrt/*
+		!ori = ori of $!this.name wrt/*
+		!height = height of $!this.name
+		!line = !pos.offset(!ori.zdir(), - !height / 2).line(!pos.offset(!ori.zdir(), !height / 2))
+		!lines = array()
+		!lines.append(!line)
+	else
+		!lines = !this.getNxtrLines(!item)
+	endif
+	return !lines
+endmethod
+
+define method .getdata(!item is any)	$*get shape data
+	!lines = !this.getLines(!item)
+	!this.setDataWithLines(!lines)
+	if !this.type eq 'NCYL' then
+		!dia = diameter of $!this.name
+		!radius = !dia / 2
+
+		do !x indices !this.cenPoints
+			!this.radiuss[!x] = !radius
+		enddo
+	elseif !lines.size() eq 1 then
+		if undefined(!this.cenpoints[1]) then
+			--!this.radiuss[1] = real()
+			if defined(!this.radiuss[1]) then
+				!this.radiuss[1].delete()
+			endif
+		endif
+		if undefined(!this.cenpoints[2]) then
+			--!this.radiuss[2] = real()
+			if defined(!this.radiuss[2]) then
+				!this.radiuss[2].delete()
+			endif
+		endif
+	endif
+endmethod
+
+
+define method .setDataWithLines(!lines is array)	$*get shape data
+	!PointArr = !this.getinterpoints(!lines)
+	!pointArr = !this.repairPointArr(!pointArr,!lines)
+
+
+	do !x indices !pointArr
+		if !PointArr[!x].set() then
+			!this.cenpoints[!x] = !!getcenpoint(!PointArr[!x])
+
+			if !PointArr[!x].size() ge 2 then
+				!this.pointArr[!x] = !PointArr[!x]
+			endif
+			if !PointArr[!x].size() ge 3 then
+				!this.profiles[!x] = object profile(!pointArr[!x][1],!!getoriwithpoints(!pointArr[!x]),!pointArr[!x])
+			endif
+		endif
+	enddo
+endmethod
+
+define method .repairPointArr(!pointarr is array, !lines is array) is array	 $*get inter points between lines of civil and profile of mem
+	if !lines.size() ne 1 then
+		do !x indices !pointarr
+			if !PointArr[!x].set() then
+				if !pointarr[!x].size() lt 4 then
+					if undefined(!selfprofiles) then
+						!selfProfiles = !this.getSelfProfiles(!lines)
+					endif
+					!pointarr[!x] = !this.repairPoints(!selfProfiles,!x,!pointarr[!x])
+				endif
+			endif
+		enddo
+	endif
+	return !pointarr
+endmethod
+
+define method .repairPoints(!profiles is array, !x is real, !oldpoints is array) is array			$*sometimes the opening is partly inside concrete
+	!otype = !this.civildata[!x].objecttype()
+	if !otype eq 'PROFILE' then
+		!linearcs = !this.civildata[!x].edges()
+	else
+		!linearcs = array()
+		!linearcs.append(!this.civildata[!x])
+		!arc1 = !this.civildata[!x]
+		!ori = !arc1.orientation
+		!pos = !arc1.position
+		!pos = !pos.offset(!ori.zdir(),!this.civilheight)
+		!arc2 = object arc(!pos,!ori,!arc1.startangle,!arc1.endangle,!arc1.radius,!arc1.sense)
+		!linearcs.append(!arc2)
+		!linearcs.append(!arc1.angleposition(!arc1.startangle).line(!arc2.angleposition(!arc2.startangle)))
+		!linearcs.append(!arc1.angleposition(!arc1.endangle).line(!arc2.angleposition(!arc2.endangle)))
+	endif
+
+
+	!result = array()
+	do !linearc values !linearcs
+		!temptype = !linearc.objecttype()
+		if !temptype eq 'LINE' then
+			!line = !linearc
+			!line = !line.extendstart(1)	$*202401111654
+			!line = !line.extendend(1)	$*202401111654
+			do !profile values !profiles
+				!temppoint = !line.intersection(!profile.plane())
+				handle any
+					skip
+				endhandle
+				if !this.isinprofile(!profile,!temppoint) and !line.onprojected(!temppoint) then
+					!result.append(!temppoint)
+				endif
+			enddo
+		else
+			do !profile values !profiles
+				!interangles = !linearc.intersections(!profile.plane())
+				handle any
+					skip
+				endhandle
+				do !oneangle values !interangles
+					!temppoint = !linearc.angleposition(!oneangle)
+					if !this.isinprofile(!profile,!temppoint) and !linearc.onprojected(!temppoint) then
+
+						!result.append(!temppoint)
+					endif
+				enddo
+			enddo
+		endif
+	enddo
+
+	!result.appendarray(!oldpoints)
+	!result.unique()
+
+	!result = !!sortroundpoints(!result)
+
+
+	return !result
+endmethod
+
+define method .isinprofile(!profile is profile,!point is position) is boolean
+
+	--!point = !point.offset(e,2000)
+
+	--if !profile.iswithout(!point).not() then
+	if !!posinprofile(!point,!profile) then
+		return true
+	endif
+
+	!nearpos = !profile.near(!point)
+	if !nearpos.distance(!point) lt 1 then
+		return true
+	else
+		return false
+	endif
+endmethod
+
+define method .getSelfProfiles(!inputlines is array) is array
+	!lines = !inputlines
+	!dirs = array()
+	!dirnums = array()
+	!dirlines = array()
+	do !line values !lines
+		!linedir = !line.direction()
+		!find = false
+		do !x indices !dirs
+			!dir = !dirs[!x]
+			!angle = !dir.angle(!linedir)
+			--if !angle gt 179 or !angle lt 1 then
+			if !angle lt 1 then
+				!dirnums[!x] = !dirnums[!x] + 1
+				!dirlines[!x].append(!line)
+				!find = true
+				break
+			endif
+		enddo
+		if !find.not() then
+			!dirs.append(!linedir)
+			!dirnums.append(1)
+			!temparr = array()
+			!temparr.append(!line)
+			!dirlines.append(!temparr)
+		endif
+	enddo
+
+	!indices = !dirnums.sortedindices().invert()
+
+	!lines = !dirlines[!indices[1]]
+
+	do !line values !lines
+		!line = !line.extendstart(0.1)
+		!line = !line.extendend(0.1)
+	enddo
+
+	!points1 = array()
+	!points2 = array()
+	do !line values !lines
+		!points1.append(!line.startposition)
+		!points2.append(!line.endposition)
+	enddo
+
+	!ori = !!getoriwithpoints(!points1)
+	!profile1 = object profile(!points1[1],!ori,!points1)
+	!profile2 = object profile(!points2[1],!ori,!points2)
+
+	!profiles = array()
+	!profiles.append(!profile1)
+	!profiles.append(!profile2)
+
+
+
+	do !x indices !points1
+		!poss = array()
+		if !x ne !points1.size() then
+			!poss.append(!points1[!x])
+			!poss.append(!points1[!x + 1])
+			!poss.append(!points2[!x + 1])
+			!poss.append(!points2[!x])
+		else
+			!poss.append(!points1[!x])
+			!poss.append(!points1[1])
+			!poss.append(!points2[1])
+			!poss.append(!points2[!x])
+		endif
+
+
+		!ori = !!getoriwithpoints(!poss)
+		!profile = object profile(!poss[1],!ori,!poss)
+		!profiles.append(!profile)
+	enddo
+
+
+
+	do !profile values !profiles
+		!profile.close()
+	enddo
+
+	return !profiles
+endmethod
+
+define method .getcatadatanew(!item is any)
+	!ngms = name of ngmref of catref of $!item
+	var !nlcys coll all nlcy for $!ngms
+	if !nlcys.unset() then
+		var !nsboxs coll all (nsbo nsex) for $!ngms
+		if !nsboxs.unset() then
+
+		endif
+	endif
+
+	!allcenpoints = array()
+	!allradiuss = array()
+	do !nlcy values !nclys
+		!onearr = !this.dealncyl(!item,!nlcy)
+		!onecenpoints = !onearr[1]
+		!oneradiuss = !onearr[2]
+		do !x indices !allcenpoints
+			if defined(!onecenpoints[!x]) then
+				do !cenpoint values !allcenpoints[!x]
+
+				enddo
+			endif
+		enddo
+	enddo
+endmethod
+
+define method .dealncyl(!item is any,!nlcy is string) is array
+	!pdia = pdia of $!nlcy
+	!oneradius = !!evalCata(!item,!pdia) / 2
+
+	!pbdi = pbdi of $!nlcy
+	!ptdi = ptdi of $!nlcy
+	!paxi = paxi of $!nlcy
+
+	!zdirnagetive = false
+	if !paxi.set() then
+		if !paxi.substring(1,1) eq '-' then
+			!zdirnagetive = true
+			!paxi = !paxi.after('-')
+		endif
+		!pos = $!paxi pos of $!item wrt/*
+	else
+		!pos = pos of $!item wrt/*
+	endif
+	!ori = ori of $!item wrt/*
+	!zdir = !ori.zdir()
+	if !zdirnagetive then
+		!zdir = !zdir.opposite()
+	endif
+	!lines[1] = !pos.offset(!zdir,!!evalcata(!item,!pbdi)).line(!pos.offset(!zdir,!!evalcata(!item,!ptdi)))
+
+	!PointArr = !this.getinterpoints(!lines)
+
+	!cenpoints = array()
+	!radiuss = array()
+	do !x indices !pointArr
+		if !PointArr[!x].set() then
+			!cenpoints[!x] = !!getcenpoint(!PointArr[!x])
+			!radiuss[!x] = !oneradius
+		endif
+	enddo
+	!result = array()
+	!result.append(!cenpoints)
+	!result.append(!radiuss)
+	return !result
+endmethod
+
+define method .dealncylinbox(!item is any,!nlcys is array,!nsboxs is array)
+	if !nlcys.set() then
+		!maxradius = 0
+		do !x indices !nlcys
+			!pdia = pdia of $!nlcys[$!x]
+			!oneradius = !!evalCata(!item,!pdia) / 2
+			if !oneradius gt !maxradius then
+				!maxradius = !oneradius
+				--!goodcyli = !nlcys[!x]
+			endif
+		enddo
+		--q var !goodcyli
+
+
+		do !goodcyli values !nlcys
+			!pdia = pdia of $!goodcyli
+			!oneradius = !!evalCata(!item,!pdia) / 2
+
+			!pbdi = pbdi of $!goodcyli
+			!ptdi = ptdi of $!goodcyli
+			!paxi = paxi of $!goodcyli
+
+			!zdirnagetive = false
+			if !paxi.set() then
+				if !paxi.substring(1,1) eq '-' then
+					!zdirnagetive = true
+					!paxi = !paxi.after('-')
+				endif
+				!pos = $!paxi pos of $!item wrt/*
+			else
+				!pos = pos of $!item wrt/*
+			endif
+			!ori = ori of $!item wrt/*
+			!zdir = !ori.zdir()
+			if !zdirnagetive then
+				!zdir = !zdir.opposite()
+			endif
+			!lines[1] = !pos.offset(!zdir,!!evalcata(!item,!pbdi)).line(!pos.offset(!zdir,!!evalcata(!item,!ptdi)))
+
+			!this.setDataWithLines(!lines)
+			do !x indices !this.cenPoints
+				!this.radiuss[!x] = !maxRadius
+			enddo
+		enddo
+	else
+		!pos = pos of $!item wrt/*
+		!ori = ori of $!item wrt/*
+		!xdir = !ori.xdir()
+		!ydir = !ori.ydir()
+		!zdir = !ori.zdir()
+
+		!profiles = array()
+		do !nsbox values !nsboxs
+
+			!px = px of $!nsbox					$* =15193/13953 Openings-Spec/Rectangular/CNPE
+			!py = py of $!nsbox
+			!pz = pz of $!nsbox
+			!realpos = !pos.offset(!xdir,!!evalcata(!item,!px)).offset(!ydir,!!evalcata(!item,!py)).offset(!zdir,!!evalcata(!item,!pz))
+
+			if type of $!nsbox eq 'NSBO' then
+				!poss = !this.getBoxEightPossWithPos(!nsbox,!realpos)
+				!poss.unique()
+				if !poss.size() ne 8 then
+					skip
+				endif
+				!lines = !this.getBoxTwelveLinesWithPoss(!poss)
+			elseif type of $!nsbox eq 'NSEX' then
+				!nsex = !nsbox
+				!ori = ori of $!item wrt/*		$*=17396/1433
+				!xdir = !ori.xdir()
+				!ydir = !ori.ydir()
+				!zdir = !ori.zdir()
+
+
+				!paaxis = paaxis of $!nsex
+				!pbaxis = pbaxis of $!nsex
+
+				!pheight = pheight of $!nsex
+				!height = !!evalcata(!item,!pheight)
+
+				if !!evalCata(!item,!paaxis) eq 0 then
+					!padir = $!paaxis dir of $!item wrt/*
+				endif
+
+				if !!evalCata(!item,!pbaxis) eq 0 then
+					!pbdir = $!pbaxis dir of $!item wrt/*
+				endif
+
+
+
+				!zdir = !padir.orthogonal(!pbdir)
+
+
+
+
+
+				var !sverts coll all sver for $!nsex
+				!lines = array()
+				do !svert values !sverts
+					!vertpx = px of $!svert
+					!vertpy = py of $!svert
+					!vertpr = pradius of $!svert
+
+
+
+
+
+					!vertpos = !realpos.offset(!padir,!!evalcata(!item,!vertpx)).offset(!pbdir,!!evalcata(!item,!vertpy))
+					!lines.append(!vertpos.line(!vertpos.offset(!zdir, - !height)))
+				enddo
+			endif
+
+			!PointArr = !this.getinterpoints(!lines)
+			!pointArr = !this.repairPointArr(!pointArr,!lines)		$*sometimes the opening is partly inside concrete
+			do !x indices !pointarr
+				if !pointarr[!x].size() lt 3 then
+					skip
+				endif
+
+				!profile = object profile(!pointArr[!x][1],!!getoriwithpoints(!pointArr[!x]),!pointArr[!x])
+				if undefined(!profiles[!x]) then
+					!profiles[!x] = !profile
+				else
+					!profiles[!x] = !profiles[!x].union(!profile)[1]
+				endif
+			enddo
+		enddo
+
+		!this.profiles = !profiles
+
+		do !x indices !profiles
+			!points = !!getPointsOfProfile(!profiles[!x])
+			!this.pointArr[!x] = !points.unique()						$*considering that there are more than one elements
+			!this.cenpoints[!x] = !!getcenpoint(!this.pointArr[!x])
+		enddo
+	endif
+endmethod
+
+
+define method .getCataData(!item is any)
+	!ngms = name of gmref of catref of $!item
+	handle any
+		!ngms = name of ngmref of catref of $!item
+		handle any
+			return
+		endhandle
+	endhandle
+	var !nlcys coll all nlcy for $!ngms
+	if !nlcys.unset() then
+		var !nsboxs coll all (nsbo nsex) for $!ngms
+		if !nsboxs.unset() then
+			!ngms = name of ngmref of catref of $!item
+			handle any
+				return
+			endhandle
+			var !nlcys coll all nlcy for $!ngms
+			if !nlcys.unset() then
+				var !nsboxs coll all (nsbo nsex) for $!ngms
+			endif
+		endif
+	endif
+
+	--$p $!this.name
+	--if !this.name eq '/S140-M01' then
+	--if !this.name eq '=17394/61235' then
+
+	--endif
+
+	if !nlcys.set() then
+		!maxradius = 0
+		do !x indices !nlcys
+			!pdia = pdia of $!nlcys[$!x]
+			!oneradius = !!evalCata(!item,!pdia) / 2
+			if !oneradius gt !maxradius then
+				!maxradius = !oneradius
+				--!goodcyli = !nlcys[!x]
+			endif
+		enddo
+		--q var !goodcyli
+
+
+		do !goodcyli values !nlcys
+
+
+			--if defined(!goodcyli) then	$*=13244/695346
+			!pbdi = pbdi of $!goodcyli
+			!ptdi = ptdi of $!goodcyli
+			!paxi = paxi of $!goodcyli
+
+			$(
+
+
+			!zdirnagetive = false
+			if !paxi.set() then
+				--q var !paxi !item
+				if !paxi.substring(1,1) eq '-' then
+					!zdirnagetive = true
+					!paxi = !paxi.after('-')
+				endif
+				!pos = $!paxi pos of $!item wrt/*
+			else
+				!pos = pos of $!item wrt/*
+			endif
+			!ori = ori of $!item wrt/*
+			!zdir = !ori.zdir()
+			if !zdirnagetive then
+				!zdir = !zdir.opposite()
+			endif
+			$)
+
+			!tempvalue = !!evalcata(!item,!paxi)
+
+			if !tempvalue.objecttype() eq 'ARRAY' then
+				!zdir = !tempvalue[1]
+				!ppos = !tempvalue[2]
+			else
+				!zdir = !tempvalue
+				!ppos = !pos
+			endif
+
+			!lines[1] = !ppos.offset(!zdir,!!evalcata(!item,!pbdi)).line(!ppos.offset(!zdir,!!evalcata(!item,!ptdi)))
+			--!lines[1] = !pos.offset(!zdir,!!evalcata(!item,!pbdi)).line(!pos.offset(!zdir,!!evalcata(!item,!ptdi)))
+			--q var !lines
+
+			!this.setDataWithLines(!lines)
+
+			do !x indices !this.cenPoints
+				!this.radiuss[!x] = !maxRadius
+			enddo
+			--endif
+		enddo
+	else
+		--var !nsboxs coll all (nsbo nsex) for $!ngms
+		$(
+		!tempNsboxs = !nsboxs
+		do !x indices !tempNsboxs
+			!pzle = pzle of $!tempNsbox[$!x]
+			if !pzle.match('ODESP') eq 0 then
+				!tempNsboxs[!x].delete()
+			endif
+		enddo
+		!tempNsboxs.compress()
+		if !tempNsboxs.set() then
+			!nsboxs = !tempNsboxs
+		endif
+		$)
+		--$p $!item
+
+
+		!pos = pos of $!item wrt/*
+		!ori = ori of $!item wrt/*
+		!xdir = !ori.xdir()
+		!ydir = !ori.ydir()
+		!zdir = !ori.zdir()
+
+		!profiles = array()
+		do !nsbox values !nsboxs
+
+			!px = px of $!nsbox					$* =15193/13953 Openings-Spec/Rectangular/CNPE
+			!py = py of $!nsbox
+			!pz = pz of $!nsbox
+			!realpos = !pos.offset(!xdir,!!evalcata(!item,!px)).offset(!ydir,!!evalcata(!item,!py)).offset(!zdir,!!evalcata(!item,!pz))
+
+			if type of $!nsbox eq 'NSBO' then
+				!poss = !this.getBoxEightPossWithPos(!nsbox,!realpos)
+				!poss.unique()
+				if !poss.size() ne 8 then
+					skip
+				endif
+				!lines = !this.getBoxTwelveLinesWithPoss(!poss)
+			elseif type of $!nsbox eq 'NSEX' then
+				!nsex = !nsbox
+				!ori = ori of $!item wrt/*		$*=17396/1433
+				!xdir = !ori.xdir()
+				!ydir = !ori.ydir()
+				!zdir = !ori.zdir()
+
+
+				!paaxis = paaxis of $!nsex
+				!pbaxis = pbaxis of $!nsex
+
+				!pheight = pheight of $!nsex
+				!height = !!evalcata(!item,!pheight)
+
+
+				!tempvalue1 = !!evalCata(!item,!paaxis)
+
+				if !tempvalue1.objecttype() eq 'ARRAY' then
+					!padir = !tempvalue1[1]
+				else
+					if !tempvalue1 eq 0 then
+						!padir = $!paaxis dir of $!item wrt/*
+					else
+						!padir = !tempvalue1
+					endif
+				endif
+
+				!tempvalue2 = !!evalCata(!item,!pbaxis)
+				if !tempvalue2.objecttype() eq 'ARRAY' then
+					!pbdir = !tempvalue2[1]
+				else
+					if !tempvalue2 eq 0 then
+						!pbdir = $!pbaxis dir of $!item wrt/*
+					else
+						!pbdir = !tempvalue2
+					endif
+				endif
+
+				--if !!evalCata(!item,!pbaxis) eq 0 then
+				--	!pbdir = $!pbaxis dir of $!item wrt/*
+				--endif
+
+
+
+				!zdir = !padir.orthogonal(!pbdir)
+
+
+				var !sverts coll all sver for $!nsex
+				!lines = array()
+				do !svert values !sverts
+					!vertpx = px of $!svert
+					!vertpy = py of $!svert
+					!vertpr = pradius of $!svert
+
+
+					!vertpos = !realpos.offset(!padir,!!evalcata(!item,!vertpx)).offset(!pbdir,!!evalcata(!item,!vertpy))
+					!lines.append(!vertpos.line(!vertpos.offset(!zdir, - !height)))
+				enddo
+
+
+			endif
+
+
+			--$p $!this.name
+			--if !this.name eq '/6NHEVV2038K' then
+
+			--endif
+
+			!PointArr = !this.getinterpoints(!lines)
+			--if !this.name eq '/6NHEVV2038K' then
+
+			--endif
+			!pointArr = !this.repairPointArr(!pointArr,!lines)		$*sometimes the opening is partly inside concrete
+			--if !this.name eq '/6NHEVV2038K' then
+
+			--endif
+
+			do !x indices !pointarr
+				if !pointarr[!x].size() lt 3 then
+					skip
+				endif
+
+				!profile = object profile(!pointArr[!x][1],!!getoriwithpoints(!pointArr[!x]),!pointArr[!x])
+				if undefined(!profiles[!x]) then
+					!profiles[!x] = !profile
+				else
+					!profiles[!x] = !profiles[!x].union(!profile)[1]
+				endif
+			enddo
+		enddo
+
+		!this.profiles = !profiles
+
+		do !x indices !profiles
+			!points = !!getPointsOfProfile(!profiles[!x])
+			!this.pointArr[!x] = !points.unique()						$*considering that there are more than one elements
+			!this.cenpoints[!x] = !!getcenpoint(!this.pointArr[!x])
+		enddo
+	endif
+endmethod
+
+$(
+define method .getnsex(!item is any)		$*=17396/1433
+	var !nsexs coll all nsex for $!ngms
+	!pos = pos of $!item wrt/*
+	!ori = ori of $!item wrt/*
+	!xdir = !ori.xdir()
+	!ydir = !ori.ydir()
+	!zdir = !ori.zdir()
+
+	!profiles = array()
+	do !nsex values !nsexs
+
+		!px = px of $!nsex					$* =15193/13953 Openings-Spec/Rectangular/CNPE
+		!py = py of $!nsex
+		!pz = pz of $!nsex
+		!realpos = !pos.offset(!xdir,!!evalcata(!item,!px)).offset(!ydir,!!evalcata(!item,!py)).offset(!zdir,!!evalcata(!item,!pz))
+
+		!paaxis = paaxis of $!nsex
+		!pbaxis = pbaxis of $!nsex
+
+		!pheight = pheight of $!nsex
+		!height = !!evalcata(!item,!pheight)
+
+		if !!evalCata(!item,!paaxis) eq 0 then
+			!padir = $!paaxis dir of $!item wrt/*
+		endif
+
+		if !!evalCata(!item,!pbaxis) eq 0 then
+			!pbdir = $!pbaxis dir of $!item wrt/*
+		endif
+
+		!zdir = !padir.orthogonal(!pbdir)
+
+
+
+
+		var !sverts coll all sver for $nsex
+		!lines = array()
+		do !svert values !sverts
+			!vertpx = px of $!svert
+			!vertpy = py of $!svert
+			!vertpr = pradius of $!svert
+
+			!vertpos = !realpos.offset(!padir,!!evalcata(!item,!vertpx)).offset(!ydir,!!evalcata(!item,!vertpy))
+			!lines.append(!vertpos.line(vertpos.offset(!zdir,!height)))
+		enddo
+
+
+
+		!PointArr = !this.getinterpoints(!lines)
+		--if !this.name eq '/6NHEVV2038K' then
+
+		--endif
+		!pointArr = !this.repairPointArr(!pointArr,!lines)
+		--if !this.name eq '/6NHEVV2038K' then
+
+		--endif
+		do !x indices !pointarr
+			if !pointarr[!x].size() lt 3 then
+				skip
+			endif
+
+			!profile = object profile(!pointArr[!x][1],!!getoriwithpoints(!pointArr[!x]),!pointArr[!x])
+			if undefined(!profiles[!x]) then
+				!profiles[!x] = !profile
+			else
+				!profiles[!x] = !profiles[!x].union(!profile)[1]
+			endif
+		enddo
+	enddo
+
+	!this.profiles = !profiles
+
+	do !x indices !profiles
+		!points = !!getPointsOfProfile(!profiles[!x])
+		!this.pointArr[!x] = !points.unique()
+		!this.cenpoints[!x] = !!getcenpoint(!this.pointArr[!x])
+	enddo
+endmethod
+$)
+
+define method .getShape()	$*get shape data
+	!type = !this.type
+	if !type inset ('NBOX','NCYL','NXTR','NPYR') then		$*/6NHFVV2002K
+		!this.getdata(!this.name)
+	elseif !type eq 'PFIT' then				$*for floor	/6NHFKK2004T
+		!this.getCataData(!this.name)
+	elseif !type eq 'FITT' then				$*for stwall	$* /6NHETT2004K
+		!this.getCataData(!this.name)
+	elseif !type eq 'SBFI' then				$*Incline	for stwall		/6NHETT2000K
+		!this.getCataData(!this.name)
+		$(
+	elseif !type eq 'CMFI' then				$*Incline	for stwall		/6NHETT2000K
+		!sbfi = name of first sbfi of $!this.name
+		!this.getCataData(!sbfi)
+	elseif !type eq 'CMPF' then				$*could be Incline	for Gwall	/6RSHKK2019T
+		!sbfi = name of first sbfi of $!this.name
+		!this.getCataData(!sbfi)
+		$)
+	elseif !type eq 'FIXING' then			$*for wall	=17396/1394	 =17396/1433
+		--!fixing = name of first sbfi of $!this.name
+		--!this.getCataData(!fixing)
+		!this.getCataData(!this.name)
+	elseif !type eq 'PANE' then
+		!ownername = name of owner of $!this.name
+
+		if !ownername.part(-1,'-') eq 'AB' or !ownername.part(-2,'-') eq 'AB' then
+		--if !ownername.part(-2,'-') eq 'AB' then	$*old
+			!this.getAbPaneData(!this.name)
+		else	$*AK OR T
+			!this.getAKPaneData(!this.name)
+		endif
+	endif
+
+	if !this.profiles.set() then
+		do !x indices !this.profiles
+			if !this.profiles[!x].isclosed().not() then
+				!this.profiles[!x].close()
+			endif
+		enddo
+	endif
+
+	!this.checkifok()
+endmethod
+
+define method .checkifok()
+	!ok = true
+	if !this.form.civildatas[!this.civilindex].type eq 'FLOOR' then
+		!planetolerance = 1000
+	else
+		!planetolerance = 30
+	endif
+	do !x indices !this.cenpoints
+		if !this.civildata[!x].objecttype() eq 'PROFILE' then
+		--q var !this.cenpoints[!x].distance(!this.civildata[!x].plane())
+			if !this.cenpoints[!x].distance(!this.civildata[!x].plane()) gt !planetolerance or !!posinprofile(!this.cenpoints[!x],!this.civildata[!x]).not() then
+				!ok = false
+				break
+			endif
+		else
+			!plane = object plane(!this.civildata[!x].position,!this.civildata[!x].orientation)
+
+			if !this.civildata[!x].onprojected(!this.cenpoints[!x]).not() or !plane.near(!this.cenpoints[!x]).distance(!this.civildata[!x]) gt 50 then
+				!ok = false
+				break
+			endif
+		endif
+	enddo
+	--q var !ok
+	if !ok.not() then
+		!this.cenpoints = array()
+	endif
+endmethod
+
+
+
+define method .getABpanedata(!item is any)
+	$(
+	!pos = pos of $!item wrt/*
+	!ori = ori of $!item wrt/*
+
+	!plooname = name of first ploo of $!item
+	handle any
+		!height = height of $!item
+		!plooname = name of first loop of $!item
+	elsehandle none
+		!height = height of $!plooname
+		!sjust = sjust of $!plooname
+		if !sjust.matchwild('*TO*') then
+			!zdir = !zdir.opposite()
+		elseif !sjust.matchwild('*CEN*') then
+			!height = !height / 2
+		endif
+	endhandle
+	!this.zdir = !zdir
+
+	!plane = object plane(!pos, !ori)
+	!points = array()
+	var !paves coll all (pave vert) for $!plooname
+	do !pave values !paves
+		!onepos = pos of $!pave wrt/*
+		!points.append(!plane.near(!onepos))
+	enddo
+	!cenpoint = !!getcenpoint(!points)
+	if !this.civildata[1].objecttype() eq 'PROFILE' then
+		do !x indices !this.civildata
+			!dis = !this.civildata[!x].plane().distance(!cenpoint)
+			if undefined(!mindis) then
+				!mindis = !dis
+				!goodx = !x
+			elseif !dis lt !mindis then
+				!mindis = !dis
+				!goodx = !x
+			endif
+		enddo
+	else
+		do !x indices !this.civildata
+			!dis = !cenpoint.distance(!this.civildata[!x])
+			if undefined(!mindis) then
+				!mindis = !dis
+				!goodx = !x
+			elseif !dis lt !mindis then
+				!mindis = !dis
+				!goodx = !x
+			endif
+		enddo
+	endif
+	!this.pointarr[!goodx] = !points
+	!this.cenpoints[!goodx] = !cenpoint
+	$)
+	!vertpoints = object vertpoints(!item,true)
+
+	!points1 = !vertpoints.points1
+	!points2 = !vertpoints.points2
+	!cenpoint1 = !vertpoints.cenpoint1
+	!cenpoint2 = !vertpoints.cenpoint2
+	if !this.civildata[1].objecttype() eq 'PROFILE' then
+		!dir = !this.civildata[1].orientation.zdir()
+		!line = !cenpoint1.line(!cenpoint1.offset(!dir,1000))
+		!interpoint1 = !line.intersection(!this.civildata[1].plane())
+		handle any
+		endhandle
+		!interpoint2 = !line.intersection(!this.civildata[2].plane())
+		handle any
+		endhandle
+		if undefined(!interpoint1) and undefined(!interpoint2) then
+			return
+		elseif undefined(!interpoint1) then
+			!midpoint = !interpoint2.offset(!this.civildata[2].orientation.zdir().opposite(),1000)
+			!goodx = 2
+		elseif undefined(!interpoint2) then
+			!midpoint = !interpoint1.offset(!this.civildata[1].orientation.zdir().opposite(),1000)
+			!goodx = 1
+		else
+			!midpoint = !interpoint1.midpoint(!interpoint2)
+			if !cenpoint1.distance(!interpoint1) lt !cenpoint1.distance(!interpoint2) then
+				!goodx = 1
+			else
+				!goodx = 2
+			endif
+		endif
+	else
+		!dir = !this.civildata[1].angledirection(!this.civildata[1].near(!cenpoint1))
+		!line = !cenpoint1.line(!cenpoint1.offset(!dir,1000))
+		!interpoints1 = !line.intersections(!this.civildata[1])
+		do !x index !interpoints1
+			if !this.civildata[1].onprojected(!interpoints1[!x]).not() then
+				!interpoints1[!x].delete()
+			endif
+		enddo
+		!interpoints1.compress()
+		if !interpoints1.size() gt 1 then
+			if !interpoints1[1].distance(!cenpoint1) le !interpoints1[2].distance(!cenpoint1) then
+				!interpoint1 = !interpoints1[1]
+			else
+				!interpoint1 = !interpoints1[2]
+			endif
+		elseif !interpoints1.size() eq 1 then
+			!interpoint1 = !interpoints1[1]
+		endif
+
+		!interpoints2 = !line.intersections(!this.civildata[2])
+		do !x index !interpoints2
+			if !this.civildata[2].onprojected(!interpoints2[!x]).not() then
+				!interpoints2[!x].delete()
+			endif
+		enddo
+		!interpoints2.compress()
+		if !interpoints2.size() gt 1 then
+			if !interpoints2[1].distance(!cenpoint1) le !interpoints2[2].distance(!cenpoint1) then
+				!interpoint2 = !interpoints2[1]
+			else
+				!interpoint2 = !interpoints2[2]
+			endif
+		elseif !interpoints2.size() eq 1 then
+			!interpoint2 = !interpoints2[1]
+		endif
+
+		if undefined(!interpoint1) and undefined(!interpoint2) then
+			return
+		elseif undefined(!interpoint1) then
+			!goodx = 2
+			if !this.civildata[1].radius lt !this.civildata[2].radius then
+				!midpoint = !interpoint2.offset(!dir,1000)
+			else
+				!midpoint = !interpoint2.offset(!dir.opposite(),1000)
+			endif
+		elseif undefined(!interpoint2) then
+			!goodx = 1
+			if !this.civildata[1].radius lt !this.civildata[2].radius then
+				!midpoint = !interpoint1.offset(!dir,1000)
+			else
+				!midpoint = !interpoint1.offset(!dir.opposite(),1000)
+			endif
+		else
+			!midpoint = !interpoint1.midpoint(!interpoint2)
+			if !cenpoint1.distance(!interpoint1) lt !cenpoint1.distance(!interpoint2) then
+				!goodx = 1
+			else
+				!goodx = 2
+			endif
+		endif
+	endif
+
+
+
+	if !cenpoint1.distance(!midpoint) gt !cenpoint2.distance(!midpoint) then
+		!cenpoint = !cenpoint1
+		!points = !points1
+	else
+		!cenpoint = !cenpoint2
+		!points = !points2
+	endif
+
+	$(
+	!mindisX1 = !this.getmindis(!cenpoint1)
+	!mindisX2 = !this.getmindis(!cenpoint2)
+
+	if !mindisx1[2].unset() or !mindisx2[2].unset() then
+		return
+	endif
+
+	if !mindisx1[3].unset() then
+		!goodx = !mindisx1[2]
+		!points = !points1
+		!cenpoint = !cenpoint1
+	elseif !mindisx2[3].unset() then
+		!goodx = !mindisx2[2]
+		!points = !points2
+		!cenpoint = !cenpoint2
+	else
+		if !mindisx1[3].angle(!mindisx2[3]) lt 10 then
+		--$p $!this.name
+			if !this.name eq '/6RSFTT2007P' then
+
+			endif
+			if !mindisx1[1] ge !mindisx2[1] then
+				!goodx = !mindisx1[2]
+				!points = !points1
+				!cenpoint = !cenpoint1
+			else
+				!goodx = !mindisx2[2]
+				!points = !points2
+				!cenpoint = !cenpoint2
+			endif
+		else
+		--$p $!this.name
+			!tempdir = !this.civildata[!mindisx1[2]].angledirection(!this.civildata[!mindisx1[2]].near(!cenpoint1))
+
+			if !mindisx1[3].angle(!tempdir) gt 90 then
+			--if !mindisx1[1] le !mindisx2[1] then
+				!goodx = !mindisx1[2]
+				!points = !points1
+				!cenpoint = !cenpoint1
+			else
+				!goodx = !mindisx2[2]
+				!points = !points2
+				!cenpoint = !cenpoint2
+			endif
+		endif
+	endif
+	$)
+
+	!this.pointarr[!goodx] = !points
+	!this.cenpoints[!goodx] = !cenpoint
+
+
+	!profile = object profile(!cenpoint,!!getOriWithPoints(!points),!points)
+	!profile.close()
+	!this.profiles[!goodx] = !profile
+endmethod
+
+define method .getmindis(!cenpoint is position) is array
+
+	if !this.civildata[1].objecttype() eq 'PROFILE' then
+		!isprofile = true
+	else
+		!isprofile = false
+	endif
+	do !x indices !this.civildata
+		if !isprofile then
+			if !!posinprofile(!cenpoint,!this.civildata[!x]).not() then
+				--if !this.civildata[!x].iswithout(!cenpoint) then
+				skip
+			endif
+			!tempangle = !this.civildata[!x].orientation.zdir().angle(!this.zdir)
+			if !tempangle gt 1 and !tempangle lt 179 then
+				skip
+			endif
+			!dis = !cenpoint.distance(!this.civildata[!x].plane())
+			!dir = !cenpoint.direction(!this.civildata[!x].plane().near(!cenpoint))
+			handle any
+				!onit = true
+			elsehandle none
+				!onit = false
+			endhandle
+		else
+			!angle = !this.civildata[!x].near(!cenpoint)
+			if !angle lt !this.civildata[!x].startangle or !angle gt !this.civildata[!x].endangle then
+				skip
+			endif
+			!tempdir = !this.civildata[!x].angledirection(!angle)
+
+			!tempangle = !tempdir.angle(!this.zdir)
+			--!tempangle = !tempangle.angle(!this.zdir)
+			if !tempangle gt 1 and !tempangle lt 179 then
+				skip
+			endif
+
+			!dis = !cenpoint.distance(!this.civildata[!x])
+			!templine = !this.civildata[!x].position.line(!this.civildata[!x].position.offset(!this.civildata[!x].orientation.zdir(),1000))
+			!tempdis = !templine.distance(!cenpoint)
+
+
+			if !tempdis gt !this.civildata[!x].radius then
+				!dir = !tempdir.opposite()
+				!onit = false
+			elseif !tempdis eq !this.civildata[!x].radius then
+				!dir = object direction()
+				!onit = true
+			else
+				!onit = false
+				!dir = !tempdir
+			endif
+		endif
+		if !onit then
+			!mindis = !dis
+			!goodx = !x
+			!gooddir = object direction()
+			break
+		else
+			if undefined(!mindis) then
+				!mindis = !dis
+				!goodx = !x
+				!gooddir = !dir
+			elseif !dis lt !mindis then
+				!mindis = !dis
+				!goodx = !x
+				!gooddir = !dir
+			endif
+		endif
+
+	enddo
+	$(
+	else
+		do !x indices !this.civildata
+			!angle = !this.civildata[!x].near(!cenpoint)
+			if !angle lt !this.civildata[!x].startangle or !angle gt !this.civildata[!x].endangle then
+				skip
+			endif
+			!dis = !cenpoint.distance(!this.civildata[!x])
+
+			if undefined(!mindis) then
+				!mindis = !dis
+				!goodx = !x
+			elseif !dis lt !mindis then
+				!mindis = !dis
+				!goodx = !x
+			endif
+		enddo
+	endif
+	$)
+	if undefined(!mindis) then
+		!mindis = 1000000
+		!goodx = object real()
+		!gooddir = object direction()
+	endif
+	!result = array()
+	!result.append(!mindis)
+	!result.append(!goodx)
+	!result.append(!gooddir)
+
+	return !result
+endmethod
+
+define method .getAKpanedata(!item is any)
+	!vertpoints = object vertpoints(!item,true)
+	!points1 = !vertpoints.points1
+	!points2 = !vertpoints.points2
+
+	!poss = !this.getFourPoints(!points1)
+
+	!poss.appendarray(!this.getFourPoints(!points2))
+
+	!lines = !this.getBoxTwelveLinesWithPoss(!poss)
+	!this.setDataWithLines(!lines)
+endmethod
+
+define method .getFourpoints(!inputpoints is array) is array
+	!points = !inputpoints
+
+	!cenpos = !!getcenpoint(!points)
+
+	!diss = array()
+	!dirs = array()
+	do !point values !points
+		!dis = !point.distance(!cenpos)
+		!dir = !cenpos.direction(!point)
+		!dirs.append(!dir)
+		!diss.append(!dis)
+	enddo
+	!indices = !diss.sortedindices().invert()
+	!diss.reindex(!indices)
+	!points.reindex(!indices)
+	!dirs.reindex(!indices)
+
+	do !x indices !points
+		do !y indices !points
+			if !y eq !x then
+				break
+			else
+				if !dirs[!x].angle(!dirs[!y]) lt 30 then
+					!points[!x].delete()
+					break
+				endif
+			endif
+		enddo
+	enddo
+
+	!points.compress()
+	!points.deletefrom(5)
+	!points.compress()
+
+	$(
+
+
+
+	!indices = !diss.sortedindices().invert()
+
+	!diss.reindex(!indices)
+	!newpoints = !points
+	!newpoints.reindex(!indices)
+
+	!result = array()
+	do !x indices !newpoints
+		!dir = !cenpos.direction(!newpoints[!x])
+		!dis = !diss[!x]
+		if !x eq 1 then
+			!olddir = !dir
+			!olddis = !dis
+			!result.append(!newpoints[1])
+		else
+			if !dir.angle(!olddir) lt 30 then
+				if !diss[!x] gt !olddis then
+					!result.[!result.size()].delete()
+					!result.compress()
+					!result.append(!newpoints[!x])
+					!olddir = !dir
+					!olddis = !dis
+				endif
+			else
+				!result.append(!newpoints[!x])
+				!olddir = !dir
+				!olddis = !dis
+			endif
+		endif
+	enddo
+
+	!result.deletefrom(5)
+	!result.compress()
+
+	!newpoints = !result
+
+
+	$)
+	$(
+	!newpoints = array()
+	do !x from 1 to 4
+		!newpoints.append(!points[!indices[!x]])
+		!dis = !
+	enddo
+	$)
+
+	--!result = !!sortroundpoints(!newpoints)
+
+	!result = !!sortroundpoints(!points)
+	return !result
+endmethod
+
+

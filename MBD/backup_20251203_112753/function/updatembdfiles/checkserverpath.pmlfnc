@@ -1,0 +1,55 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= April 11th 2024
+--[Function]:
+------------------------------------------
+
+define function !!checkserverpath() is string
+	$(
+	!folderpath = !!pml.getpathname('checkserverpath.pmlfnc').lowcase()
+	handle any
+		!folderpath = ''
+	elsehandle none
+		if !folderpath.match('\function\updatembdfiles') ne 0 then
+			!folderpath = !folderpath.before('\function\updatembdfiles')
+		else
+			!folderpath = !folderpath.before('/function/updatembdfiles')
+		endif
+	endhandle
+	return !folderpath
+	$)
+	--$(
+	!path = !!pml.getpathname('checkserverpath.pmlfnc').lowcase().before('checkserverpath.pmlfnc') & 'serverpath.txt'
+	!txtfile = object file(!path)
+	!lines = !txtfile.readfile()
+	handle any
+		!!alert.warning('请在 serverpath.txt 设置好服务器上文件夹的地址')
+		return ''
+	endhandle
+	!inputpath = !lines[1]
+	handle any
+		!!alert.warning('请在 serverpath.txt 设置好服务器上文件夹的地址')
+		return ''
+	endhandle
+	--q var !lines
+	!serverpath = !inputpath.trim().lowcase()
+
+	if !serverpath ne '' then
+		!tempstring = !serverpath.substring(-1,1)
+		if !tempstring eq '\' or !tempstring eq '/' then
+			!serverpath = !serverpath.substring(1,!serverpath.length() - 1)
+		endif
+		--!tempfile = object file(!serverpath)
+		--if !tempfile.exists().not() then
+		--	$p 请管理员在 serverpath.txt 文件中 设置好相应服务器文件夹的正确地址
+		--	return ''
+		--endif
+	endif
+
+	return !serverpath
+	--$)
+endfunction

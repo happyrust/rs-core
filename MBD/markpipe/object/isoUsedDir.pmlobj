@@ -1,0 +1,55 @@
+﻿define object isoUsedDir
+    member .name is string
+    member .dir is direction
+    member .mindis is real    $*dis from start point of current space to the start pos of isoline
+    member .maxdis is real    $*dis from endpoint of current space to the start pos of isoline
+    --member .object is any
+    member .object is string
+
+	member .angle is real
+	member .minradius is real
+	member .maxRadius is real
+endobject
+
+$(
+define method .isoUsedDir(!name is string,!dir is direction,!mindis is real,!maxdis is real,!object is any)
+$p asdfasdf
+    !this.name = !name
+    !this.dir = !dir
+    !this.mindis = !mindis
+    !this.maxdis = !maxdis
+    if !object.objecttype() ne 'STRING' then
+        !this.object = !object
+    elseif !object ne '' then
+        !this.object = !object
+    endif
+endmethod
+$)
+
+
+define method .isoUsedDir(!name is string,!dir is direction,!mindis is real,!maxdis is real,!object is string,!angle is real,!minRadius is real,!maxRadius is real)
+    !this.name = !name
+    !this.dir = !dir
+    !this.mindis = !mindis
+    !this.maxdis = !maxdis
+    if !object ne '' then
+        !this.object = !object
+    endif
+	!this.angle = !angle
+	!this.minRadius = !minRadius
+	!this.maxRadius = !maxRadius
+endmethod
+
+define method .isoUsedDir(!name is string,!dir is direction,!mindis is real,!maxdis is real,!object is string)
+	!angle = 5
+	!minradius = 0
+	!maxradius = 10000
+	!this.isoUsedDir(!name,!dir,!mindis,!maxdis,!object,!angle,!minradius,!maxradius)
+endmethod
+
+define method .isoUsedDir(!name is string,!dir is direction,!mindis is real,!maxdis is real,!object is string,!angle is real)
+	!minradius = 0
+	!maxradius = 10000
+	!this.isoUsedDir(!name,!dir,!mindis,!maxdis,!object,!angle,!minradius,!maxradius)
+endmethod
+

@@ -1,0 +1,141 @@
+define function !!getSctnPoints(!sctn is any) is array
+	!points = array()
+	--!dbref = object dbref(!sctn)
+	if !sctn.objecttype() eq 'DBREF' then
+		!dbref = !sctn
+	else
+		!dbref = object dbref(!sctn.string())
+	endif
+	--q var !sctn
+	!pos = !!getsctnpos(!sctn)
+	--!pos = pos of $!sctn wrt/*
+	!ori = ori of $!sctn wrt/*
+	if type of $!sctn eq 'GENSEC' then
+		!spine = name of first spine of $!sctn
+		handle any
+			return !points
+		endhandle
+
+
+		!mems = member of $!spine
+		var !mode mode
+		if !mode eq 'Backwards' then
+			!mems.invert()
+		endif
+		!pos1 = pos of $!mems[1] wrt/*
+		handle any
+			!result = array()
+			golabel /end
+		endhandle
+
+		!pos2 = pos of $!mems[2] wrt/*
+		handle any
+			!result = array()
+			golabel /end
+		endhandle
+
+		!zdir = !pos1.direction(!pos2)
+		-----------------------
+		-----------------------tempydir maybe not the right ydir. e.g. zdir is u and tempdir is n 30 u
+		!tempydir = ydir of $!spine wrt/*
+
+		!xdir = !tempydir.orthogonal(!zdir)
+		!ori = x is $!xdir and z is $!zdir
+
+	endif
+	!xdir = !ori.xdir()
+	!ydir = !ori.ydir()
+
+	!gmss = gstref of catref of $!sctn
+	handle any
+		!gmss = gmre of catref of $!sctn
+	endhandle
+	!mems = mem of $!gmss
+
+
+	do !x indices !mems
+		!mem = !mems[!x]
+		!level = level of $!mem
+		if !level[1] gt 6 or !level[2] lt 6 then
+			skip
+		endif
+
+		!obst = obstruction of $!mem
+		if !obst ne 2 and !obst ne 0 then
+			skip
+		endif
+
+		!memtype = type of $!mem
+		--$p $!memtype $!mem
+		if !memtype eq 'SPRO' then
+			var !spves coll all spve for $!mem
+			if !spves.size() lt 3 then
+				skip
+			else
+				!onepoints = array()
+				do !spve values !spves
+					!px = px of $!spve
+					--$p $!spve
+					--q var !px
+					--$p $!dbref
+					--!xdis = !dbref.evaluate(object block(!px))
+					!xdis = !!evalCata(!dbref,!px)
+					!onepos = !pos.offset(!xdir,!xdis)
+
+					!py = py of $!spve
+
+
+					--!ydis = !dbref.evaluate(object block(!py))
+					!ydis = !!evalCata(!dbref,!py)
+
+					!points.append(!onepos.offset(!ydir,!ydis))
+				enddo
+				!onepoints.unique()
+				if !onepoints.size() ge 3 then
+					!points.appendarray(!onepoints)
+					break				$*consider only one profile
+				endif
+			endif
+			--q var !points
+		elseif !memtype eq 'SREC' then
+			!px = px of $!mem
+			--!xdis = !dbref.evaluate(object block(!px))
+			!xdis = !!evalCata(!dbref,!px)
+			!onepos = !pos.offset(!xdir,!xdis)
+
+			!py = py of $!mem
+			--!ydis = !dbref.evaluate(object block(!py))
+			!ydis = !!evalCata(!dbref,!py)
+			!onepos = !onepos.offset(!ydir,!ydis)
+
+			!pxlen = pxlen of $!mem
+			!pylen = pylen of $!mem
+			--!xlen = !dbref.evaluate(object block(!pxlen))
+			!xlen = !!evalCata(!dbref,!pxlen)
+			--!ylen = !dbref.evaluate(object block(!pylen))
+			!ylen = !!evalCata(!dbref,!pylen)
+
+			!poss[1] = !onepos.offset(!xdir,!xlen / 2).offset(!ydir,!ylen / 2)
+			!poss[2] = !poss[1].offset(!xdir, - !xlen)
+			!poss[3] = !poss[2].offset(!ydir, - !ylen)
+			!poss[4] = !poss[3].offset(!xdir,!xlen)
+			!points.appendarray(!poss)
+			break $*consider only one profile
+		else	$*not consider now
+			--$p $!sctn
+			var !pradstring prad of $!mem
+			!prad = !!evalCata(!dbref,!pradstring)
+			!xlen = !prad * 2
+			!ylen = !xlen
+
+			!poss[1] = !pos.offset(!xdir,!xlen / 2).offset(!ydir,!ylen / 2)
+			!poss[2] = !poss[1].offset(!xdir, - !xlen)
+			!poss[3] = !poss[2].offset(!ydir, - !ylen)
+			!poss[4] = !poss[3].offset(!xdir,!xlen)
+			!points.appendarray(!poss)
+			break
+		endif
+	enddo
+	return !points
+endfunction
+;¤

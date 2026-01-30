@@ -1,0 +1,44 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= March 22nd 2024
+--[Function]:	Z type pcom: apos and lpos are not on one line,angle of adir and ldir is 180
+------------------------------------------
+
+define function !!ispipespecialelement(!mem is any) is boolean
+	!memtype = type of $!mem
+    !memname = name of $!mem
+	--if !memtype ne 'PCOM' or !memname.Matchwild('*FL') then
+    if !memtype ne 'PCOM'  then
+		return false
+	endif
+
+	if !!isrjpcom(!mem) then
+		return false
+	endif
+
+    --modify by jyg 20240925
+    !ldir = ldir of $!mem wrt/*
+    !lpos = lpos of $!mem wrt/*
+	!adir = adir of $!mem wrt/*
+    handle any
+        !adir = !ldir.opposite()
+    endhandle
+	!apos = apos of $!mem wrt/*
+	handle any
+        !apos = !lpos
+    endhandle
+
+
+	!angle = !adir.angle(!ldir)
+	if !angle lt 0.1 or !angle gt 179.9 then
+		!line = !apos.line(!apos.offset(!adir,1000))
+		if !line.distance(!lpos) gt 1 then
+			return true
+		endif
+	endif
+	return false
+endfunction

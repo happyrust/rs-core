@@ -1,0 +1,6 @@
+member .wjbm is string
+member .nbbm is string
+member .rev is string
+member .status is string
+member .tssm is string
+member .room is string

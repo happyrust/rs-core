@@ -1,0 +1,1261 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= August 31st 2023
+--[Function]:	get bolt material and relative boltmem
+------------------------------------------
+
+--Method:
+--Public method:
+--boltMem(!item is any) 													$*constructer
+--getarrivebolt() is array  												$*get bolt data and relative boltmem from arrive point
+--getleavebolt() is array   												$*get bolt data and relative boltmem from leave point
+--return is array:
+-- 				1 array
+-- 						1 onememarray
+-- 										1 one bolt array
+-- 											1 bolt material
+-- 											2 cap material
+-- 											3 wash material
+-- 											......
+-- 										......
+-- 						2 relativemems
+-- 										1 boltmem
+-- 										2 boltmem
+-- 										......
+-- 				2 array
+-- 				......
+
+
+--Private method:
+-----------------------------------------Step 1:get own information
+--getbtsedata() is array														$*
+--getallflanPNums() is array													$*
+--matchbtse(!pnums is array, !size is real) is array							$*
+--isboltconn(!conn is string) is boolean										$*
+--getflancrfa() is array														$*
+
+
+----------------------------------------Step 2:get bolt connection data
+--getppointbolt(!pnum is real)	is array 													$*
+----Steps:
+----Step 1: check data of ppoint
+----Step 2: to find elements involved in bolt
+----Step 3: check current data of p point
+----Step 4: middle element with g
+----Step x: check if completed
+----Step x: if the other flan is not found in maxmum elements, it means no bolt
+----
+--checkbtseisused(!btse is boltbtse,!conntype is string) is boolean 						$*
+--checkifmiddleElement(!nextmode is boolean, !tempele is string) is boolean 				$*
+--getconnpointnumber(!tempele is string, !cele is string, !nextmode is boolean) is real 	$*
+
+
+
+---------------------------------------Step 3:calcalate bolt data of one bltp
+--getmaterialdata(!mem1 is boltmem,!midmems is array, !mem2 is boltmem,!bltp1 is boltbltp,!bltp2 is boltbltp) is array  	$*
+--getBdiasele(!boltspec is string, !bdia is real, !memname is string) is string 											$*
+----Steps:
+----Step 1: shop
+----Step 2: temp
+----Step 3: pressure
+----
+--getboltdata(!spcomem is suispco,!bdiasele is string, !bsel is string) is array											$*
+--getboltlengthweight(!spcomem is suispco,!clen is real)																	$*
+--getBoltRelation(!mem1 is boltmem,!midmems is array, !mem2 is boltmem) is array											$*
+--getbtypspco(!btyp is string, !bdiasele is string, !bsel is string) is suispco 											$*
+--getshop(!memname is string) is string 																					$*
+
+
+
+
+define object boltMem
+	member .name is string
+	--member .branname is string
+
+	member .bsel is string
+	--member .shop is boolean
+	--member .temp is real
+	--member .press is real
+
+	member .pointNums is array
+	member .bores is array
+	member .conntypes is array
+	member .btses is array
+
+	--member .BoltDatas is array
+endobject
+
+-----------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------Step 4:get own information
+define method .boltMem(!item is any)
+	!this.name = name of $!item
+	handle any
+		return
+	endhandle
+	--!this.branname = name of bran of $!item
+	--q var !this.name
+    --获取螺栓信息（螺栓的数量及螺栓尺寸信息）
+	!btsedatas = !this.getbtsedata()
+    --q var !btsedatas[1]
+    --没有获取到螺栓信息，则跳过
+	if !btsedatas.unset() then
+		return
+	endif
+	--q var !this.name
+	--!this.shop = shop of $!this.name
+	!this.bsel = bsel of $!this.name
+    --q var !this.bsel
+	--!this.temp = temp of bran of $!this.name
+	--!this.press = press of bran of $!this.name
+
+    --获取法兰上所有连接口的信息，（例如仪表管道接口）
+	!temparr = !this.getallflanPNums()			$* get all port data with flan
+    --!temparr[1] 获取所以法兰连接口的点信息（有哪些法兰连接点，以数组的形式存放）
+    --q var !temparr
+    --q var !temparr[1] !temparr[2] !temparr[3]
+    --$p 55
+	!pnums = !temparr[1]
+    --q var !pnums
+    --$p 456
+	if !Pnums.unset() then
+		return
+	endif
+
+	!pitems = !temparr[2]
+	!pconntypes = !temparr[3]
+
+    --返回值都是数组类型
+	--q var !pnums !pitems !pconntypes
+	--q var !btsedatas[1]
+    --$p 111
+    --!pnums 获取法兰连接口的点信息（数组类型）；!btsedatas收集的法兰螺栓信息，数组的形式（进出口都是法兰的连接形式，则有两个信息）；
+	!allbores = !this.matchbtse(!pnums,!btsedatas.size())
+    --获取法兰口对应的口径信息（数组的形式存放）
+    --q var !allbores
+	if !allbores.unset() then
+		return
+	endif
+
+    --q var !allbores
+    --q var !pnums
+	!this.pointNums = !pnums
+	!this.bores = !allbores
+	!this.conntypes = !pconntypes
+	--q var !this.pointNums !this.bores !this.conntypes
+
+
+	!bores = !allbores.unique()
+	!bores.sort()
+
+	--q var !this.bores !bores !btsedatas[1]
+    --jyg待详细查看，为什么!bores合并了重复项；!this.bores不合并重复项；!btsedatas是否按从小到大排序了，且合并了重复项。
+	do  !x indices !this.bores
+        --
+		!index = !bores.findfirst(!this.bores[!x])
+		!this.btses[!x] = !btsedatas[!index]
+	enddo
+	--q var !this.btses
+    --q var !this.btses[1]
+	--$p 44
+	$(
+	!x = 0
+	!cbore = 0
+	!this.btses = array()
+	do !bore values !bores
+		if !bore ne !cbore then
+			!x = !x + 1
+			!this.btses.append(!btsedatas[!x])
+		endif
+	enddo
+	$)
+endmethod
+
+define method .getbtsedata() is array
+	!result = array()
+    --q var !this.name
+	!btses = blrfarray of catref of $!this.name
+	handle any
+		return !result
+	endhandle
+
+	if !btses.unset() then
+		return !result
+	endif
+
+	!btses.unique()
+	--q var !btses
+    --$p 159
+	!btsedatas = array()
+	!bdias = array()
+    --q var !this.name
+	do !btse values !btses
+		!btsedata = object boltbtse(!btse)
+        --q var !btsedata
+        --$p 456
+		if !btsedata.bltps.set() then
+			!btsedatas.append(!btsedata)
+			--!btsebdia = bdia of $!btse
+			if !btsedata.bdia eq 0 then
+				!bdias.append(!btsedata.bltps[1].bdia)
+			else
+				!bdias.append(!btsedata.bdia)
+			endif
+		endif
+	enddo
+	!indices = !bdias.sortedindices()
+	!btsedatas.reindex(!indices)
+    --q var !btsedatas
+	return !btsedatas
+endmethod
+
+define method .getallflanPNums() is array
+    --获取法兰上连接小管道的连接信息（例如仪表管道是否是法兰连接）
+	!temparr = !this.getflancrfa()
+    --q var !temparr
+    --$p 786549
+	!flanpnums = !temparr[1]			$* array of ppoint number
+	!flanitems = !temparr[2]			$* array of connection name of ppoint
+	!flanconntypes = !temparr[3]
+	!aconn = aconn of $!this.name
+	if !this.isboltconn(!aconn) then
+		!arrive = arrive of $!this.name
+		!flanPnums.append(!arrive)
+		!flanitems.append('arrive')
+		!flanconntypes.append(!aconn)
+	endif
+
+	!lconn = lconn of $!this.name
+	if !this.isboltconn(!lconn) then
+		!leave = leave of $!this.name
+		!flanPnums.append(!leave)
+		!flanitems.append('leave')
+		!flanconntypes.append(!lconn)
+	endif
+	--if !flanpnums.unset() then
+	--	$p Warning: Blrfarray set, but no flan port, it is strange  (catalogue problem) $!this.name     in boltMem.pmlobj
+	--endif
+	!result = array()
+	!result.append(!flanpnums)
+	!result.append(!flanitems)
+	!result.append(!flanconntypes)
+    --q var !result[1] !result[2] !result[3]
+    --$p 98657
+    --q var !result
+	return !result
+endmethod
+
+define method .isboltconn(!conn is string) is boolean
+	if !conn.matchwild('F*') or !conn.matchwild('L*') or !conn.matchwild('W*') then
+		return true
+	else
+		return false
+	endif
+endmethod
+
+define method .getflancrfa() is array
+	!nums = array()
+	!items = array()
+	!conntypes = array()
+
+	!cref = name of cref of $!this.name
+	handle any
+    --$p 111
+		!crfa = crfa of $!name
+		handle any
+		elsehandle none
+			if !crfa.set() then
+				do !cnum indices !crfa
+					!conn = p$!cnum conn of $!this.name
+					if !this.isboltconn(!conn) then
+						!nums.append(!cnum)
+						!item = name of $!crfa[$!cnum]
+						!items.append(!item)
+						!conntypes.append(!conn)
+					endif
+				enddo
+			endif
+		endhandle
+	elsehandle none
+    --$p 222
+		!nums.append(arrive of $!this.name)
+		!nums.append(leave of $!this.name)
+		!temparr = array()
+		!temparr.append(1)
+		!temparr.append(2)
+		!temparr.append(3)
+		!cnum = !temparr.difference(!nums)
+
+        --modifyg by jyg 20240926
+        --!conn = p$!cnum conn of $!this.name
+		!conn = p$!cnum[1] conn of $!this.name
+
+		if !this.isboltconn(!conn) then
+			!nums.append(!cp)
+			!items.append(!cref)
+			!conntypes.append(!conn)
+		endif
+	endhandle
+
+	!result = array()
+	!result.append(!nums)
+	!result.append(!items)
+	!result.append(!conntypes)
+    --q var !result
+    --$p 65874
+	return !result
+endmethod
+
+
+define method .matchbtse(!pnums is array, !size is real) is array
+	!bores = array()
+	do !pnum values !pnums
+		!pbore = p$!pnum bore of $!this.name
+		!bores.append(!pbore)
+	enddo
+	!allbores = !bores
+
+	--q var !bores.unique().size()  !size
+
+	if !bores.unique().size() ne !size then
+		$p the size of blrfarray is different from size of all bores from all p point with flan
+		!psize = !bores.size()
+		$p blrfarray $!size     bores  $!psize
+		--q var !bores
+		!allbores = array()
+	endif
+	return !allbores
+endmethod
+
+-----------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------Step 5:get bolt connection data
+define method .getarrivebolt() is array
+	!arrive = arrive of $!this.name
+	return !this.getppointbolt(!arrive)
+endmethod
+define method .getleavebolt() is array
+	!leave = leave of $!this.name
+	return !this.getppointbolt(!leave)
+endmethod
+define method .getppointbolt(!pnum is real)	is array
+    --$p 进出口点
+    --q var !pnum
+    --$p 555555555555555555
+	!result = array()
+    --q var !this.pointnums !this.pointnums[1]
+    --q var !this.pointNums !pnum
+
+    --q var !this.pointNums
+    --$p ooooooooo
+	!Pointindex = !this.pointNums.findfirst(!pnum)
+    --q var !Pointindex
+
+	--!!5(!this.btses,!this.conntypes,!this.pointnums,!this.name,!pnum)
+	--$p $!this.name
+
+    ----------YYY和VVV之间的代码是螺栓计算的核心功能，用来判断哪些法兰需要计算螺栓数量
+    --q var !this.name
+    --$p YYY
+	if !Pointindex.unset() then
+        --$p 123
+		golabel /end
+		--else
+		--if defined(!this.boltdata[!Pointindex]) then
+		--	return !this.boltdata[!Pointindex]
+	elseif !this.checkbtseisused(!this.btses[!pointindex],!this.conntypes[!pointindex]) then
+        --$p 456
+		golabel /end
+		--endif
+	endif
+
+	-----------------------------------------------------------------------------------
+	-----------------------------------------------------------------------------------Step 1: check data of ppoint
+	--$p 852
+	!arrive = arrive of $!this.name
+
+    --q var !this.name
+    --$p VVVV
+    --------------------
+
+
+    --modify by jyg 20250107 处理法兰盖无法获取螺栓的情况
+    !fblitype = type of $!this.name
+    --q var !fblitype
+    if  !fblitype eq 'FBLI'then
+        !nextmode = true
+    else
+        --q var !pnum
+        if !arrive eq !pnum then
+            !nextmode = false
+        else
+            !nextmode = true
+        endif
+    endif
+
+    --$p 获取下一个法兰连接件,上面的判断是用来计算当前法兰后面是否还有配套法兰
+	--q var !nextmode
+
+	-----------------------------------------------------------------------------------
+	-----------------------------------------------------------------------------------Step 2: to find elements involved in BOLT
+	!midmems = array()
+	!cele = !this.name
+    --q var !cele
+	--$p cele $!cele
+	!maxelenum = 100
+	do !elenum from 1 to 1000
+		--do
+		-----------------------
+		-----------------------max number of elements between two flans must be less than 20
+
+        --获取法兰前后的管件（flan gask flan）要成套出现
+		if !nextmode then
+			!tempele = !!getnextmem(!cele)
+		else
+			!tempele = !!getpremem(!cele)
+		endif
+
+        --q var !tempele
+        --$p 753
+		--$p $!nextmode $!elenum $!tempele
+		if !tempele eq '' then
+			golabel /end
+        else
+            --modify by jyg 20250123  处理falan连接风管的问题
+            --if type of owner of owner of $!tempele eq 'HVAC' then
+            --    skip
+            --endif
+		endif
+        --q var !tempele
+		!tempnum = !this.getconnpointnumber(!tempele,!cele,!nextmode)
+        --$P 7854
+		--q var !tempnum
+
+		!cele = !tempele
+
+		--if !tempele eq '' then
+		--	golabel /end
+		--endif
+
+		--$p $!elenum
+		-----------------------------------------------------------------------------------
+		-----------------------------------------------------------------------------------Step 1:check current data of p point
+        --$p 000
+        --q var !tempele
+        --$p 111
+
+        !tempmem = object boltMem(!tempele)
+
+        --q var  !tempmem
+        --$p 222
+
+        --modify by jyg 20240926
+        --if  !tempmem.pointNums.size() eq 0 then
+        --    skip
+        --endif
+        --$P 147
+        --Q VAR !tempmem.pointNums
+		!tempPointindex = !tempmem.pointNums.findfirst(!tempnum)
+        --q var !tempPointindex
+
+		if !tempPointindex.unset() then
+			-----------------------
+			-----------------------当前元件对应方位没有螺栓，有可能是G或W，也有可能是其它，如果是其它则中断，不生成螺栓
+			if !this.checkifmiddleElement(!nextmode,!tempele) then
+				-----------------------------------------------------------------------------------if current elemetn is GASK or similar to Gask
+				-----------------------------------------------------------------------------------Step 1:middle element with G
+				if !nextmode then
+					!midmems.append(!tempmem)
+				else
+					!midmems.insert(1,!tempmem)
+				endif
+			else
+				golabel /end
+			endif
+		elseif !tempmem.bores[!temppointindex] gt !this.bores[!pointindex] then
+			-----------------------错误
+			-----------------------比自己管径大，中断，不生成螺栓
+			golabel /end
+		elseif !this.checkbtseisused(!tempmem.btses[!temppointindex],!tempmem.conntypes[!temppointindex]) then
+			-----------------------不太可能
+			-----------------------对应方位有螺栓，但是被占了。如果管径小的F或L，或同管径的W，当作夹件，如果不是，中断，不生成螺栓
+			if !tempmem.bores[!temppointindex] lt !this.bores[!pointindex] or !tempmem.conntypes[!temppointindex].matchwild('W*') then
+				-----------------------
+				-----------------------if conntype is w or bore is less than curren one
+				if !nextmode then
+					!midmems.append(!tempmem)
+				else
+					!midmems.insert(1,!tempmem)
+				endif
+			else
+				-----------------------
+				-----------------------if conntype of current ele is F or L and the bore of it is eq bore of first flan, it means no bolt
+				golabel /end
+			endif
+		elseif !tempmem.bores[!temppointindex] lt !this.bores[!pointindex] then
+			-----------------------不太可能
+			-----------------------对应方位有没有被占的螺栓，但是管径小于对应管径，当作夹件
+			if !nextmode then
+				!midmems.append(!tempmem)
+			else
+				!midmems.insert(1,!tempmem)
+			endif
+		else
+			if !this.btses[!pointindex].bltps.size() ne !tempmem.btses[!temppointindex].bltps.size() then
+				golabel /end
+			endif
+			-----------------------
+			-----------------------有同管径的没有被占的螺栓孔
+
+			!gotbltpdatas = array()
+
+			!existsindices = !tempmem.btses[!temppointindex].bltps.indices()  $*202309130948 to reduce times to calculate
+            --q var !existsindices
+            --$p 456
+            --q var !this.btses[!pointindex].bltps
+			do !bltpindex indices !this.btses[!pointindex].bltps
+                --q var !this.btses[!pointindex].bltps[!bltpindex]
+				if !this.btses[!pointindex].bltps[!bltpindex].used then
+                --$p 1
+					skip
+				endif
+				if not(!this.conntypes[!pointindex].matchwild('W*').not() or !this.btses[!pointindex].bltps[!bltpindex].btyp inset ('JACK','CAP','TAP')) then
+					--$p 2
+                    skip
+				endif
+				!numb = !this.btses[!pointindex].bltps[!bltpindex].numb
+				!bdia = !this.btses[!pointindex].bltps[!bltpindex].bdia
+
+				!find = false
+
+				do !xxindex indices !existsindices  $*202309130948 to reduce times to calculate
+					!tempbltpindex = !existsindices[!xxindex]  $*202309130948 to reduce times to calculate
+
+					--do !tempbltpindex indices !tempmem.btses[!temppointindex].bltps
+					if !tempmem.btses[!temppointindex].bltps[!tempbltpindex].used then
+						--$p 3
+                        skip
+					endif
+
+					if !tempmem.btses[!temppointindex].bltps[!tempbltpindex].numb ne 0 and !numb ne 0 and !tempmem.btses[!temppointindex].bltps[!tempbltpindex].numb ne !numb then
+						--$p 4
+                        skip
+					endif
+
+					--q var !tempmem.btses[!temppointindex].bltps[!tempbltpindex].bdia !bdia
+					if !tempmem.btses[!temppointindex].bltps[!tempbltpindex].bdia ne !bdia then
+						--$p 5
+                        skip
+					endif
+					--$p asdfasdfafdsasf
+					-----------------------
+					-----------------------要么是F L， 要么是JACK/CAP/TAP的W
+					if !tempmem.conntypes[!temppointindex].matchwild('W*') and not(!tempmem.btses[!temppointindex].bltps[!tempbltpindex].btyp inset ('JACK','CAP','TAP')) then
+						--$p 6
+                        skip
+					endif
+					--$p asdfasdf
+					!find = true
+					!goodbltpindex = !tempbltpindex
+					!existsindices[!xxindex].delete()  $*202309130948 to reduce times to calculate
+					--$p 7
+                    break
+				enddo
+
+				if !find then
+					!alreadygot = false
+                    --$p 89
+                    --q var !gotbltpdatas[1]
+					do !x indices !gotbltpdatas
+						if !gotbltpdatas[!x][1] eq !this.name and !gotbltpdatas[!x][2] eq !tempmem.name $
+							and !this.btses[!pointindex].same and !tempmem.btses[!temppointindex].same then
+							--and !gotbltpdatas[!x][3] eq !this.btses[!pointindex].bltps[!bltpindex].name $
+							--and !gotbltpdatas[!x][4] eq !tempmem.btses[!temppointindex].bltps[!goodbltpindex].name then
+							--!oneboltdata = !gotbltpdatas[!x][5]
+							!gotbltpdatas[!x][4] = !gotbltpdatas[!x][4] + 1
+                            --q var !gotbltpdatas[!x][4]
+							!alreadygot = true
+                            --$p 8
+							break
+						endif
+					enddo
+
+
+					if !alreadygot.not() then
+						--$p 23
+						if !nextmode then
+							!onebltpdata = !this.getmaterialdata(!this,!midmems,!tempmem,!this.btses[!pointindex].bltps[!bltpindex],!tempmem.btses[!temppointindex].bltps[!goodbltpindex])
+						else
+							!onebltpdata = !this.getmaterialdata(!tempmem,!midmems,!this,!tempmem.btses[!temppointindex].bltps[!goodbltpindex],!this.btses[!pointindex].bltps[!bltpindex])
+						endif
+						if !onebltpdata.set() then
+							!temparr = array()
+							!temparr.append(!this.name)
+							!temparr.append(!tempmem.name)
+							--!temparr.append(!this.btses[!pointindex].bltps[!bltpindex].name)
+							--!temparr.append(!tempmem.btses[!temppointindex].bltps[!goodbltpindex].name)
+							!temparr.append(!onebltpdata)
+							!temparr.append(1)
+                            --q var !temparr
+							!gotbltpdatas.append(!temparr)
+						endif
+					endif
+					--q var !onebltpdata[1]
+					!this.btses[!pointindex].bltps[!bltpindex].used = true
+					!tempmem.btses[!temppointindex].bltps[!tempbltpindex].used = true
+				endif
+			enddo
+            --q var !temparr
+            --q var !gotbltpdatas
+            --q var !gotbltpdatas[1]
+            --q var !temparr[3][1] !temparr[3][2] !temparr[3][3] !temparr[3][4] !temparr[3][5]
+			!onemembolt = array()
+			do !x indices !gotbltpdatas
+				!materials = !gotbltpdatas[!x][3]
+				!size = !gotbltpdatas[!x][4]
+				!oneboltdata = array()
+				!uniquecodes = array()
+				do !material values !materials
+					!material.weight = !material.weight * !size
+					!material.quantity = !material.quantity * !size
+					!uniqueindex = !uniquecodes.findfirst(!material.uniquecode)
+					if !uniqueindex.set() then
+						!oneboltdata[!uniqueindex].weight = !oneboltdata[!uniqueindex].weight + !material.weight
+						!oneboltdata[!uniqueindex].quantity = !oneboltdata[!uniqueindex].quantity + !material.quantity
+					else
+						!uniquecodes.append(!material.uniquecode)
+						!oneboltdata.append(!material)
+					endif
+				enddo
+
+				!onemembolt.append(!oneboltdata)
+			enddo
+            --$p 111111111111
+			--q var !onemembolt[1][1]
+			if !onemembolt.set() then
+				!onememarr = array()
+				!onememarr.append(!onemembolt)
+				!relativemems = array()
+				if !nextmode then
+					!relativemems.append(!this)
+				else
+					!relativemems.append(!tempmem)
+				endif
+				!relativemems.appendarray(!midmems)
+				if !nextmode then
+					!relativemems.append(!tempmem)
+				else
+					!relativemems.append(!this)
+				endif
+				!onememarr.append(!relativemems)
+
+				!result.append(!onememarr)
+			endif
+
+
+			-----------------------------------------------------------------------------------
+			-----------------------------------------------------------------------------------Step 1:check if completed
+			if !this.checkbtseisused(!this.btses[!pointindex],!this.conntypes[!pointindex]) then
+				break
+			endif
+
+
+			--!!3(!this,!tempmem,!pointindex)
+			-----------------------
+			-----------------------if some bltp are not used, if conntype of tempmem is W, continue to find next one, or go to end
+			if !tempmem.conntypes[!temppointindex].matchwild('W*') then
+				!midmems.append(!tempmem)
+			else
+				golabel /end
+			endif
+		endif
+
+		-----------------------------------------------------------------------------------
+		-----------------------------------------------------------------------------------Step 2:if the other flan is not found in maxmum elements, it means no bolt
+		if !elenum eq !maxelenum then
+			golabel /end
+		endif
+	enddo
+	--!this.boltdata[!Pointindex] = !result
+	return !result
+
+
+	label /end
+    --q var !pointindex.set()
+    --$p 666666666
+	if !pointindex.set() then
+		-----------------------
+		-----------------------if fail to get boltdata, set used of all bltps true, dont try to find bolt for it
+		--q var !this.btses[!pointindex]
+		do !x indices !this.btses[!pointindex].bltps
+			!this.btses[!pointindex].bltps[!x].used = true
+		enddo
+	endif
+	!onememarr = array()
+	!onememarr[1] = array()
+	!onememarr[2] = array()
+	!onememarr[2].append(!this)
+    --q var !onememarr[2][1]
+    --q var !onememarr[2]
+    --$p 7536987
+	!result.append(!onememarr)
+    --q var !result
+	return !result
+endmethod
+
+define method .getconnpointnumber(!tempele is string, !cele is string, !nextmode is boolean) is real
+    --q var !tempele  !cele  !nextmode
+    --$p 852369
+	if type of $!tempele eq 'NOZZ' then
+		!temppnum = 1
+	elseif name of bran of $!tempele ne name of bran of $!cele then
+		!cref = name of cref of $!tempele
+		handle any
+			!crfa = crfa of $!tempele
+			handle any
+				if !nextmode then
+					!temppnum = arrive of $!tempele
+				else
+					!temppnum = leave of $!tempele
+				endif
+			elsehandle none
+				!findtempnum = false
+				do !cnum indices !crfa
+					if name of bran of $!crfa[$!cnum] eq name of bran of $!cele then
+						!temppnum = !cnum
+						!findtempnum = true
+						break
+					endif
+				enddo
+				if !findtempnum.not() then
+					if !nextmode then
+						!temppnum = arrive of $!tempele
+					else
+						!temppnum = leave of $!tempele
+					endif
+				endif
+			endhandle
+		elsehandle none
+			!crfa = array()
+			if name of bran of $!cref eq name of bran of $!cele then
+				!nums = array()
+				!nums.append(arrive of $!tempele)
+				!nums.append(leave of $!tempele)
+				!temparr = array()
+				!temparr.append(1)
+				!temparr.append(2)
+				!temparr.append(3)
+				!temppnum = !temparr.difference(!nums)
+			else
+				if !nextmode then
+					!temppnum = arrive of $!tempele
+				else
+					!temppnum = leave of $!tempele
+				endif
+			endif
+		endhandle
+	else
+		if !nextmode then
+			!temppnum = arrive of $!tempele
+		else
+			!temppnum = leave of $!tempele
+		endif
+	endif
+	return !temppnum
+
+endmethod
+
+define method .checkbtseisused(!btse is boltbtse,!conntype is string) is boolean
+	!used = true
+    --q var !btse.bltps !conntype
+
+	do !bltp values !btse.bltps
+        --q var !bltp
+		if !conntype.matchwild('W*') and not(!bltp.btyp inset ('JACK','CAP','TAP')) then
+			skip
+		endif
+		if !bltp.used.not() then
+			!used = false
+			break
+		endif
+	enddo
+    --q var !used
+	return !used
+endmethod
+
+define method .checkifmiddleElement(!nextmode is boolean, !tempele is string) is boolean
+--$p asdfasf
+
+	if type of $!tempele eq 'NOZZ' then
+		!tempconntype = p1 conn of $!tempele
+	else
+		if !nextmode then
+			!tempconntype = aconn of $!tempele
+		else
+			!tempconntype = lconn of $!tempele
+		endif
+	endif
+
+	--q var !tempconntype
+	if !tempconntype.matchwild('G*').not() and !tempconntype.matchwild('W*').not() then
+		return false
+	endif
+	!tempadir = adir of $!tempele
+	!templdir = ldir of $!tempele
+	if !tempadir.angle(!templdir) lt 179 then
+		-----------------------
+		-----------------------did get second flan, but the element is not straight, no bolt
+		return false
+	else
+		return true
+	endif
+endmethod
+
+
+-----------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------Step 6:calcalate bolt data of one bltp
+define method .getmaterialdata(!mem1 is boltmem,!midmems is array, !mem2 is boltmem,!bltp1 is boltbltp,!bltp2 is boltbltp) is array
+	!result = array()
+	!btyp1 = !bltp1.btyp
+	!btyp2 = !bltp2.btyp
+    --q var !bltp1 !bltp1
+	if !btyp1.unset() then
+		!btyp1 = 'BOLT'
+	endif
+	if !btyp2.unset() then
+		!btyp2 = 'BOLT'
+	endif
+
+	if !btyp1 eq 'BOLT' and !btyp2 ne 'BOLT' then
+		!memname = !mem2.name
+		!bltp = !bltp2
+		!btyp = !btyp2
+		!boltspec = name of bspec of spec of spref of $!mem2.name
+		!bsel = !mem2.bsel
+		--!shop = !mem2.shop
+		--!temp = !mem2.temp
+		--!press = !mem2.press
+	else
+		!memname = !mem1.name
+		!bltp = !bltp1
+		!btyp = !btyp1
+		!boltspec = name of bspec of spec of spref of $!mem1.name
+		!bsel = !mem1.bsel
+		--!shop = !mem1.shop
+		--!temp = !mem1.temp
+		--!press = !mem1.press
+	endif
+	--q var !memname !boltspec !bltp.bdia
+	!bdiasele = !this.getBdiaSele(!boltspec,!bltp.bdia,!memname)
+	if !bdiasele eq '' then
+		golabel /end
+	endif
+    --q var !bdiasele
+	!spcomem = !this.getbtypspco(!btyp,!bdiasele,!bsel)
+    --q var !spcomem
+	!temparr = !this.getboltdata(!spcomem,!bdiasele,!bsel)
+    --q var !temparr[1][1] !temparr[2]
+	!otherspcomems = !temparr[1]
+	!pluslength = !temparr[2]
+	--!netweight = !temparr[3]
+
+
+	!reallen = !pluslength
+	do !boltmem value !midmems
+		!p1pos = p1 pos of $!boltmem.name
+		!p2pos = p2 pos of $!boltmem.name
+		--q var !p1pos !p2pos !reallen
+		!reallen = !reallen + !p1pos.distance(!p2pos)
+	enddo
+	!flth1 = !!evalcata(!mem1.name,!bltp1.bthk)
+	!flth2 = !!evalcata(!mem2.name,!bltp2.bthk)
+	!reallen = !reallen + !flth1 + !flth2
+	!temparr = !this.getboltlengthweight(!spcomem,!reallen)
+	!boltlen = !temparr[1]
+	!boltweight = !temparr[2]
+
+	!relationarr = !this.getBoltRelation(!mem1,!midmems,!mem2)
+	if !relationarr.unset() then
+		golabel /end
+	endif
+	!boltitem = !relationarr[1]
+	!showitem = !relationarr[2]
+	!relativeMems = !relationarr[3]
+	!inbran = !relationarr[4]
+
+
+	!isomaterial = object isomaterial(!boltlen,!boltweight,!bltp.bdia,!boltitem,!showitem,!spcomem,!relativemems,!inbran)
+	!result.append(!isomaterial)
+
+	do !onespcomem values !otherspcomems
+		!isomaterial = object isomaterial(!bltp.bdia,!boltitem,!showitem,!onespcomem,!relativemems,!inbran)
+		!result.append(!isomaterial)
+	enddo
+
+	label /end
+	return !result
+endmethod
+
+define method .getBdiasele(!boltspec is string, !bdia is real, !memname is string) is string
+	--define method .getBdiasele(!boltspec is string, !bdia is real, !shop is boolean, !temp is real, !press is real) is string
+	!seles = member of $!boltspec
+	do !sele values !seles
+		if tanswer of $!sele eq 'BOLT' and question of $!sele eq 'BDIA' then
+			!boltsele = name of $!sele
+			break
+		endif
+	enddo
+	if undefined(!boltsele) then
+		golabel /end
+	endif
+
+	!seles = member of $!boltsele
+	do !sele values !seles
+		!answer = answer of $!sele
+		!maxanswer = maxanswer of $!sele
+		if !answer.real() le !bdia and !maxanswer ge !bdia then
+			!bdiasele = name of $!sele
+			break
+		endif
+	enddo
+	if undefined(!bdiasele) then
+		golabel /end
+	endif
+
+
+
+	-----------------------------------------------------------------------------------
+	-----------------------------------------------------------------------------------check shop temp press
+	!csele = !bdiasele
+	do
+		!question = question of $!csele
+		if !question eq 'BTYP' then
+			break
+		endif
+		!seles = member of $!csele
+		!find = false
+		if !question eq 'SHOP' then
+			-----------------------------------------------------------------------------------
+			-----------------------------------------------------------------------------------Step 1:shop
+			!shop = !this.getshop(!memname)
+			--!shop = !shop.substring(1,4)
+			do !sele values !seles
+				!tanswer = tanswer of $!sele
+				if !tanswer.substring(1,4) eq !shop then
+					!csele = name of $!sele
+					!find = true
+					break
+				endif
+			enddo
+		elseif !question eq 'TEMP' then
+			-----------------------------------------------------------------------------------
+			-----------------------------------------------------------------------------------Step 2:temp
+			!temp = temp of bran of $!memname
+			do !sele values !seles
+				!answer = answer of $!sele
+				!maxanswer = maxanswer of $!sele
+				if !answer.real() le !temp and !maxanswer ge !temp then
+					!csele = name of $!sele
+					!find = true
+					break
+				endif
+			enddo
+		elseif !question eq 'PRES' then
+			-----------------------------------------------------------------------------------
+			-----------------------------------------------------------------------------------Step 3:pressure
+			!press = press of bran of $!memname
+			do !sele values !seles
+				!answer = answer of $!sele
+				!maxanswer = maxanswer of $!sele
+				if !answer.real() le !press and !maxanswer ge !press then
+					!csele = name of $!sele
+					!find = true
+					break
+				endif
+			enddo
+		endif
+		if !find.not() then
+			golabel /end
+		endif
+	enddo
+
+
+
+	return !csele
+
+	label /end
+	return ''
+endmethod
+
+define method .getshop(!memname is string) is string
+	!shop = 'FALS'
+	!owner = name of spref of $!memname
+	do
+		if question of !owner eq 'SHOP' then
+			!shop = tanswer of $!owner
+
+			break
+		else
+			!owner = name of owner of $!owner
+			handle any
+				break
+			elsehandle none
+				if type of $!owner ne 'SELE' then
+					break
+				endif
+			endhandle
+		endif
+	enddo
+	if !shop eq 'SITE' or !shop eq 'FALSE' then
+		!shop = 'FALS'
+	else
+		!shop = 'TRUE'
+	endif
+	return !shop
+endmethod
+
+define method .getboltdata(!spcomem is suispco,!bdiasele is string, !bsel is string) is array
+	!netlength = !spcomem.xtralength
+	--!netweight = !spcomem.weight
+	!otheritems = array()
+	do !x indices !spcomem.bitems
+		!netlength = !netlength + !spcomem.Bitlength[!x]
+		!itemspcomem = !this.getbtypspco(!spcomem.bitems[!x],!bdiasele,!bsel)
+		!otheritems.append(!itemspcomem)
+		--!netweight = !netweight + !itemspcomem.weight
+	enddo
+	!result = array()
+	!result.append(!otheritems)
+	!result.append(!netlength)
+	--!result.append(!netweight)
+	return !result
+endmethod
+
+define method .getboltlengthweight(!spcomem is suispco,!clen is real) is array
+	--q var !spcomem.blength
+	do !x indices !spcomem.Blength
+		!len = !spcomem.Blength[!x]
+		if !len + 1 ge !clen then
+			!boltlen = !len          $*修整长度
+			!goodx = !x
+			break
+		endif
+	enddo
+	--q var !goodx
+	----no consider weight of cap nut wash
+	if undefined(!goodx) then
+		!boltlen = !clen.nint()
+		!boltweight = 0
+		--!maxlen = !spcomem.Blength.last()
+		--$p this bolt is too long $!reallength ( maxlen $!maxlen)
+		--!spcomem.realboltweight = !spcomem.weight * !reallength / !netlength		$*修整重量
+	else
+		--q var !spcomem.Bweight
+		if defined(!spcomem.Bweight[!goodx]) and !spcomem.Bweight[!goodx] ne 0 then
+			!boltweight = !spcomem.Bweight[!goodx]
+		else
+			!boltweight = !spcomem.weight	$*没有准确的重量的话，只能取这个近似值了
+			--!boltweight = 0
+			--!spcomem.realboltweight = !spcomem.weight * !reallength / !netlength		$*修整重量
+			--$p real $!reallength   net $!netlength
+			--$p weight $!spcomem.weight
+			--$p realweight $!spcomem.realboltweight
+		endif
+	endif
+	!result = array()
+	!result.append(!boltlen)
+	!result.append(!boltweight)
+	return !result
+endmethod
+
+define method .getbtypspco(!btyp is string, !bdiasele is string, !bsel is string) is suispco
+	if !btyp eq 'BOLT' then
+		!btyp = tdefault of $!bdiasele
+	endif
+	var !seles coll all sele with(Tanswer eq !btyp) for $!bdiasele
+	if !seles.unset() then
+		golabel /end
+	endif
+
+
+	!typesele = !seles[1]
+	if !bsel eq '' then
+		!bsel = tdefault of $!typesele
+	endif
+
+
+	var !spcos coll all spco with(tanswer eq !bsel) for $!typesele
+	if !spcos.unset() then
+		golabel /end
+	endif
+
+
+	!spcomem = object suispco(!spcos[1])
+	return !spcomem
+
+	label /end
+	!spcomem = object suispco()
+	return !spcomem
+endmethod
+
+define method .getBoltRelation(!mem1 is boltmem,!midmems is array, !mem2 is boltmem) is array
+	!firstflan = !mem1.name
+	!secondflan = !mem2.name
+
+	!firsttype = type of $!firstflan
+	!secondtype = type of $!secondflan
+
+	!allmems = array()
+	!allmems.append(!firstflan)
+	do !boltmem values !midmems
+		!allmems.append(!boltmem.name)
+	enddo
+	!allmems.append(!secondflan)
+
+	!havegask = false
+	!branmems = array()
+	!cbran = ''
+	do !mem value !allmems
+		!bran = name of bran of $!mem
+		handle any
+			!bran = name of nozz of $!mem
+		elsehandle none
+			if !havegask.not() and type of $!mem eq 'GASK' then
+				!havagask = true
+			endif
+		endhandle
+		if !cbran ne '' and !bran eq !cbran then
+			!branmems[!branmems.size()].append(!mem)
+		else
+			!onebranmems = array()
+			!onebranmems.append(!mem)
+			!branmems.append(!onebranmems)
+		endif
+		!cbran = !bran
+	enddo
+
+	if !branmems.size() eq 1 then
+		if !havegask then
+			do !x from !allmems.size() to 1 by -1
+				!mem = !allmems[!x]
+				if type of $!mem eq 'GASK' then
+					!boltitem = !mem
+					!preele = !allmems[!x - 1]
+					!nextele = !allmems[!x + 1]
+					if type of $!nextele eq 'FLAN' OR type of $!nextele eq 'FBLI' then
+						!showitem = !nextele
+					elseif type of $!preele eq 'FLAN' OR type of $!preele eq 'FBLI' then
+						!showitem = !preele
+					else
+						!showitem = !mem
+					endif
+					break
+				endif
+			enddo
+		else
+			if !secondtype eq 'FLAN' or !secondtype eq 'FBLI'  then
+				!showitem = !secondflan
+				!boltitem = !secondflan
+			elseif !firsttype eq 'FLAN' or !firsttype eq 'FBLI'  then
+				!showitem = !firstflan
+				!boltitem = !firstflan
+			else
+				!boltitem = !allmems[!allmems.size() - 1]
+				!lpos = lpos of $!boltitem wrt/*
+				!showitem = !lpos.string()
+			endif
+		endif
+	elseif !branmems.size() eq 2 then
+		if !havegask then
+			!firstlast = !branmems[1].last()
+			if type of $!firstlast eq 'GASK' then		$* the last mem is gask in pre bran
+				!boltitem = !firstlast
+				!preele = !branmems[1][!branmems[1].size() - 1]
+				if type of $!preele eq 'FLAN' or type of $!preele eq 'FBLI' then
+					!showitem = !preele
+				else
+					!showitem = !boltitem
+				endif
+			else
+				!find = false
+				do !x from !branmems[2].size() to 1 by -1					$* check from the last ele to first ele in next bran
+					!mem = !branmems[2][!x]
+					if type of $!mem eq 'GASK' then						$* found GASK
+						!boltitem = !mem
+						!nextele = !branmems[2][!x + 1]
+						if type of $!nextele eq 'FLAN' OR type of $!nextele eq 'FBLI' then
+							!showitem = !nextele
+						else
+							!showitem = !mem
+						endif
+						!find = true
+						break
+					endif
+				enddo
+				if !find.not() then
+					if !secondtype eq 'FLAN' or !secondtype eq 'FBLI' then
+						!showitem = !secondflan
+						!boltitem = !secondflan
+					else
+						!boltitem = !branmems[2][!branmems[2].size() - 1]
+						handle any
+							!boltitem = !branmems[2].last()
+							!hpos = hpos of bran of $!boltitem wrt/*
+							handle any
+								!hpos = p1 pos of $!boltitem wrt/*			$*nozz
+							endhandle
+							!showitem = !hpos.string()
+						elsehandle none
+							!lpos = lpos of $!boltitem wrt/*
+							!showitem = !lpos.string()
+						endhandle
+					endif
+				endif
+			endif
+		else
+			if !secondtype eq 'FLAN' or !secondtype eq 'FBLI'  then
+				!showitem = !secondflan
+				!boltitem = !secondflan
+			else
+				!boltitem = !branmems[2][!branmems[2].size() - 1]
+				handle any
+					!boltitem = !branmems[2].last()
+					!hpos = hpos of bran of $!boltitem wrt/*
+					handle any
+						!hpos = p1 pos of $!boltitem wrt/*			$*nozz
+					endhandle
+					!showitem = !hpos.string()
+				elsehandle none
+					!lpos = lpos of $!boltitem wrt/*
+					!showitem = !lpos.string()
+				endhandle
+			endif
+		endif
+	else
+		golabel /end
+	endif
+
+	!belongbran = name of bran of $!boltitem
+	!thisbran = name of bran of $!this.name
+	if !belongbran eq !thisbran then
+		!inbran = true
+	else
+		!inbran = false
+	endif
+
+	!result = array()
+	!result.append(!boltitem)
+	!result.append(!showitem)
+	!result.append(!allmems)
+	!result.append(!inbran)
+	--!result.append(!firstflan)
+	--!result.append(!secondflan)
+	return !result
+
+	label /end
+	!result = array()
+	return !result
+endmethod
+

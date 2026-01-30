@@ -1,0 +1,29 @@
+ï»¿define object isoWeldText
+    member .name is string
+    member .text is string
+    member .pos is position
+
+	member .movedir is direction	$* according to line showdir
+	member .movedis is real			$* according to line showdir
+
+	member .shop is boolean
+endobject
+
+
+define method .isoWeldText(!mem is string, !pos is position, !text is string,!movedir is direction,!movedis is real,!shop is boolean)
+	!this.shop = !shop
+	!this.isoWeldText(!mem, !pos, !text,!movedir,!movedis)
+endmethod
+
+define method .isoWeldText(!mem is string, !pos is position, !text is string,!movedir is direction,!movedis is real)
+	!this.movedir = !movedir
+	!this.movedis = !movedis
+	!this.isoweldtext(!mem,!pos,!text)
+endmethod
+
+define method .isoWeldText(!mem is string, !pos is position, !text is string)
+    !this.name = !mem
+    !this.pos = !pos
+    !this.text = !text
+endmethod
+ž†

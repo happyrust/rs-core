@@ -1,0 +1,14 @@
+ï»¿define function !!isoFindIsoUsedDir(!isoUsedDirs is array, !name is string) is isoUsedDir
+--$p 1
+   !returnIsoUsedDir = object isoUsedDir()
+    do !isoUsedDir values !isoUsedDirs
+    --$p 2
+        if !isoUsedDir.name eq !name then
+            !returnIsoUsedDir = !isoUsedDir
+            break
+        endif
+    enddo
+    --$p 3
+    return !returnIsoUsedDir
+endfunction
+Ð

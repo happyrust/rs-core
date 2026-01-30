@@ -1,0 +1,104 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= June 27th 2023
+--[Function]:
+------------------------------------------
+
+define function !!getsuppname(!inputitem is any) is array
+	!item = name of $!inputitem
+
+	!suppname = name of suppo of $!item
+	handle any
+		-----------------------
+		-----------------------pipe support
+
+		!suppname = name of zone of $!item
+		handle any
+
+			!struname = name of stru of $!item
+			handle any
+				!restname = name of rest of $!item
+				handle any
+					golabel /false
+				elsehandle none
+					if !restname.match('/REST') ne 0 then
+						!suppname = !restname.before('/REST')
+					else
+						!suppname = !restname
+					endif
+					!struname = !suppname + '/STRU'
+					!struname = name of $!struname
+					handle any
+						!struname = !suppname
+						!struname = name of $!struname
+						handle any
+							!struname = !suppname + '/STRU'
+						endhandle
+					endhandle
+				endhandle
+			elsehandle none
+				if !struname.match('/STRU') ne 0 then
+					!suppname = !struname.before('/STRU')
+				else
+					!suppname = !struname
+				endif
+				!restname = !suppname + '/REST'
+				!restname = name of $!restname
+				handle any
+					!restname = !suppname
+					!restname = name of $!restname
+					handle any
+						!restname = !suppname + '/REST'
+					endhandle
+				endhandle
+			endhandle
+		elsehandle none
+
+			!struname = name of first stru of $!suppname
+			handle any
+				!struname = !suppname + '/STRU'
+			endhandle
+
+			!restname = name of first rest of $!suppname
+			handle any
+				!restname = !suppname + '/REST'
+			endhandle
+			$(
+			if !suppname.substring(1,1) eq '/' then
+				!struname = !suppname + '/STRU'
+				!restname = !suppname + '/REST'
+			else
+				golabel /false
+			endif
+			$)
+		endhandle
+	elsehandle none
+	-----------------------
+	----------------------- HVAC SUPPORT
+		!struname = name of first stru of $!suppname
+		handle any
+			!struname = !suppname + '/STRU'
+		endhandle
+
+		!restname = name of first supc of $!suppname
+		handle any
+			!restname = !suppname + '/B1'
+		endhandle
+	endhandle
+
+
+	!result = array()
+	!result.append(!suppname)
+	!result.append(!struname)
+	!result.append(!restname)
+	return !result
+
+	label /false
+	!result = array()
+	return !result
+endfunction
+]Å

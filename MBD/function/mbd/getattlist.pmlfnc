@@ -1,0 +1,66 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= July 11st 2023
+--[Function]:	get list of material att cutlength for bran or support
+------------------------------------------
+
+define function !!getattlist(!type is string) is array
+	if !type.lowcase().match('instbran') ne 0 then
+		!dealtype = 'instbran'
+		!formname = 'markinstpipeform.pmlfrm'
+	elseif !type.lowcase().match('bran') ne 0 then
+		!dealtype = 'bran'
+		!formname = 'markpipeform.pmlfrm'
+	elseif !type.lowcase().match('instsupp') ne 0 then
+		!dealtype = 'instsupp'
+		!formname = 'markinstsuppform.pmlfrm'
+	elseif !type.lowcase().match('instpipesupp') ne 0 then
+		!dealtype = 'instpipesupp'
+		!formname = 'markinstpipesuppform.pmlfrm'
+	elseif !type.lowcase().match('supp') ne 0 then
+		!dealtype = 'supp'
+		!formname = 'marksuppform.pmlfrm'
+	elseif !type.lowcase().match('equi') ne 0 then
+		!dealtype = 'equi'
+		!formname = 'markequiform.pmlfrm'
+	elseif !type.lowcase().match('instequi') ne 0 then
+		!dealtype = 'instequi'
+		!formname = 'markinstequiform.pmlfrm'
+	elseif !type.lowcase().match('civil') ne 0 then
+		!dealtype = 'civil'
+		!formname = 'markcivilform.pmlfrm'
+	elseif !type.lowcase().match('arch') ne 0 then
+		!dealtype = 'arch'
+		!formname = 'markarchform.pmlfrm'
+	endif
+	!path = !!pml.getpathname(!formname).before(!formname) + !dealtype + 'AttList.txt'
+	--q var !path
+	!file = object file(!path)
+	!templines = !file.readfile()
+
+	!result = array()
+	!result[1] = array()
+	!result[2] = array()
+	do !line values !templines
+		!bn = !line.before(':').before('arr')
+		!attarr = !line.after(':').split(',')
+		!atts = array()
+		!show = array()
+		do !string values !attarr
+			!Atts.append(!string.part(1,'/'))
+			!Show.append(!string.part(2,'/'))
+		enddo
+		!result[1].append(!atts)
+		!result[1].append(!show)
+
+		!result[2].append(!bn + 's')
+		!result[2].append(!bn + 'show')
+	enddo
+
+	return !result
+endfunction
+G

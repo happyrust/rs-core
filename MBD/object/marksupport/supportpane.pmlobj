@@ -1,0 +1,191 @@
+define object supportpane
+	member .ref is string
+	member .plane is plane
+	member .pos is position
+	member .ori is orientation
+	member .zdir is direction
+	member .height is real
+	member .profile is profile
+
+	member .poss is array
+
+
+	--$(
+	member .midposs is array
+
+
+	member .dir1 is direction
+	member .axis1 is line
+	member .midposs1 is array
+
+	member .dir2 is direction
+	member .axis2 is line
+	member .midposs2 is array
+
+	member .maxDis is real
+	--$)
+endobject
+
+define method .supportpane(!item is any)
+--q var !item
+	var !ref ref of $!item
+	!this.ref = !ref
+	!this.pos = pos of $!item wrt/*
+	!this.ori = ori of $!item wrt/*
+--q var !this.ori
+
+	!this.zdir = !this.ori.zdir()
+	!this.plane = object plane(!this.pos,!this.ori)
+	!ploo = ref of first ploo of $!item
+	handle any
+		return
+	endhandle
+
+	!this.height = height of $!ploo
+	!sjust = sjust of $!ploo
+	if !sjust.matchwild('*TO*') then
+		!this.zdir = !this.zdir.opposite()
+	elseif !sjust.matchwild('*CEN*') then
+		!this.pos = !this.pos.offset(!this.zdir, - !this.height / 2)
+	endif
+
+    --q var  !item
+    --$p 1122
+
+	var !nboxs coll all nbox for $!item
+	if !nboxs.set() then
+		var !ncyls coll all ncyl for $!item
+		if !ncyls.set() then		$* supppanepad
+			return
+		endif
+	endif
+
+
+	!this.profile = object profile(!ploo)
+	if(!this.profile.isclosed().not())then
+		!this.profile.close()
+	endif
+	!this.profile.mergepoints().mergearcs().mergelines()
+
+	!this.poss = array()
+	var !paves coll all pave for $!item
+	--if !paves.size() ne 4 then
+	--	return
+	--endif
+
+	do !pave values !paves
+		!pavepos = pos of $!pave wrt/*
+		!nearpos = !this.plane.near(!pavepos)
+		!this.poss.append(!nearpos)
+	enddo
+
+	!this.maxDis = !this.poss[1].distance(!this.poss[3]) / 2
+
+	!havemem = false
+	var !nxtrs coll all nxtr for $!item
+	do !nxtr values !nxtrs
+		!floop = name of first loop of $!nxtr
+		handle any
+			skip
+		endhandle
+		!nxtrprofile = object profile(!floop.dbref())
+		!this.profile = !this.profile.difference(!nxtrprofile)[1]
+		!havemem = true
+	enddo
+
+	if !havemem then
+		!edges = !this.profile.edges()
+
+
+		!this.poss = array()
+		do !edge values !edges
+			!this.poss.append(!edge.startposition)
+		enddo
+		return
+	elseif !paves.size() ne 4 then	$* no four points pane
+		return
+	endif
+
+
+
+
+	--if !this.paves.size() ne 4 then	$* no four points pane
+	--	return
+	--endif
+
+	--$(
+	!this.midposs = array()
+	do !x from 1 to 4
+		if !x ne 4 then
+			!midpos = !this.poss[!x].midpoint(!this.poss[!x + 1])
+		else
+			!midpos = !this.poss[!x].midpoint(!this.poss[1])
+		endif
+		!this.midposs.append(!midpos)
+	enddo
+	--q var !this.midposs
+	!this.dir1 = !this.midposs[1].direction(!this.midposs[3])
+	!this.midposs1 = array()
+	!this.midposs1.append(!this.midposs[1])
+	!this.midposs1.append(!this.midposs[3])
+	!this.axis1 = !this.midposs1[1].line(!this.midposs1[2])
+
+	!this.dir2 = !this.midposs[2].direction(!this.midposs[4])
+	!this.midposs2 = array()
+	!this.midposs2.append(!this.midposs[2])
+	!this.midposs2.append(!this.midposs[4])
+	!this.axis2 = !this.midposs2[1].line(!this.midposs2[2])
+	--$)
+endmethod
+
+
+define method .supportpane(!item is string,!px is real,!py is real,!pz is real,!xlen is real,!ylen is real,!zlen is real)
+	var !ref ref of $!item
+	!this.ref = !ref
+	!this.pos = pos of $!item wrt/*
+	!this.ori = ori of $!item wrt/*
+	!xdir = !this.ori.xdir()
+	!ydir = !this.ori.ydir()
+	!zdir = !this.ori.zdir()
+
+	!this.zdir = !zdir
+	!this.plane = object plane(!this.pos,!this.ori)
+
+	!this.height = !zlen
+	!this.poss = array()
+	!this.poss[1] = !this.pos.offset(!xdir,!xlen / 2).offset(!ydir, - !ylen / 2)
+	!this.poss[2] = !this.pos.offset(!xdir,!xlen / 2).offset(!ydir,!ylen / 2)
+	!this.poss[3] = !this.pos.offset(!xdir, - !xlen / 2).offset(!ydir,!ylen / 2)
+	!this.poss[4] = !this.pos.offset(!xdir, - !xlen / 2).offset(!ydir, - !ylen / 2)
+
+	!this.profile = object profile(!this.pos,!this.ori,!this.poss)
+	!this.profile.close()
+
+
+	!this.maxDis = !this.poss[1].distance(!this.poss[3]) / 2
+
+	!this.midposs = array()
+	do !x from 1 to 4
+		if !x ne 4 then
+			!midpos = !this.poss[!x].midpoint(!this.poss[!x + 1])
+		else
+			!midpos = !this.poss[!x].midpoint(!this.poss[1])
+		endif
+		!this.midposs.append(!midpos)
+	enddo
+
+	!this.dir1 = !this.midposs[1].direction(!this.midposs[3])
+	!this.midposs1 = array()
+	!this.midposs1.append(!this.midposs[1])
+	!this.midposs1.append(!this.midposs[3])
+	!this.axis1 = !this.midposs1[1].line(!this.midposs1[2])
+
+	!this.dir2 = !this.midposs[2].direction(!this.midposs[4])
+	!this.midposs2 = array()
+	!this.midposs2.append(!this.midposs[2])
+	!this.midposs2.append(!this.midposs[4])
+	!this.axis2 = !this.midposs2[1].line(!this.midposs2[2])
+	--$)
+endmethod
+
+r

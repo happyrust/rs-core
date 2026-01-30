@@ -1,0 +1,6204 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= April 14th 2023
+--[Function]:
+--
+--[REV]
+--Revision		= 1.1
+--Date			= January 16th 2024
+--[Function]:
+------------------------------------------
+
+--
+--<<Method>>:
+--<<Public method>>:
+--markcivil(!item is any, !getdata is boolean, !form is form)   			$*
+--markcivil(!item is any, !form is form)									$*
+--markcivil(!item is any, !getdata is boolean)  							$*
+--markCivil(!item is any)   												$*
+--
+--<<Private method>>:
+--setform(!item is any) 													$*
+--clearcontent()															$*
+--getatts() 																$*
+--getcivilAttArr(!civilAtts is array) is array  							$*
+--getDataOfCivil()  														$*
+--draworigin()  															$*
+--drawoneorigin(!inputpos is position, !ori is orientation) 				$*
+--getoriginalpointori() 													$*
+--getoriginpoint()  														$*
+--getmeminfo(!atts is array) is array   									$*
+--getroominfo(!atts is array) is array  									$*
+--getDataOfMem()															$*
+--civilAttJson(!civilAtts is array, !civilAttShow is array) is array		$*
+--getmemJson(!mematts is array, !memattShow is array) is array  			$*
+--getroomJson(!roomatts is array, !roomattShow is array) is array   		$*
+--getJsonData(!civilAtts is array, !civilAttShow is array,!mematts is array,!memAttShow is array,!roomatts is array,!roomAttShow is array) is array 	$*
+--getProofreadingJson() is array											$*
+--getDrawingInfoJson() is array 											$*
+--merge(!arr is array) is string											$*
+--setting() 																$*
+--drawarch()																$*
+--drawarchwalls()   														$*
+--drawarchname(!dimgro is string)   										$*
+--draw()																	$*
+--getrooms()																$*
+--setroomorder()															$*
+--drawroom()																$*
+--drawarchroom()															$*
+--drawarchel(!cenpoint is position, !ori is orientation, !down is real, !up is real)	$*
+--generatejsonattrvm()  													$*
+--addConInfo()  															$*
+--drawdim() 																$*
+--dimmem()  																$*
+--dimonememxydis(!dimgro is string,!mem is civilmem,!cheightbili is real)   	$*
+--dimOnearchMem(!mem is civilMem) is real   								$*
+--dimOneMem(!mem is civilMem) is real   									$*
+--drawOpeningDimLine(!line is line, !ori is orientation, !profile is profile, !charheight is real, !desc is string) is real 	$*
+--dim() is boolean  														$* draw dimension for civil self
+--getwallsonfloor() is array												$*
+-----Step 1:
+--------------Step 1:add end points of other walls
+-----------Step 1:sort interpoints
+-----------Step 2:add end point into edge points
+-----------Step 3:add end point of other wall to edge points
+--addotherwalls(!indices is array)  										$*
+--addotherwall(!civilindex is real) 										$*
+--------Step 1:add end points of other walls
+--drawotherwalls()  														$*
+--------Step 1:sort interpoints
+--------Step 2:add end point into edge points
+--------Step 3:add end point of other wall to edge points
+--getcivilindex(!input is any) is real  									$*
+--drawinterlinearcs(!dimgro is string,!twoedges is array, !alledgepoints is array, !alledgepointsymbles is array)   	$*
+--drawWallAngle(!dimgro is string,!twoedges is array, !alledgepoints is array, !alledgepointsymbles is array)   	$*
+--drawangle(!point is position,!dir1 is direction,!dir2 is direction)   	$*
+--getgoodori(!ori is orientation,!textpos is position,!textlen is real) is array	$*
+--drawstwallgwall(!dimgro is string,!twoedges is array, !alledgepoints is array, !alledgepointsymbles is array) 	$*
+--drawwall(!dimgro is string,!twoedges is array, !alledgepoints is array, !alledgepointsymbles is array)	$*
+-----Step 1: for radius
+-----Step 2:for radius
+-----Step 3:draw radius
+--drawedges(!wallindices is array)  										$*
+-----Step 1:get edges and seperate them
+-----Step 2:get line and arc of walls
+--drawedgelines(!lines is array, !conangles is array)   					$*
+--drawedgelineangle(!line is line, !inputydir is direction) 				$*
+--drawedgearcs(!arcs is array)  											$*
+--cutarc(!arc is arc, !allarcs is array, !allarcpositions is array, !allarcradiuss is array , !allarczdirs is array, !tolerance is real)	$*
+--cutonearc(!arc is arc, !onearc is arc ,!tolerance is real) is array   	$*
+--cutline(!line is line,!alllines is array, !alllinedirs is array, !alllineconangles is array, !tolerance is real)  	$*
+--cutoneline(!line is line, !oneline is line ,!tolerance is real) is array  	$*
+--findlinegoodx(!linedir is direction, !alllinedirs is array,!tolerance is real) is real	$*
+--findarcgoodx(!arcpos is position,!arcradius is real,!arczdir is direction, !allarcpositions is array,!allarcradiuss is array,!allarczdirs is array,!tolerance is real) is real	$*
+--getdirstring(!dir is direction) is string 								$*
+--drawarcpoint(!dimgro is string,!arc is arc,!point is position,!outside is boolean,!desc is string,!textstring is string) is mlabel	$*
+--getuniquesizewithtolerance(!arr is array, !tolerance is real) is real 	$*
+--getendpoints() is array   												$*
+--interforfloor() is array  												$*
+--getinterpoints(!linearc1 is any,!linearc2 is any) is array				$*
+--diminter() is boolean 													$* dimension with other civils
+--checkIfClashTwoLines(!line1 is line, !line2 is line, !toleheight is real) is position 	$*
+--dimTwoPointArr(!pointarr is array) is boolean 							$* drn did not consider
+--drawArcPoint(!dimpos is position, !ori is orientation, !points is array, !arcIndex is real) is boolean	$*
+--drawOneDim(!dimpos is position,!ori is orientation, !points is array) is boolean  	$*
+--sortPoints(!points is array, !x is real) is array 						$*
+--SortLinePoss(!inputposs is array, !line is line) is array 				$*
+--sortArcPoss(!inputposs is array,!arc is arc) is array 					$*
+--createOneDim(!poss is array, !dimpos is position, !ori is orientation, !function is string) is boolean	$*
+--uniquePoss(!poss is array) is array   									$*
+--drawMlabel()  															$*
+--markwallEl()  															$*
+-----------Step 1:mark sure the mlabel is on right side
+--markCivilSelf()   														$*
+--drawthick(!pos is position,!ori is orientation,!elthickcheight is real) is boolean	$*
+--drawstrongclass(!thickpos is position,!ori is orientation,!elthickcheight is real) is boolean 	$*
+--drawOneMlabel(!string is string, !pos is position, !ori is orientation, !cheight is real, !frame is boolean, !function is string) is boolean  	$*
+--markonemem(!owner is string,!civilmem is civilmem,!cheightbili is real)   	$*
+--markCivilMem()															$*
+--changeline()  															$* keep or remove the line of mlabel
+--setMlabelLine(!switch is boolean) 										$*
+--deleteDimAndMlabel() is boolean   										$*
+--deleteDim() is boolean													$*
+--deleteMlabel() is boolean 												$*
+-------------------------------------
+
+
+define object markCivil
+	member .ref is string
+	member .civilname is string
+	member .type is string
+	member .owner is string
+	member .markname is string
+
+	member .checkedmem is boolean
+	member .mems is array
+	member .thick is real			$* it is for floor and all kinds of wall
+	member .ori is orientation
+	member .zdir is direction
+	member .level is real			$* for floor
+
+
+	member .profiles is array		$* it is for GWALL FLOOR STWALL
+
+	member .arcs is array			$* it is for wall
+	member .height is real			$* it is for wall
+
+	member .originori1 is orientation
+	member .originpoint1 is position
+	member .originori2 is orientation
+	member .originpoint2 is position
+
+	member .mbdstru is mbdstru
+	member .cenpoint is position
+
+	member .Textoffsetdis is real
+	member .civilCheight is real
+	member .roomCheight is real
+	member .doorCheight is real
+	member .apdpCheight is real
+	member .openingCheight is real
+	member .elthickCheight is real
+	member .memdimcheight is real
+	member .civildimcheight is real
+
+	member .lines is array			$* for gwall stwall
+
+	member .otherLineOrArcs is array		$* line or arc from other walls
+
+	member .onwallindices is array			$* for floor (walls on floor)
+
+	member .otherwallindices is array		$* for wall (relation between current wall and other walls)
+	member .interpoints1 is array
+	member .interpoints2 is array
+	member .pointsymbles1 is array
+	member .pointsymbles2 is array
+	member .otherendpoints is array
+	member .volume is volume
+	member .currentfloorname is string
+
+
+	member .markThickAfterName is boolean
+	member .vertDim is boolean				$* lindim in vertical direction to describe the length of the wall
+	member .mat is boolean
+	member .secondcon is boolean
+	member .openingpos is boolean
+
+
+	member .autocheight is boolean
+	member .autocheightbili is real
+	member .sepSmallDim is boolean
+
+	member .markmem is boolean
+
+	--member .specialnum is string
+	member .purpose is string
+	member .strongclass is string
+
+	member .generatejson is boolean
+	member .filepath is string
+
+	member .wrongs is array
+
+	member .lookdir is direction
+
+
+	member .rooms is array
+	member .doors is array
+
+	member .form is form
+
+
+	--for modelatt drawing and proofreading
+	!tempstrings = split('membermodelatt memberdrawinginfo memberproofreading')
+	do !string values !tempstrings
+		!tempfile = object file(!!commonpath() + !string + '.txt')
+		!lines = !tempfile.readfile()
+		do !line values !lines
+			if !line.trim().trim('	') ne '' then
+				$!line
+			endif
+		enddo
+	enddo
+endobject
+
+define method .markcivil(!item is any, !getdata is boolean, !form is form)
+	!this.form = !form
+	!this.markcivil(!item,!getdata)
+endmethod
+define method .markcivil(!item is any, !form is form)
+	!this.form = !form
+	!this.markcivil(!item)
+endmethod
+define method .markcivil(!item is any, !getdata is boolean)
+	!this.markcivil(!item)
+	if !getdata then
+		!this.getDataOfCivil()
+	endif
+endmethod
+define method .markCivil(!item is any)
+	--!this.getspecialnum()
+	!this.textOffsetDis = 5
+	!this.civilCheight = 350
+	!this.roomCheight = 350
+	!this.doorCheight = 150
+	!this.apdpCheight = 70
+	!this.openingCheight = 70
+	!this.elthickCheight = 70
+	!this.memdimcheight = 70
+	!this.markThickAfterName = false
+	--!this.markThickAfterName = true
+	!this.vertDim = false
+
+	!this.markmem = true
+
+	!types = split('WALL GWALL STWALL FLOOR')
+	do !type values !types
+		!this.civilname = name of $!type of $!item
+		handle any
+			--q var !!error
+			--$p adsfasf $!type
+		elsehandle none
+			!this.type = !type
+			var !ref ref of $!this.civilname
+			!this.ref = !ref
+			break
+		endhandle
+	enddo
+
+	if !this.civilname.set() then
+		!this.setform(!item)
+		--!this.getDataOfCivil()
+		!this.getatts()
+		--!this.getDataOfMem()
+		--!this.getDimName()
+		!this.mbdstru = object mbdstru(!this.civilname)
+		!this.volume = object volume(object dbref(!this.civilname))
+	else
+		$p Choose right Type please
+	endif
+endmethod
+
+define method .setform(!item is any)
+	if !this.form.unset() then
+		!sitename = name of site of $!item
+		if !sitename.match('ARCH') ne 0 then
+			!this.form = !!markarchform
+			handle any
+				show !!markarchform
+				handle any
+					!this.form = !!markcivilform
+				elsehandle none
+					hide !!markarchform
+					!this.form = !!markarchform
+				endhandle
+			endhandle
+		else
+			!this.form = !!markcivilform
+			handle any
+				show !!markcivilform
+				handle any
+					!this.form = !!markarchform
+				elsehandle none
+					hide !!markcivilform
+					!this.form = !!markcivilform
+				endhandle
+			endhandle
+		endif
+	endif
+endmethod
+$(
+define method .getspecialnum()
+	!this.specialnum = 'xxxxxxxxxxxx'
+endmethod
+
+
+
+define method .markCivil(!item is any, !onlyCivilData is boolean)	$*useless
+	!types = split('WALL GWALL STWALL FLOOR')
+	do !type values !types
+		!this.civilname = name of $!type of $!item
+		handle any
+		elsehandle none
+			!this.type = !type
+			var !ref ref of $!this.civilname
+			!this.ref = !ref
+			break
+		endhandle
+	enddo
+
+	if !this.civilname.set() then
+		!this.getatts()
+		--!this.getDataOfCivil()
+	endif
+endmethod
+$)
+
+define method .clearcontent()
+	!this.checkedmem = false
+endmethod
+
+define method .getatts()
+	!name = name of frmw of $!this.civilname
+	!!setattvalue(!this,!name,split('purpose/purpose,drawnum/:zd_nbbm,thick/:jj_qthd,strongclass/:jj_qddj',','))
+	!!setattvalue(!this,!name,split('room/:room_no,tssm/:zd_tssm,wjbm/:zd_wjbm,nbbm/:zd_nbbm,status/:zd_status,rev/:zd_rev',','))
+	!this.owner = !name
+	if !this.form.name() eq 'MARKARCHFORM' then
+		!this.markname = !this.owner.part(-3,'-')
+	else
+		!this.markname = !this.owner.part(-1,'-')
+	endif
+	if type of $!this.civilname eq 'FLOOR' then
+		!pos = pos of $!this.civilname wrt/*
+		!this.level = !pos.up.string('D1').replace('.0','').real()
+	endif
+
+	!this.rev = 'A' $*4ÔÂ30ÈÕÇ°
+	!this.getdrawinfo()
+	!!setproofreadinginfo(!this,!name)
+
+	if !this.thick.unset() or !this.thick eq 0 then
+		!this.getdataofcivil()
+	endif
+
+	$(
+	------------------------------------------------------
+	------------------------------------------------------
+	!civil = !this.civilname
+
+	!this.purpose = purpose of $!civil
+	handle any
+		!this.purpose = ''
+	endhandle
+
+	!this.drawnum = :zd_nbbm of $!civil
+	handle any
+		!this.drawnum = ''
+	endhandle
+
+	--!this.owner = name of owner of $!civil
+	!this.owner = name of frmw of $!civil
+	--!this.markname = !this.owner.part(-1,'-')
+	--q var !this.form
+	if !this.form.name() eq 'MARKARCHFORM' then
+		!this.markname = !this.owner.part(-3,'-')
+	else
+		!this.markname = !this.owner.part(-1,'-')
+	endif
+
+	!this.thick = :jj_qthd OF $!this.owner
+	handle any
+		--!this.thick = 0
+		!this.getdataofcivil()
+	endhandle
+
+	!this.strongclass = :jj_qddj of $!this.owner
+	handle any
+		!this.strongclass = ''
+	endhandle
+
+	if type of $!civil eq 'FLOOR' then
+		!pos = pos of $!civil wrt/*
+		!this.level = !pos.up.string('D1').replace('.0','').real()
+	endif
+	$)
+endmethod
+
+define method .getcivilAttArr(!civilAtts is array) is array
+	if !this.purpose.unset() then
+		!this.getatts()
+	endif
+
+	!row = array()
+	do !x indices !civilatts
+		!att = !civilAtts[!x]
+		!com = |!row[!x] = !this.| + !att
+		$!com
+		handle any
+			!rows[!x] = ''
+			$p No civilatt: $!att for civil $!this.civilname
+		endhandle
+	enddo
+	--q var !row
+	return !row
+endmethod
+
+
+define method .getDataOfCivil()
+	if !this.thick.set() and !this.thick ne 0 then
+		return
+	endif
+	!this.ori = ori of $!this.civilname wrt/*
+	--q var !this.ori
+	--!this.zdir = !this.ori.zdir()
+	!type = !this.type
+    --q var !this.civilname
+	if !type eq 'STWALL' then
+		!this.zdir = !this.ori.ydir()
+		--!desp = desp of $!this.civilname
+		!widthstring = prop thk of $!this.civilname
+        handle any
+            --modify by jyg 20241129,´¦ÀíÇ½Ã»ÓÐÊµÌåµÄÇé¿ö
+            return
+        endhandle
+		!height1string = prop height of $!this.civilname
+		handle any
+			return
+		endhandle
+		!width = !widthstring.real()
+		!heightstart = !height1string.real()
+		!height2string = prop haut of $!this.civilname
+		handle any
+		elsehandle none
+			!heightend = !height2string.real()
+		endhandle
+		var !posstartstring pos ppli na prop 0 of $!this.civilname wrt/*
+		var !posendstring pos ppli na prop 1 of $!this.civilname wrt/*
+		!poss[1] = !posstartstring.position()
+		!poss[2] = !posendstring.position()
+		!ori = !this.ori
+		!xdir = !ori.xdir()
+		!ydir = !ori.ydir()
+
+		!drnstart = drnstart of $!this.civilname wrt/*
+		!tempdir = !poss[1].direction(!poss[2])
+		!tempangle = !tempdir.angle(!drnstart)
+		if !tempangle gt 85 and !tempangle lt 95 then
+			!drnstart = !tempdir
+		endif
+		!drnend = drnend of $!this.civilname wrt/*
+		!tempangle = !tempdir.angle(!drnend)
+		if !tempangle gt 85 and !tempangle lt 95 then
+			!drnend = !tempdir
+		endif
+
+		!posstart1 = !poss[1].offset(!xdir,!width)
+		!posend1 = !poss[2].offset(!xdir,!width)
+		!line2 = !posstart1.line(!posend1)
+
+		!pointvector = object pointvector(!poss[1],!drnstart)
+		!plane1 = !pointvector.plane()
+		!poss[3] = !plane1.intersection(!line2)
+
+		!pointvector = object pointvector(!poss[2],!drnend)
+		!plane2 = !pointvector.plane()
+		!poss[4] = !plane2.intersection(!line2)
+
+		!poss[5] = !poss[1].offset(!ydir,!heightstart)
+		!poss[7] = !poss[3].offset(!ydir,!heightstart)
+		if defined(!heightend) then
+			!poss[6] = !poss[2].offset(!ydir,!heightend)
+			!poss[8] = !poss[4].offset(!ydir,!heightend)
+		else
+			!poss[6] = !poss[2].offset(!ydir,!heightstart)
+			!poss[8] = !poss[4].offset(!ydir,!heightstart)
+		endif
+
+
+		!profileOri = y is $!ydir and z is $!xdir
+		!poss1 = array()
+		!poss1.append(!poss[1])
+		!poss1.append(!poss[2])
+		!poss1.append(!poss[6])
+		!poss1.append(!poss[5])
+
+		!profile1 = object profile(!poss[1],!profileori,!poss1)
+
+		!tempzdir = !xdir.opposite()
+		!profileOri = y is $!ydir and z is $!tempzdir
+		!poss2 = array()
+		!poss2.append(!poss[3])
+		!poss2.append(!poss[4])
+		!poss2.append(!poss[8])
+		!poss2.append(!poss[7])
+
+		!profile2 = object profile(!poss[3],!profileori,!poss2)
+
+		!this.profiles.append(!profile1)
+		!this.profiles.append(!profile2)
+		!thick = !line2.distance(!poss[1])
+		!this.height = !heightstart
+	elseif !type eq 'WALL' then
+		!this.zdir = !this.ori.zdir()
+		!thicknessString = prop thk of $!this.civilname
+		!thickness = !thicknessString.real()
+		!heightString = prop heig of $!this.civilname
+		!height = !heightstring.real()
+
+		!this.height = !height
+
+
+		!mems = members of first spine of $!this.civilname
+		!poss = array()
+		do !mem values !mems
+			!mempos = pos of $!mem wrt/*
+			!poss.append(!mempos)
+		enddo
+
+		!pos1 = !poss[1]
+		!pos2 = !poss[2]
+		!pos3 = !poss[3]
+		!line1 = !pos1.line(!pos2)
+		!line2 = !pos2.line(!pos3)
+		!dir1 = !line1.direction()
+		!dir2 = !line2.direction()
+		!zdir = !dir1.orthogonal(!dir2)
+		!mdir1 = !dir1.orthogonal(!zdir)
+		!mpos1 = !pos1.midpoint(!pos2)
+		!mpos2 = !pos2.midpoint(!pos3)
+		!mdir2 = !dir2.orthogonal(!zdir)
+		!templine1 = !mpos1.line(!mpos1.offset(!mdir1,1000))
+		!templine2 = !mpos2.line(!mpos2.offset(!mdir2,1000))
+		!cenpos = !templine1.intersection(!templine2)
+
+		!radius = !cenpos.distance(!pos1)
+
+		!dir1 = !cenpos.direction(!pos1)
+		!dir2 = !cenpos.direction(!pos2)
+		!dir3 = !cenpos.direction(!pos3)
+
+		!angle = 0
+		do !x from 2 to !poss.size()
+			!dira = !cenpos.direction(!poss[!x - 1])
+			!dirb = !cenpos.direction(!poss[!x])
+			!angle = !angle + !dira.angle(!dirb)
+		enddo
+		--!angle = !dir1.angle(!dir2) + !dir2.angle(!dir3)
+		!arcZdir = !this.ori.zdir()
+
+
+		var !cbowposstring  pos ppli cbow prop 0 of $!this.civilname wrt/*
+		!cbowpos = !cbowposstring.position()
+
+		$(
+		if !zdir.angle(!arcZdir) lt 90 then
+			!arcxdir = !dir1
+			!arc = object arc(!cenpos,object orientation('X is $!dir1 and Z is $!arczdir'),0,!angle,!radius,true)
+			if !cbowpos.distance(!cenpos) lt !radius then
+				--if !this.ori.xdir().angle(!dir1) lt 90 then
+				!radius = !radius - !thickness
+			else
+				!radius = !radius + !thickness
+			endif
+		else
+			!arcxdir = !dir3
+			!arc = object arc(!cenpos,object orientation('X is $!dir3 and Z is $!arczdir'),0,!angle,!radius,true)
+			if !cbowpos.distance(!cenpos) lt !radius then
+				--if !this.ori.xdir().angle(!dir3) lt 90 then
+				!radius = !radius - !thickness
+			else
+				!radius = !radius + !thickness
+			endif
+		endif
+		$)
+		if !zdir.angle(!arcZdir) lt 90 then
+			!arcxdir = !dir1
+		else
+			!arcxdir = !dir3
+		endif
+		!arc = object arc(!cenpos,object orientation('X is $!arcxdir and Z is $!arczdir'),0,!angle,!radius,true)
+		!this.arcs.append(!arc)
+		if !cbowpos.distance(!cenpos) lt !radius then
+			!radius2 = !radius - !thickness
+		else
+			!radius2 = !radius + !thickness
+		endif
+		!arc = object arc(!cenpos,object orientation('X is $!arcxdir and Z is $!arczdir'),0,!angle,!radius2,true)
+		--!arc = object arc(!cenpos,object orientation('X is $!dir3 and Z is $!arczdir'),0,!angle,!radius,true)
+		--if !radius2 gt !radius then
+		!this.arcs.append(!arc)
+		--else
+		--	!this.arcs.insert(1,!arc)
+		--endif
+		!thick = !thickness
+	elseif !type eq 'FLOOR' then
+
+		!vertresult = object VertPoints(!this.civilname,true)
+		!zdir = !vertresult.zdir
+		!thick = !vertresult.height
+		!this.zdir = !this.ori.zdir()
+
+		!vertresult.getTwoProfiles()
+		!profiles = !vertResult.twoProfiles
+
+		!this.profiles.append(!profiles[1])
+		if !zdir.angle(d) lt 90 then
+			!this.profiles.append(!profiles[2])
+		else
+			!this.profiles.insert(1,!profiles[2])
+		endif
+	elseif !type eq 'GWALL' then
+		--$p asfdsadf
+		!vertresult = object VertPoints(!this.civilname,true)
+		!pos = !vertresult.pos
+		!ori = !vertresult.ori
+		!zdir = !vertresult.zdir
+		!height = !vertresult.height
+		!points1 = !vertresult.points1
+		!points2 = !vertresult.points2
+
+		!vertresult.getTwoProfiles()
+		!profiles = !vertResult.twoProfiles
+
+		!this.profiles.append(!profiles[1])
+		if !zdir.angle(d) lt 90 then
+			!this.profiles.insert(1,!profiles[2])
+		else
+			!this.profiles.append(!profiles[2])
+		endif
+
+		!vertresult.getOtherProfiles()
+
+		!this.profiles.appendarray(!vertresult.otherProfiles)
+
+
+		!maxProfileNums[1] = 1
+		!maxProfileNums[2] = 2
+		!areas = array()
+		do !profile values !this.profiles
+			!zdir = !profile.orientation.zdir()
+			!angle = !zdir.angle(u)
+			!angle = min(!angle,180 - !angle)
+			if !angle lt 20 then
+				if undefined(!minup) then
+					!minup = !profile.position.up
+					!maxup = !profile.position.up
+					!this.zdir = !profile.orientation.zdir()
+				else
+					!minup = min(!minup,!profile.position.up)
+					if !profile.position.up gt !maxup then
+						!this.zdir = !profile.orientation.zdir()
+						!maxup = !profile.position.up
+					endif
+				endif
+				!areas.append(0)
+			else
+				!area = !profile.area()
+				!areas.append(!area)
+			endif
+		enddo
+		if !this.zdir.angle(d) lt 90 then
+			!this.zdir = !this.zdir.opposite()
+		endif
+
+		!indices = !areas.sortedindices().invert()
+		!maxProfiles[1] = !this.profiles[!indices[1]]
+		!maxProfiles[2] = !this.profiles[!indices[2]]
+
+		!tempProfile1 = !this.profiles[!indices[1]]
+		!tempProfile2 = !this.profiles[!indices[2]]
+		!this.profiles[!indices[1]] = !this.profiles[1]
+		!this.profiles[!indices[2]] = !this.profiles[2]
+		!this.profiles[1] = !tempProfile1
+		!this.profiles[2] = !tempProfile2
+
+		!thick = !maxprofiles[2].position.distance(!maxprofiles[1].plane())
+		--q var !thick
+
+
+		if abs(!maxup - !minup - !height) lt 0.1 then
+			!this.height = !height
+		else
+			!this.height = !maxup - !minup
+		endif
+		$(
+	elseif !type eq 'FLOOR' or !type eq 'GWALL' then
+		!ori = !this.ori
+		!zdir = !ori.zdir()
+		!pos = pos of $!this.civilname wrt/*
+		!plane = object plane(!pos,!ori)
+
+		!plooname = name of first ploo of $!this.civilname
+		handle any
+			!height = height of $!this.civilname
+			!plooname = name of first loop of $!this.civilname
+		elsehandle none
+			!height = height of $!plooname
+			!sjust = sjust of $!plooname
+			if !sjust.matchwild('*TO*') then
+				!zdir = !zdir.opposite()
+			elseif !sjust.matchwild('*CEN*') then
+				!pos = !pos.offset(!zdir, - !height / 2)
+				!plane = object plane(!pos,!ori)
+				--!height = !height / 2
+			endif
+		endhandle
+		if !type eq 'FLOOR' then
+			!this.zdir = !this.ori.zdir()
+			!this.thick = !height
+		endif
+
+
+		var !paves coll all (pave vert) for $!plooname
+		!points1 = array()
+		!points2 = array()
+		do !pave values !paves
+			!onepos = pos of $!pave wrt/*
+			!temppos = !plane.near(!onepos)
+
+			if !points1.set() and !temppos.distance(!points1.last()) lt 0.1 then
+				skip
+			endif
+
+			!points1.append(!temppos)
+			!points2.append(!temppos.offset(!zdir,!height))
+		enddo
+
+
+		!profile = object profile(!pos,!ori,!points1)
+
+
+		--q var !profile
+		!profile = !profile.mergepoints()
+		!profile = !profile.mergelines()
+		!this.profiles.append(!profile)
+		--!profile.position = !profile.position.offset(!zdir,!height)
+
+		!profile = object profile(!pos.offset(!zdir,!height),!ori,!points2)
+		!profile = !profile.mergepoints()
+		!profile = !profile.mergelines()
+		if !zdir.angle(d) lt 90 then
+			!this.profiles.insert(1,!profile)
+		else
+			!this.profiles.append(!profile)
+		endif
+
+
+		if !type eq 'GWALL' then
+			!maxProfileNums[1] = 1
+			!maxProfileNums[2] = 2
+			var !paves coll all (pave vert) for $!plooname
+			!points = array()
+			do !pave values !paves
+				!onepos = pos of $!pave wrt/*
+				!temppos = !this.profiles[1].plane().near(!onepos)
+				if !points.unset() then
+					!points.append(!temppos)
+				elseif !temppos.distance(!points.last()) gt 0.1 then
+					!points.append(!this.profiles[1].plane().near(!onepos))
+				endif
+			enddo
+
+			!points.unique()
+			--!points[4].delete()
+			--!points.unique()
+
+
+			do !x indices !points
+				!poss = array()
+				if !x lt !points.size() then
+					!poss[1] = !points[!x]
+					!poss[2] = !points[!x + 1]
+				else
+					!poss[1] = !points[!x]
+					!poss[2] = !points[1]
+				endif
+				!poss[3] = !poss[2].offset(!zdir,!height)
+				!poss[4] = !poss[1].offset(!zdir,!height)
+				--$p $!this.civilname
+
+
+				!profile = object profile(!poss[1],!!getOriwithpoints(!poss),!poss)
+				!profile = !profile.mergepoints()
+				!profile = !profile.mergelines()
+				!profile.close()
+				!this.profiles.append(!profile)
+			enddo
+
+
+			--!this.profiles.deletefrom(1,2)
+			--!this.profiles.compress()
+
+			!areas = array()
+			do !profile values !this.profiles
+				!zdir = !profile.orientation.zdir()
+				!angle = !zdir.angle(u)
+				!angle = min(!angle,180 - !angle)
+				if !angle lt 20 then
+					if undefined(!minup) then
+						!minup = !profile.position.up
+						!maxup = !profile.position.up
+						!this.zdir = !profile.orientation.zdir()
+					else
+						!minup = min(!minup,!profile.position.up)
+						if !profile.position.up gt !maxup then
+							!this.zdir = !profile.orientation.zdir()
+							!maxup = !profile.position.up
+						endif
+					endif
+					!areas.append(0)
+				else
+					!area = !profile.area()
+					!areas.append(!area)
+				endif
+			enddo
+			if !this.zdir.angle(d) lt 90 then
+				!this.zdir = !this.zdir.opposite()
+			endif
+
+			!indices = !areas.sortedindices().invert()
+			!maxProfiles[1] = !this.profiles[!indices[1]]
+			!maxProfiles[2] = !this.profiles[!indices[2]]
+
+
+			!tempProfile1 = !this.profiles[!indices[1]]
+			!tempProfile2 = !this.profiles[!indices[2]]
+			!this.profiles[!indices[1]] = !this.profiles[1]
+			!this.profiles[!indices[2]] = !this.profiles[2]
+			!this.profiles[1] = !tempProfile1
+			!this.profiles[2] = !tempProfile2
+
+			!this.thick = !maxprofiles[2].position.distance(!maxprofiles[1].plane())
+
+
+			if abs(!maxup - !minup - !height) lt 0.1 then
+				!this.height = !height
+			else
+				!this.height = !maxup - !minup
+			endif
+
+			$ (
+			!mindis = !height
+			do !x from 1 to !points.size() - 2
+				!dis = !points[!x + 2].distance(!this.profiles[!x + 2].plane())
+				if !dis lt !mindis then
+					!mindis = !dis
+					!maxProfiles[1] = !x + 2
+					!maxProfiles[2] = !x + 4
+				endif
+				if !x eq !points.size() - 2 then
+					!dis = !points[1].distance(!this.profiles[!x + 2].plane())
+				else
+					!dis = !points[!x + 2].distance(!this.profiles[!x + 2].plane())
+				endif
+
+				if !dis lt !mindis then
+					!mindis = !dis
+					!maxProfiles[1] = !x + 2
+					!maxProfiles[2] = !x + 4
+				endif
+			enddo
+			!this.thick = !mindis
+			if !this.thick lt !height then
+				!this.height = !height
+			endif
+
+
+			if !maxProfiles[1] ne 1 then
+				!tempProfile1 = !this.profiles[!maxProfiles[1]]
+				!tempProfile2 = !this.profiles[!maxProfiles[2]]
+				!this.profiles[!maxProfiles[1]] = !this.profiles[1]
+				!this.profiles[!maxProfiles[2]] = !this.profiles[2]
+				!this.profiles[1] = !tempProfile1
+				!this.profiles[2] = !tempProfile2
+			endif
+			$ )
+		endif
+		$)
+	endif
+
+	!tempangle = !this.zdir.angle(u)
+	!tempangle = min(!tempangle,180 - !tempangle)
+	if !tempangle lt 0.1 then
+		!this.zdir = u
+	endif
+
+	if !this.thick.set() and !this.thick ne 0 and abs(!thick - !this.thick) gt 0.1 then
+		!this.wrongs.append('Please check the :JJ_QTHD of ' + !this.civilname)
+		$p Please check the :JJ_QTHD of $!this.civilname
+	endif
+
+	if !this.thick.unset() or !this.thick eq 0 then
+		!this.thick = !thick
+	endif
+
+	if abs(!this.thick - !this.thick.nint()) lt 0.1 then
+		!this.thick = !this.thick.nint()
+	endif
+
+	if !this.height.set() and abs(!this.height - nint(!this.height)) lt 0.01 then
+		!this.height = nint(!this.height)
+	endif
+
+	--------------------------------------set ori of profile
+	if !this.profiles.set() then
+		$(
+		do !x indices !this.profiles
+			if !this.profiles[!x].isclosed().not() then
+				!this.profiles[!x] = !this.profiles[!x].close()
+			endif
+		enddo
+		$)
+		--$(
+		!poss = array()
+
+		do !x indices !this.profiles
+			!poss.appendarray(!!getpointsofprofile(!this.profiles[!x]))
+		enddo
+
+		!this.cenpoint = !!getcenpoint(!poss)
+		do !x indices !this.profiles
+			!zdir = !this.cenpoint.direction(!this.profiles[!x].plane().near(!this.cenpoint))
+            handle any
+                --modify by jyg 20240828
+                skip
+            endhandle
+			!angle = !zdir.angle(u)
+			!angle = min(!angle,180 - !angle)
+			if !angle lt 20 then
+				!ydir = !zdir.orthogonal(!this.ori.xdir())
+				handle any
+					!xdir = !zdir.orthogonal(!this.ori.ydir())
+				elsehandle none
+					!xdir = !ydir.orthogonal(!zdir)
+				endhandle
+			else
+				!ydir = u
+				!xdir = !ydir.orthogonal(!zdir)
+			endif
+			!ori = object orientation('X is $!xdir and z is $!zdir')
+
+
+
+			--!this.profiles[!x].orientation = !ori
+			--$(
+			--!temppos = !this.profiles[!x].position
+			--!edges = !this.profiles[!x].edges()
+			--!this.profiles[!x] = object profile(!temppos,!ori,!edges)
+			!this.profiles[!x] = object profile(!this.profiles[!x].position,!ori,!this.profiles[!x].edges())
+
+
+			if !this.profiles[!x].isValidClosed().not() then	$*202304231132
+				!this.profiles[!x] = !this.profiles[!x].mergepoints(0.1)
+				!this.profiles[!x] = !this.profiles[!x].mergelines(1)
+			endif
+			--$)
+		enddo
+		--$)
+
+
+		do !x indices !this.profiles
+			if !this.profiles[!x].isclosed().not() then
+				!this.profiles[!x] = !this.profiles[!x].close()
+			endif
+		enddo
+		if !this.type ne 'FLOOR' then
+			do !x from 1 to 2
+				!edges = !this.profiles[!x].edges()
+				!tempangles = array()
+                --Q  VAR !edges
+                --Q  VAR  !this.profiles[!x]
+				do !edge values !edges
+                    --!edge.Draw(1,2,3)
+                    --q var !edge
+					!angle = abs(!edge.direction().angle(u) - 90)
+                    handle (2,779)
+                    --modify by jyg 20250121 ´¦ÀíÖ§µõ¼ÜÔÚ¼ÆËãÇ½Ãæ»¡±ß³¯ÏòÎÊÌâÊ±£¬ÎÞ·¨»ñÈ¡direction()µÄÎÊÌâ,Ìø¹ý¡£
+                        skip
+                    endhandle
+					!tempangles.append(!angle)
+				enddo
+				!indices = !tempangles.sortedindices()
+				!newedges = array()
+				!newedges[1] = !edges[!indices[1]]
+				!newedges[2] = !edges[!indices[2]]
+
+
+				!templines = array()
+				!tempups = array()
+				do !edge values !newedges
+					!templines.append(!edge)
+					!tempups.append(!edge.startposition.midpoint(!edge.endposition).up)
+				enddo
+				if !tempups.set() then
+					!indices = !tempups.sortedindices()
+					!this.lines[!x] = !templines[!indices[1]]
+				endif
+
+				$(
+				!templines = array()
+				!tempups = array()
+				do !edge values !edges
+					!angle = !edge.direction().angle(u)
+					if !angle gt 85 and !angle lt 95 then
+						--!this.lines[!x] = !edge
+						--break
+						!templines.append(!edge)
+						!tempups.append(!edge.startposition.midpoint(!edge.endposition).up)
+					endif
+				enddo
+				if !tempups.set() then
+					!indices = !tempups.sortedindices()
+					!this.lines[!x] = !templines[!indices[1]]
+				endif
+				$)
+			enddo
+		endif
+	endif
+	!this.getoriginalpointori()
+endmethod
+
+define method .draworigin()
+	do !x from 1 to 2
+		!ori = !this.originori$!x
+		!point = !this.originpoint$!x
+
+		!this.drawoneorigin(!point,!ori)
+	enddo
+endmethod
+
+define method .drawoneorigin(!inputpos is position, !inputori is orientation)
+	if !this.mbdstru.toaid().not() then
+		return
+	endif
+	!ori = !inputori
+	if !this.type eq 'WALL' then
+		if !this.arcs[1].radius lt !this.arcs[2].radius then
+			!shortarc = !this.arcs[1]
+		else
+			!shortarc = !this.arcs[2]
+		endif
+	endif
+
+	!pos = !inputpos.offset(!ori.zdir(),!this.textoffsetdis)
+	!cheight = !this.civilcheight * 0.5
+	!xdir = !ori.xdir()
+	!ydir = !ori.ydir()
+	!unitlen = !cheight * 2
+	do !x from 1 to 2
+		if !x eq 1 then
+			!dir = !xdir
+			!theotherdir = !ydir
+		else
+			!dir = !ydir
+			!theotherdir = !xdir
+		endif
+
+		!dp1 = !pos
+		!dp2 = !pos.offset(!dir,!unitlen)
+
+		if !x eq 1 and !this.type eq 'WALL' then
+			if abs(!shortarc.position.distance(!inputpos) - !shortarc.radius) lt 1 then
+				!offsetangle = !unitlen * 1.1 * 180 / (!shortarc.radius * pi)
+				if !shortarc.near(!dp1) gt !shortarc.near(!dp2) then
+					!tempangle = !shortarc.near(!dp1).value() - !offsetangle.value()
+				else
+					!tempangle = !shortarc.near(!dp1).value() + !offsetangle.value()
+				endif
+				!dp2 = !shortarc.angleposition(!tempangle)
+				!dir = !dp1.direction(!dp2)
+				!xdir = !dir
+				!dp2 = !dp1.offset(!dir,!unitlen)
+				!ori = x is $!dir and y is $!ydir
+			endif
+		endif
+
+		!temppos = !dp2.offset(!dir, - 0.20 * !unitlen)
+		!dp3 = !temppos.offset(!theotherdir, 0.12 * !unitlen)
+		!dp4 = !temppos.offset(!theotherdir, - 0.12 * !unitlen)
+
+		!nodename = 'node:' + !this.civilname
+		!aidline = object mbdaidline(!this.mbdstru.aidgro,!dp1,!dp2,'¾Ö²¿×ø±êÏµ',!nodename)
+
+		!aidline = object mbdaidline(!this.mbdstru.aidgro,!dp2,!dp3,'¾Ö²¿×ø±êÏµ',!nodename)
+
+		!aidline = object mbdaidline(!this.mbdstru.aidgro,!dp2,!dp4,'¾Ö²¿×ø±êÏµ',!nodename)
+
+	enddo
+
+	if !this.type eq 'FLOOR' then
+		if !ori.zdir().angle(u) lt 90 then
+			!ydir = !this.lookdir
+			!textori = y is $!ydir and z is u
+		else
+			!ydir = !this.lookdir.opposite()
+			!textori = y is $!ydir and z is d
+		endif
+	else
+		!textori = !ori
+	endif
+
+	!pos0 = !pos.offset(!xdir,!cheight / 2).offset(!ydir,!cheight / 2)
+	!posx = !pos.offset(!xdir,!unitlen * 7 / 8).offset(!ydir,!cheight * 3 / 4)
+	!posy = !pos.offset(!ydir,!unitlen * 7 / 8).offset(!xdir,!cheight * 3 / 4)
+
+	!pos0 = !pos0.offset(!textori.xdir(), - !cheight / 2).offset(!textori.ydir(), - !cheight / 2)
+	!posx = !posx.offset(!textori.xdir(), - !cheight / 2).offset(!textori.ydir(), - !cheight / 2)
+	!posy = !posy.offset(!textori.xdir(), - !cheight / 2).offset(!textori.ydir(), - !cheight / 2)
+
+
+	!zore = object mlabel(!this.mbdstru.dimgro,!pos0,!textori,'0',!cheight,false,'¾Ö²¿×ø±êÏµ','',!nodename)
+	!mlabelx = object mlabel(!this.mbdstru.dimgro,!posx,!textori,'X',!cheight,false,'¾Ö²¿×ø±êÏµ','',!nodename)
+	!mlabely = object mlabel(!this.mbdstru.dimgro,!posy,!textori,'Y',!cheight,false,'¾Ö²¿×ø±êÏµ','',!nodename)
+endmethod
+
+define method .getoriginalpointori()
+	if !this.form.unset() then
+		!this.setform(!this.civilname)
+	endif
+	if !this.profiles.set() then
+		if !this.type eq 'FLOOR' then
+			--q var !this.form
+			!ydir1 = !this.form.lookdir.displaytext().direction()
+			!xdir1 = !ydir1.orthogonal(u)
+
+			!ydir2 = !ydir1.opposite()
+			!xdir2 = !xdir1
+			!ori1 = x is $!xdir1 and y is $!ydir1
+			!ori2 = x is $!xdir2 and y is $!ydir2
+			if !this.profiles[1].position.up gt !this.profiles[2].position.up then
+				!this.originori1 = !ori1
+				!this.originori2 = !ori2
+			else
+				!this.originori1 = !ori2
+				!this.originori2 = !ori1
+			endif
+		else
+			do !x from 1 to 2
+				!this.originori$!x = !this.profiles[!x].orientation
+			enddo
+		endif
+		!this.getoriginpoint()
+	else
+		do !x from 1 to 2
+			!currentradius = !this.arcs[!x].radius
+			if !x eq 1 then
+				!theotherradius = !this.arcs[2].radius
+			else
+				!theotherradius = !this.arcs[1].radius
+			endif
+			if !currentradius lt !theotherradius then
+            --$p 1
+				if !this.arcs[!x].orientation.zdir().angle(u) gt 90 then
+					!pptpos = !this.arcs[!x].angleposition(!this.arcs[!x].startangle)
+					!xdir = !this.arcs[!x].starttangent()
+				else
+					!pptpos = !this.arcs[!x].angleposition(!this.arcs[!x].endangle)
+					!xdir = !this.arcs[!x].endtangent().opposite()
+				endif
+			else
+            --$p 2
+				if !this.arcs[!x].orientation.zdir().angle(u) gt 90 then
+					!pptpos = !this.arcs[!x].angleposition(!this.arcs[!x].endangle)
+					!xdir = !this.arcs[!x].endtangent().opposite()
+				else
+					!pptpos = !this.arcs[!x].angleposition(!this.arcs[!x].startangle)
+					!xdir = !this.arcs[!x].starttangent()
+				endif
+			endif
+
+			!this.originori$!x = object orientation('x is $!xdir and y is u')
+            handle any
+                --modify by jyg 20240809
+                !this.originori$!x = object orientation('x is e and y is u')
+            endhandle
+			!this.originpoint$!x = !pptpos
+		enddo
+	endif
+endmethod
+
+define method .getoriginpoint()
+	do !times from 1 to 2
+		--do !times indices !this.profiles
+		!profile = !this.profiles[!times]
+
+		!ori = !this.originori$!times
+		!xdir = !ori.xdir()
+		!ydir = !ori.ydir()
+
+		!edges = !profile.edges()
+		--!xdiss = array()
+		--!ydiss = array()
+		!xydiss = array()
+		!poss = array()
+		!edgex = 0
+		do !edge values !edges
+			!pos = !edge.startposition
+			handle any
+				!pos = !edge.angleposition(!edge.startangle)
+			endhandle
+			!edgex = !edgex + 1
+			if !edgex eq 1 then
+				!measurepos = !pos
+			endif
+			!xdis = !!suidirdis(!measurepos,!xdir,!pos)
+			!ydis = !!suidirdis(!measurepos,!ydir,!pos)
+			--!xdiss.append(!xdis)
+			--!ydiss.append(!ydis)
+			!xydis = !xdis + !ydis
+			!xydiss.append(!xydis)
+			!poss.append(!pos)
+		enddo
+		!indices = !xydiss.sortedindices()
+		!this.originpoint$!times = !poss[!indices[1]]
+		$(
+		!indices = !xdiss.sortedindices()
+		!xdiss.reindex(!indices)
+		!ydiss.reindex(!indices)
+		!poss.reindex(!indices)
+
+		do !x indices !xdiss
+			if abs(!xdiss[!x] - !xdiss[!x + 1]) gt 1 then
+				!goodx = !x
+				break
+			endif
+		enddo
+
+		if !goodx eq 1 then
+			!startpos = !poss[1]
+			!this.originpoint$!times = !startpos
+		else
+			!ydiss.deletefrom(!goodx + 1)
+			!poss.deletefrom(!goodx + 1)
+			!indices = !ydiss.sortedindices()
+			!poss.reindex(!indices)
+			!startpos = !poss[1]
+			!this.originpoint$!times = !startpos
+		endif
+		$)
+	enddo
+endmethod
+
+define method .getmeminfo(!atts is array) is array
+	!this.getdataofmem()
+	!rowarrs = array()
+	--if !this.lookdir.unset() then
+	--	!this.lookdir = !this.form.lookdir.displaytext().direction()
+	--endif
+	--!xdir = !this.lookdir.orthogonal(u)
+	--!ydir = !this.lookdir
+	do !memdata values !this.mems
+		--if !this.type eq 'FLOOR' then
+		--	!memdata.ydir = !ydir
+		--q var !this.lookdir
+		--	!memdata.xdir = !xdir
+		--endif
+
+		!memdata.getxydis()
+		!rowarr = array()
+		do !x indices !atts
+			!att = !atts[!x]
+			!com = '!rowarr[!x] = !memdata.' + !att + '.string()'
+			$!com
+			handle any
+				!rowarr[!x] = ''
+				$p No att: $!att in CivilMem object
+			elsehandle none
+				if !rowarr[!x] ne '' and !this.arcs.set() and (!att eq 'axdis' or !att eq 'bxdis') then
+					!rowarr[!x] = !rowarr[!x] + '¡ã'
+				endif
+			endhandle
+		enddo
+		!rowarrs.append(!rowarr)
+	enddo
+	return !rowarrs
+endmethod
+
+define method .getroominfo(!atts is array) is array
+	!this.getrooms()
+	!rowarrs = array()
+	do !roomdata values !this.rooms
+		!rowarr = array()
+		do !x indices !atts
+			!att = !atts[!x]
+			!com = '!rowarr[!x] = !roomdata.' + !att + '.string()'
+			$!com
+			handle any
+				!rowarr[!x] = ''
+				$p No att: $!att in FloorRoom object
+			endhandle
+		enddo
+		!rowarrs.append(!rowarr)
+	enddo
+	return !rowarrs
+endmethod
+define method .getdoorinfo(!atts is array) is array
+	!this.getdoors()
+	!rowarrs = array()
+	do !doordata values !this.doors
+		!rowarr = array()
+		do !x indices !atts
+			!att = !atts[!x]
+			!com = '!rowarr[!x] = !doordata.' + !att + '.string()'
+			$!com
+			handle any
+				!rowarr[!x] = ''
+				$p No att: $!att in civildoor object
+			endhandle
+		enddo
+		!rowarrs.append(!rowarr)
+	enddo
+	return !rowarrs
+endmethod
+
+define method .getDataOfMem()
+	if !this.checkedmem.set() and !this.checkedmem then
+		return
+	endif
+	if !this.profiles.unset() and !this.arcs.unset() then
+		return
+	endif
+	!this.checkedmem = true
+
+
+	if !this.form.name() eq 'MARKARCHFORM' then
+		!archmodel = true
+	else
+		!archmodel = false
+	endif
+
+	--$p $!archmodel
+
+	--var !mems coll all (NBOX NXTR NPYR PFIT FITT CMFI CMPF FIXING) for $!this.civilname
+
+	if !archmodel then
+		if !this.type eq 'FLOOR' then
+			var !mems coll all NXTR for $!this.civilname
+		else
+			var !mems coll all fitt with(purpose eq 'DOOR') for $!this.civilname
+		endif
+	else
+		var !mems coll all (NBOX NXTR NPYR NCYL NRTO PFIT FITT SBFI FIXING) for $!this.civilname
+
+		!abakts = !!getabakt(!this.civilname)
+		do !abakt values !abakts
+			var !mems append coll all pane for $!abakt
+			handle any
+			endhandle
+		enddo
+	endif
+
+
+	!civilindex = !this.getcivilindex(!this.civilname)
+	--if !this.profiles.set() then
+	--	!civildata = !this.profiles
+	--else
+	--	!civildata = !this.arcs
+	--endif
+	!this.mems = array()
+	do !mem values !mems
+		--!tempppp = e 38400 s 32100 d 5050
+		--!mempos = pos of $!mem wrt/*
+		--aid text number 1234 '1' at $!mempos
+		--if !mempos.distance(!tempppp) lt 1000 then
+		--$p $!mem
+		--endif
+		--if !mem ne '=17400/17500' then
+		--	skip
+		--endif
+
+		--if !mem ne '=17394/66693' then
+		--	skip
+		--endif
+
+
+		!civilMem = object civilmem(!mem,!civilindex,!this.form)
+		handle any
+			$p Warning: $!MEM µÃ²»µ½ÐÎ×´£¬Çë¼ì²é½¨Ä£ÊÇ·ñ¹æ·¶
+			skip
+		endhandle
+		if !archmodel then
+			if !civilmem.radiuss.set() then	$*no arc in arch opening
+				skip
+			endif
+		endif
+
+		--if !civildata[1].objecttype() eq 'PROFILE' then
+		--!civilMem = object civilmem(!mem,!civildata)
+		--else
+		--	!civilMem = object civilmem(!mem,!civildata,!this.height)
+		--endif
+
+		--!memname = name of $!mem
+
+		--q var !civilmem.cenpoints
+
+		if !civilmem.cenpoints.set() then
+			!this.mems.append(!civilmem)
+		endif
+		--break
+		--$p $!mem ok
+	enddo
+
+
+
+	do !x indices !this.mems
+		!this.mems[!x].order = !x
+		$(
+		if !this.mems[!x].spec ne 'X' then
+			!this.mems[!x].markstring = !x & ' ' & !this.mems[!x].spec & ' ' & !this.mems[!x].code
+		else
+			!this.mems[!x].markstring = !x & ' ' & !this.mems[!x].code
+		endif
+		$)
+	enddo
+endmethod
+
+define method .civilAttJson(!civilAtts is array, !civilAttShow is array) is array
+	!rowarr = !this.getcivilAttArr(!civilAtts)
+	!row = array()
+	!row.append(|{|)
+	do !x indices !rowarr
+		!row.append(|"| + !civilAttShow[!x] + |": "| + !rowarr[!x].string().replace(|\|,|\\|).replace(|"|,|\"|) + |",|)
+		handle any
+			!row.append(|"| + !civilAttShow[!x] + |": "| + '' + |",|)
+		endhandle
+		if !x eq !rowarr.size() then
+			!row[!row.size()] = !row[!row.size()].substring(1,!row[!row.size()].length() - 1)
+		endif
+	enddo
+	--!row.append(|}|)
+	!row.append(|},|)
+
+	!row.insert(2,|"type":"civilAttribution",|)
+	!row.insert(2,|"nodeNames":["| + !this.civilname + |"],|)
+	return !row
+endmethod
+
+define method .getmemJson(!mematts is array, !memattShow is array) is array
+	!result = array()
+	!allrowarr = !this.getmeminfo(!memAtts)
+	do !rowarr values !allrowarr
+		!row = array()
+		!row.append(|{|)
+		do !x indices !rowarr
+			!row.append(|"| + !memAttShow[!x] + |": "| + !rowarr[!x].string().replace(|\|,|\\|).replace(|"|,|\"|) + |",|)
+			handle any
+				!row.append(|"| + !memAttShow[!x] + |": "| + '' + |",|)
+			endhandle
+			if !x eq !rowarr.size() then
+				!row[!row.size()] = !row[!row.size()].substring(1,!row[!row.size()].length() - 1)
+			endif
+		enddo
+		--!row.append(|}|)
+		!row.append(|},|)
+
+		!row.insert(2,|"type":"memList",|)
+		!row.insert(2,|"nodeNames":["| + !this.civilname + |"],|)
+		!result.appendarray(!row)
+	enddo
+	return !result
+endmethod
+
+define method .getroomJson(!roomatts is array, !roomattShow is array) is array
+	!result = array()
+
+	!allrowarr = !this.getroominfo(!roomAtts)
+	do !rowarr values !allrowarr
+		!row = array()
+		!row.append(|{|)
+		do !x indices !rowarr
+			!row.append(|"| + !roomAttShow[!x] + |": "| + !rowarr[!x].string().replace(|\|,|\\|).replace(|"|,|\"|) + |",|)
+			handle any
+				!row.append(|"| + !roomAttShow[!x] + |": "| + '' + |",|)
+			endhandle
+			if !x eq !rowarr.size() then
+				!row[!row.size()] = !row[!row.size()].substring(1,!row[!row.size()].length() - 1)
+			endif
+		enddo
+		--!row.append(|}|)
+		!row.append(|},|)
+
+		!row.insert(2,|"type":"roomList",|)
+		!row.insert(2,|"nodeNames":["| + !this.civilname + |"],|)
+		!result.appendarray(!row)
+	enddo
+	return !result
+endmethod
+
+define method .getdoorJson(!dooratts is array, !doorattShow is array) is array
+	!result = array()
+
+	!allrowarr = !this.getdoorinfo(!doorAtts)
+	do !rowarr values !allrowarr
+		!row = array()
+		!row.append(|{|)
+		do !x indices !rowarr
+			!row.append(|"| + !doorAttShow[!x] + |": "| + !rowarr[!x].string().replace(|\|,|\\|).replace(|"|,|\"|) + |",|)
+			handle any
+				!row.append(|"| + !doorAttShow[!x] + |": "| + '' + |",|)
+			endhandle
+			if !x eq !rowarr.size() then
+				!row[!row.size()] = !row[!row.size()].substring(1,!row[!row.size()].length() - 1)
+			endif
+		enddo
+		--!row.append(|}|)
+		!row.append(|},|)
+
+		!row.insert(2,|"type":"doorList",|)
+		!row.insert(2,|"nodeNames":["| + !this.civilname + |"],|)
+		!result.appendarray(!row)
+	enddo
+	return !result
+endmethod
+
+define method .getJsonData(!civilAtts is array, !civilAttShow is array,!mematts is array,!memAttShow is array,!roomatts is array,!roomAttShow is array) is array
+	!jsonmem = object jsonmem()
+	!jsonmem.node = !this.civilname
+	!jsonmem.code = !this.civilname
+	!jsonmem.type = 'CIVIL'
+	!jsonmem.rev = !this.rev
+
+	--$p json
+	!json = object json(!this.mbdstru.mbdstru)
+	--$p content
+	!jsonmem.content = !json.getJson()
+	--$p att
+	!jsonmem.civilatt = !this.civilAttJson(!civilAtts, !civilAttShow)
+	--$p mem
+	!jsonmem.abakt = !this.getmemjson(!mematts, !memAttShow)
+	--$p room
+	!jsonmem.rooms = !this.getroomjson(!roomAtts, !roomAttShow)
+	--$p draw
+	!jsonmem.drawingInfo = !this.getDrawingInfoJson()
+	--$p proofreading
+	!jsonmem.proofreading = !this.getproofreadingjson()
+
+	return !jsonmem.getjsontext()
+endmethod
+define method .getJsonData(!civilAtts is array, !civilAttShow is array,!mematts is array,!memAttShow is array,!roomatts is array,!roomAttShow is array,!dooratts is array,!doorAttShow is array) is array
+	!jsonmem = object jsonmem()
+	!jsonmem.node = !this.civilname
+	!jsonmem.code = !this.civilname
+	!jsonmem.type = 'ARCH'
+
+	--$p json
+	!json = object json(!this.mbdstru.mbdstru)
+	--$p content
+	!jsonmem.content = !json.getJson()
+	--$p att
+	!jsonmem.civilatt = !this.civilAttJson(!civilAtts, !civilAttShow)
+	--$p mem
+	!jsonmem.abakt = !this.getmemjson(!mematts, !memAttShow)
+	--$p room
+	!jsonmem.rooms = !this.getroomjson(!roomAtts, !roomAttShow)
+	--$p door
+	!jsonmem.doors = !this.getdoorjson(!doorAtts, !doorAttShow)
+	--$p draw
+	!jsonmem.drawingInfo = !this.getDrawingInfoJson()
+	--$p proofreading
+	!jsonmem.proofreading = !this.getproofreadingjson()
+
+	return !jsonmem.getjsontext()
+endmethod
+
+define method .getProofreadingJson() is array
+	!row = !!getProofreadingJson(!this,!this.civilname)
+	return !row
+endmethod
+
+define method .getdrawinfo()
+	if !this.drawgroup.unset() then
+		if !this.form.name() eq 'MARKCIVILFORM' then
+			!this.drawmajor = '½á¹¹'
+			!this.drawname = '½á¹¹ÈýÎ¬ÖÆ×÷Í¼'
+		else
+			!this.drawmajor = '½¨Öþ'
+			!this.drawname = '½¨ÖþÈýÎ¬ÖÆ×÷Í¼'
+		endif
+		!!getdrawinginfo(!this)
+	endif
+endmethod
+
+define method .getDrawingInfoJson() is array
+	!row = !!getdrawinginfojson(!this,!this.civilname)
+	return !row
+endmethod
+
+define method .merge(!arr is array) is string
+	--q var !arr
+	!string = !arr[1]
+	do !x from 2 to !arr.size()
+		!string = !string + '-' + !arr[!x]
+	enddo
+	return !string
+endmethod
+
+define method .setting()
+	if !this.form.name() eq 'MARKCIVILFORM' then
+		!this.generatejson = !this.form.generatejson.displaytext().boolean()
+		!this.filepath = !this.form.filepath.displaytext()
+
+		!this.textoffsetdis = !this.form.textoffsetdis.displaytext().real()
+		!this.civilCheight = !this.form.civilCheight.displaytext().real()
+		!this.roomCheight = !this.form.roomCheight.displaytext().real()
+
+		!this.elThickCheight = !this.form.elThickCheight.displaytext().real()
+		!this.apdpCheight = !this.form.apdpCheight.displaytext().real()
+		!this.openingCheight = !this.form.openingCheight.displaytext().real()
+		!this.memdimcheight = !this.form.memdimcheight.displaytext().real()
+		!this.civildimCheight = !this.form.civildimCheight.displaytext().real()
+		!this.lookdir = !this.form.lookdir.displaytext().direction()
+
+		!this.autocheight = !this.form.autocheight.displaytext().boolean()
+		!this.autocheightbili = !this.form.autocheightbili.displaytext().real()
+		handle any
+			!this.autocheightbili = 0
+		endhandle
+		!this.sepSmallDim = !this.form.sepSmallDim.displaytext().boolean()
+
+		!this.vertDim = !this.form.vertDim.selection('dtext').boolean()
+		!this.markThickAfterName = !this.form.wallThickAfterName.selection('dtext').boolean()
+		!this.mat = !this.form.mat.selection('dtext').boolean()
+		!this.secondcon = !this.form.secondcon.selection('dtext').boolean()
+		!this.openingpos = !this.form.openingpos.selection('dtext').boolean()
+	else
+		!this.generatejson = !this.form.generatejson.displaytext().boolean()
+		!this.filepath = !this.form.filepath.displaytext()
+
+		!this.textoffsetdis = !this.form.textoffsetdis.displaytext().real()
+		!this.civilCheight = !this.form.civilCheight.displaytext().real()
+		!this.roomCheight = !this.form.roomCheight.displaytext().real()
+		!this.doorCheight = !this.form.doorCheight.displaytext().real()
+		!this.elThickCheight = !this.form.elThickCheight.displaytext().real()
+		!this.openingCheight = !this.form.openingCheight.displaytext().real()
+		!this.memdimcheight = !this.form.memdimcheight.displaytext().real()
+		!this.civildimCheight = !this.form.civildimCheight.displaytext().real()
+		!this.lookdir = !this.form.lookdir.displaytext().direction()
+
+		!this.autocheight = !this.form.autocheight.displaytext().boolean()
+		!this.autocheightbili = !this.form.autocheightbili.displaytext().real()
+		handle any
+			!this.autocheightbili = 0
+		endhandle
+		!this.sepSmallDim = !this.form.sepSmallDim.displaytext().boolean()
+	endif
+endmethod
+
+define method .drawarch()
+	if !this.civilname.unset() then
+		return
+	endif
+	!this.form = !!markarchform
+	!this.setting()
+	!this.getdataofcivil()
+	if !this.type ne 'FLOOR' then
+		return
+	endif
+
+	!this.deleteDimAndMlabel()
+	--!this.markCivilSelf()
+	--!this.draworigin()
+	if !this.mbdstru.todim().not() then
+		$p ´ËÕËºÅÃ»ÓÐSITE(MBD)µÄ¶ÁÐ´È¨ÏÞ 1
+		return
+	endif
+
+	if !this.type eq 'FLOOR' then
+		!this.drawarchwalls()
+		!this.drawarchroom()
+	endif
+
+	if !this.markmem then
+		!this.getdataofmem()
+		!mems = !this.mems
+
+		if !this.mbdstru.todim().not() then
+			$p Çë¼ì²éMBD  SITEÊÇ·ñÒÑ¾­´æÔÚ 1
+			return
+		else
+			!owner = !this.mbdstru.dimgro
+			do !mem values !mems
+				!cheightbili = !this.dimOnearchMem(!mem)
+				--!this.dimonememxydis(!owner,!mem,!cheightbili)
+				!this.markonemem(!owner,!mem,!cheightbili)
+			enddo
+		endif
+	endif
+	if !this.generatejson then
+		!this.generatejsonattrvm()
+	endif
+endmethod
+
+define method .drawarchdoor()
+	if !this.civilname.unset() then
+		return
+	endif
+	!this.form = !!markarchform
+	!this.setting()
+	!this.getdataofcivil()
+
+	if !this.currentfloorname eq '' then
+		return
+	endif
+
+	--$(
+	!floorindex = !this.getcivilindex(!this.currentfloorname.split()[1])
+	if !this.form.civildatas[$!floorindex].mbdstru.todim().not() then
+		return
+	else
+		!dimgro = name
+		$(
+		!matchstring = !this.civilname
+		var !lindims coll all (lindim mlabel) with(match(desc,!matchstring) ne 0) for $!dimgro
+		do !lindim values !lindims
+			$!lindim
+			delete $!!ce.type		$*maybe drawed for another floor
+		enddo
+		$)
+	endif
+	--$)
+
+	!this.getdataofmem()
+	!mems = !this.mems
+
+	do !mem values !mems
+		!this.drawonearchdoor(!dimgro,!mem)
+	enddo
+endmethod
+
+define method .getdoortextori(!ydir is direction,!textpos is position) is array
+	!lookdir1 = !this.lookdir
+	!lookdir2 = !lookdir1.orthogonal(u)
+
+	if !ydir.angle(!lookdir1.opposite()) lt 70 then
+		if !ydir.angle(!lookdir2) gt 70 then
+			!ydir = !ydir.opposite()
+			!textpos = !textpos.offset(!ydir,!this.thick)
+		endif
+	elseif !ydir.angle(!lookdir1) gt 80 then
+		if !ydir.angle(!lookdir2) gt 90 then
+			!ydir = !ydir.opposite()
+			!textpos = !textpos.offset(!ydir,!this.thick)
+		endif
+	endif
+
+	!ori = y is $!ydir and z is u
+	!textpos = !textpos.offset(!ori.ydir(),!this.doorcheight * 1.5).offset(!ori.xdir(),!this.doorcheight * 2)
+
+	!ori = y is $!lookdir1 and z is u
+
+	!result = array()
+	!result[1] = !ori
+	!result[2] = !textpos
+	return !result
+endmethod
+
+define method .drawonearchdoor(!dimgro is string,!mem is civilmem)
+	do !x indices !mem.profiles
+		--!ydir = !mem.profiles[!x].orientation.zdir().opposite()	$*SX104-D01
+		!cenpos = !mem.cenpoints[!x]
+		if !this.profiles.set() then
+			!ydir = !this.profiles[!x].orientation.zdir()
+		else
+			!tempdir = !this.arcs[1].near(!cenpos)
+			if !x eq 1 then
+				!ydir = !tempdir.opposite()
+			else
+				!ydir = !tempdir
+			endif
+		endif
+		break
+	enddo
+
+	!pos = !cenpos
+	!temparr = !this.getdoortextori(!ydir,!pos)
+	!ori = !temparr[1]
+	--!pos = !pos.offset(!ori.ydir(),!this.openingcheight * 1.5).offset(!ori.xdir(),!this.openingcheight * 1)
+
+	!desc = 'node:' + !this.currentfloorname + ' ' + !this.civilname + ' ' + !mem.name
+	!malbel = object mlabel(!dimgro,!pos,!ori,!mem.markString,!this.doorcheight,false,'ÃÅ',!cenpos,!desc)
+endmethod
+
+
+define method .getonwallindices()
+	if !this.onwallindices.set() then
+		return
+	endif
+	if !this.profiles[1].position.up gt !this.profiles[2].position.up then
+		!profile = !this.profiles[1]
+		!theotherpf = !this.profiles[2]
+	else
+		!profile = !this.profiles[2]
+		!theotherpf = !this.profiles[1]
+	endif
+
+	!up = !profile.position.up
+	!up2 = !theotherpf.position.up
+
+	var !walls coll all (wall gwall stwall)  with (not(matchwild(name of site,'/MDS*'))) within volume $!this.civilname 5
+	!tolerance = 100
+	!onwallindices = array()
+	--!walldatas = array()
+	do !x indices !walls
+		!wall = !walls[!x]
+		!civilindex =  !this.form.getcivilindex(!wall)
+
+
+		if !civilindex.unset() then
+			!aaa = object markcivil(!walls[!x],true,!this.form)
+			handle any
+				!this.wrongs.append('Wall ' + !walls[!x] + ' Failed to get markcivil')
+				skip
+			endhandle
+			!this.form.civildatas.append(!aaa)
+			!civilindex = !this.form.civildatas.maxindex()
+		else
+			!aaa = !this.form.civildatas[!civilindex]
+		endif
+
+		--!aaa = object markcivil(!walls[!x],true,!this.form)
+		--!aaa.currentfloorname = !this.civilname
+		if !aaa.lines.set() then
+			if !aaa.lines[1].startposition.up lt !up + !tolerance and !aaa.lines[1].startposition.up gt !up2 - !tolerance then
+				!inside = false
+				do !line values !aaa.lines
+					if !!posinprofile(!line.startposition,!profile) or !!posinprofile(!line.endposition,!profile) then
+						!inside = true
+						break
+					endif
+				enddo
+				if !inside then
+					--!walldatas.append(!aaa)
+					!onwallindices.append(!civilindex)
+				endif
+			endif
+		else
+			if !aaa.arcs[1].position.up lt !up + !tolerance and !aaa.arcs[1].position.up gt !up2 - !tolerance then
+				!inside = false
+				do !arc values !aaa.arcs
+					if !!posinprofile(!arc.angleposition(!arc.startangle),!profile) or !!posinprofile(!arc.angleposition(!arc.endangle),!profile) then
+						!inside = true
+						break
+					endif
+				enddo
+				if !inside then
+
+					--!walldatas.append(!aaa)
+					!onwallindices.append(!civilindex)
+				endif
+			endif
+		endif
+	enddo
+
+	do !index values !onwallindices
+		if !this.form.civildatas[!index].currentfloorname.set() and !this.form.civildatas[!index].currentfloorname ne '' then
+			if !this.form.civildatas[!index].currentfloorname.match(!this.civilname) eq 0 then
+				!this.form.civildatas[!index].currentfloorname = !this.form.civildatas[!index].currentfloorname + ' ' + !this.civilname
+			endif
+		else
+			!this.form.civildatas[!index].currentfloorname = !this.civilname
+		endif
+	enddo
+
+	!this.onwallindices = !onwallindices
+endmethod
+
+define method .drawarchwalls()
+	!onwallindices = !this.onwallindices
+
+	do !index values !onwallindices
+		$(
+		if !this.form.civildatas[!index].currentfloorname.set() and !this.form.civildatas[!index].currentfloorname ne '' then
+			if !this.form.civildatas[!index].currentfloorname.match(!this.civilname) eq 0 then
+				!this.form.civildatas[!index].currentfloorname = !this.form.civildatas[!index].currentfloorname + ' ' + !this.civilname
+			endif
+		else
+			!this.form.civildatas[!index].currentfloorname = !this.civilname
+		endif
+		$)
+
+		!this.form.civildatas[!index].drawarchname(!this.mbdstru.dimgro)
+		!this.form.civildatas[!index].drawarchdoor()
+	enddo
+	--!this.getdoorandlines()
+endmethod
+
+define method .drawarchname(!dimgro is string)
+	!this.form = !!markarchform
+	!this.setting()
+	add $!this.civilname
+	--!markstring = !this.owner.part(-1,'-')
+	!markstring = !this.markname
+
+	!civilcheight = !this.civilcheight
+	--!elthickcheight = !this.elthickCheight
+
+	!textLen = !!mbdtextlen(!markstring) * !civilcheight
+	--!textLen = !!mbdtextlen(!markstring) * !civilcheight * 0.75
+	if !this.autocheight then
+		if !this.type ne 'FLOOR' and !this.thick lt !civilcheight then
+			!bili = !this.thick / !civilcheight
+			!civilcheight = !civilcheight * !bili
+			--!elthickcheight = !elthickCheight * !bili
+			!textLen = !textLen * !bili
+		endif
+
+
+
+		!needLen = !textLen
+
+
+		if !this.lines.set() and !this.lines[1].length() lt !needlen then
+			!bili = !this.lines[1].length() / !needlen
+			!civilcheight = !civilcheight * !bili
+			--!elthickcheight = !elthickCheight * !bili
+			!textLen = !textLen * !bili
+		elseif !this.arcs.set() then
+			!templen = !this.arcs[1].angleposition(!this.arcs[1].startangle).distance(!this.arcs[1].angleposition(!this.arcs[1].endangle))
+			if !templen lt !needlen then
+				!bili = !templen / !needlen
+				!civilcheight = !civilcheight * !bili
+				--!elthickcheight = !elthickCheight * !bili
+				!textLen = !textLen * !bili
+			endif
+		endif
+	endif
+
+	if !this.type.Match('WALL') ne 0 then
+		if !this.type eq 'GWALL' then
+			do !profile values !this.profiles
+				!angle = !profile.orientation.zdir().angle(d)
+				!angle = min(!angle,180 - !angle)
+				if !angle lt 20 then
+					!cenpoint = !!getCenPoint(!!getPointsOfProfile(!profile))
+					if undefined(!maxup) then
+						!topProfile = !profile
+						!maxup = !cenpoint.up
+						!topCenPoint = !cenpoint
+					elseif !cenpoint.up gt !maxup then
+						!topProfile = !profile
+						!topCenPoint = !cenpoint
+						!maxup = !cenpoint.up
+					endif
+				endif
+			enddo
+			!edges = !topProfile.edges()
+			do !edge values !edges
+				!oneLen = !edge.length()
+				if undefined(!maxlen) then
+					!maxlen = !onelen
+					handle any
+					endhandle
+					if !edge.objecttype() eq 'ARC' then
+						--$p arc $!this.civilname
+						!xdir = !edge.angletangent((!edge.startangle + !edge.endangle) / 2)
+					else
+						!xdir = !edge.direction()
+					endif
+				elseif !onelen gt !maxlen then
+					!maxlen = !onelen
+					!xdir = !edge.direction()
+				endif
+			enddo
+		elseif !this.type eq 'WALL' then
+			!temppos1 = !this.arcs[1].angleposition((!this.arcs[1].startangle + !this.arcs[1].endangle) / 2)
+			!temppos2 = !this.arcs[2].angleposition((!this.arcs[1].startangle + !this.arcs[1].endangle) / 2)
+			!topCenpoint = !temppos1.midpoint(!temppos2).offset(!this.zdir,!this.height)
+			!xdir = !this.arcs[1].angleposition(!this.arcs[1].startangle).direction(!this.arcs[1].angleposition(!this.arcs[1].endangle))
+		else	$*STWALL
+			!points1 = !!getpointsofprofile(!this.profiles[1])
+			!points2 = !!getpointsofprofile(!this.profiles[2])
+			!poss = array()
+			!poss.append(!points1[3])
+			!poss.append(!points1[4])
+			!poss.append(!points2[3])
+			!poss.append(!points2[4])
+			!topcenpoint = !!getcenpoint(!poss)
+			!xdir = !points1[3].direction(!points1[4])
+		endif
+		!ori = object orientation('X is $!xdir and z is u')
+		if !ori.ydir().angle(!this.lookdir) gt 91 then
+			!xdir = !xdir.opposite()
+			!ori = object orientation('X is $!xdir and z is u')
+		endif
+
+		!topcenpoint = !topcenpoint.offset(!ori.zdir(),!this.textOffsetDis).offset(!ori.ydir(), - !civilcheight / 3).offset(!ori.xdir(), - !textLen / 2)
+
+
+		$!dimgro
+		!mlabel = object mlabel()
+		!desc = 'node:' + !this.currentfloorname + ' ' + !this.civilname
+		!mlabel = object mlabel(!dimgro,!topcenpoint,!ori,!markString,!civilcheight,false,'Ãû³Æ','',!desc)
+	endif
+endmethod
+
+-----------------------draw main method
+define method .draw()
+	if !this.civilname.unset() then
+		return
+	endif
+	!this.setting()
+	!this.getdataofcivil()
+	!this.deleteDimAndMlabel()
+
+	!this.markCivilSelf()
+	!this.markwallEl()
+	!this.draworigin()
+	--!this.drawmlabel()
+
+	--!this.drawdim()
+	--RETURN
+	if !this.type eq 'FLOOR' then
+		!wallindices = !this.getwallsonfloor()
+		--return
+		!this.drawedges(!wallindices)
+		!this.drawroom()
+	endif
+
+	if !this.markmem then
+		!this.getdataofmem()
+		!mems = !this.mems
+
+		if !this.mbdstru.todim().not() then
+			$p Çë¼ì²éMBD  SITEÊÇ·ñÒÑ¾­´æÔÚ 2
+			return
+		else
+			!owner = name
+			do !mem values !mems
+				!cheightbili = !this.dimOneMem(!mem)
+				!this.dimonememxydis(!owner,!mem,!cheightbili)
+				!this.markonemem(!owner,!mem,!cheightbili)
+			enddo
+		endif
+	endif
+	if !this.generatejson then
+		!this.generatejsonattrvm()
+	endif
+endmethod
+define method .getdoors()
+	if !this.doors.set() then
+		return
+	endif
+	!this.getonwallindices()
+	do !index values !this.onwallindices
+		!wall = !this.form.civildatas[!index]
+		!wall.getdataofmem()
+		!mems = !wall.mems
+		do !mem values !mems
+			!civildoor = object civildoor(!mem)
+			!this.doors.append(!civildoor)
+		enddo
+	enddo
+	!this.setdoororder()
+endmethod
+
+define method .setdoororder()
+	!markstrings = array()
+	do !door values !this.doors
+		!markstrings.append(!door.name)
+	enddo
+	!indices = !markstrings.sortedindices()
+	!this.doors.reindex(!indices)
+	do !x indices !this.doors
+		!this.doors[!x].order = !x
+	enddo
+endmethod
+
+define method .getrooms()
+	!tolerance = 1000
+
+	if !this.rooms.set() then
+		return
+	endif
+	if !this.type ne 'FLOOR' then
+		return
+	endif
+	!volume = object volume(object dbref(!this.civilname))
+	!volume.to.up = !volume.to.up + !tolerance
+	--var !panes coll all pane with(type of owner eq 'SBFR') within volume $!this.civilname 5
+	var !panes coll all pane with(type of owner eq 'SBFR') within $!volume.from to $!volume.to
+	--var !panes coll all pane  within volume $!this.civilname 5
+	--q var !panes
+	!allrooms = array()
+	!allvertpoints = array()
+	!floorup = !this.profiles[1].position.up
+
+	--q var !panes
+	!frmws = array()
+	do !pane values !panes
+		!roomname = name of frmw of $!pane
+		--if !roomname.match('-ARCH-') eq 0 and !roomname.match('-RM') eq 0 then
+		--	skip
+		--endif
+		!frmws.append(!roomname)
+	enddo
+	!frmws.unique()
+	do !frmw values !frmws
+		!room = object floorroom(!frmw)
+		--q var !room
+		if !room.name.set() then
+			!roomup = !room.drawpoints[1].up
+			if abs(!roomup - !floorup) lt !tolerance then
+				!this.rooms.append(!room)
+			endif
+		endif
+	enddo
+
+	!this.setroomorder()
+	--!this.rooms = !allrooms
+	--!this.roomvertpoints = !allvertpoints
+endmethod
+
+define method .setroomorder()
+	!markstrings = array()
+	do !room values !this.rooms
+		!markstrings.append(!room.markname)
+	enddo
+	!indices = !markstrings.sortedindices()
+	!this.rooms.reindex(!indices)
+	do !x indices !this.rooms
+		!this.rooms[!x].order = !x
+	enddo
+endmethod
+
+define method .drawroom()
+	!this.getrooms()
+	!ydir = !this.lookdir
+	!xdir = !this.lookdir.orthogonal(u)
+
+	!ori = y is $!this.lookdir and z is u
+	!cheight = !this.roomcheight
+
+	do !x indices !this.profiles
+		if !this.profiles[!x].orientation.zdir().angle(u) lt 20 then
+			!points = !!getpointsofprofile(!this.profiles[!x])
+			!cenpos = !!getcenpoint(!points)
+			break
+		endif
+	enddo
+	!up = !this.profiles[1].position.up
+	----!textlen = !!mbdtextlen(!this.owner.part(-1,'-')) *	!this.civilcheight * 0.75
+	--!textlen = !!mbdtextlen(!this.markname) * !this.civilcheight * 0.75
+	!textlen = !!mbdtextlen(!this.markname) * !this.civilcheight
+	do !roomindex indices !this.rooms
+		!floorroom = !this.rooms[!roomindex]
+		!markstring = !floorroom.markname
+		do !drawpoint values !floorroom.drawpoints
+			$(
+			do !x indices !floorroom.roomvertpoints
+				if !floorroom.roomvertpoints[!x].cenpoint1.up lt !floorroom.roomvertpoints[!x].cenpoint2.up then
+					!cenpoint = !floorroom.roomvertpoints[!x].cenpoint1
+				else
+					!cenpoint = !floorroom.roomvertpoints[!x].cenpoint2
+				endif
+			$)
+
+			if !drawpoint.distance(!cenpos) lt !textlen then
+				!drawpoint = !drawpoint.offset(!xdir, - 1.3 * !textlen)
+			endif
+			!cenpoint = !drawpoint
+			!cenpoint.up = min(!up,!cenpoint.up)
+			!cenpoint = !cenpoint.offset(u,!this.textoffsetdis)
+
+			--!markstring = !this.rooms[!x]
+			--!textlen = !!mbdtextlen(!markstring) * !cheight * 0.75
+			!textlen = !!mbdtextlen(!markstring) * !cheight
+
+			!cenpoint = !cenpoint.offset(!xdir, - !textlen / 2).offset(!ydir, - !cheight / 2).offset(u,!this.textOffsetDis)
+			!this.drawOneMlabel(!markstring,!cenpoint,!ori,!cheight,false,'·¿¼äºÅ')
+		enddo
+	enddo
+endmethod
+
+define method .drawarchroom()
+	!this.getrooms()
+	!ydir = !this.lookdir
+	!xdir = !this.lookdir.orthogonal(u)
+
+	!ori = y is $!this.lookdir and z is u
+	!cheight = !this.roomcheight
+
+	do !x indices !this.profiles
+		if !this.profiles[!x].orientation.zdir().angle(u) lt 20 then
+			!points = !!getpointsofprofile(!this.profiles[!x])
+			!cenpos = !!getcenpoint(!points)
+			break
+		endif
+	enddo
+	!up = !this.profiles[1].position.up
+	----!textlen = !!mbdtextlen(!this.owner.part(-1,'-')) *	!this.civilcheight * 0.75
+	--!textlen = !!mbdtextlen(!this.markname) * !this.civilcheight * 0.75
+	!textlen = !!mbdtextlen(!this.markname) * !this.civilcheight
+	!up = !this.profiles[1].position.up
+	!down = !this.profiles[2].position.up
+	do !roomindex indices !this.rooms
+		!floorroom = !this.rooms[!roomindex]
+		!markstring = !floorroom.markname
+		do !drawpoint values !floorroom.drawpoints
+			if !drawpoint.distance(!cenpos) lt !textlen then
+				!drawpoint = !drawpoint.offset(!xdir, - 1.3 * !textlen)
+			endif
+			!cenpoint = !drawpoint
+			!cenpoint.up = !up
+			!cenpoint = !cenpoint.offset(u,!this.textoffsetdis)
+
+			--!textlen = !!mbdtextlen(!markstring) * !cheight * 0.75
+			!textlen = !!mbdtextlen(!markstring) * !cheight
+
+			!cenpoint = !cenpoint.offset(!xdir, - !textlen / 2).offset(!ydir, - !cheight / 2).offset(u,!this.textOffsetDis)
+			!this.drawOneMlabel(!markstring,!cenpoint,!ori,!cheight,false,'·¿¼äºÅ')
+			!this.drawarchel(!cenpoint,!ori,!down,!up)
+		enddo
+	enddo
+endmethod
+
+define method .drawarchel(!cenpoint is position, !ori is orientation, !down is real, !up is real)
+	!cheight = !this.elthickcheight
+	--!downtextlen = !!mbdtextlen(!down.value().string('d0')) * !cheight * 0.6
+	--!uptextlen = !!mbdtextlen(!up.value().string('d0')) * !cheight * 0.6
+	!downtextlen = !!mbdtextlen(!down.value().string('d0')) * !cheight
+	!uptextlen = !!mbdtextlen(!up.value().string('d0')) * !cheight
+
+	!textlen = max(!downtextlen,!uptextlen)
+
+	!pos = !cenpoint.offset(!ori.ydir().opposite(), !textlen / 2 + !cheight / 2)
+
+	!this.drawoneMlabel(!down.value().string('d0'),!pos.offset(!ori.ydir().opposite(),!cheight / 3),!ori,!cheight,false,'½¨Öþ±ê¸ß')
+
+	!circlepos = !pos.offset(!ori.xdir(),!textlen / 2)
+	!this.mbdstru.toaid()
+	!owner = name
+	!aidcircle1 = object aidcircle(!owner, !circlepos, !ori, !textlen / 2 + !cheight / 5,'½¨Öþ±ê¸ß','node:' + !this.civilname)
+	!textpos = !circlepos.offset(!ori.xdir(),!textlen / 2).offset(!ori.ydir().opposite(),!textlen / 2)
+	!aidtext = object aidtext(!owner,!textpos,!ori,'r',!cheight,'½¨Öþ±ê¸ß','node:' + !this.civilname)
+
+
+	--!uptextlen = !!mbdtextlen(!up.value().string('d0')) * !cheight * 0.6
+	!pos = !pos.offset(!ori.xdir(), !textlen + !cheight / 2)
+
+	!this.drawoneMlabel(!up.value().string('d0'),!pos.offset(!ori.ydir().opposite(),!cheight / 3),!ori,!cheight,false,'½¨Öþ±ê¸ß')
+
+	!circlepos = !pos.offset(!ori.xdir(),!textlen / 2)
+	!this.mbdstru.toaid()
+	!owner = name
+	!aidcircle1 = object aidcircle(!owner, !circlepos, !ori, !textlen / 2 + !cheight / 5,'½¨Öþ±ê¸ß','node:' + !this.civilname)
+
+	!textpos = !circlepos.offset(!ori.xdir(),!textlen / 2).offset(!ori.ydir().opposite(),!textlen / 2)
+	!aidtext = object aidtext(!owner,!textpos,!ori,'f',!cheight,'½¨Öþ±ê¸ß','node:' + !this.civilname)
+
+	return
+	!cheight = !this.elthickcheight
+	--!downtextlen = 6 * !cheight * 0.75
+	--!downtextlen = !!mbdtextlen(!down.value().string('d0')) * !cheight * 0.6
+	--!uptextlen = !!mbdtextlen(!up.value().string('d0')) * !cheight * 0.6
+	!downtextlen = !!mbdtextlen(!down.value().string('d0')) * !cheight
+	!uptextlen = !!mbdtextlen(!up.value().string('d0')) * !cheight
+
+	!textlen = max(!downtextlen,!uptextlen)
+
+	!pos = !cenpoint.offset(!ori.ydir().opposite(), !downtextlen / 2 + !cheight / 2)
+
+	!this.drawoneMlabel(!down.value().string('d0'),!pos.offset(!ori.ydir().opposite(),!cheight / 3),!ori,!cheight,false,'½¨Öþ±ê¸ß')
+
+	!circlepos = !pos.offset(!ori.xdir(),!downtextlen / 2)
+	!this.mbdstru.toaid()
+	!owner = name
+	!aidcircle1 = object aidcircle(!owner, !circlepos, !ori, !downtextlen / 2 + !cheight / 5,'½¨Öþ±ê¸ß','node:' + !this.civilname)
+	!textpos = !circlepos.offset(!ori.xdir(),!downtextlen / 2).offset(!ori.ydir().opposite(),!downtextlen / 2)
+	!aidtext = object aidtext(!owner,!textpos,!ori,'r',!cheight,'½¨Öþ±ê¸ß','node:' + !this.civilname)
+
+
+	--!uptextlen = !!mbdtextlen(!up.value().string('d0')) * !cheight * 0.6
+	!pos = !pos.offset(!ori.xdir(), !downtextlen + !cheight / 2)
+
+	!this.drawoneMlabel(!up.value().string('d0'),!pos.offset(!ori.ydir().opposite(),!cheight / 3),!ori,!cheight,false,'½¨Öþ±ê¸ß')
+
+	!circlepos = !pos.offset(!ori.xdir(),!uptextlen / 2)
+	!this.mbdstru.toaid()
+	!owner = name
+	!aidcircle1 = object aidcircle(!owner, !circlepos, !ori, !uptextlen / 2 + !cheight / 5,'½¨Öþ±ê¸ß','node:' + !this.civilname)
+
+	!textpos = !circlepos.offset(!ori.xdir(),!uptextlen / 2).offset(!ori.ydir().opposite(),!uptextlen / 2)
+	!aidtext = object aidtext(!owner,!textpos,!ori,'f',!cheight,'½¨Öþ±ê¸ß','node:' + !this.civilname)
+endmethod
+
+define method .getjsonarray() is array
+	if !this.form.name() eq 'MARKCIVILFORM' then
+		!result = !this.getjsondata(!this.form.civilAtts ,!this.form.civilAttShow,!this.form.memAtts ,!this.form.memAttShow,!this.form.roomAtts ,!this.form.roomAttShow )
+	else
+		!result = !this.getjsondata(!this.form.civilAtts ,!this.form.civilAttShow,!this.form.memAtts ,!this.form.memAttShow,!this.form.roomAtts ,!this.form.roomAttShow,!this.form.doorAtts ,!this.form.doorAttShow )
+	endif
+	return !result
+endmethod
+
+define method .generatejsonattrvm() is array
+	!filepaths = array()
+	!filepath = !this.filepath
+	!folder = object file(!filepath)
+	--q var !folder !this.filepath
+	if !folder.exists().not() then
+		$p ´æ´¢Â·¾¶²»¶Ô $!filepath
+		return !filepaths
+	endif
+	!filename = !!getmbdfilename(!this.civilName)
+	--!filename = !this.civilName.replace('=','_').replace('/','_').replace('\','_')
+	--q var !filename
+	--return
+	----$p get json
+
+	--return
+	$(
+	if !this.form.name() eq 'MARKCIVILFORM' then
+		!result = !this.getjsondata(!this.form.civilAtts ,!this.form.civilAttShow,!this.form.memAtts ,!this.form.memAttShow,!this.form.roomAtts ,!this.form.roomAttShow )
+	else
+		!result = !this.getjsondata(!this.form.civilAtts ,!this.form.civilAttShow,!this.form.memAtts ,!this.form.memAttShow,!this.form.roomAtts ,!this.form.roomAttShow,!this.form.doorAtts ,!this.form.doorAttShow )
+	endif
+	$)
+	!result = !this.getjsonarray()
+	--q var !result.size()
+	--RETURN
+	--$p store json
+	!this.form.instore(!result,!filename,!filepath)
+
+	!newitems = array()
+	!remitems = array()
+	!newitems.append(!this.civilName)
+	--$p rvm
+	!!getrvm(!newitems,!remitems,!filepath & !filename & '.rvm')
+	--$p att
+	!!getatt(!newitems,!remitems,!filepath & !filename & '.att')
+	!!gettxt(!newitems,!filepath & !filename & '.txt')
+
+
+	!filepaths.append(!filepath & !filename & '.json')
+	!filepaths.append(!filepath & !filename & '.rvm')
+	!filepaths.append(!filepath & !filename & '.att')
+	!filepaths.append(!filepath & !filename & '.txt')
+	return !filepaths
+endmethod
+
+define method .totplant()
+	!filepaths = !this.generatejsonattrvm()
+	if !this.form.name() eq 'MARKCIVILFORM' then
+		!up = object updatefiles(!filepaths,'MBD-CIVIL')
+	else
+		!up = object updatefiles(!filepaths,'MBD-ARCH')
+	endif
+endmethod
+
+define method .addConInfo()
+	add $!this.civilname
+	if !this.mbdstru.checktype('MLABEL','Civil').not() then
+		!this.markCivilSelf()
+	else
+		!this.mbdstru.addfunction('MLABEL','Civil')
+	endif
+endmethod
+
+define method .drawdim()
+	!this.mbdstru.deletefunction('LINDIM','')
+	--!this.deleteDim()
+	!this.Dim()					$*draw dimension for civil self
+
+	if !this.markmem then
+		!this.dimmem()
+	endif
+endmethod
+
+define method .dimmem()
+	!this.getdataofmem()
+	!mems = !this.mems
+	do !mem values !mems
+		!cheightbili = !this.dimOneMem(!mem)
+		!this.dimonememxydis(!mem,!cheightbili)
+	enddo
+endmethod
+
+define method .dimonememxydis(!dimgro is string,!mem is civilmem,!cheightbili is real)
+
+	--if !this.mbdstru.toAid().not() then
+	--	return
+	--endif
+
+	if !this.autocheight.not() then
+		!cheight = !this.memdimcheight
+	else
+		!cheight = !this.memdimcheight * max(!cheightbili,!this.autocheightbili)
+	endif
+
+
+	!mem.getxydis()
+
+
+	--if !mem.profiles.set() then
+	!civilData = !mem.civildata
+	if !civildata[1].objecttype() eq 'PROFILE' then
+		!profiles = !mem.profiles
+		do !x from 1 to 2
+			!xdir = !mem.xdir$!x
+			!ydir = !mem.ydir$!x
+			!ori = x is $!xdir and y is $!ydir
+			$(
+			!ori = !civildata[!x].orientation
+			!xdir = !ori.xdir()
+			!ydir = !ori.ydir()
+			$)
+
+			!cenpoint = !mem.cenpoints[!x]
+			handle any
+				skip
+			endhandle
+
+			if defined(!mem.profiles[!x]) then
+				!profile = !mem.profiles[!x]
+				!xline = !cenpoint.line(!cenpoint.offset(!xdir,-100000))
+				!yline = !cenpoint.line(!cenpoint.offset(!ydir,-100000))
+
+				!goodxinterpoint = object position()
+				!goodyinterpoint = object position()
+				!edges = !profile.edges()
+				do !edge values !edges
+					if !goodxinterpoint.unset() then
+						!xinterpoint = !xline.intersection(!edge)
+						handle any
+						elsehandle none
+							if !xline.onprojected(!xinterpoint) and !edge.onprojected(!xinterpoint) then
+								!goodxinterpoint = !xinterpoint
+							endif
+						endhandle
+					endif
+
+					if !goodyinterpoint.unset() then
+						!yinterpoint = !yline.intersection(!edge)
+						handle any
+						elsehandle none
+							if !yline.onprojected(!yinterpoint) and !edge.onprojected(!yinterpoint) then
+								!goodyinterpoint = !yinterpoint
+							endif
+						endhandle
+					endif
+				enddo
+			else
+				!goodxinterpoint = !cenpoint.offset(!xdir, - !mem.radiuss[!x])
+				!goodyinterpoint = !cenpoint.offset(!ydir, - !mem.radiuss[!x])
+			endif
+
+			if !goodxinterpoint.unset() or !goodyinterpoint.unset() then	$* cenpoint is not in profile
+
+
+			else
+				if !x eq 1 then
+					!xdisstring = !mem.axdis.string()
+					!ydisstring = !mem.aydis.string()
+				else
+					!xdisstring = !mem.bxdis.string()
+					!ydisstring = !mem.bydis.string()
+				endif
+
+				--!xlen = !!mbdtextlen(!xdisstring) * !cheight * 0.75
+				--!ylen = !!mbdtextlen(!ydisstring) * !cheight * 0.75
+
+				!xlen = !!mbdtextlen(!xdisstring) * !cheight
+				!ylen = !!mbdtextlen(!ydisstring) * !cheight
+
+				!xstartpos = !goodxinterpoint.offset(!xdir, - !xlen)
+				!ystartpos = !goodyinterpoint.offset(!ydir, - !ylen)
+
+				!desc = 'node:' + !this.civilname + ' ' + !mem.name
+
+				!mlabelpos = !xstartpos.offset(!ori.zdir(),!this.textoffsetdis)
+				--!mlabel = object mlabel(!this.mbdstru.dimgro,!mlabelpos,!ori,!xdisstring,!this.openingCheight,false,'³ß´ç±ê×¢',!cenpoint,!desc)
+				!mlabel = object mlabel(!dimgro,!mlabelpos,!ori,!xdisstring,!Cheight,false,'³ß´ç±ê×¢',!cenpoint,!desc)
+				!mlabelxdir = !ydir.opposite()
+				!mlabelori = x is $!mlabelxdir and y is $!xdir
+				!mlabelpos = !goodyinterpoint.offset(!ori.zdir(),!this.textoffsetdis)
+				--!mlabel = object mlabel(!this.mbdstru.dimgro,!mlabelpos,!mlabelori,!ydisstring,!this.openingCheight,false,'³ß´ç±ê×¢',!cenpoint,!desc)
+				!mlabel = object mlabel(!dimgro,!mlabelpos,!mlabelori,!ydisstring,!Cheight,false,'³ß´ç±ê×¢',!cenpoint,!desc)
+			endif
+			if !this.type eq 'FLOOR' then	$*floor only draw one side(normally upside)
+				break
+			endif
+		enddo
+	else
+		!profiles = !mem.profiles
+		do !x from 1 to 2
+			!xdir = !mem.xdir$!x
+			!ydir = !mem.ydir$!x
+			!ori = x is $!xdir and y is $!ydir
+
+
+			!cenpoint = !mem.cenpoints[!x]
+			handle any
+				skip
+			endhandle
+
+			if defined(!mem.profiles[!x]) then
+				!profile = !mem.profiles[!x]
+				!xline = !cenpoint.line(!cenpoint.offset(!xdir,-100000))
+				!yline = !cenpoint.line(!cenpoint.offset(!ydir,-100000))
+
+				!goodxinterpoint = object position()
+				!goodyinterpoint = object position()
+				!edges = !profile.edges()
+				do !edge values !edges
+					if !goodxinterpoint.unset() then
+						!xinterpoint = !xline.intersection(!edge)
+						handle any
+						elsehandle none
+							if !xline.onprojected(!xinterpoint) and !edge.onprojected(!xinterpoint) then
+								!goodxinterpoint = !xinterpoint
+							endif
+						endhandle
+					endif
+
+					if !goodyinterpoint.unset() then
+						!yinterpoint = !yline.intersection(!edge)
+						handle any
+						elsehandle none
+							if !yline.onprojected(!yinterpoint) and !edge.onprojected(!yinterpoint) then
+								!goodyinterpoint = !yinterpoint
+							endif
+						endhandle
+					endif
+				enddo
+			else
+				!goodxinterpoint = !cenpoint.offset(!xdir, - !mem.radiuss[!x])
+				!goodyinterpoint = !cenpoint.offset(!ydir, - !mem.radiuss[!x])
+			endif
+
+
+			if !x eq 1 then
+				!xdisstring = !mem.axdis.string() + '¡ã'
+				!ydisstring = !mem.aydis.string()
+			else
+				!xdisstring = !mem.bxdis.string() + '¡ã'
+				!ydisstring = !mem.bydis.string()
+			endif
+			--!xlen = !!mbdtextlen(!xdisstring) * !cheight * 0.75
+			--!ylen = !!mbdtextlen(!ydisstring) * !cheight * 0.75
+
+			!xlen = !!mbdtextlen(!xdisstring) * !cheight
+			!ylen = !!mbdtextlen(!ydisstring) * !cheight
+
+
+
+			!xstartpos = !goodxinterpoint.offset(!xdir, - !xlen)
+			--!ystartpos = !goodyinterpoint.offset(!ydir, - !ylen)
+
+			!desc = 'node:' + !this.civilname + ' ' + !mem.name
+
+			!tempdis = !goodxinterpoint.distance(!cenpoint)
+			!tempoffdis = !this.arcs[!x].radius - sqrt(!this.arcs[!x].radius.power(2) - power(!tempdis + !xlen * 1.1,2))
+			if !this.arcs[!x].radius lt !this.arcs[3 - !x].radius then
+				--if (!x eq 1 and !this.arcs[1].radius lt !this.arcs[2].radius) or (!x eq 2 and !this.arcs[1].radius gt !this.arcs[2].radius) then
+				--!tempoffdis = !this.arcs[!x].radius - sqrt(!this.arcs[!x].radius.power(2) - power(!!mbdtextlen(!xdisstring) * !cheight * 0.75,2))
+				!xstartpos = !xstartpos.offset(!ori.zdir(),!tempoffdis)
+			else
+				!cenpoint = !cenpoint.offset(!ori.zdir(),!tempoffdis)
+				!goodyinterpoint = !goodyinterpoint.offset(!ori.zdir(),!tempoffdis)
+			endif
+			if !xdisstring ne '¡ã' then
+				!mlabelpos = !xstartpos.offset(!ori.zdir(),!this.textoffsetdis)
+				!mlabel = object mlabel(!dimgro,!mlabelpos,!ori,!xdisstring,!Cheight,false,'³ß´ç±ê×¢',!cenpoint,!desc)
+			endif
+
+			if !ydisstring ne '' then
+				!mlabelxdir = !ydir.opposite()
+				!mlabelori = x is $!mlabelxdir and y is $!xdir
+				!mlabelpos = !goodyinterpoint.offset(!ori.zdir(),!this.textoffsetdis)
+				!mlabel = object mlabel(!dimgro,!mlabelpos,!mlabelori,!ydisstring,!Cheight,false,'³ß´ç±ê×¢',!cenpoint,!desc)
+			endif
+		enddo
+	endif
+endmethod
+
+
+define method .dimOnearchMem(!mem is civilMem) is real
+	!cheight = !this.memdimcheight
+	if !mem.profiles.set() then
+		!profiles = !mem.profiles
+		!desc = 'node:' + !this.civilname + ' ' + !mem.name
+
+		if !profiles.size() ge 2 then
+			if !profiles[1].position.up gt !profiles[2].position.up then
+				!x = 1
+			else
+				!x = 2
+
+			endif
+		else
+			!x = !profiles.maxindex()
+		endif
+		!profile = !profiles[!x]
+
+		!xdir = !mem.xdir$!x
+		!ydir = !mem.ydir$!x
+		!ori = x is $!xdir and y is $!ydir
+
+		!edges = !profile.edges()
+
+		do !line values !edges
+			!cheight = !this.drawOpeningDimLine(!line,!ori,!profile,!cheight,!desc)
+		enddo
+
+	endif
+
+	return !cheight / !this.memdimCheight
+endmethod
+
+define method .dimOneMem(!mem is civilMem) is real
+	!cheight = !this.memdimcheight
+	!tolerance = 0.1
+	if !mem.profiles.set() then
+		!profiles = !mem.profiles
+		!civilData = !mem.civildata
+		!cenpoints = !mem.cenpoints
+
+		--!desc = 'node:' + !this.civilname
+		--!desc = 'node:' + !mem.name
+		!desc = 'node:' + !this.civilname + ' ' + !mem.name
+
+		do !x indices !profiles
+			!profile = !profiles[!x]
+
+			$(
+			if !civildata[!x].objecttype() eq 'PROFILE' then
+				--!ori = !civildata[!x].orientation
+				--!xdir = !ori.xdir()
+				--!ydir = !ori.ydir()
+				!xdir = !mem.xdir
+				!ydir = !mem.ydir
+				!ori = x is $!xdir and y is $!ydir
+			else
+				!zdir = !civildata[!x].position.direction(!civildata[!x].angleposition(!civildata[!x].near(!cenpoints[!x])))
+				!ydir = u
+				!xdir = !ydir.orthogonal(!zdir)
+				if !x eq 2 then
+					!xdir = !xdir.opposite()
+					!zdir = !xdir.orthogonal(!ydir)
+				endif
+				!ori = object orientation('x is $!xdir and y is $!ydir')
+			endif
+			$)
+			!xdir = !mem.xdir$!x
+			!ydir = !mem.ydir$!x
+			!ori = x is $!xdir and y is $!ydir
+
+			!edges = !profile.edges()
+
+
+			if !edges.size() eq 4 and abs(!edges[1].length() - !edges[3].length()) lt !tolerance and abs(!edges[2].length() - !edges[4].length()) lt !tolerance then
+				do !line values !edges
+					!linedir = !line.direction()
+					!tempanglex = !linedir.angle(!xdir)
+					!tempanglex = min(!tempanglex,180 - !tempanglex)
+					!tempangley = !linedir.angle(!ydir)
+					!tempangley = min(!tempangley,180 - !tempangley)
+
+					if !tempanglex eq !tempangley then
+						if undefined(!minydis) then
+							!ydis = !!suidirdis(!cenpoints[!x],!ydir,!line.startposition.midpoint(!line.endposition))
+							!minydis = !ydis
+							!yline = !line
+						else
+							!tempangle = !linedir.angle(!yline.direction())
+							if !tempangle lt 1 or !tempangle gt 179 then
+								if !ydis gt !minydis then
+									!minydis = !ydis
+									!yline = !line
+								endif
+							else
+								!xdis = !!suidirdis(!cenpoints[!x],!xdir,!line.startposition.midpoint(!line.endposition))
+								if undefined(!minxdis) then
+									!minxdis = !xdis
+									!xline = !line
+								elseif !xdis gt !minxdis then
+									!minxdis = !xdis
+									!xline = !line
+								endif
+							endif
+						endif
+					elseif !tempanglex lt !tempangley then
+						!ydis = !!suidirdis(!cenpoints[!x],!ydir,!line.startposition.midpoint(!line.endposition))
+						if undefined(!minydis) then
+							!minydis = !ydis
+							!yline = !line
+						elseif !ydis gt !minydis then
+							--elseif !ydis lt !minydis then
+							!minydis = !ydis
+							!yline = !line
+						endif
+					else
+						!xdis = !!suidirdis(!cenpoints[!x],!xdir,!line.startposition.midpoint(!line.endposition))
+						if undefined(!minxdis) then
+							!minxdis = !xdis
+							!xline = !line
+						elseif !xdis gt !minxdis then
+							--elseif !xdis lt !minxdis then
+							!minxdis = !xdis
+							!xline = !line
+						endif
+					endif
+				enddo
+
+				if define(!xline) then
+
+					!cheight = !this.drawOpeningDimLine(!xline,!ori,!profile,!cheight,!desc)
+					!xline.delete()
+					!minxdis.delete()
+				endif
+				if define(!yline) then
+
+					!cheight = !this.drawOpeningDimLine(!yline,!ori,!profile,!cheight,!desc)
+					!yline.delete()
+					!minydis.delete()
+				endif
+			else
+				do !line values !edges
+					!cheight = !this.drawOpeningDimLine(!line,!ori,!profile,!cheight,!desc)
+				enddo
+			endif
+		enddo
+	endif
+
+	return !cheight / !this.memdimCheight
+endmethod
+
+define method .drawOpeningDimLine(!line is line, !ori is orientation, !profile is profile, !charheight is real, !desc is string) is real
+	if !this.mbdstru.todim().not() then
+		--if !this.toDimGro().not() then
+		return false
+	endif
+
+	!poss = array()
+	!poss.append(!line.startposition)
+	!poss.append(!line.endposition)
+
+	!linedir = !line.direction()
+	!midpoint = !line.startposition.midpoint(!line.endposition)
+	!movedir = !ori.zdir().orthogonal(!linedir)
+	!temppos = !midpoint.offset(!movedir,1)
+	if !!posinprofile(!temppos,!profile) then
+		--if !profile.iswithout(!temppos).not() then
+		!movedir = !movedir.opposite()
+	endif
+
+
+	!ydir = !movedir
+	!oppo = false
+	!anglex = !ydir.angle(!ori.xdir())
+	!angley = !ydir.angle(!ori.ydir())
+	if !anglex gt 90 or !angley gt 90 then
+		!anglex1 = min(!anglex,180 - !anglex)
+		!angley1 = min(!angley,180 - !angley)
+		if !anglex1 lt !angley1 then
+			if !anglex gt 90 then
+				!oppo = true
+			endif
+		else
+			if !angley gt 90 then
+				!oppo = true
+			endif
+		endif
+	endif
+
+	if !oppo then
+		!ydir = !ydir.opposite()
+	endif
+	!dimzdir = !ori.zdir()
+	!dimori = object orientation('y is $!ydir and z is $!dimzdir')
+	!xdir = !dimori.xdir()
+	if !xdir.angle(!linedir) gt 90 then
+		!poss.invert()
+	endif
+	$(
+	if !oppo then
+		!dimpos = !poss[1].offset(!ydir, - !charheight * 1.5)
+	else
+		!dimpos = !poss[1].offset(!ydir, !charheight * 0.5)
+	endif
+	$)
+	!dimpos = !poss[1]
+	!dimpos = !dimpos.offset(!dimzdir,!this.textoffsetdis)
+
+	if !this.arcs.set() then
+		if !this.arcs[1].angleposition(!this.arcs[1].near(!poss[1])).distance(!poss[1]) gt !this.arcs[2].angleposition(!this.arcs[2].near(!poss[1])).distance(!poss[1]) then
+			if !this.arcs[1].radius lt !this.arcs[2].radius then
+				!tempoffdis = !this.arcs[1].radius - sqrt(!this.arcs[1].radius.power(2) - !line.length().power(2) / 4)
+				!dimpos = !dimpos.offset(!dimzdir,!tempoffdis)
+			endif
+		else
+			if !this.arcs[1].radius gt !this.arcs[2].radius then
+				!tempoffdis = !this.arcs[2].radius - sqrt(!this.arcs[2].radius.power(2) - !line.length().power(2) / 4)
+				!dimpos = !dimpos.offset(!dimzdir,!tempoffdis)
+			endif
+		endif
+	endif
+
+
+	--$(
+	!owner = name
+	--!desc = 'node:' + !this.civilname
+
+	!temparr = array()
+	!temparr.append(!this.autocheight)
+	!temparr.append(!this.autocheightbili)
+	!temparr.append(!this.sepSmallDim)
+
+	!lindim = object lindim(!owner,!dimpos,!dimori,!poss,!charheight,'¿×¶´³ß´ç',!desc,!temparr)
+	return !lindim.cheight
+	--$)
+
+	$(
+	new lindim
+	handle any
+		return false
+	endhandle
+	desc 'Opening Dimension'
+
+	pos $!dimpos
+	ori $!dimori
+	cheight $!charheight
+
+	do !pos values !Poss
+		new dimpos
+		pos $!pos
+	enddo
+	$)
+endmethod
+
+define method .dim() is boolean				$*draw dimension for civil self
+	if !this.type ne 'FLOOR' then
+		$(
+		--draw on floor and the size of itself will be shown when show dimension of mems
+		if !this.type ne 'WALL' then
+			if !this.vertdim then
+				!startIndex = 1
+			else
+				!startIndex = 2
+			endif
+			do !x from !startIndex to 2
+				if !x eq 1 then
+					!poss[1] = !this.lines[1].startposition
+					!poss[2] = !this.lines[1].endposition
+					!xdir = !this.lines[1].direction()
+					!zdir = !xdir.orthogonal(u)
+				else
+					!poss[1] = !this.lines[1].endposition
+					!poss[2] = !this.lines[1].endposition.offset(!this.zdir,!this.height)
+					!xdir = !this.zdir
+					!ydir = !this.lines[1].direction().opposite()
+					!zdir = !xdir.orthogonal(!ydir)
+				endif
+
+				!ori = object orientation('x is $!xdir and z is $!zdir')
+				!dimpos = !poss[1].offset(!ori.ydir(), - !this.memdimcheight * 2)
+				!function = 'Civil Dim'
+
+				if !this.createOneDim(!poss,!dimpos,!ori,!function).not() then
+					return false
+				endif
+			enddo
+		else
+			!poss[1] = !this.arcs[1].angleposition(!this.arcs[1].endangle)
+			!poss[2] = !poss[1].offset(!this.zdir,!this.height)
+			!xdir = !this.zdir
+			!zdir = !this.arcs[1].angledirection(!this.arcs[1].endangle)
+
+			!ori = object orientation('x is $!xdir and z is $!zdir')
+			!dimpos = !poss[1].offset(!ori.ydir(), - !this.memdimcheight * 2)
+			!function = 'Civil Dim'
+
+
+			if !this.createOneDim(!poss,!dimpos,!ori,!function).not() then
+				return false
+			endif
+		endif
+		$)
+
+
+
+		$(
+		--draw on floor
+
+		var !walls coll all (wall gwall stwall) with(name ne '$!this.civilname') within volume $!this.civilname 10
+
+
+		!this.otherlineorarcs = array()
+		do !wall values !walls
+			--add $!wall
+			!aaa = object markcivil(!wall,true)
+			if !aaa.lines.set() then
+				!this.otherlineorarcs.appendarray(!aaa.lines)
+			else
+				!this.otherlineorarcs.appendarray(!aaa.arcs)
+			endif
+			--!lineorarcs = !!getWallLineOrArc(!wall)
+			--!this.otherlineorarcs.appendarray(!lineorarcs)
+		enddo
+
+		return !this.diminter()
+		$)
+	else
+		!this.getwallsonfloor()
+	endif
+	return true
+endmethod
+
+define method .getwallsonfloor() is array
+	$(
+	if !this.profiles[1].position.up gt !this.profiles[2].position.up then
+		!profile = !this.profiles[1]
+	else
+		!profile = !this.profiles[2]
+	endif
+
+	!up = !profile.position.up
+	var !walls coll all (wall gwall stwall) within volume $!this.civilname 5
+	!otherlineorarcs = array()
+	!onwalls = array()
+	do !x indices !walls
+		!wall = !walls[!x]
+		!aaa = object markcivil(!walls[!x],true)
+		if !aaa.lines.set() then
+			if abs(!aaa.lines[1].startposition.up - !up) lt 5 then
+				!inside = false
+				do !line values !aaa.lines
+					if !!posinprofile(!line.startposition,!profile) or !!posinprofile(!line.endposition,!profile) then
+						!inside = true
+						break
+					endif
+				enddo
+				if !inside then
+					!otherlineorarcs.appendarray(!aaa.lines)
+					!onwalls.append(!aaa)
+				endif
+			endif
+		else
+			if abs(!aaa.arcs[1].position.up - !up) lt 5 then
+				!inside = false
+				do !arc values !aaa.arcs
+					if !!posinprofile(!arc.angleposition(!arc.startangle),!profile) or !!posinprofile(!arc.angleposition(!arc.endangle),!profile) then
+						!inside = true
+						break
+					endif
+				enddo
+				if !inside then
+					!otherlineorarcs.appendarray(!aaa.arcs)
+					!onwalls.append(!aaa)
+				endif
+			endif
+		endif
+	enddo
+
+	!dealwallseperatlly = true
+	if !dealwallseperatlly then
+		----------------------------
+		----------------------------Step 1:
+		!volumes = array()
+		do !walldata values !onwalls
+			!volume = object volume(object dbref(!walldata.civilname))
+			!volumes.append(!volume)
+		enddo
+
+		!allinterpoints = array()
+		!allpointsymbles = array()
+		!allendpoints = array()
+
+		!size = !onwalls.size()
+		do !x from 1 to !onwalls.size()
+			!volume1 = !volumes[!x]
+			!from1 = !volume1.from
+			!to1 = !volume1.to
+
+			if !onwalls[!x].lines.set() then
+				!twoedges1 = !onwalls[!x].lines
+			else
+				!twoedges1 = !onwalls[!x].arcs
+			endif
+
+			do !y from !x + 1 to !size
+				!volume2 = !volumes[!y]
+				!from2 = !volume2.from
+				!to2 = !volume2.to
+
+				if !from1.east gt !to2.east or !from1.north gt !to2.north or !from2.east gt !to1.east or !from2.north gt !to1.north then
+					skip
+				else
+					if !onwalls[!y].lines.set() then
+						!twoedges2 = !onwalls[!y].lines
+					else
+						!twoedges2 = !onwalls[!y].arcs
+					endif
+
+					!twowallinterpoints = array()
+					do !edge1 values !twoedges1
+						do !edge2 values !twoedges2
+							!tempposs = !this.getinterpoints(!edge1,!edge2)
+							!twowallinterpoints.appendarray(!tempposs)
+						enddo
+					enddo
+
+					if !twowallinterpoints.set() then
+
+						----------------------------
+						----------------------------Step x:add inter points of other walls
+						if undefined(!allinterpoints[!x]) then
+							!allinterpoints[!x] = array()
+							!allpointsymbles[!x] = array()
+						endif
+						if undefined(!allinterpoints[!y]) then
+							!allinterpoints[!y] = array()
+							!allpointsymbles[!y] = array()
+						endif
+						!allinterpoints[!x].appendarray(!twowallinterpoints)
+						!allinterpoints[!y].appendarray(!twowallinterpoints)
+						do !times indices !twowallinterpoints
+							!allpointsymbles[!x].append(!onwalls[!y].civilname)
+							!allpointsymbles[!y].append(!onwalls[!x].civilname)
+						enddo
+
+
+
+						----------------------------
+						----------------------------Step x:add end points of other walls
+						if undefined(!allendpoints[!x]) then
+							!allendpoints[!x] = array()
+						endif
+						if undefined(!allendpoints[!y]) then
+							!allendpoints[!y] = array()
+						endif
+						do !edge2 values !twoedges2
+							if !edge2.objecttype() eq 'LINE' then
+								!allendpoints[!x].append(!edge2.startposition)
+								!allendpoints[!x].append(!edge2.endposition)
+							else
+								!allendpoints[!x].append(!edge2.angleposition(!edge2.startangle))
+								!allendpoints[!x].append(!edge2.angleposition(!edge2.endangle))
+							endif
+						enddo
+						do !edge1 values !twoedges1
+							if !edge1.objecttype() eq 'LINE' then
+								!allendpoints[!y].append(!edge1.startposition)
+								!allendpoints[!y].append(!edge1.endposition)
+							else
+								!allendpoints[!y].append(!edge1.angleposition(!edge1.startangle))
+								!allendpoints[!y].append(!edge1.angleposition(!edge1.endangle))
+							endif
+						enddo
+					endif
+				endif
+			enddo
+		enddo
+	else
+
+		----------------------------
+		----------------------------Step 2:
+
+		!this.otherlineorarcs = !otherlineorarcs
+		!interpoints = !this.interforfloor()
+		!endpoints = !this.getendpoints()
+	endif
+
+	do !x indices !onwalls
+		!walldata = !onwalls[!x]
+		if !dealwallseperatlly then
+			!interpoints = !allinterpoints[!x]
+			!endpoints = !allendpoints[!x]
+		endif
+
+		if !walldata.lines.set() then
+			!twoedges = !walldata.lines
+		else
+			!twoedges = !walldata.arcs
+		endif
+		!edgetype = !twoedges[1].objecttype()
+
+		!alledgepoints = array()
+		!alledgepointsymbles = array()
+		do !edge values !twoedges
+			!edgepoints = array()
+			!edgepointsymbles = array()
+
+			----------------------------
+			----------------------------Step 1:add interpoint into edge points
+			do !point values !interpoints
+				if !edge.on(!point) and !edge.onprojected(!point) then
+					!edgepoints.append(!point)
+					!edgepointsymbles.append('inter')
+				endif
+			enddo
+
+
+			----------------------------
+			----------------------------Step 2:add end point into edge points
+			if !edgetype eq 'LINE' then
+				!edgepoints = !this.SortLinePoss(!edgepoints,!edge)
+				!startpoint = !edge.startposition
+				!endpoint = !edge.endposition
+
+				!dir1 = !edge.direction().opposite()
+				!dir2 = !edge.direction()
+			else
+				!edgepoints = !this.SortarcPoss(!edgepoints,!edge)
+				!startpoint = !edge.angleposition(!edge.startangle)
+				!endpoint = !edge.angleposition(!edge.endangle)
+
+				!dir1 = !edge.angletangent(!edge.startangle).opposite()
+				!dir2 = !edge.angletangent(!edge.endangle)
+			endif
+
+			if !edgepoints.set() then
+				if !edgepoints[1].distance(!startpoint) lt 1 then
+					!edgepointsymbles[1] = 'end'
+					golabel /startpointok
+				endif
+			endif
+			!edgepoints.insert(1,!startpoint)
+			!edgepointsymbles.insert(1,'end')
+			label /startpointok
+
+			if !edgepoints.set() then
+				if !edgepoints.last().distance(!endpoint) lt 1 then
+					!edgepointsymbles[!edgepointsymbles.size()] = 'end'
+					golabel /endpointok
+				endif
+			endif
+			!edgepoints.append(!endpoint)
+			!edgepointsymbles.append('end')
+			label /endpointok
+
+
+			----------------------------
+			----------------------------Step 3:add end point of other wall to edge points
+			do !point values !endpoints
+				if !point.distance(!startpoint) lt 2000 then
+					!tempdir = !startpoint.direction(!point)
+					handle any
+					elsehandle none
+						if !tempdir.angle(!dir1) lt 10 then
+							!edgepoints.insert(1,!point)
+							!edgepointsymbles.insert(1,'end')
+						endif
+					endhandle
+				endif
+
+				if !point.distance(!endpoint) lt 2000 then
+					!tempdir = !endpoint.direction(!point)
+					handle any
+					elsehandle none
+						if !tempdir.angle(!dir2) lt 10 then
+							!edgepoints.append(!point)
+							!edgepointsymbles.append('end')
+						endif
+					endhandle
+				endif
+			enddo
+
+			!alledgepoints.append(!edgepoints)
+			!alledgepointsymbles.append(!edgepointsymbles)
+		enddo
+		!this.drawinterlinearcs(!walldata,!twoedges,!alledgepoints,!alledgepointsymbles)
+	enddo
+
+	$)
+
+
+	$(
+	if !this.profiles[1].position.up gt !this.profiles[2].position.up then
+		!profile = !this.profiles[1]
+		!theotherpf = !this.profiles[2]
+	else
+		!profile = !this.profiles[2]
+		!theotherpf = !this.profiles[1]
+	endif
+
+	!up = !profile.position.up
+	!up2 = !theotherpf.position.up
+
+	var !walls coll all (wall gwall stwall) within volume $!this.civilname 5
+	--!onwalls = array()
+	--return
+	!tolerance = 100
+	!onwallindices = array()
+	do !x indices !walls
+		!wall = !walls[!x]
+		!civilindex =  !this.form.getcivilindex(!wall)
+		--$p $!civilindex $!wall
+
+		if !civilindex.unset() then
+			!aaa = object markcivil(!walls[!x],true,!this.form)
+			handle any
+				!this.wrongs.append('Wall ' + !walls[!x] + ' Failed to get markcivil')
+				skip
+			endhandle
+			!this.form.civildatas.append(!aaa)
+			!civilindex = !this.form.civildatas.maxindex()
+		else
+			!aaa = !this.form.civildatas[!civilindex]
+		endif
+
+		if !aaa.lines.set() then
+			if !aaa.lines[1].startposition.up lt !up + !tolerance and !aaa.lines[1].startposition.up gt !up2 - !tolerance then
+				!inside = false
+				do !line values !aaa.lines
+					if !!posinprofile(!line.startposition,!profile) or !!posinprofile(!line.endposition,!profile) then
+						!inside = true
+						break
+					endif
+				enddo
+				if !inside then
+					--!onwalls.append(!aaa)
+					!onwallindices.append(!civilindex)
+				endif
+			endif
+		else
+			if !aaa.arcs[1].position.up lt !up + !tolerance and !aaa.arcs[1].position.up gt !up2 - !tolerance then
+				--if abs(!aaa.arcs[1].position.up - !up) lt !tolerance then
+				!inside = false
+				do !arc values !aaa.arcs
+					if !!posinprofile(!arc.angleposition(!arc.startangle),!profile) or !!posinprofile(!arc.angleposition(!arc.endangle),!profile) then
+						!inside = true
+						break
+					endif
+				enddo
+				if !inside then
+					--!onwalls.append(!aaa)
+					!onwallindices.append(!civilindex)
+				endif
+			endif
+		endif
+	enddo
+	$)
+
+	--$p got onwallindices
+	--!wallsize = !onwallindices.size()
+	--$p size is $!wallsize
+	--return
+
+	--RETURN
+	--!num = 0
+	!this.getonwallindices()
+	!onwallindices = !this.onwallindices
+	do !index values !onwallindices
+		--!num = !num + 1
+		--$p $!index
+		$(
+		if !this.form.civildatas[!index].currentfloorname.set() and !this.form.civildatas[!index].currentfloorname ne '' then
+			if !this.form.civildatas[!index].currentfloorname.match(!this.civilname) eq 0 then
+				!this.form.civildatas[!index].currentfloorname = !this.form.civildatas[!index].currentfloorname + ' ' + !this.civilname
+			endif
+		else
+			!this.form.civildatas[!index].currentfloorname = !this.civilname
+		endif
+		$)
+
+		--return
+		--$p aaaa
+		!this.form.civildatas[!index].addotherwalls(!onwallindices)
+		--$p bbbb
+		!this.form.civildatas[!index].drawotherwalls()
+		--$p $!num finished
+		--if !num eq 20 then
+		--	break
+		--endif
+	enddo
+
+	return !onwallindices
+	----------------------------
+	----------------------------Step 1:
+	!volumes = array()
+	do !civilindex values !onwallindices
+		!wallname = !this.form.civildatas[!civilindex]
+		!volume = object volume(object dbref(!civilname))
+		--do !walldata values !onwalls
+		--!volume = object volume(object dbref(!walldata.civilname))
+		!volumes.append(!volume)
+	enddo
+
+	!allinterpoints = array()
+	!allpointsymbles = array()
+	!allendpoints = array()
+
+	--do !x indices !onwalls
+	do !x indices !onwallindices
+		!allinterpoints[!x] = array()
+		!allinterpoints[!x][1] = array()
+		!allinterpoints[!x][2] = array()
+
+		!allpointsymbles[!x] = array()
+		!allpointsymbles[!x][1] = array()
+		!allpointsymbles[!x][2] = array()
+
+		!allendpoints[!x] = array()
+	enddo
+
+	!size = !onwallindices.size()
+	--!size = !onwalls.size()
+	do !x from 1 to !size - 1
+		!volume1 = !volumes[!x]
+		!from1 = !volume1.from
+		!to1 = !volume1.to
+
+		if !this.form.civildatas[!onwallindices[!x]].lines.set() then
+			!twoedges1 = !this.form.civildatas[!onwallindices[!x]].lines
+		else
+			!twoedges1 = !this.form.civildatas[!onwallindices[!x]].arcs
+		endif
+		--if !onwalls[!x].lines.set() then
+		--!twoedges1 = !onwalls[!x].lines
+		--else
+		--	!twoedges1 = !onwalls[!x].arcs
+		--endif
+
+		do !y from !x + 1 to !size
+			!volume2 = !volumes[!y]
+			!from2 = !volume2.from
+			!to2 = !volume2.to
+
+			if !from1.east gt !to2.east or !from1.north gt !to2.north or !from2.east gt !to1.east or !from2.north gt !to1.north then
+				skip
+			endif
+
+			--if !onwalls[!y].lines.set() then
+			--	!twoedges2 = !onwalls[!y].lines
+			--else
+			--	!twoedges2 = !onwalls[!y].arcs
+			--endif
+
+			if !this.form.civildatas[!onwallindices[!y]].lines.set() then
+				!twoedges2 = !this.form.civildatas[!onwallindices[!y]].lines
+			else
+				!twoedges2 = !this.form.civildatas[!onwallindices[!y]].arcs
+			endif
+
+			!clash = false
+			do !edgex1 indices !twoedges1
+				do !edgex2 indices !twoedges2
+					!tempposs = !this.getinterpoints(!twoedges1[!edgex1],!twoedges2[!edgex2])
+					if !tempposs.set() then
+						!interpoint = !tempposs[1]	$*only one point
+						!allinterpoints[!x][!edgex1].append(!interpoint)
+						!allpointsymbles[!x][!edgex1].append(!onwalls[!y].civilname)
+						!allinterpoints[!y][!edgex2].append(!interpoint)
+						!allpointsymbles[!y][!edgex2].append(!onwalls[!x].civilname)
+						!clash = true
+					endif
+				enddo
+			enddo
+
+			if !clash then
+				----------------------------
+				----------------------------Step 1:add end points of other walls
+				do !edge2 values !twoedges2
+					if !edge2.objecttype() eq 'LINE' then
+						!allendpoints[!x].append(!edge2.startposition)
+						!allendpoints[!x].append(!edge2.endposition)
+					else
+						!allendpoints[!x].append(!edge2.angleposition(!edge2.startangle))
+						!allendpoints[!x].append(!edge2.angleposition(!edge2.endangle))
+					endif
+				enddo
+				do !edge1 values !twoedges1
+					if !edge1.objecttype() eq 'LINE' then
+						!allendpoints[!y].append(!edge1.startposition)
+						!allendpoints[!y].append(!edge1.endposition)
+					else
+						!allendpoints[!y].append(!edge1.angleposition(!edge1.startangle))
+						!allendpoints[!y].append(!edge1.angleposition(!edge1.endangle))
+					endif
+				enddo
+			endif
+		enddo
+	enddo
+
+
+	do !x indices !onwalls
+		!walldata = !onwalls[!x]
+		!endpoints = !allendpoints[!x]
+
+
+		if !walldata.lines.set() then
+			!twoedges = !walldata.lines
+		else
+			!twoedges = !walldata.arcs
+		endif
+		!edgetype = !twoedges[1].objecttype()
+
+		!alledgepoints = array()
+		!alledgepointsymbles = array()
+		!edgex = 0
+		do !edge values !twoedges
+			!edgex = !edgex + 1
+			!edgepoints = !allinterpoints[!x][!edgex]
+			!edgepointsymbles = !allpointsymbles[!x][!edgex]
+
+			----------------------------
+			----------------------------Step 1:sort interpoints
+			if !edgetype eq 'LINE' then
+				!tempdiss = array()
+				!dir = !edge.direction()
+				do !temppos values !edgepoints
+					!tempdiss.append(!!suidirdis(!edge.startposition,!dir,!temppos))
+				enddo
+				!indices = !tempdiss.sortedindices()
+				!edgepoints.reindex(!indices)
+				!edgepointsymbles.reindex(!indices)
+
+
+				!startpoint = !edge.startposition
+				!endpoint = !edge.endposition
+
+				!dir1 = !edge.direction().opposite()
+				!dir2 = !edge.direction()
+			else
+				!angles = array()
+				do !temppos values !edgepoints
+					!angles.append(!edge.near(!temppos))
+				enddo
+				!indices = !angles.sortedindices()
+				!edgepoints.reindex(!indices)
+				!edgepointsymbles.reindex(!indices)
+
+				!startpoint = !edge.angleposition(!edge.startangle)
+				!endpoint = !edge.angleposition(!edge.endangle)
+
+				!dir1 = !edge.angletangent(!edge.startangle).opposite()
+				!dir2 = !edge.angletangent(!edge.endangle)
+			endif
+
+
+			----------------------------
+			----------------------------Step 2:add end point into edge points
+			if !edgepoints.set() then
+				if !edgepoints[1].distance(!startpoint) lt 1 then
+					!edgepointsymbles[1] = 'end'
+					golabel /startpointok
+				endif
+			endif
+			!edgepoints.insert(1,!startpoint)
+			!edgepointsymbles.insert(1,'end')
+			label /startpointok
+
+			if !edgepoints.set() then
+				if !edgepoints.last().distance(!endpoint) lt 1 then
+					!edgepointsymbles[!edgepointsymbles.size()] = 'end'
+					golabel /endpointok
+				endif
+			endif
+			!edgepoints.append(!endpoint)
+			!edgepointsymbles.append('end')
+			label /endpointok
+
+
+			----------------------------
+			----------------------------Step 3:add end point of other wall to edge points
+			do !point values !endpoints
+				if !point.distance(!startpoint) lt 2000 then
+					!tempdir = !startpoint.direction(!point)
+					handle any
+					elsehandle none
+						if !tempdir.angle(!dir1) lt 10 then
+							!edgepoints.insert(1,!point)
+							!edgepointsymbles.insert(1,'end')
+						endif
+					endhandle
+				endif
+
+				if !point.distance(!endpoint) lt 2000 then
+					!tempdir = !endpoint.direction(!point)
+					handle any
+					elsehandle none
+						if !tempdir.angle(!dir2) lt 10 then
+							!edgepoints.append(!point)
+							!edgepointsymbles.append('end')
+						endif
+					endhandle
+				endif
+			enddo
+
+			!alledgepoints.append(!edgepoints)
+			!alledgepointsymbles.append(!edgepointsymbles)
+		enddo
+		!this.drawinterlinearcs(!walldata,!twoedges,!alledgepoints,!alledgepointsymbles)
+	enddo
+endmethod
+
+
+define method .addotherwalls(!indices is array)
+	!tempindices = !indices
+	!currentindex = !this.getcivilindex(!this.civilname)
+	!arr = !indices.find(!currentindex)
+	do !index values !arr
+		!tempindices[!index].delete()
+	enddo
+
+	--return
+	do !index values !tempindices
+		if !this.otherwallindices.findfirst(!index).unset() then
+			!this.addotherwall(!index)
+		endif
+
+		--$p $!index
+		--break
+	enddo
+endmethod
+
+define method .addotherwall(!civilindex is real)
+	!this.otherwallindices.append(!civilindex)
+	!currentindex = !this.getcivilindex(!this.civilname)
+
+	if !this.form.civildatas[!civilindex].otherwallindices.findfirst(!currentindex).unset() then
+		!this.form.civildatas[!civilindex].otherwallindices.append(!currentindex)
+	endif
+
+	!volume1 = !this.volume
+	!from1 = !volume1.from
+	!to1 = !volume1.to
+
+	if !this.lines.set() then
+		!twoedges1 = !this.lines
+	else
+		!twoedges1 = !this.arcs
+	endif
+
+	!otherwall = !this.form.civildatas[!civilindex]
+	!volume2 = object volume(object dbref(!otherwall.civilname))
+	!from2 = !volume2.from
+	!to2 = !volume2.to
+
+	if !from1.east gt !to2.east or !from1.north gt !to2.north or !from2.east gt !to1.east or !from2.north gt !to1.north then
+
+		return
+	endif
+
+	if !otherwall.lines.set() then
+		!twoedges2 = !otherwall.lines
+	else
+		!twoedges2 = !otherwall.arcs
+	endif
+
+	!clash = false
+	do !edgex1 indices !twoedges1
+		do !edgex2 indices !twoedges2
+			!tempposs = !this.getinterpoints(!twoedges1[!edgex1],!twoedges2[!edgex2])
+			if !tempposs.set() then
+				!interpoint = !tempposs[1]	$*only one point
+				if !edgex1 eq 1 then
+					!this.interpoints1.append(!interpoint)
+					!this.pointsymbles1.append(!otherwall.civilname)
+				else
+					!this.interpoints2.append(!interpoint)
+					!this.pointsymbles2.append(!otherwall.civilname)
+				endif
+
+				if !edgex2 eq 1 then
+					!this.form.civildatas[!civilindex].interpoints1.append(!interpoint)
+					!this.form.civildatas[!civilindex].pointsymbles1.append(!this.civilname)
+				else
+					!this.form.civildatas[!civilindex].interpoints2.append(!interpoint)
+					!this.form.civildatas[!civilindex].pointsymbles2.append(!this.civilname)
+				endif
+				!clash = true
+			endif
+		enddo
+	enddo
+
+	if !clash then
+		----------------------------
+		----------------------------Step 1:add end points of other walls
+		do !edge2 values !twoedges2
+			if !edge2.objecttype() eq 'LINE' then
+				!this.otherendpoints.append(!edge2.startposition)
+				!this.otherendpoints.append(!edge2.endposition)
+			else
+				!this.otherendpoints.append(!edge2.angleposition(!edge2.startangle))
+				!this.otherendpoints.append(!edge2.angleposition(!edge2.endangle))
+			endif
+		enddo
+		do !edge1 values !twoedges1
+			if !edge1.objecttype() eq 'LINE' then
+				!this.form.civildatas[!civilindex].otherendpoints.append(!edge1.startposition)
+				!this.form.civildatas[!civilindex].otherendpoints.append(!edge1.endposition)
+			else
+				!this.form.civildatas[!civilindex].otherendpoints.append(!edge1.angleposition(!edge1.startangle))
+				!this.form.civildatas[!civilindex].otherendpoints.append(!edge1.angleposition(!edge1.endangle))
+			endif
+		enddo
+	endif
+endmethod
+
+
+define method .drawotherwalls()
+	!this.setting()
+
+	--q var !this.currentfloorname
+	if !this.currentfloorname.set() and !this.currentfloorname ne '' then
+		!floorindex = !this.getcivilindex(!this.currentfloorname.split()[1])
+		if !this.form.civildatas[$!floorindex].mbdstru.todim().not() then
+			return
+		else
+			!dimgro = name
+
+			--var !lindims coll all lindim with(match(desc,!this.civilname) ne 0) for $!dimgro	$* cant write like this
+			--var !lindims coll all lindim with(matchwild(desc,'*' + !this.civilname + '*')) for $!dimgro	$* cant write like this
+
+			--!matchstring = '*' + !this.civilname + '*'
+			--var !lindims coll all lindim with(matchwild(desc,!matchstring)) for $!dimgro	$* this way is right
+
+			!matchstring = !this.civilname
+			var !lindims coll all lindim with(match(desc,!matchstring) ne 0) for $!dimgro
+			do !lindim values !lindims
+				$!lindim
+				delete lindim		$*maybe drawed for another floor
+			enddo
+		endif
+	else
+		if !this.mbdstru.todim().not() then
+			return
+		else
+			!dimgro = name
+		endif
+	endif
+
+
+
+	!endpoints = !this.otherendpoints
+
+
+	if !this.lines.set() then
+		!twoedges = !this.lines
+	else
+		!twoedges = !this.arcs
+	endif
+	!edgetype = !twoedges[1].objecttype()
+
+	!alledgepoints = array()
+	!alledgepointsymbles = array()
+	!edgex = 0
+	do !edge values !twoedges
+		!edgex = !edgex + 1
+		!edgepoints = !this.interpoints$!edgex
+		!edgepointsymbles = !this.pointsymbles$!edgex
+
+		----------------------------
+		----------------------------Step 1:sort interpoints
+		if !edgetype eq 'LINE' then
+			!tempdiss = array()
+			!dir = !edge.direction()
+			do !temppos values !edgepoints
+				!tempdiss.append(!!suidirdis(!edge.startposition,!dir,!temppos))
+			enddo
+			!indices = !tempdiss.sortedindices()
+			!edgepoints.reindex(!indices)
+			!edgepointsymbles.reindex(!indices)
+
+
+			!startpoint = !edge.startposition
+			!endpoint = !edge.endposition
+
+			!dir1 = !edge.direction().opposite()
+			!dir2 = !edge.direction()
+		else
+			!angles = array()
+			do !temppos values !edgepoints
+				!angles.append(!edge.near(!temppos))
+			enddo
+			!indices = !angles.sortedindices()
+			!edgepoints.reindex(!indices)
+			!edgepointsymbles.reindex(!indices)
+
+			!startpoint = !edge.angleposition(!edge.startangle)
+			!endpoint = !edge.angleposition(!edge.endangle)
+
+			!dir1 = !edge.angletangent(!edge.startangle).opposite()
+			!dir2 = !edge.angletangent(!edge.endangle)
+		endif
+
+
+		----------------------------
+		----------------------------Step 2:add end point into edge points
+		if !edgepoints.set() then
+			if !edgepoints[1].distance(!startpoint) lt 1 then
+				!edgepointsymbles[1] = 'end'
+				golabel /startpointok
+			endif
+		endif
+		!edgepoints.insert(1,!startpoint)
+		!edgepointsymbles.insert(1,'end')
+		label /startpointok
+
+		if !edgepoints.set() then
+			if !edgepoints.last().distance(!endpoint) lt 1 then
+				!edgepointsymbles[!edgepointsymbles.size()] = 'end'
+				golabel /endpointok
+			endif
+		endif
+		!edgepoints.append(!endpoint)
+		!edgepointsymbles.append('end')
+		label /endpointok
+
+
+		----------------------------
+		----------------------------Step 3:add end point of other wall to edge points
+		do !point values !endpoints
+			if !point.distance(!startpoint) lt 2000 then
+				!tempdir = !startpoint.direction(!point)
+				handle any
+				elsehandle none
+					if !tempdir.angle(!dir1) lt 10 then
+						!edgepoints.insert(1,!point)
+						!edgepointsymbles.insert(1,'end')
+					endif
+				endhandle
+			endif
+
+			if !point.distance(!endpoint) lt 2000 then
+				!tempdir = !endpoint.direction(!point)
+				handle any
+				elsehandle none
+					if !tempdir.angle(!dir2) lt 10 then
+						!edgepoints.append(!point)
+						!edgepointsymbles.append('end')
+					endif
+				endhandle
+			endif
+		enddo
+
+		!alledgepoints.append(!edgepoints)
+		!alledgepointsymbles.append(!edgepointsymbles)
+	enddo
+	!this.drawinterlinearcs(!dimgro,!twoedges,!alledgepoints,!alledgepointsymbles)
+endmethod
+
+define method .getcivilindex(!input is any) is real
+
+	return !this.form.getcivilindex(!input)
+endmethod
+
+define method .drawinterlinearcs(!dimgro is string,!twoedges is array, !alledgepoints is array, !alledgepointsymbles is array)
+	!edgetype = !twoedges[1].objecttype()
+	if !edgetype eq 'LINE' then
+		!this.drawstwallgwall(!dimgro,!twoedges, !alledgepoints, !alledgepointsymbles)
+		!this.drawWallAngle(!dimgro,!twoedges, !alledgepoints, !alledgepointsymbles)
+	else
+		!this.drawwall(!dimgro,!twoedges, !alledgepoints, !alledgepointsymbles)
+	endif
+endmethod
+define method .drawWallAngle(!dimgro is string,!twoedges is array, !alledgepoints is array, !alledgepointsymbles is array)
+	!angles = array()
+	!dir = !twoedges[1].direction()
+	!fourdirs = array()
+	!fourdirs.append(e)
+	!fourdirs.append(s)
+	!fourdirs.append(w)
+	!fourdirs.append(n)
+	do !onedir values !fourdirs
+		!angles.append(!dir.angle(!onedir))
+	enddo
+	!angles.sort()
+	if !angles[1] lt 0.01 then	$*unnecessary
+		return
+	endif
+
+	do !x from 1 to 2
+		do !y indices !alledgepoints[!x]
+			if !alledgepointsymbles[!x][!y] ne 'end' then
+				!tempclashwall = !alledgepointsymbles[!x][!y]
+				if type of $!tempclashwall ne 'WALL' then
+					!nearpoint$!x = !alledgepoints[!x][!y]
+					!neardis$!x = !!suidirdis(!twoedges[1].startposition,!dir,!alledgepoints[!x][!y])
+					!clashwall$!x = !tempclashwall
+					!temptype = type of $!tempclashwall
+					--$p $!x $!temptype $!tempclashwall
+					break
+				endif
+			endif
+		enddo
+	enddo
+	--q var !nearpoint1 !nearpoint2 !neardis1 !neardis2
+	if defined(!nearpoint1) and defined(!nearpoint2) then
+		if !neardis1 le !neardis2 then
+			!nearpoint = !nearpoint1
+			!nearside = 1
+			!clashwall = !clashwall1
+		else
+			!nearpoint = !nearpoint2
+			!nearside = 2
+			!clashwall = !clashwall2
+		endif
+	elseif defined(!nearpoint1) then
+		!nearpoint = !nearpoint1
+		!nearside = 1
+		!clashwall = !clashwall1
+	elseif defined(!nearpoint2) then
+		!nearpoint = !nearpoint2
+		!nearside = 2
+		!clashwall = !clashwall2
+	else
+		!nearpoint = !twoedges[1].startposition
+		!nearside = 1
+		!clashwall = ''
+	endif
+
+	if !clashwall eq '' then
+
+		!tempdir = !twoedges[2].near(!twoedges[1].startposition).direction(!twoedges[1].startposition)
+		handle any
+			!tempdir = !twoedges[2].near(!twoedges[1].endposition).direction(!twoedges[1].endposition)
+		endhandle
+		!dirs = !fourdirs
+		do !x indices !dirs
+			if !tempdir.angle(!dirs[!x]) gt 90 then
+				!dirs[!x].delete()
+			endif
+		enddo
+		!dirs.compress()
+
+		!edgedir1 = !twoedges[1].direction()
+		!angles = array()
+		do !onedir values !dirs
+			!angle = !edgedir1.angle(!onedir)
+			!angles.append(!angle)
+		enddo
+		!indices = !angles.sortedindices()
+		!angles.reindex(!indices)
+		!dirs.reindex(!indices)
+		if !angles[1] lt 30 then	$*no enough space
+			!edgedir2 = !dirs[2]
+		else
+			!edgedir2 = !dirs[1]
+		endif
+		!this.drawangle(!nearpoint,!edgedir1,!edgedir2)
+	else
+		!tempindex = !this.getcivilindex(!clashwall)
+		!lines2 = !this.form.civildatas[!tempindex].lines
+		--if undefined(!lines2[1]) then
+
+		--endif
+		if !nearside eq 1 then
+			!line1 = !twoedges[1]
+			!theotherline = !twoedges[2]
+		else
+			!line1 = !twoedges[2]
+			!theotherline = !twoedges[1]
+		endif
+		!dimdir1 = !theotherline.near(!line1.startposition).direction(!line1.startposition)
+
+		!tempposs1 = !this.getinterpoints(!line1,!lines2[1])
+		if !tempposs1.set() and !tempposs1[1].distance(!nearpoint) lt 1 then
+			!line2 = !lines2[1]
+			!theotherline = !lines2[2]
+		else
+			!line2 = !lines2[2]
+			!theotherline = !lines2[1]
+		endif
+		!dimdir2 = !theotherline.near(!line2.startposition).direction(!line2.startposition)
+
+
+		!edgedir1 = !line1.direction()
+		if !edgedir1.angle(!dimdir2) gt 90 then
+			!edgedir1 = !edgedir1.opposite()
+		endif
+
+		!edgedir2 = !line2.direction()
+		if !edgedir2.angle(!dimdir1) gt 90 then
+			!edgedir2 = !edgedir2.opposite()
+		endif
+
+
+		!this.drawangle(!nearpoint,!edgedir1,!edgedir2)
+	endif
+
+endmethod
+
+define method .drawangle(!point is position,!dir1 is direction,!dir2 is direction)
+	!point = !point.offset(u,!this.textOffsetDis)
+	if !this.currentfloorname.set() and !this.currentfloorname ne '' then
+		!floorindex = !this.getcivilindex(!this.currentfloorname.split()[1])
+		if !this.form.civildatas[$!floorindex].mbdstru.toaid().not() then
+			return
+		else
+			!aidgro = name
+		endif
+	else
+		if !this.mbdstru.toaid().not() then
+			return
+		else
+			!aidgro = name
+		endif
+	endif
+
+
+	!radius = !this.thick / 2
+	if !radius lt 1 then	$* sometimes gwall
+		!radius = !this.civildimcheight
+	endif
+	!line1 = !point.line(!point.offset(!dir1,!radius + !this.civildimcheight / 2))
+	!line2 = !point.line(!point.offset(!dir2,!radius + !this.civildimcheight / 2))
+	!zdir = !dir1.orthogonal(!dir2)
+	handle any
+		return
+	endhandle
+	!ori = x is $!dir1 and z is $!zdir
+
+	!angle = !dir1.angle(!dir2)
+	!arc = object arc(!point,!ori,0,!angle,!radius,true)
+
+	!functiontext = 'Æ«×ª½Ç¶È'
+
+	if !this.currentfloorname.unset() then
+		!desc = 'node:' + !this.civilname
+	else
+		!desc = 'node:' + !this.currentfloorname + ' ' + !this.civilname
+	endif
+
+	!aidline1 = object mbdaidline(!aidgro,!line1,!functiontext,!desc)
+	!aidline2 = object mbdaidline(!aidgro,!line2,!functiontext,!desc)
+	!aidarc = object aidarc(!aidgro,!arc,!functiontext,!desc)
+	!radiusdir = !dir1.bisect(!dir2)
+	!offdir = !radiusdir.orthogonal(!zdir)
+
+	if !zdir.angle(u) lt 90 then
+		!offdir = !offdir.opposite()
+		!orizdir = !zdir
+	else
+		!orizdir = !zdir.opposite()
+	endif
+
+	!angle = !dir1.angle(!dir2)
+
+
+
+	!tempzdir = !dir1.orthogonal(!dir2)
+
+
+	!textstring = !angle.string('d1').real().string() + '¡ã'
+
+	--!textlen = !!mbdtextlen(!textstring) * !this.civildimcheight * 0.6
+	!textlen = !!mbdtextlen(!textstring) * !this.civildimcheight
+	!textpos = !point.offset(!radiusdir,!radius + !this.civildimcheight / 10).offset(!offdir,!textlen / 2)
+	!orixdir = !offdir.opposite()
+	!ori = x is $!orixdir and z is $!orizdir
+
+	!temparr = !this.getgoodori(!ori,!textpos,!textlen)
+	!tempori = !temparr[1]
+	!dirtextpos = !temparr[2]
+
+	!aidtext = object aidtext(!aidgro,!textpos,!ori,!textstring,!this.civildimcheight,!functiontext,!desc)
+endmethod
+
+define method .getgoodori(!ori is orientation,!textpos is position,!textlen is real) is array
+	!orixdir = !ori.xdir()
+	!orizdir = !ori.zdir()
+
+	!lookdir1 = !this.lookdir
+	!lookdir2 = !lookdir1.orthogonal(u)
+
+	if !ori.ydir().angle(!lookdir1.opposite()) lt 70 then
+		!textpos = !textpos.offset(!orixdir,!textlen).offset(!ori.ydir(),!this.civildimcheight)
+		!orixdir = !ori.xdir().opposite()
+		!ori = x is $!orixdir and z is $!orizdir
+	elseif !ori.ydir().angle(!lookdir1) gt 80 then
+		if !ori.ydir().angle(!lookdir2) gt 90 then
+			!textpos = !textpos.offset(!orixdir,!textlen).offset(!ori.ydir(),!this.civildimcheight)
+			!orixdir = !ori.xdir().opposite()
+			!ori = x is $!orixdir and z is $!orizdir
+		endif
+	endif
+	!result = array()
+	!result[1] = !ori
+	!result[2] = !textpos
+	return !result
+endmethod
+
+define method .drawstwallgwall(!dimgro is string,!twoedges is array, !alledgepoints is array, !alledgepointsymbles is array)
+	add $!this.civilname
+
+	!line1 = !twoedges[1]
+	!line2 = !twoedges[2]
+	!dir = !line1.direction()
+
+	!diss = array()
+	!types = array()
+	!points = array()
+	!whichsides = array()
+	do !x from 1 to 2
+		do !y indices !alledgepoints[!x]
+			!point = !alledgepoints[!x][!y]
+			!dis = !!suidirdis(!line1.startposition,!dir,!point)
+			!diss.append(!dis)
+			!types.append(!alledgepointsymbles[!x][!y])
+			!points.append(!point)
+			!whichsides.append(!x)
+		enddo
+	enddo
+
+	!indices = !diss.sortedindices()
+
+	!points.reindex(!indices)
+	!whichsides.reindex(!indices)
+	!diss.reindex(!indices)
+	!types.reindex(!indices)
+
+
+
+
+	!alllinepoints = array()
+	!alllinesides = array()
+	!alllinediss = array()
+	!alllinepointsides = array()
+	--!alllinetypes = array()
+
+	!linepoints = array()
+	!linediss = array()
+	!linepointsides = array()
+	--!linetypes = array()
+	!currentside = 0
+	do !x indices !points
+		if !alllinepoints.set() and !linepoints.unset() and !diss[!x] - !alllinediss.last().last() lt 1 then
+			skip
+		endif
+		!point = !points[!x]
+		!linepoints.append(!point)
+		!linediss.append(!diss[!x])
+		!linepointsides.append(!whichsides[!x])
+		--!linetypes.append(!types[!x])
+		!side = !whichsides[!x]
+		!type = !types[!x]
+		if !diss[!x] - !linediss[1] gt 1 and !type ne 'end' then
+			if !side eq 1 then
+				if !currentside eq 0 then
+					!currentside = 2
+				elseif !currentside eq 1 then
+					if !alllinesides.set() then $*keep same with last one if possible
+						!tempdiss = !linediss
+						if !this.getuniquesizewithtolerance(!tempdiss,1) eq 2 then
+							--if !tempdiss.unique().size() eq 2 then
+							!currentside = !alllinesides.last()
+						endif
+					endif
+					!alllinesides.append(!currentside)
+					!alllinepointsides.append(!linepointsides)
+					!alllinepoints.append(!linepoints)
+					!alllinediss.append(!linediss)
+					--!alllinetypes.append(!linetypes)
+
+					!linepointsides = array()
+					!linediss = array()
+					!linepoints = array()
+					!currentside = 0
+					--!alllinetypes = array()
+					--elseif !currentside eq 2 then
+					--no need to do anything
+				endif
+			else
+				if !currentside eq 0 then
+					!currentside = 1
+				elseif !currentside eq 2 then
+					if !alllinesides.set() then	$*keep same with last one if possible
+						!tempdiss = !linediss
+						if !this.getuniquesizewithtolerance(!tempdiss,1) eq 2 then
+							--if !tempdiss.unique().size() eq 2 then
+							!currentside = !alllinesides.last()
+						endif
+					endif
+
+					!alllinesides.append(!currentside)
+					!alllinepointsides.append(!linepointsides)
+					!alllinepoints.append(!linepoints)
+					!alllinediss.append(!linediss)
+					--!alllinetypes.append(!linetypes)
+
+					!linepointsides = array()
+					!linediss = array()
+					!linepoints = array()
+					!currentside = 0
+					--!alllinetypes = array()
+					--elseif !currentside eq 1 then
+					--no need to do anything
+				endif
+			endif
+		endif
+	enddo
+	if !linepoints.set() then
+		if !currentside eq 0 then
+			!currentside = !alllinesides.last()
+			handle any
+				!currentside = 1
+			endhandle
+		endif
+		!alllinepoints.append(!linepoints)
+		!alllinesides.append(!currentside)
+		!alllinediss.append(!linediss)
+		!alllinepointsides.append(!linepointsides)
+		--!alllinetypes.append(!linetypes)
+	endif
+
+
+
+	-----------------------delete repleat point
+	do !x indices !alllinepoints
+		!side = !alllinesides[!x]
+		!diss = !alllinediss[!x]
+		!pointsides = !alllinepointsides[!x]
+		do !y indices !diss
+			if !y eq 1 then
+				!olddis = !diss[!y]
+				!oldindex = !y
+			else
+				if !diss[!y] - !olddis lt 1 then	$*delete nearer point, keep farer one
+					if !pointsides[!y] eq !side then
+						!alllinediss[!x][!y].delete()
+						!alllinepointsides[!x][!y].delete()
+						!alllinepoints[!x][!y].delete()
+					else
+						!alllinediss[!x][!oldindex].delete()
+						!alllinepointsides[!x][!oldindex].delete()
+						!alllinepoints[!x][!oldindex].delete()
+						!oldindex = !y
+					endif
+				else
+					!olddis = !diss[!y]
+					!oldindex = !y
+				endif
+			endif
+		enddo
+
+		!alllinepointsides[!x].compress()
+		!alllinediss[!x].compress()
+		!alllinepoints[!x].compress()
+	enddo
+
+	!lookdir1 = !this.lookdir
+	!lookdir2 = !lookdir1.orthogonal(u)
+
+	!dimtemparr = array()
+	!dimtemparr.append(!this.autocheight)
+	!dimtemparr.append(!this.autocheightbili)
+	!dimtemparr.append(!this.sepSmallDim)
+
+	--!changeCheightAuto = true
+	--!sepSmallDim = true
+	!desc = 'node:' + !this.currentfloorname + ' ' + !this.civilname
+	--!desc = 'node:' + !this.civilname
+	do !x indices !alllinepoints
+		!points = !alllinepoints[!x]
+		if !points.size() le 1 then
+			skip
+		endif
+		!side = !alllinesides[!x]
+		!ydir = !this.profiles[!side].orientation.zdir()
+		!offsetdir = !ydir
+		!offsetdis = !this.civildimcheight
+		--if !this.civilname eq '=17394/466' then
+
+		--endif
+		if !ydir.angle(!lookdir1) gt 95 then
+			!ydir = !ydir.opposite()
+			!offsetdis = !offsetdis + !this.civildimcheight
+			!offsetdir = !ydir.opposite()
+		elseif !ydir.angle(!lookdir2) gt 175 then
+			!ydir = !ydir.opposite()
+			!offsetdis = !offsetdis + !this.civildimcheight
+			!offsetdir = !ydir.opposite()
+		endif
+		!ori = y is $!ydir and z is u
+		!line = !line$!side
+		!lindimpos = !line.startposition.offset(!offsetdir,!offsetdis).offset(u,!this.textOffsetDis)
+		--if !dimgro ne '/_17398_2911-DIM' then
+
+		--endif
+		!lindim = object lindim(!dimgro, !lindimpos, !ori,!points, !this.civildimcheight, '³ß´ç±ê×¢', !desc, !dimtemparr)
+		handle any
+		endhandle
+	enddo
+endmethod
+define method .drawwall(!dimgro is string,!twoedges is array, !alledgepoints is array, !alledgepointsymbles is array)
+	add $!this.civilname
+
+	!arc1 = !twoedges[1]
+	!arc2 = !twoedges[2]
+
+	if !arc1.radius gt !arc2.radius then
+		!maxside = 1
+		!minside = 2
+	else
+		!maxside = 2
+		!minside = 1
+	endif
+	--!dir = !line1.direction()
+
+	!angles = array()
+	!types = array()
+	!points = array()
+	!whichsides = array()
+	do !x from 1 to 2
+		do !y indices !alledgepoints[!x]
+			!point = !alledgepoints[!x][!y]
+			!angle = !arc1.near(!point)
+			!angles.append(!angle)
+			!types.append(!alledgepointsymbles[!x][!y])
+			!points.append(!point)
+			!whichsides.append(!x)
+		enddo
+	enddo
+
+	!indices = !angles.sortedindices()
+
+	!points.reindex(!indices)
+	!whichsides.reindex(!indices)
+	!angles.reindex(!indices)
+	!types.reindex(!indices)
+
+
+	----------------------------
+	----------------------------Step 1: for radius
+	!maxgapangle = 0
+	!secondgapangle = 0
+
+	!gapangle1 = 0
+	!gapangle2 = 0
+	!gapangle3 = 0
+	!gapangle4 = 0
+	do !x from 2 to !angles.size()
+		!gapangle = !angles[!x] - !angles[!x - 1]
+		if !gapangle gt !maxgapangle then
+			!secondgapangle = !maxgapangle
+			!maxgapangle = !gapangle
+
+			!gapangle3 = !gapangle1
+			!gapangle4 = !gapangle2
+
+			!gapangle1 = !angles[!x - 1]
+			!gapangle2 = !angles[!x]
+		elseif !gapangle gt !secondgapangle then
+			!secondgapangle = !gapangle
+			!gapangle3 = !angles[!x - 1]
+			!gapangle4 = !angles[!x]
+		endif
+	enddo
+
+	----------------------------
+	----------------------------Step 2:for radius
+
+
+	!alllinepoints = array()
+	!alllinesides = array()
+	!alllineangles = array()
+	!alllinepointsides = array()
+
+
+	!linepoints = array()
+	!lineangles = array()
+	!linepointsides = array()
+	!currentside = 0
+	do !x indices !points
+		if !alllinepoints.set() and !linepoints.unset() and !angles[!x] - !alllineangles.last().last() lt 0.1 then
+			skip
+		endif
+		!point = !points[!x]
+		!linepoints.append(!point)
+		!lineangles.append(!angles[!x])
+		!linepointsides.append(!whichsides[!x])
+
+		!side = !whichsides[!x]
+		!type = !types[!x]
+		if !angles[!x] - !lineangles[1] gt 0.1 and !type ne 'end' then
+			if !side eq 1 then
+				if !currentside eq 0 then
+					!currentside = 2
+				elseif !currentside eq 1 then
+					!tempangles = !lineangles
+					if !this.getuniquesizewithtolerance(!tempangles,0.1) eq 2 then
+						if !alllinesides.set() then $*keep same with last one if possible
+							!currentside = !alllinesides.last()
+						else
+							!currentside = !maxside
+						endif
+					endif
+
+					!alllinesides.append(!currentside)
+					!alllinepointsides.append(!linepointsides)
+					!alllinepoints.append(!linepoints)
+					!alllineangles.append(!lineangles)
+
+					!linepointsides = array()
+					!lineangles = array()
+					!linepoints = array()
+					!currentside = 0
+					--elseif !currentside eq 2 then
+					--no need to do anything
+				endif
+			else
+				if !currentside eq 0 then
+					!currentside = 1
+				elseif !currentside eq 2 then
+					!tempangles = !lineangles
+					if !this.getuniquesizewithtolerance(!tempangles,0.1) eq 2 then
+						if !alllinesides.set() then	$*keep same with last one if possible
+							!currentside = !alllinesides.last()
+						else
+							!currentside = !maxside
+						endif
+					endif
+
+					!alllinesides.append(!currentside)
+					!alllinepointsides.append(!linepointsides)
+					!alllinepoints.append(!linepoints)
+					!alllineangles.append(!lineangles)
+
+					!linepointsides = array()
+					!lineangles = array()
+					!linepoints = array()
+					!currentside = 0
+					--elseif !currentside eq 1 then
+					--no need to do anything
+				endif
+			endif
+		endif
+	enddo
+	if !linepoints.set() then
+		if !currentside eq 0 then
+			!currentside = !alllinesides.last()
+			handle any
+				!currentside = 1
+			endhandle
+		endif
+		!alllinepoints.append(!linepoints)
+		!alllinesides.append(!currentside)
+		!alllineangles.append(!lineangles)
+		!alllinepointsides.append(!linepointsides)
+	endif
+
+
+	-----------------------delete repleat point
+	do !x indices !alllinepoints
+		!side = !alllinesides[!x]
+		!angles = !alllineangles[!x]
+		!pointsides = !alllinepointsides[!x]
+		do !y indices !angles
+			if !y eq 1 then
+				!oldangle = !angles[!y]
+				!oldindex = !y
+			else
+				if !angles[!y] - !oldangle lt 0.1 then
+					if !pointsides[!y] eq !side then	$*delete nearer point, keep farer one
+						!alllineangles[!x][!y].delete()
+						!alllinepointsides[!x][!y].delete()
+						!alllinepoints[!x][!y].delete()
+					else
+						!alllineangles[!x][!oldindex].delete()
+						!alllinepointsides[!x][!oldindex].delete()
+						!alllinepoints[!x][!oldindex].delete()
+						!oldindex = !y
+					endif
+				else
+					!oldangle = !angles[!y]
+					!oldindex = !y
+				endif
+			endif
+		enddo
+
+		!alllinepointsides[!x].compress()
+		!alllineangles[!x].compress()
+		!alllinepoints[!x].compress()
+	enddo
+
+	--!changeCheightAuto = true
+	--!sepSmallDim = true
+
+	!desc = 'node:' + !this.currentfloorname + ' ' + !this.civilname
+	--!desc = 'node:' + !this.civilname
+
+	!arcydir = !this.lookdir.opposite()
+	!ori = y is $!arcydir and z is d
+	!anglearc = object arc(!arc1.position,!ori,0,360,1000,true)
+
+
+
+
+	do !x indices !alllinepoints
+		!points = !alllinepoints[!x]
+		--if !points.size() le 1 then
+		--	skip
+		--endif
+		!pointsides = !alllinepointsides[!x]
+		!side = !alllinesides[!x]
+		if !side eq !maxside then
+			!outside = true
+		else
+			!outside = false
+		endif
+
+		!arc = !arc$!side
+		--if !x eq 1 then
+		--!tempdir = !arc.near(!points[1])
+		--!this.drawarcpoint(!dimgro,!arc,!point,!outside,!desc,!this.getdirstring(!tempdir))
+		--elseif !x eq !alllinepoints.size() then
+		--!tempdir = !arc.near(!points.last())
+		--!this.drawarcpoint(!dimgro,!arc,!points.last(),!outside,!desc,!this.getdirstring(!tempdir))
+		--endif
+
+
+		do !y indices !points
+			!point = !points[!y]
+			!pointangle = !anglearc.near(!point)
+			!pointside = !pointsides[!y]
+			!tempmlabel = !this.drawarcpoint(!dimgro,!arc,!point,!outside,!desc,!pointangle.string('D3').replace('degree','¡ã'))
+			if !pointside ne !side then
+				--!temparc = !arc$!pointside
+				--!tempangle = !temparc.near(!point)
+				--!malbeldimpos = !temparc.angleposition(!tempangle)
+				$!tempmlabel
+				first dimpos
+				--pos $!malbeldimpos
+				!dimpos = !point.offset(u,!this.height)
+				pos $!dimpos
+			endif
+		enddo
+	enddo
+
+
+	----------------------------
+	----------------------------Step 3:draw radius
+	!maxarc = !arc$!maxside
+	!minarc = !arc$!minside
+
+	!maxradius = !maxarc.radius
+	!minradius = !minarc.radius
+
+
+	if !minradius * !maxgapangle / 180 gt !this.civildimcheight * 3 or !secondgapangle eq 0 then
+		!useonegap = true
+	else
+		!useonegap = false
+	endif
+
+	if !useonegap then
+		!midangle = (!gapangle1 + !gapangle2) / 2
+		!offsetangle = 180 * !this.civildimcheight * 0.3 / !minradius.value()
+		!angle1 = !midangle.value() + !offsetangle.value()
+		!angle2 = !midangle.value() - !offsetangle.value()
+	else
+		!angle1 = (!gapangle1 + !gapangle2) / 2
+		!angle2 = (!gapangle3 + !gapangle4) / 2
+	endif
+
+	!point1 = !minarc.angleposition(!angle1)
+	!maxmlabel = !this.drawarcpoint(!dimgro,!minarc,!point1,false,!desc,'R=' & !maxradius.value().string('D0'))
+
+	!dimpos = !maxarc.angleposition(!angle1).offset(u,!this.height)
+	$!maxmlabel.name
+	first dimpos
+	pos $!dimpos
+
+
+	!point2 = !minarc.angleposition(!angle2)
+	!minmlabel = !this.drawarcpoint(!dimgro,!minarc,!point2,false,!desc,'R=' & !minradius.value().string('D0'))
+endmethod
+
+
+define method .drawedges(!wallindices is array)
+
+	----------------------------
+	----------------------------Step 1:get edges and seperate them
+	!edges = !this.profiles[1].edges()
+	!alllines = array()
+	!alllinedirs = array()
+	!alllineconangles = array()
+
+	!allarcs = array()
+	!allarcradiuss = array()
+	!allarcpositions = array()
+	!allarczdirs = array()
+
+	!tolerance = 0.1
+	!edgex = 0
+	do !edge values !edges
+		!edgex = !edgex + 1
+		if !edge.objecttype() eq 'LINE' then
+			!linedir = !edge.direction()
+			!goodx = !this.findlinegoodx(!linedir,!alllinedirs,!tolerance)
+			if !goodx ne 0 then
+				!alllines[!goodx].append(!edge)
+				!alllineconangles[!goodx].append(true)
+			else
+				!temparr = array()
+				!temparr.append(!edge)
+				!alllines.append(!temparr)
+				!alllinedirs.append(!linedir)
+
+				!temparr = array()
+				!temparr.append(true)
+				!alllineconangles.append(!temparr)
+			endif
+		else
+			!arc = !edge
+			!arcpos = !arc.position
+			!arcradius = !arc.radius
+			!arczdir = !arc.orientation.zdir()
+			!goodx = !this.findarcgoodx(!arcpos,!arcradius,!arczdir,!allarcpositions,!allarcradiuss,!allarczdirs,!tolerance)
+
+			if !goodx ne 0 then
+				!allarcs[!goodx].append(!edge)
+			else
+				!temparr = array()
+				!temparr.append(!edge)
+				!allarcs.append(!temparr)
+				!allarcradiuss.append(!arcradius)
+				!allarcpositions.append(!arcpos)
+				!allarczdirs.append(!arczdir)
+			endif
+		endif
+	enddo
+
+	----------------------------
+	----------------------------Step 2:get line and arc of walls
+	!lines = array()
+	!arcs = array()
+	do !index values !wallindices
+		!civildata = !this.form.civildatas[!index]
+		if !civildata.type eq 'WALL' then
+			!arcs.appendarray(!civildata.arcs)
+			!lines.append(!civildata.arcs[1].angleposition(!civildata.arcs[1].startangle).line(!civildata.arcs[2].angleposition(!civildata.arcs[2].startangle)))
+			!lines.append(!civildata.arcs[1].angleposition(!civildata.arcs[1].endangle).line(!civildata.arcs[2].angleposition(!civildata.arcs[2].endangle)))
+		else
+			!lines.appendarray(!civildata.lines)
+			!lines.append(!civildata.lines[1].startposition.line(!civildata.lines[2].startposition))
+			!lines.append(!civildata.lines[1].endposition.line(!civildata.lines[2].endposition))
+		endif
+	enddo
+
+
+
+	!plane = !this.profiles[1].plane()
+	!floorup = !this.profiles[1].position.up
+	do !line values !lines
+		if abs(!line.startposition.up - !floorup) gt !tolerance then
+			!line = !line.projected(!plane)
+		endif
+		!this.cutline(!line,!alllines,!alllinedirs,!alllineconangles,!tolerance)
+	enddo
+
+	do !arc values !arcs
+		!arc.position.up = !floorup
+		!this.cutarc(!arc,!allarcs,!allarcpositions,!allarcradiuss,!allarczdirs,!tolerance)
+	enddo
+
+
+
+	!lines = array()
+	!conangles = array()
+	do !x indices !alllines
+		!lines.appendarray(!alllines[!x])
+		!conangles.appendarray(!alllineconangles[!x])
+		--do !onelines values !alllines
+		--!lines.appendarray(!onelines)
+	enddo
+
+	!arcs = array()
+	do !onearcs values !allarcs
+		!arcs.appendarray(!onearcs)
+	enddo
+
+	!this.drawedgelines(!lines,!conangles)
+	!this.drawedgearcs(!arcs)
+endmethod
+
+define method .drawedgelines(!lines is array, !conangles is array)
+	!profile = !this.profiles[1]
+
+	!dimtemparr = array()
+	!dimtemparr.append(!this.autocheight)
+	!dimtemparr.append(!this.autocheightbili)
+	!dimtemparr.append(!this.sepSmallDim)
+
+	!desc = 'node:' + !this.civilname
+	--do !line values !lines
+	do !x indices !lines
+		!line = !lines[!x]
+		!linedir = !line.direction()
+		!ydir = !linedir.orthogonal(u)
+		!midpoint = !line.startposition.midpoint(!line.endposition)
+		!trypos = !midpoint.offset(!ydir,1)
+		if !!posinprofile(!trypos,!profile) then
+			!ydir = !ydir.opposite()
+		endif
+
+
+		!offsetdir = !ydir
+		!offsetdis = !this.civildimcheight
+
+		!ori = y is $!ydir and z is u
+
+		!lindimpos = !line.startposition.offset(!offsetdir,!offsetdis).offset(u,!this.textOffsetDis)
+
+		!points = array()
+		!points.append(!line.startposition)
+		!points.append(!line.endposition)
+		!lindim = object lindim(!this.mbdstru.dimgro, !lindimpos, !ori,!points, !this.civildimcheight, '³ß´ç±ê×¢', !desc, !dimtemparr)
+		handle any
+		endhandle
+		if !conangles[!x] then
+			!this.drawedgelineangle(!line,!ydir)
+		endif
+	enddo
+endmethod
+
+define method .drawedgelineangle(!line is line, !inputydir is direction)
+	!ydir = !inputydir.opposite()
+	!angles = array()
+	!dir = !line.direction()
+	!fourdirs = array()
+	!fourdirs.append(e)
+	!fourdirs.append(s)
+	!fourdirs.append(w)
+	!fourdirs.append(n)
+	do !onedir values !fourdirs
+		!angles.append(!dir.angle(!onedir))
+	enddo
+	!angles.sort()
+	if !angles[1] lt 0.01 then	$*unnecessary
+		return
+	endif
+
+
+	!nearpoint = !line.startposition
+
+	!dirs = !fourdirs
+	do !x indices !dirs
+		if !ydir.angle(!dirs[!x]) gt 90 then
+			!dirs[!x].delete()
+		endif
+	enddo
+	!dirs.compress()
+
+
+	!angles = array()
+	do !onedir values !dirs
+		!angle = !dir.angle(!onedir)
+		!angles.append(!angle)
+	enddo
+	!indices = !angles.sortedindices()
+	!angles.reindex(!indices)
+	!dirs.reindex(!indices)
+
+	!edgedir2 = !dirs[1]
+
+	!this.drawangle(!nearpoint,!dir,!edgedir2)
+endmethod
+
+define method .drawedgearcs(!arcs is array)
+	!profile = !this.profiles[1]
+
+	!arcydir = !this.lookdir.opposite()
+	!ori = y is $!arcydir and z is d
+
+
+	!desc = 'node:' + !this.civilname
+	do !arc values !arcs
+		!anglearc = object arc(!arc.position,!ori,0,360,1000,true)
+		!odir = !arc.angledirection((!arc.startangle + !arc.endangle) / 2)
+		!midpoint = !arc.angleposition((!arc.startangle + !arc.endangle) / 2)
+		!trypos = !midpoint.offset(!odir,1)
+		if !!posinprofile(!trypos,!profile) then
+			!outside = false
+		else
+			!outside = true
+		endif
+
+		do !x from 1 to 2
+			if !x eq 1 then
+				!point = !arc.angleposition(!arc.startangle)
+			else
+				!point = !arc.angleposition(!arc.endangle)
+			endif
+			!pointangle = !anglearc.near(!point)
+			!tempmlabel = !this.drawarcpoint(!this.mbdstru.dimgro,!arc,!point,!outside,!desc,!pointangle.string('D3').replace('degree','¡ã'))
+		enddo
+
+
+		!point = !arc.angleposition((!arc.startangle + !arc.endangle) / 2)
+		!maxmlabe = !this.drawarcpoint(!this.mbdstru.dimgro,!arc,!point,!outside,!desc,'R=' & !arc.radius.value().string('D0'))
+	enddo
+endmethod
+
+define method .cutarc(!arc is arc, !allarcs is array, !allarcpositions is array, !allarcradiuss is array , !allarczdirs is array, !tolerance is real)
+	!arcpos = !arc.position
+	!arcradius = !arc.radius
+	!arczdir = !arc.orientation.zdir()
+	!goodx = !this.findarcgoodx(!arcpos,!arcradius,!arczdir,!allarcpositions,!allarcradiuss,!allarczdirs,!tolerance)
+	if !goodx ne 0 then
+		!onearcs = !allarcs[!goodx]
+		!newonearcs = array()
+		do !x indices !onearcs
+			!onearc = !onearcs[!x]
+			!cutarcs = !this.cutonearc(!arc,!onearc,!tolerance)
+			!newonearcs.appendarray(!cutarcs)
+		enddo
+		!allarcs[!goodx] = !newonearcs
+
+		if !allarcs[!goodx].unset() then
+			!allarcs[!goodx].delete()
+			!allarcpositions[!goodx].delete()
+			!allarcradiuss[!goodx].delete()
+			!allarczdirs[!goodx].delete()
+
+			!allarcs.compress()
+			!allarcpositions.compress()
+			!allarcradiuss.compress()
+			!allarczdirs.compress()
+		endif
+	endif
+endmethod
+
+define method .cutonearc(!arc is arc, !onearc is arc ,!tolerance is real) is array
+	!cutarcs = array()
+
+	!angles = array()
+	!oneangles = array()
+
+	!sp = !arc.angleposition(!arc.startangle)
+	!ep = !arc.angleposition(!arc.endangle)
+	!onesp = !onearc.angleposition(!onearc.startangle)
+	!oneep = !onearc.angleposition(!onearc.endangle)
+
+	if !onearc.orientation.zdir().angle(!arc.orientation.zdir()) gt 90 then
+		!temppos = !sp
+		!sp = !ep
+		!ep = !temppos
+	endif
+	!angles.append(!onearc.near(!sp))
+	!angles.append(!onearc.near(!ep))
+	if !angles[1] gt !angles[2] then
+		!angles[1] = !angles[1] - 360
+	endif
+
+	!oneangles.append(!onearc.near(!onesp))
+	!oneangles.append(!onearc.near(!oneep))
+	if !oneangles[1] gt !oneangles[2] then
+		!oneangles[1] = !oneangles[1] - 360
+	endif
+
+	if !angles[2] lt !oneangles[1] or !angles[1] gt !oneangles[2] then
+		!cutarcs.append(!onearc)
+	else
+		if !angles[1] gt !oneangles[1] + !tolerance then
+			!temparc = !onearc
+			!temparc.endangle = !angles[1]
+			!cutarcs.append(!temparc)
+		endif
+
+		if !angles[2] lt !oneangles[2] - !tolerance then
+			!temparc = !onearc
+			!temparc.startangle = !angles[2]
+			!cutarcs.append(!temparc)
+		endif
+	endif
+
+	return !cutarcs
+endmethod
+
+define method .cutline(!line is line,!alllines is array, !alllinedirs is array, !alllineconangles is array, !tolerance is real)
+	!linedir = !line.direction()
+	!goodx = !this.findlinegoodx(!linedir,!alllinedirs,!tolerance)
+	if !goodx ne 0 then
+		!onelines = !alllines[!goodx]
+		!conangles = !alllineconangles[!goodx]
+
+
+		!newconangles = array()
+		!newonelines = array()
+		do !x indices !onelines
+			!oneline = !onelines[!x]
+
+			!cutlines = !this.cutoneline(!line,!oneline,!tolerance)
+			if !cutlines.set()then
+				!newonelines.appendarray(!cutlines)
+				if !cutlines.size() eq 1 then
+					if !cutlines[1].startposition.distance(!oneline.startposition) gt !tolerance or !cutlines[1].endposition.distance(!oneline.endposition) gt !tolerance then
+						!newconangles[!newonelines.size()] = false
+					else
+
+						!newconangles[!newonelines.size()] = !conangles[!x]
+					endif
+				elseif !cutlines.size() gt 1 then
+					do !xx from !newonelines.size() - !cutlines.size() + 1 to !newonelines.size()
+						!newconangles[!xx] = false
+					enddo
+				endif
+			endif
+
+			$(
+			!cutresult = !this.cutoneline(!line,!oneline,!tolerance)
+			!cutlines = !cutresult[1]
+			!newonelines.appendarray(!cutlines)
+			if !cutresult[2].not() then
+				if !x ne !onelines.size() then
+					!newonelines.appendarray(!onelines.from(!x + 1))
+				endif
+				break
+			endif
+			$)
+		enddo
+		!alllines[!goodx] = !newonelines
+		!alllineconangles[!goodx] = !newconangles
+
+
+
+		if !alllines[!goodx].unset() then
+			!alllinedirs[!goodx].delete()
+			!alllines[!goodx].delete()
+			!alllineconangles[!goodx].delete()
+			!alllinedirs.compress()
+			!alllines.compress()
+			!alllineconangles.compress()
+		endif
+	endif
+endmethod
+
+define method .cutoneline(!line is line, !oneline is line ,!tolerance is real) is array
+	!cutlines = array()
+	--!rest = true
+	if !oneline.distance(!line.startposition) gt !tolerance then
+		!cutlines.append(!oneline)
+	else
+		!diss = array()
+		!onediss = array()
+		!pos = !oneline.startposition
+
+		!dir = !oneline.direction()
+		!diss.append(!!suidirdis(!pos,!dir,!line.startposition))
+		!diss.append(!!suidirdis(!pos,!dir,!line.endposition))
+		!diss.sort()
+
+		!onediss.append(0)
+		!onediss.append(!oneline.length())
+
+		if !diss[2] lt !onediss[1] or !diss[1] gt !onediss[2] then
+			!cutlines.append(!oneline)
+		else
+			if !diss[1] gt !onediss[1] + !tolerance then
+				!cutlines.append(!pos.line(!pos.offset(!dir,!diss[1])))
+			endif
+
+			if !diss[2] lt !onediss[2] - !tolerance then
+				!cutlines.append(!pos.offset(!dir,!diss[2]).line(!oneline.endposition))
+			endif
+			$(
+			if !diss[1] gt (!onediss[1] - !tolerance) and !diss[2] lt (!onediss[2] + !tolerance) then
+				!rest = false
+			endif
+			$)
+		endif
+	endif
+	$(
+	!result = array()
+	!result.append(!cutlines)
+	!result.append(!rest)
+	return !result
+	$)
+	return !cutlines
+endmethod
+
+define method .findlinegoodx(!linedir is direction, !alllinedirs is array,!tolerance is real) is real
+	!goodx = 0
+	do !x indices !alllinedirs
+		!angle = !alllinedirs[!x].angle(!linedir)
+		if !angle lt !tolerance or !angle gt 180 - !tolerance then
+			!goodx = !x
+			break
+		endif
+	enddo
+	return !goodx
+endmethod
+
+define method .findarcgoodx(!arcpos is position,!arcradius is real,!arczdir is direction, !allarcpositions is array,!allarcradiuss is array,!allarczdirs is array,!tolerance is real) is real
+	!goodx = 0
+	do !x indices !allarcradius
+		if abs(!arcradius - !allarcradius[!x]) lt !tolerance then
+			if !arcpos.distance(!allarcpositions[!x]) lt !tolerance then
+				!angle = !arczdir.angle(!allarczdirs[!x])
+				if !angle lt !tolerance or !angle gt 180 - !tolerance then
+					!goodx = !x
+					break
+				endif
+			endif
+		endif
+	enddo
+	return !goodx
+endmethod
+
+define method .getdirstring(!dir is direction) is string
+	!dirstring = !dir.string()
+	if !dirstring.length() ne 1 then
+		!firstdir = !dirstring.substring(1,1)
+		!seconddir = !dirstring.substring(-1,1)
+		!realstring = !dirstring.substring(2,!dirstring.length() - 2).trim().real().string('d3')
+		!dirstring = !firstdir + ' ' + !realstring + !seconddir
+	endif
+	return !dirstring
+endmethod
+
+define method .drawarcpoint(!dimgro is string,!arc is arc,!point is position,!outside is boolean,!desc is string,!textstring is string) is mlabel
+	!angle = !arc.near(!point)
+	!dir = !arc.angledirection(!angle)
+	if !outside.not() then
+		!dir = !dir.opposite()
+	endif
+
+	!arcpos = !arc.angleposition(!angle).offset(u,!this.textOffsetDis)
+	!offsetdis = 2 * !this.civildimcheight
+
+	!lookdir1 = !this.lookdir
+	!lookdir2 = !lookdir1.orthogonal(u)
+
+	!ydir = !dir.orthogonal(u)
+	if !ydir.angle(!lookdir1) gt 95 then
+		!ydir = !ydir.opposite()
+	elseif !ydir.angle(!lookdir2) gt 175 then
+		!ydir = !ydir.opposite()
+	else
+		--!textlen = !!mbdtextlen(!textstring) * !this.civildimcheight * 0.75
+		!textlen = !!mbdtextlen(!textstring) * !this.civildimcheight
+		!offsetdis = !offsetdis + !textlen
+	endif
+	!textpos = !arcpos.offset(!dir,!offsetdis)
+	if !this.type ne 'FLOOR' then
+		!textpos = !textpos.offset(u,!this.height)
+	endif
+
+	!ori = y is $!ydir and z is u
+
+	if !this.type ne 'FLOOR' then
+		!dimpos = !arcpos.offset(u,!this.height)
+	else
+		!dimpos = !arcpos
+	endif
+	!mlabel = object mlabel(!dimgro,!textpos,!ori,!textstring,!this.civildimcheight,false,'»¡¶È°ë¾¶',!dimpos,!desc)
+	return !mlabel
+endmethod
+
+
+
+define method .getuniquesizewithtolerance(!arr is array, !tolerance is real) is real
+	!size = !arr.size()
+	do !x indices !arr
+		if !x eq 1 then
+			!oldreal = !arr[1]
+		else
+			if !arr[!x] - !arr[!x - 1] le !tolerance then
+				!size = !size - 1
+			else
+				!olereal = !arr[!x]
+			endif
+		endif
+	enddo
+	return !size
+endmethod
+
+define method .getendpoints() is array
+	!linearcs = !this.otherlineorarcs
+	!endpoints = array()
+	do !lineorarc values !linearcs
+		if !lineorarc.objecttype() eq 'LINE' then
+			!endpoints.append(!lineorarc.startposition)
+			!endpoints.append(!lineorarc.endposition)
+		else
+			!endpoints.append(!lineorarc.angleposition(!lineorarc.startangle))
+			!endpoints.append(!lineorarc.angleposition(!lineorarc.endangle))
+		endif
+	enddo
+	return !endpoints
+endmethod
+
+define method .interforfloor() is array
+	!linearcs = !this.otherlineorarcs
+	!size = !linearcs.size()
+	!interpoints = array()
+	do !x from 1 to !size - 1
+		do !y from !x + 1 to !size
+			!tempposs = !this.getinterpoints(!linearcs[!x],!linearcs[!y])
+			!interpoints.appendarray(!tempposs)
+		enddo
+	enddo
+
+	$(
+	do !lineorarc values !linearcs
+		if !lineorarc.objecttype() eq 'LINE' then
+			!interpoints.append(!lineorarc.startposition)
+			!interpoints.append(!lineorarc.endposition)
+		else
+			!interpoints.append(!lineorarc.angleposition(!lineorarc.startangle))
+			!interpoints.append(!lineorarc.angleposition(!lineorarc.endangle))
+		endif
+	enddo
+
+
+	!interpoints = !this.uniqueposs(!interpoints)
+	$)
+
+	return !interpoints
+
+endmethod
+
+define method .getinterpoints(!linearc1 is any,!linearc2 is any) is array
+	!otype1 = !linearc1.objecttype()
+	!otype2 = !linearc2.objecttype()
+	!poss = array()
+	if !otype2 eq 'LINE' then
+		if !otype1 eq 'LINE' then
+			!point = !linearc2.intersection(!linearc1)
+			handle any
+			elsehandle none
+				if !linearc1.onprojected(!point) and !linearc2.onprojected(!point) then
+					!poss.append(!point)
+				endif
+			endhandle
+		else
+			!points = !linearc2.intersections(!linearc1)
+			do !point values !points
+				if !linearc1.onprojected(!point) and !linearc2.onprojected(!point) then
+					!poss.append(!point)
+				endif
+			enddo
+		endif
+	else
+		if !otype1 eq 'LINE' then
+			!angles = !linearc2.intersections(!linearc1)
+			handle any
+			elsehandle none
+				do !angle values !angles
+					!point = !linearc2.angleposition(!angle)
+					if !linearc1.onprojected(!point) and !linearc2.onprojected(!point) then
+						!poss.append(!point)
+					endif
+				enddo
+			endhandle
+		else
+			!angles = !linearc2.intersections(!linearc1)
+			handle any
+			elsehandle none
+				do !angle values !angles
+					!point = !linearc2.angleposition(!angle)
+					if !linearc1.onprojected(!point) and !linearc2.onprojected(!point) then
+						!poss.append(!point)
+					endif
+				enddo
+			endhandle
+		endif
+	endif
+	return !poss
+endmethod
+
+define method .diminter() is boolean			$*dimension with other civils
+	if !this.lines.unset() then
+		!linearcs = !this.arcs
+	else
+		!linearcs = !this.lines
+	endif
+	!otherlinearcs = !this.otherlineorarcs
+
+	!toleHeight = 200
+	!pointArr = array()
+	do !lineorarc values !linearcs
+		!otype1 = !lineorarc.objecttype()
+		!poss = array()
+		if !otype1 eq 'LINE' then
+			!poss.append(!lineorarc.startposition)
+			!poss.append(!lineorarc.endposition)
+		else
+			!poss.append(!lineorarc.angleposition(!lineorarc.startangle))
+			!poss.append(!lineorarc.angleposition(!lineorarc.endangle))
+		endif
+
+		do !otherlineorarc values !otherlinearcs
+			!otype2 = !otherlineorarc.objecttype()
+			if !otype2 eq 'LINE' then
+				if !otype1 eq 'LINE' then
+					!point = !otherlineorarc.intersection(!lineorarc)
+					handle any
+					elsehandle none
+						if !lineorarc.onprojected(!point) and !otherlineorarc.onprojected(!point) and !point.distance(!lineorarc) le !toleHeight then
+							!poss.append(!point)
+						endif
+					endhandle
+				else
+					!points = !otherlineorarc.intersections(!lineorarc)
+					do !point values !points
+						if !lineorarc.onprojected(!point) and !otherlineorarc.onprojected(!point) and !point.distance(!otherlineorarc) le !toleHeight then
+							!poss.append(!point)
+						endif
+					enddo
+				endif
+			else
+				if !otype1 eq 'LINE' then
+					!angles = !otherlineorarc.intersections(!lineorarc)
+					handle any
+					elsehandle none
+						do !angle values !angles
+							!point = !otherlineorarc.angleposition(!angle)
+							if !lineorarc.onprojected(!point) and !otherlineorarc.onprojected(!point) and !point.distance(!lineorarc) le !toleHeight then
+								!poss.append(!point)
+							endif
+						enddo
+					endhandle
+				else
+					!tempplane = object plane(!lineorarc.position,!lineorarc.orientation)
+					!angles = !otherlineorarc.intersections(!lineorarc)
+					handle any
+					elsehandle none
+						do !angle values !angles
+							!point = !otherlineorarc.angleposition(!angle)
+							if !lineorarc.onprojected(!point) and !otherlineorarc.onprojected(!point) and !point.distance(!tempplane) le !toleHeight then
+								!poss.append(!point)
+							endif
+						enddo
+					endhandle
+				endif
+			endif
+		enddo
+
+		!pointarr.append(!poss)
+	enddo
+	return !this.dimtwopointarr(!pointarr)
+endmethod
+
+
+
+--$(
+define method .checkIfClashTwoLines(!line1 is line, !line2 is line, !toleheight is real) is position
+	!point = !line2.intersection(!line1)
+	if !point.distance(!line1) gt !toleheight then
+		golabel /false
+	endif
+	if !line1.onprojected(!point) then
+		if !line2.onprojected(!point) then
+			golabel /good
+		endif
+	else
+
+	endif
+
+	label /good
+	return !point
+
+	label /false
+	!emptyPos = object position()
+	return !emptyPos
+endmethod
+--$)
+
+define method .dimTwoPointArr(!pointarr is array) is boolean	$*drn did not consider
+	--$p asfdasf
+	if !this.type eq 'GWALL' and !this.lines[1].direction().angle(!this.lines[2].direction()) gt 1 $
+		and !this.lines[1].direction().angle(!this.lines[2].direction()) lt 179 then
+		------------------------------------------------------------------------------------------------------------------------------------------
+		do !x from 1 to 2
+			!points = !pointarr[!x]
+			!points = !this.sortpoints(!points,!x)
+			!ydir = !this.profiles[!x].orientation.zdir()
+			!dimpos = !points[1].offset(!this.profiles[!x].orientation.zdir(),!this.memdimcheight * 2)
+
+			!tempangle = !ydir.angle(n)
+			if !tempangle gt 91 then
+				!ydir = !ydir.opposite()
+			elseif !tempangle le 91 and !tempangle ge 89 then
+				if !ydir.angle(e) gt 91 then
+					!ydir = !ydir.opposite()
+				endif
+			endif
+			!ori = object orientation('y is $!ydir and z is u')
+
+			!dimpos = !dimpos.offset(u,!this.textoffsetdis)
+			if !this.drawOneDim(!dimpos,!ori,!points).not() then
+				return false
+			endif
+		enddo
+	else
+		--$p asfd
+		if !pointarr[1].size() le !pointarr[2].size() then
+			--$p 1
+
+			!points = !pointarr[1]
+			!pointarr[2].deleteFrom(1,2)
+
+			!points.appendarray(!pointarr[2])
+			--$p dssd
+			!points = !this.sortpoints(!points,1)
+
+			if !this.type ne 'WALL' then
+				!ydir = !this.profiles[1].orientation.zdir()
+				!dimpos = !points[1].offset(!ydir,!this.memdimcheight * 2)
+			else
+				!arcIndex = 1
+				!ydir = !this.arcs[1].angledirection(!this.arcs[1].startangle)
+				!dimpos = !points[1].offset(!ydir,!this.memdimcheight * 2)
+			endif
+			--$p kkk $!arcindex
+		else
+			--$p 2
+			!points = !pointarr[2]
+			!pointarr[1].deleteFrom(1,2)
+			!points.appendarray(!pointarr[1])
+			!points = !this.sortpoints(!points,2)
+			if !this.type ne 'WALL' then
+				!ydir = !this.profiles[2].orientation.zdir()
+				!dimpos = !points[1].offset(!this.profiles[2].orientation.zdir(),!this.memdimcheight * 2)
+			else
+				!arcIndex = 2
+				!ydir = !this.arcs[2].angledirection(!this.arcs[2].startangle)
+				!dimpos = !points[1].offset(!this.arcs[2].angledirection(!this.arcs[2].startangle), - !this.memdimcheight * 2)
+			endif
+		endif
+		--$p asdf
+		!tempangle = !ydir.angle(n)
+		if !tempangle gt 91 then
+			!ydir = !ydir.opposite()
+		elseif !tempangle le 91 and !tempangle ge 89 then
+			if !ydir.angle(e) gt 91 then
+				!ydir = !ydir.opposite()
+			endif
+		endif
+
+		!ori = object orientation('y is $!ydir and z is u')
+		--$p asdfdsa
+		if !this.type ne 'WALL' then
+			!dimpos = !dimpos.offset(u,!this.textoffsetdis)
+			if !this.drawOneDim(!dimpos,!ori,!points).not() then
+				return false
+			endif
+		else
+			if !this.drawArcPoint(!dimpos,!ori,!points,!arcIndex).not() then
+				return false
+			endif
+		endif
+	endif
+	--$p sadfsaf
+	return true
+endmethod
+
+define method .drawArcPoint(!dimpos is position, !ori is orientation, !points is array, !arcIndex is real) is boolean
+	!arc = !this.arcs[!arcIndex]
+	do !pos values !points
+		!angle = !arc.near(!pos)
+		if !arcIndex eq 1 then
+			!xdir = !arc.position.direction(!pos)
+		else
+			!xdir = !pos.direction(!arc.position)
+		endif
+		!ori = object orientation('X is $!xdir and z is u')
+		!cenpos = !arc.angleposition(!angle).offset(u,!this.textoffsetdis)
+		!anglestring = !angle.string('d1')
+		if !this.drawoneMlabel(!anglestring,!cenpos,!ori,!this.memdimcheight,false,'Civil Dimension').not() then		$*name
+			return false
+		endif
+	enddo
+	return true
+endmethod
+
+define method .drawOneDim(!dimpos is position,!ori is orientation, !points is array) is boolean
+	!poss = !points
+	if !this.mbdstru.todim().not() then
+		--if !this.toDimGro().not() then
+		return false
+	endif
+	!owner = name
+	!desc = 'node:' + !this.civilname
+	!lindim = object lindim(!owner,!dimpos,!ori,!poss,!this.memdimcheight,'Civil Dimension',!desc)
+	$(
+	new lindim
+	handle any
+		return false
+	endhandle
+	desc 'Civil Dimension'
+
+	pos $!dimpos
+	ori $!ori
+	cheight $!this.memdimcheight
+
+	do !pos values !Poss
+		new dimpos
+		pos $!pos
+	enddo
+	$)
+
+	if !poss.size() gt 2 then
+		!tempdis = !!suidirdis(!dimpos,!ori.ydir(),!poss[1])
+		if !tempdis lt 0 then
+			!point = !dimpos.offset(!ori.ydir(),!this.memdimcheight * 1.5)
+		else
+			!point = !dimpos.offset(!ori.ydir(), - !this.memdimcheight * 1.5)
+		endif
+		!secondposs = array()
+		!secondposs.append(!poss[1])
+		!secondposs.append(!poss.last())
+		!desc = 'node:' + !this.civilname
+		!lindim = object lindim(!owner,!point,!ori,!secondposs,!this.memdimcheight,'Civil Dimension',!desc)
+
+		$(
+		new lindim
+		desc 'Civil Dimension'
+		pos $!point
+		ori $!ori
+		cheight $!this.memdimcheight
+		new dimpos
+		pos $!Poss[1]
+		new dimpos
+		!temppos = !poss.last()
+		pos $!temppos
+		$)
+	endif
+
+	return true
+endmethod
+
+define method .sortPoints(!points is array, !x is real) is array
+	if !this.type eq 'WALL' then
+		!poss = !this.sortArcPoss(!points,!this.arcs[1])
+	else
+		!poss = !this.sortLinePoss(!points,!this.lines[!x])
+	endif
+	return !poss
+endmethod
+define method .SortLinePoss(!inputposs is array, !line is line) is array
+	!poss = !inputposs
+	!diss = array()
+	!poss.unique()
+	!dir = !line.direction()
+	do !pos values !poss
+		!diss.append(!!suidirdis(!poss[1],!dir,!pos))
+	enddo
+	!indices = !diss.sortedindices()
+	!Poss.reindex(!indices)
+	!diss.reindex(!indices)
+	do !x from 2 to !diss.size()
+		if abs(!diss[!x] - !diss[!x - 1]) lt 0.01 then
+			!poss[!x].delete()
+		endif
+	enddo
+	!poss.compress()
+	return !poss
+endmethod
+
+define method .sortArcPoss(!inputposs is array,!arc is arc) is array
+	!poss = !inputposs
+	!poss.unique()
+	!angles = array()
+	--!arc = !this.arcs[1]
+	do !pos values !poss
+		!angles.append(!arc.near(!pos))
+	enddo
+
+	!indices = !angles.sortedindices()
+	!Poss.reindex(!indices)
+	!angles.reindex(!indices)
+	do !x from 2 to !angles.size()
+		if abs(!angles[!x] - !angles[!x - 1]) lt 0.01 then
+			!poss[!x].delete()
+		endif
+	enddo
+	!poss.compress()
+	return !poss
+endmethod
+
+define method .createOneDim(!poss is array, !dimpos is position, !ori is orientation, !function is string) is boolean
+	if !this.mbdstru.todim().not() then
+		--if !this.toDimGro().not() then
+		return false
+	endif
+	!owner = name
+	!lindim = object lindim()
+	!desc = 'node:' + !this.civilname
+	return !lindim.lindim(!owner,!dimpos,!ori,!poss,!this.memdimcheight,!function,!desc)
+
+	$(
+	if !this.todimgro().not() then
+		return false
+	endif
+
+
+	new lindim
+	handle any
+		return false
+	endhandle
+	function '$!function'
+
+	pos $!dimpos
+	ori $!ori
+	cheight $!this.memdimcheight
+
+	!poss = !this.uniquePoss(!Poss)
+	do !pos values !Poss
+		new dimpos
+		pos $!pos
+	enddo
+	return true
+	$)
+endmethod
+
+define method .uniquePoss(!poss is array) is array
+	!dels = array()
+	do !x from 1 to !poss.size() - 1
+		if !dels.findfirst(!x).set() then
+			skip
+		endif
+		do !y from !x + 1 to !poss.size()
+			if !dels.findfirst(!y).set() then
+				skip
+			endif
+			if !poss[!x].distance(!poss[!y]) lt 0.1 then
+				!dels.append(!y)
+				!poss[!y].delete()
+			endif
+		enddo
+	enddo
+	!poss.compress()
+	return !poss
+endmethod
+
+define method .drawMlabel()
+	--!this.deleteMlabel()
+
+	!this.markCivilSelf()
+	!this.markwallEl()
+	if !this.markmem then
+		!this.markCivilMem()
+	endif
+endmethod
+
+define method .markwallEl()
+	!offsetdis = !this.memdimcheight
+	if !this.type eq 'WALL' then
+		do !x from 1 to 2
+
+			----------------------------
+			----------------------------Step 1:mark sure the mlabel is on right side
+			!currentradius = !this.arcs[!x].radius
+			if !x eq 1 then
+				!theotherradius = !this.arcs[2].radius
+			else
+				!theotherradius = !this.arcs[1].radius
+			endif
+			if !currentradius lt !theotherradius then
+				if !this.arcs[!x].orientation.zdir().angle(u) gt 90 then
+					!pptpos = !this.arcs[!x].angleposition(!this.arcs[!x].endangle)
+					!xdir = !this.arcs[!x].endtangent()
+				else
+					!pptpos = !this.arcs[!x].angleposition(!this.arcs[!x].startangle)
+					!xdir = !this.arcs[!x].starttangent().opposite()
+				endif
+			else
+				if !this.arcs[!x].orientation.zdir().angle(u) lt 90 then
+					!pptpos = !this.arcs[!x].angleposition(!this.arcs[!x].endangle)
+					!xdir = !this.arcs[!x].endtangent()
+				else
+					!pptpos = !this.arcs[!x].angleposition(!this.arcs[!x].startangle)
+					!xdir = !this.arcs[!x].starttangent().opposite()
+				endif
+			endif
+
+			--!ori = object orientation('x is $!xdir and y is u')
+
+			--!cenpos = !pptpos.offset(!xdir,!offsetdis)
+			do !xx from 1 to 2
+				if !xx eq 2 then
+					!pptpos = !pptpos.offset(!this.zdir,!this.height)
+				endif
+
+				!ele = !pptpos.up / 1000
+				!elstring = 'EL. ' + !ele.string('d3').upcase().before('MM') + 'm'
+
+				--!textlen = !!mbdtextlen(!elstring) * !this.elthickcheight * 0.75
+				!textlen = !!mbdtextlen(!elstring) * !this.elthickcheight
+
+
+
+				!cenpos = !pptpos.offset(!xdir, - !textlen - !offsetdis)
+
+				!offsetangle = (!textlen + !offsetdis) * 180 / (!this.arcs[!x].radius * pi)
+
+				!ppangle = !this.arcs[!x].near(!pptpos)
+				!startangle = !this.arcs[!x].near(!cenpos)
+
+				if !startangle lt !ppangle then
+					!startangle = !ppangle.value() - !offsetangle.value()
+				else
+					!startangle = !ppangle.value() + !offsetangle.value()
+				endif
+
+				!cenpos = !this.arcs[!x].angleposition(!startangle)
+				if !xx eq 2 then
+					!cenpos = !cenpos.offset(!this.zdir,!this.height)
+				endif
+				!xdir = !cenpos.direction(!pptpos)
+				!ori = object orientation('x is $!xdir and y is u')
+
+				if !xx eq 1 then
+					!cenpos = !cenpos.offset(u,!this.elthickcheight * 0.5)
+				else
+					!cenpos = !cenpos.offset(d,!this.elthickcheight * 1.3)
+				endif
+
+
+
+				!cenpos = !cenpos.offset(!ori.zdir(),!this.textoffsetdis)
+
+
+				if !currentradius gt !theotherradius then
+					!tempoffdis = !this.arcs[!x].radius - sqrt(!this.arcs[!x].radius.power(2) - power(!textlen + !offsetdis,2) / 4)
+					!cenpos = !cenpos.offset(!ori.zdir(),!tempoffdis)
+				endif
+
+
+				--!elstring = 'EL. ' + before(upcase(string(!cenpos.up / 1000,d3)),'MM') + 'm'
+				if !this.drawoneMlabel(!elstring,!cenpos,!ori,!this.elthickcheight,false,'±ê¸ß').not() then
+					return
+				else
+					new dimpos
+					pos $!pptpos
+					desc '$!pptpos'
+				endif
+			enddo
+		enddo
+	elseif !this.type ne 'FLOOR' then
+		do !x from 1 to 2
+			!line = !this.lines[!x]
+			!ori = !this.originori$!x
+			if !line.direction().angle(!ori.xdir()) lt 90 then
+				!pptpos = !this.lines[!x].endposition
+			else
+				!pptpos = !this.lines[!x].startposition
+			endif
+			!xdir = !ori.xdir()
+
+			$(
+			if !x eq 1 then
+				!pptpos = !this.lines[!x].endposition
+				!xdir = !this.lines[!x].direction()
+			else
+				!pptpos = !this.lines[!x].startposition
+				!xdir = !this.lines[!x].direction().opposite()
+			endif
+			!zdir = !xdir.orthogonal(u)
+			!xdir = !zdir.orthogonal(u).opposite()
+			!ori = object orientation('x is $!xdir and y is u')
+			$)
+
+
+			--!cenpos = !pptpos.offset(!xdir,!offsetdis)
+			do !xx from 1 to 2
+				if !xx eq 2 then
+					!pptpos = !pptpos.offset(!this.zdir,!this.height)
+				endif
+				--!cenpos = !pptpos.offset(!xdir, - !offsetdis)
+
+				!ele = !pptpos.up / 1000
+				!elstring = 'EL. ' + !ele.string('d3').upcase().before('MM') + 'm'
+
+				--!elstring = 'EL. ' + before(upcase(string(!cenpos.up / 1000,d3)),'MM') + 'm'
+
+				--!textlen = !!mbdtextlen(!elstring) * !this.elthickcheight * 0.75
+				!textlen = !!mbdtextlen(!elstring) * !this.elthickcheight
+				!cenpos = !pptpos.offset(!xdir, - !textlen - !offsetdis)
+
+				if !xx eq 1 then
+					!cenpos = !cenpos.offset(u,!this.elthickcheight * 0.5)
+				else
+					!cenpos = !cenpos.offset(d,!this.elthickcheight * 1.3)
+				endif
+
+				!cenpos = !cenpos.offset(!ori.zdir(),!this.textoffsetdis)
+
+
+				if !this.drawoneMlabel(!elstring,!cenpos,!ori,!this.elthickcheight,false,'±ê¸ß').not() then
+					--$p asfsa
+					return
+				else
+					new dimpos
+					pos $!pptpos
+					desc '$!pptpos'
+				endif
+			enddo
+		enddo
+	endif
+endmethod
+
+define method .markCivilSelf()
+	--!ownername = name of owner of $!this.civilname
+	--!markString = !ownerName.part(-2,'-')
+	!markstring = !this.markname
+	$(
+	if !this.form.name() eq 'MARKARCHFORM' then
+		!markstring = !this.owner.part(-3,'-')
+	else
+		!markstring = !this.owner.part(-1,'-')
+	endif
+	$)
+	--if !this.type ne 'FLOOR' then
+	--	!markString = !this.civilname
+	--endif
+
+	!civilcheight = !this.civilcheight
+	!elthickcheight = !this.elthickCheight
+
+	--!textLen = !!mbdtextlen(!markstring) * !civilcheight * 0.75
+	!textLen = !!mbdtextlen(!markstring) * !civilcheight
+	if !this.autocheight then
+		if !this.type ne 'FLOOR' and !this.thick lt !civilcheight then
+			!bili = !this.thick / !civilcheight
+			!civilcheight = !civilcheight * !bili
+			!elthickcheight = !elthickCheight * !bili
+			!textLen = !textLen * !bili
+		endif
+
+
+		if !this.markThickAfterName then
+			--!needLen = !textLen + !!mbdtextlen(!this.thick.value().string('d0')) * !elthickcheight * 2 + !!mbdtextlen(!this.strongclass) * !elthickcheight	$* maxtextlen
+			!needLen = !textLen + !!mbdtextlen(!this.thick.value().string('d0')) * !elthickcheight * 1.5 + !!mbdtextlen(!this.strongclass) * !elthickcheight
+		else
+			!needLen = !textLen
+		endif
+
+		if !this.lines.set() and !this.lines[1].length() lt !needlen then
+			!bili = !this.lines[1].length() / !needlen
+			!civilcheight = !civilcheight * !bili
+			!elthickcheight = !elthickCheight * !bili
+			!textLen = !textLen * !bili
+		elseif !this.arcs.set() then
+			!templen = !this.arcs[1].angleposition(!this.arcs[1].startangle).distance(!this.arcs[1].angleposition(!this.arcs[1].endangle))
+			if !templen lt !needlen then
+				!bili = !templen / !needlen
+				!civilcheight = !civilcheight * !bili
+				!elthickcheight = !elthickCheight * !bili
+				!textLen = !textLen * !bili
+			endif
+		endif
+	endif
+
+
+
+	do !x from 1 to 2
+		--$p $!x
+		if !this.type eq 'WALL' then
+
+			!midangle = (!this.arcs[!x].startangle + !this.arcs[!x].endangle) / 2
+
+			!textAngle = (180 / pi) * (!textLen / !this.arcs[!x].radius.string().before('mm').real())
+
+			if !this.arcs[!x].orientation.zdir().angle(u) gt 90 then
+				--if !x eq 1 then
+				!startAngle = !midAngle - !textAngle / 2
+			else
+				!startAngle = !midAngle + !textAngle / 2
+			endif
+			!startAngle = !startAngle.value()
+			!startPos = !this.arcs[!x].angleposition(!startAngle)
+
+			!ydir = u
+			!zdir = !this.arcs[!x].angledirection(!midAngle)
+			--if !x eq 2 then
+			if (!x eq 1 and !this.arcs[1].radius lt !this.arcs[2].radius) or (!x eq 2 and !this.arcs[1].radius gt !this.arcs[2].radius) then
+				!zdir = !zdir.opposite()
+			endif
+			!xdir = !ydir.orthogonal(!zdir)
+			!ori = object orientation('x is $!xdir and z is $!zdir')
+			--if !x eq 1 then
+			if (!x eq 1 and !this.arcs[1].radius gt !this.arcs[2].radius) or (!x eq 2 and !this.arcs[1].radius lt !this.arcs[2].radius) then
+				!midPos = !this.arcs[!x].angleposition(!midAngle)
+				!templine = !this.arcs[!x].position.line(!midpos)
+				!startPos = !midpos.offset(!xdir, - !templine.distance(!startpos)).offset(!zdir,!this.textOffsetDis)
+			else
+				!startPos = !startPos.offset(!zdir,!this.textOffsetDis)
+			endif
+
+
+			!startPos = !startPos.offset(!this.zdir,!this.height / 2)
+
+			if !this.drawoneMlabel(!markString,!startpos,!ori,!civilcheight,false,'Ãû³Æ').not() then		$*name
+				return
+			endif
+
+			if !this.markThickAfterName then
+				--!startPos = !startPos.offset(!xdir,!markString.length() * !civilcheight)
+				!thickPos = !startPos.offset(!ydir, - 2 * !elthickcheight).offset(!ori.xdir(),!elthickcheight)
+				if !this.drawthick(!thickPos,!ori,!elthickcheight).not() then
+					--if !this.drawoneMlabel(!this.thick.string(),!thickpos,!ori,!elthickcheight,false,'ºñ¶È').not() then	$* thick
+					--if !this.drawoneMlabel(!this.thick.string(),!startpos,!ori,!elthickcheight,true,'Civil').not() then	$* thick
+					return
+				endif
+				!this.drawstrongclass(!thickpos,!ori,!elthickcheight)
+			endif
+		else
+			!points = !!getpointsofprofile(!this.profiles[!x])
+			!cenpos = !!getcenpoint(!points)
+			if !this.type ne 'FLOOR' then
+				!ori = !this.profiles[!x].orientation
+			else
+				if !x eq 1 then
+					!oriydir = !this.lookdir
+					--!orizdir = u
+				else
+					!oriydir = !this.lookdir.opposite()
+					--!orizdir = d
+				endif
+				!orizdir = !this.profiles[!x].orientation.zdir()
+				!ori = y is $!oriydir and z is $!orizdir
+			endif
+
+			--if !this.drawoneMlabel(!markString,!cenpos,!this.profiles[!x].orientation,!civilcheight,false,!this.type).not() then
+			!cenpos = !cenpos.offset(!ori.zdir(),!this.textOffsetDis).offset(!ori.xdir(), - !textLen / 2)
+			if !this.drawoneMlabel(!markString,!cenpos,!ori,!civilcheight,false,'Ãû³Æ').not() then
+				return
+			endif
+			--q var !this.markThickAfterName
+			if !this.markThickAfterName  and !this.type ne 'FLOOR' then
+				--!cenpos = !cenpos.offset(!ori.xdir(),!markString.length() * !civilcheight)
+				!thickPos = !cenPos.offset(!ori.ydir(), - 2 * !elthickcheight).offset(!ori.xdir(),!elthickcheight)
+				if !this.drawthick(!thickPos,!ori,!elthickcheight).not() then
+					--if !this.drawoneMlabel(!this.thick.string(),!thickpos,!this.profiles[!x].orientation,!elthickcheight,false,'ºñ¶È').not() then	$* thick
+					--if !this.drawoneMlabel(!this.thick.string(),!cenpos,!this.profiles[!x].orientation,!civilcheight,true,'Civil').not() then	$* thick
+					return
+				endif
+				!this.drawstrongclass(!thickpos,!ori,!elthickcheight)
+			endif
+			if !this.type eq 'FLOOR' then
+				if !this.profiles[!x].orientation.zdir().angle(u) lt 20 then
+					!ele = !this.profiles[!x].position.up / 1000
+					!elestring = 'EL. ' + !ele.string('d3').upcase().before('MM') + 'm'
+					--!elestring = 'EL. ' + before(upcase(string(!cenpos.up / 1000,d3)),'MM') + 'm'
+					!cenpos = !cenpos.offset(!ori.ydir(), - !elthickcheight * 1.5)
+					--!cenpos = !cenpos.offset(!this.profiles[!x].orientation.ydir(), - !elthickcheight * 1.5)
+					--!eleString = 'EL. ' + !this.profiles[!x].position.up.string()
+
+					--if !this.drawoneMlabel(!eleString,!cenpos,!this.profiles[!x].orientation,!elthickcheight,false,!this.type).not() then
+					!cenpos = !cenpos.offset(!this.profiles[!x].orientation.zdir(),!this.textOffsetDis)
+					if !this.drawoneMlabel(!eleString,!cenpos,!ori,!elthickcheight,false,'±ê¸ß').not() then
+						--if !this.drawoneMlabel(!eleString,!cenpos,!this.profiles[!x].orientation,!elthickcheight,false,'±ê¸ß').not() then
+						return
+					endif
+					!cenpos = !cenpos.offset(!ori.ydir(), - !elthickcheight * 2.5).offset(!ori.xdir(),!elthickcheight / 2)
+					--!cenpos = !cenpos.offset(!this.profiles[!x].orientation.ydir(), - !elthickcheight * 2.5).offset(!this.profiles[!x].orientation.xdir(),!elthickcheight / 2)
+					--!thickString = 'h ' + !this.thick.string()
+					--if !this.drawoneMlabel(!thickString,!cenpos,!this.profiles[!x].orientation,!elthickcheight,false,!this.type).not() then
+					!cenpos = !cenpos.offset(!this.profiles[!x].orientation.zdir(),!this.textOffsetDis)
+					--if !this.drawoneMlabel(!thickString,!cenpos,!this.profiles[!x].orientation,!elthickcheight,false,'ºñ¶È').not() then
+					--	return
+					--endif
+					if !this.drawthick(!cenpos,!ori,!elthickcheight).not() then
+						--if !this.drawthick(!cenpos,!this.profiles[!x].orientation).not() then
+						return
+					endif
+					!this.drawstrongclass(!cenpos,!this.profiles[!x].orientation,!elthickcheight)
+				endif
+			endif
+		endif
+	enddo
+	--return
+
+
+	-----------------------top mlabel
+
+	if !this.type.Match('WALL') ne 0 then
+		if !this.type eq 'GWALL' then
+			do !profile values !this.profiles
+				!angle = !profile.orientation.zdir().angle(d)
+				!angle = min(!angle,180 - !angle)
+				if !angle lt 20 then
+					!cenpoint = !!getCenPoint(!!getPointsOfProfile(!profile))
+					if undefined(!maxup) then
+						!topProfile = !profile
+						!maxup = !cenpoint.up
+						!topCenPoint = !cenpoint
+					elseif !cenpoint.up gt !maxup then
+						!topProfile = !profile
+						!topCenPoint = !cenpoint
+						!maxup = !cenpoint.up
+					endif
+				endif
+			enddo
+			!edges = !topProfile.edges()
+			do !edge values !edges
+				!oneLen = !edge.length()
+				if undefined(!maxlen) then
+					!maxlen = !onelen
+					handle any
+					endhandle
+					if !edge.objecttype() eq 'ARC' then
+						--$p arc $!this.civilname
+						!xdir = !edge.angletangent((!edge.startangle + !edge.endangle) / 2)
+					else
+						!xdir = !edge.direction()
+					endif
+				elseif !onelen gt !maxlen then
+					!maxlen = !onelen
+					!xdir = !edge.direction()
+				endif
+			enddo
+		elseif !this.type eq 'WALL' then
+			!temppos1 = !this.arcs[1].angleposition((!this.arcs[1].startangle + !this.arcs[1].endangle) / 2)
+			!temppos2 = !this.arcs[2].angleposition((!this.arcs[1].startangle + !this.arcs[1].endangle) / 2)
+			!topCenpoint = !temppos1.midpoint(!temppos2).offset(!this.zdir,!this.height)
+			--!xdir = !this.arcs[1].angleposition(!this.arcs[1].startangle).direction(!this.arcs[1].angleposition(!this.arcs[1].endangle))
+			!xdir = !this.arcs[1].angleposition(!this.arcs[1].startangle).direction(!this.arcs[1].angleposition(30))
+		else	$*STWALL
+			!points1 = !!getpointsofprofile(!this.profiles[1])
+			!points2 = !!getpointsofprofile(!this.profiles[2])
+			!poss = array()
+			!poss.append(!points1[3])
+			!poss.append(!points1[4])
+			!poss.append(!points2[3])
+			!poss.append(!points2[4])
+			!topcenpoint = !!getcenpoint(!poss)
+			!xdir = !points1[3].direction(!points1[4])
+		endif
+		!ori = object orientation('X is $!xdir and z is u')
+		if !ori.ydir().angle(!this.lookdir) gt 91 then
+			!xdir = !xdir.opposite()
+			!ori = object orientation('X is $!xdir and z is u')
+		endif
+		--if !this.drawOneMlabel(!markString,!topcenpoint,!ori,!civilcheight,false,!this.type).not() then
+		if !this.markThickAfterName then
+
+			!textLen = !textlen + !!mbdtextlen(!this.thick.value().string('d0')) * !elthickcheight * 1.5 + !!mbdtextlen(!this.strongclass) * !elthickcheight
+
+		endif
+		!topcenpoint = !topcenpoint.offset(!ori.zdir(),!this.textOffsetDis).offset(!ori.ydir(), - !civilcheight / 3).offset(!ori.xdir(), - !textLen / 2)
+		if !this.drawOneMlabel(!markString,!topcenpoint,!ori,!civilcheight,false,'Ãû³Æ').not() then
+			return
+		endif
+		if !this.markThickAfterName then
+			--!topcenpoint = !topcenpoint.offset(!xdir, !!mbdtextlen(!markString) * !civilcheight * 0.75 + !elthickcheight)
+			!topcenpoint = !topcenpoint.offset(!xdir, !!mbdtextlen(!markString) * !civilcheight + !elthickcheight)
+			!topcenpoint = !topcenpoint.offset(!ori.ydir(), !civilcheight / 2 - !elthickcheight)
+			if !this.drawthick(!topcenpoint,!ori,!elthickcheight).not() then
+				return
+			endif
+		endif
+	endif
+endmethod
+
+define method .drawthick(!pos is position,!ori is orientation,!elthickcheight is real) is boolean
+	if !this.drawoneMlabel(!this.thick.value().string('d0'),!pos,!ori,!elthickcheight,false,'ºñ¶È').not() then	$* thick
+		return false
+	endif
+	--!textlen = !!mbdtextlen(!this.thick.value().string('d0')) * !elthickcheight * 0.6
+	!textlen = !!mbdtextlen(!this.thick.value().string('d0')) * !elthickcheight
+	!circlepos = !pos.offset(!ori.xdir(),!textlen / 2).offset(!ori.ydir(),!elthickcheight / 3)
+	!this.mbdstru.toaid()
+	!owner = name
+	!aidcircle1 = object aidcircle(!owner, !circlepos, !ori, !textlen / 2 + !elthickcheight / 5,'ºñ¶È','node:' + !this.civilname)
+	!aidcircle2 = object aidcircle(!owner, !circlepos, !ori, !textlen / 2 + !elthickcheight / 2,'ºñ¶È','node:' + !this.civilname)
+	return true
+endmethod
+
+define method .drawstrongclass(!thickpos is position,!ori is orientation,!elthickcheight is real) is boolean
+	if !this.strongclass.set() and !this.strongclass ne '' then
+		!classpos = !thickpos.offset(!ori.xdir(),5 * !elthickcheight)
+		return !this.drawoneMlabel(!this.strongclass,!classpos,!ori,!elthickcheight,false,'Ç¿¶ÈµÈ¼¶')
+	endif
+	return true
+endmethod
+
+define method .drawOneMlabel(!string is string, !pos is position, !ori is orientation, !cheight is real, !frame is boolean, !function is string) is boolean
+	if !this.mbdstru.todim().not() then
+		return false
+	endif
+	!owner = name
+	!mlabel = object mlabel()
+	!desc = 'node:' + !this.civilname
+	return !mlabel.mlabel(!owner,!pos,!ori,!string,!cheight,!frame,!function,'',!desc)
+
+	$(
+	if !this.drawOneMlabel(!string,!pos,!ori,!cheight,!frame).not() then
+		return false
+	else
+		function '$!function'
+	endif
+	return true
+	$)
+endmethod
+
+$(
+define method .drawOneMlabel(!string is string, !pos is position, !ori is orientation, !cheight is real, !frame is boolean) is boolean
+	if !this.toDimGro().not() then
+		return false
+	endif
+	--!pos = !pos.offset(!ori.zdir(),!this.textOffsetDis)
+	new mlabel
+	position $!pos
+	cheight $!cheight
+	ori $!ori
+	lframe $!frame
+	stext '$!string'
+	return true
+endmethod
+$)
+
+define method .markonemem(!owner is string,!civilmem is civilmem,!cheightbili is real)
+	if !civilmem.type eq 'PANE' then
+		!cheight = !this.apdpcheight
+	else
+		!cheight = !this.openingcheight
+	endif
+	if !this.autocheight then
+		!cheight = !cheight * max(!cheightbili,!this.autocheightbili)
+	endif
+
+	!pointArr = !civilMem.pointArr
+	!cenPoints = !civilMem.cenPoints
+	!markstring = !civilmem.markstring
+
+	!orimark = !markstring
+	!memtype = !civilMem.type
+	do !x indices !cenpoints
+		if !this.openingpos.set() and !this.openingpos then
+			!markstring = !orimark + '|' + !cenpoints[!x].string().before(' WRT')
+		endif
+		--if !civilmem.civildata[!x].objecttype() eq 'PROFILE' then
+		$(
+		!ori = !civilmem.civildata[!x].orientation
+		!xdir = !ori.xdir()
+		!ydir = !ori.ydir()
+		$)
+		!xdir = !civilmem.xdir$!x
+		!ydir = !civilmem.ydir$!x
+		--!ori = !civilmem.ori
+		--else
+		--!zdir = !civilmem.civildata[!x].position.direction(!civilmem.civildata[!x].angleposition(!civilmem.civildata[!x].near(!cenpoints[!x])))
+		--!ydir = u
+		--!xdir = !ydir.orthogonal(!zdir)
+		--if !x eq 2 then
+		--	!xdir = !xdir.opposite()
+		--	!zdir = !xdir.orthogonal(!ydir)
+		--endif
+		!ori = object orientation('x is $!xdir and y is $!ydir')
+		--	endif
+
+		!points = !pointArr[!x]
+		handle any
+			!pos = !cenpoints[!x].offset(!xdir,!civilmem.radiuss[!x] / sqrt(2)).offset(!ydir,!civilmem.radiuss[!x] / sqrt(2))
+		elsehandle none
+			!diss = array()
+			do !point values !points
+				!diss.append(!!suidirdis(!cenpoints[!x],!xdir,!point) + !!suidirdis(!cenpoints[!x],!ydir,!point))
+			enddo
+			!indices = !diss.sortedindices()
+			!pos = !points[!indices.last()]
+		endhandle
+
+		if !this.type eq 'WALL' and !this.arcs[!x].radius lt !this.arcs[3 - !x].radius then
+			!textLen = !markstring.length() * !cheight
+			!textAngle = (180 / pi) * (!textLen / !this.arcs[!x].radius.string().before('mm').real())
+
+			!startangle = !this.arcs[!x].near(!pos)
+			!cenpointangle = !this.arcs[!x].near(!cenpoints[!x])
+			if !cenpointangle ge !startangle then
+				!endangle = !startangle.value() - !textangle.value()
+			else
+				!endangle = !startangle.value() + !textangle.value()
+			endif
+			!startpos = !this.arcs[!x].angleposition(!startangle)
+			!endpos = !this.arcs[!x].angleposition(!endangle)
+
+
+			!tempdis = !!suidirdis(!startpos,!this.zdir,!pos)
+
+			!startpos = !startpos.offset(!this.zdir,!tempdis)
+			!endpos = !endpos.offset(!this.zdir,!tempdis)
+
+			!xdir = !startpos.direction(!endpos)
+			!zdir = !xdir.orthogonal(!ydir)
+			!ori = object orientation('x is $!xdir and y is $!ydir')
+			!pos = !startpos
+		endif
+
+		!pos = !pos.offset(!ori.zdir(),!this.textOffsetDis)
+		!desc = 'node:' + !this.civilname + ' ' + !civilmem.name
+
+		!mlabel = object mlabel(!owner,!pos,!ori,!civilmem.order.string(),!cheight,false,'Ô¤Âñ¼þ±àºÅ','',!desc)
+
+		--!pos = !pos.offset(!ori.xdir(),!!mbdtextlen(!civilmem.order.string()) * !cheight * 0.75)
+		!pos = !pos.offset(!ori.xdir(),!!mbdtextlen(!civilmem.order.string()) * !cheight)
+
+		--$p $!markstring
+		!mlabel = object mlabel(!owner,!pos,!ori,!markstring,!cheight,false,'Ô¤Âñ¼þÃû³Æ','',!desc)
+	enddo
+endmethod
+
+define method .markCivilMem()
+	if !this.mbdstru.todim().not() then
+		--if !this.toDimGro().not() then
+		$p Çë¼ì²éMBD  SITEÊÇ·ñÒÑ¾­´æÔÚ
+		--$p $!civilMem.civilname cant be marked
+		--skip
+		return
+	endif
+	!owner = name
+	--if !this.mems.unset() then
+	!this.getDataOfMem()
+	--endif
+
+
+	do !civilMem values !this.mems
+		!pointArr = !civilMem.pointArr
+		!cenPoints = !civilMem.cenPoints
+		--!markString = !civilMem.civilname
+		!markstring = !civilmem.markstring
+		--if !this.mat and !civilmem.matstring.set() then
+		--	!markstring = !markstring + '|' + !civilmem.matstring
+		--endif
+		--if !this.secondcon and !civilmem.secondcon.set() then
+		--	!markstring = !markstring + '|' + !civilmem.secondcon
+		--endif
+		!orimark = !markstring
+		!memtype = !civilMem.type
+
+		do !x indices !cenpoints
+			if !this.openingpos.set() and !this.openingpos then
+				!markstring = !orimark + '|' + !cenpoints[!x].string().before(' WRT')
+			endif
+			if !civilmem.civildata[!x].objecttype() eq 'PROFILE' then
+				!ori = !civilmem.civildata[!x].orientation
+				!xdir = !ori.xdir()
+				!ydir = !ori.ydir()
+			else
+				!zdir = !civilmem.civildata[!x].position.direction(!civilmem.civildata[!x].angleposition(!civilmem.civildata[!x].near(!cenpoints[!x])))
+				!ydir = u
+				!xdir = !ydir.orthogonal(!zdir)
+				--if !x eq 2 then
+				if (!x eq 1 and !this.arcs[1].radius lt !this.arcs[2].radius) or (!x eq 2 and !this.arcs[1].radius gt !this.arcs[2].radius) then
+					!xdir = !xdir.opposite()
+					!zdir = !xdir.orthogonal(!ydir)
+				endif
+				--!ori = object orientation('x is $!xdir and y is $!ydir')
+			endif
+
+			!points = !pointArr[!x]
+			handle any
+				!pos = !cenpoints[!x].offset(!xdir,!civilmem.radiuss[!x] / sqrt(2)).offset(!ydir,!civilmem.radiuss[!x] / sqrt(2))
+			elsehandle none
+				!diss = array()
+				do !point values !points
+					!diss.append(!!suidirdis(!cenpoints[!x],!xdir,!point) + !!suidirdis(!cenpoints[!x],!ydir,!point))
+				enddo
+				!indices = !diss.sortedindices()
+				!pos = !points[!indices.last()]
+			endhandle
+
+			if !this.type eq 'WALL' then
+				!textlen = !!mbdtextlen(!markstring) * !this.openingcheight
+				--!textlen = !!mbdtextlen(!markstring) * !this.openingcheight * 0.75
+				----!textLen = !markstring.length() * !this.openingcheight
+				!textAngle = (180 / pi) * (!textLen / !this.arcs[!x].radius.string().before('mm').real())
+
+				!startangle = !this.arcs[!x].near(!pos)
+				!cenpointangle = !this.arcs[!x].near(!cenpoints[!x])
+				if !cenpointangle ge !startangle then
+					!endangle = !startangle - !textangle
+				else
+					!endangle = !startangle + !textangle
+				endif
+				!startpos = !this.arcs[!x].angleposition(!startangle)
+				!endpos = !this.arcs[!x].angleposition(!endangle)
+
+
+				!tempdis = !!suidirdis(!startpos,!this.zdir,!pos)
+
+				!startpos = !startpos.offset(!this.zdir,!tempdis)
+				!endpos = !endpos.offset(!this.zdir,!tempdis)
+
+				!xdir = !startpos.direction(!endpos)
+				!zdir = !xdir.orthogonal(!ydir)
+				!ori = object orientation('x is $!xdir and y is $!ydir')
+				!pos = !startpos
+			endif
+
+			!pos = !pos.offset(!ori.zdir(),!this.textOffsetDis)
+			!desc = 'node:' + !this.civilname + ' ' + !civilmem.name
+
+			!mlabel = object mlabel(!owner,!pos,!ori,!civilmem.order.string(),!this.apdpcheight,false,'ÐòºÅ','',!desc)
+
+			--!pos = !pos.offset(!ori.xdir(),!!mbdtextlen(!civilmem.order.string()) * !this.apdpcheight * 0.75)
+			!pos = !pos.offset(!ori.xdir(),!!mbdtextlen(!civilmem.order.string()) * !this.apdpcheight)
+
+			!mlabel = object mlabel(!owner,!pos,!ori,!markstring,!this.apdpcheight,false,'±àºÅ','',!desc)
+		enddo
+	enddo
+endmethod
+
+define method .changeline()     $* keep or remove the line of mlabel
+	var !dimposs coll all dimpos with(type of owner eq 'MLABEL') for $!this.mbdstru.dimgro
+	handle any
+		return
+	endhandle
+	do !dimpos values !dimposs
+		!pos = pos of $!dimpos wrt/*
+		!desc = desc of $!dimpos
+		if !desc eq '' then
+			!desc = desc of owner of $!dimpos
+			!descpos = !desc.part(2,'|').position()
+			handle any
+				skip
+			endhandle
+		else
+			!descpos = !desc.position()
+			handle any
+				skip
+			endhandle
+		endif
+
+		if !descpos.unset() then
+			skip
+		else
+			if !pos.distance(!descpos) lt 0.1 then
+				!mlabelpos = pos of mlabel of $!dimpos wrt/*
+				!dbref = object dbref(!dimpos)
+				!dbref.pos = !mlabelpos
+			else
+				!dbref = object dbref(!dimpos)
+				!dbref.pos = !descpos
+			endif
+		endif
+	enddo
+endmethod
+
+define method .setMlabelLine(!switch is boolean)
+	var !dimposs coll all dimpos with(type of owner eq 'MLABEL') for $!this.mbdstru.dimgro
+	handle any
+		--$p asdfsaf
+		return
+	endhandle
+	--q var !dimposs
+	do !dimpos values !dimposs
+		!pos = pos of $!dimpos wrt/*
+		!desc = desc of $!dimpos
+		if !desc eq '' then
+			!desc = desc of owner of $!dimpos
+			!descpos = !desc.part(2,'|').position()
+			handle any
+				skip
+			endhandle
+		else
+			!descpos = !desc.position()
+			handle any
+				skip
+			endhandle
+		endif
+
+		if !descpos.unset() then
+			skip
+		else
+			if !switch.not() then
+				!mlabelpos = pos of mlabel of $!dimpos wrt/*
+				!dbref = object dbref(!dimpos)
+				!dbref.pos = !mlabelpos
+			else
+				!dbref = object dbref(!dimpos)
+				!dbref.pos = !descpos
+			endif
+		endif
+	enddo
+endmethod
+
+
+define method .deleteDimAndMlabel() is boolean
+	return !this.mbdstru.deletestru()
+endmethod
+
+define method .deleteDim() is boolean
+	return !this.mbdstru.deletefunction('lindim','')
+endmethod
+
+define method .deleteMlabel() is boolean
+	return !this.mbdstru.deletefunction('mlabel','')
+endmethod
+
+
+dø

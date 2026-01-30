@@ -1,0 +1,297 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.1
+--Date			= June 30th 2023
+--[Function]:
+------------------------------------------
+
+--Method:
+--Public method:
+--suppMaterial(!mem is string, !quantity is real)   						$*
+
+--Private method:
+
+
+define object suppMaterial
+	member .name is string
+	--member .spref is string
+	member .type is string
+
+	member .order is real   				$*序号
+	member .specialnum is string			$*分项序号
+
+	----------from excel table s
+	member .itemcode is string				$*编号
+	member .desc is string   				$*品名
+	member .ns is string   					$*型号
+	member .material is string 				$*材料牌号
+	member .materialstandard is string 		$*材料标准
+	member .specstandard is string 			$*规格标准
+	member .size is string					$*尺寸
+	member .generateStyle is string			$*制造形式
+	member .rccm is string					$*RCC-M
+	member .qualitylevel is string			$*质保等级
+	member .unit is string					$*单位
+	member .perWeight is real				$*单重
+	member .weightUnit is string			$*单重单位
+	member .remark is string				$*备注
+	----------from excel table e
+	--member .dataarr is array				$*data from input data
+
+	member .quantity is real   				$*数量
+	member .weight is real   				$*重量
+	member .rev is string   				$*Rev.
+
+
+	member .mtxx is string					$*
+
+	member .supptext is string
+
+
+	---------
+	member .uniquecode is string
+	member .materialangle is real
+	member .angle is real
+
+	member .changetype is string
+
+	member .errors is array
+endobject
+
+define method .suppMaterial(!mem is string, !quantity is real)
+	!this.mtxx = mtxx of spref of $!mem
+	handle any
+		!this.mtxx = 'NA'
+	endhandle
+	--q var !this.quantity
+    if  !quantity inset(1000000001,1000000002,1000000003,1000000004,1000000005,1000000006,1000000007,1000000008,1000000009) then
+        !this.quantity = 1
+        !this.setmemdata(!mem,!quantity.string())
+    else
+        !this.quantity = !quantity
+        !this.setmemdata(!mem,'')
+    endif
+endmethod
+
+define method .suppmaterial(!input is any)
+	if !input.objecttype() eq 'STRING' then
+		!this.suppmaterial(!input)
+		return
+	else
+		!object = !input
+		!mem = !object.name
+		if !input.objecttype() inset ('ISOPAD','ISOLUG') then
+			!this.angle = !input.angle
+			!cutangle = min(max(5 * 180 / (!input.rinside * pi),5),45)
+			!cutangle = !cutangle.value()
+			!this.materialangle = !this.angle + !cutangle
+		endif
+		if !object.objecttype() ne 'ISOLEG' then
+			!this.uniquecode = !object.nsAndSpref[2] & '-' & !this.type
+		else
+			!this.uniquecode = !object.nsAndSpref[2] & '-' & !object.objecttype()
+		endif
+
+		!this.mtxx = mtxx of $!matchspref
+		handle any
+			!this.mtxx = 'NA'
+		endhandle
+		!this.supptext = ''
+		!this.Unit = 'mm'
+		!this.quantity = real(STRING(!object.height, 'D0') + !this.unit)
+		--q var !this.quantity
+        --$p 2
+        !this.setmemdata(!mem,!object)
+	endif
+endmethod
+
+define method .setmemdata(!mem is string,!input is any) is boolean
+	!this.name = !mem
+	!this.type = type of $!mem
+
+
+	--!this.rev = :ZD_Rev of zone of $!mem
+	--handle any
+	--	!this.rev = ''
+	--endhandle
+	--!this.rev = 'a' $*4月30日前
+    --modify by jyg 20240731
+	!rev = :ZD_Rev of zone of $!mem
+    if !rev.empty() or !rev eq 'A' then
+        !this.rev = 'a'
+    elseif !rev eq 'A+' or !rev eq 'B' then
+        !this.rev = 'b'
+    endif
+    --q var !mem
+	!this.itemcode = :itemcode of $!mem
+	handle any
+	endhandle
+	if !this.itemcode.unset() or !this.itemcode eq '' or !this.itemcode.upcase() eq 'UNSET' then
+		$p $!this.type $!mem 得不到材料,请检查它的 :itemcode
+		!this.errors.append(!this.type & | | & !mem & | 得不到材料,请检查它的 :itemcode|)
+		return false
+	endif
+        --modify by jyg 20250208 解决itemcode 有多个编码的情况
+        !itemcode = :itemcode of $!mem
+        !allItemcode = !itemcode.split(';')
+        !indexInfo = '1000000001,1000000002,1000000003,1000000004,1000000005,1000000006,1000000007,1000000008,1000000009'
+        if  !input inset('1000000001','1000000002','1000000003','1000000004','1000000005','1000000006','1000000007','1000000008','1000000009') then
+            !number = !indexInfo.split(',').Findfirst(!input)
+            !this.itemcode = !allItemcode[$!number]
+            !setinput = ''
+            if !this.getexceldata(!this.itemcode,!setinput).not() then
+                return false
+            endif
+        else
+            if !this.getexceldata(!this.itemcode,!input).not() then
+                return false
+            endif
+        endif
+
+        if !this.perWeight.unset() then
+            !this.weight = 0
+        else
+
+            --modify by jyg 20250219 解决阀门用支架拉杆数量不是1，而是取长度的问题。
+            if  !this.type eq 'PCLA' then
+                !catrefOwner = name of owner of catref of $!mem
+                if  !catrefOwner eq '/NPHS-TA(U型)' then
+                    !this.weight = !this.perWeight
+                else
+                    !this.weight = !this.perWeight * !this.quantity.string().upcase().before('MM').before('IN').real()
+                endif
+            else
+                !this.weight = !this.perWeight * !this.quantity.string().upcase().before('MM').before('IN').real()
+            endif
+            if !this.unit eq 'M2' then
+                !this.weight = !this.weight / 1000000
+            elseif !this.unit eq 'M' then
+                !this.weight = !this.weight / 1000
+            endif
+        endif
+        !quantityMess = !this.quantity.string('d1').replace('.0','')
+        if  !quantityMess.match('mm') gt 0  or !quantityMess eq '1' then
+            !this.quantity = !quantityMess.real()
+        else
+            !quantityMess = !quantityMess + 'mm'
+            !this.quantity = !quantityMess.real()
+        endif
+
+        ----------------------
+        ----------------------Step 1:check specstandard
+        if !this.specstandard.match('1907') ne 0 then
+            --q var !this.specstandard
+            !this.specstandard = !this.specstandard.replace('1907','CP05')
+        endif
+
+	return true
+endmethod
+
+define method .getexceldata(!itemcode is string, !input is any) is boolean
+    --$P 123
+    --q var !itemcode
+
+
+        --q var !input
+        !headdataarr = !!mbdmaterialdata.getmaterial(!itemcode)
+        if !headdataarr.unset() then
+            $p $!this.type $!this.name 得不到材料,请检查它的 :itemcode ：$!itemcode ,在码表中查询不到
+            !this.errors.append(!this.type & | | & !this.name & | 得不到材料,请检查它的 :itemcode ：| & !itemcode & | , 在码表中查询不到|)
+            return false
+        else
+            !cols = !headdataarr[1]
+            !dataarr = !headdataarr[2]
+        endif
+
+        !itemcodeindex = !cols.findfirst('编号')
+        !descindex = !cols.findfirst('品名')
+        !nsindex = !cols.findfirst('型号')
+        !materialindex = !cols.findfirst('材料牌号')
+        !materialStandardindex = !cols.findfirst('材料标准')
+        !specStandardindex = !cols.findfirst('规格标准')
+        !sizeindex = !cols.findfirst('尺寸')
+        !generateStyleindex = !cols.findfirst('制造形式')
+        !rccmindex = !cols.findfirst('RCC-M')
+        if !rccmindex.unset() then
+            !rccmindex = !cols.findfirst('RCC_M')
+        endif
+        !qualitylevelindex = !cols.findfirst('质保等级')
+        !unitindex = !cols.findfirst('单位')
+        !perWeightindex = !cols.findfirst('单重')
+        !weightUnitindex = !cols.findfirst('单重单位')
+        !remarkindex = !cols.findfirst('备注')
+
+        if !input.objecttype() eq 'STRING' then	$*紧固件
+            if !nsindex.unset() then
+                --!nsindex = !cols.findfirst('型号')
+                !nsindex = !cols.findfirst('公称直径')
+                --!sizeindex = !cols.findfirst('尺寸')
+                --!generateStyleindex = !cols.findfirst('制造形式')
+            endif
+        endif
+
+        !this.desc = !dataarr[!descindex]
+        !this.ns = !dataarr[!nsindex]
+        handle any
+        endhandle
+        !this.material = !dataarr[!materialindex]
+        !this.materialStandard = !dataarr[!materialStandardindex]
+        !this.specStandard = !dataarr[!specStandardindex]
+        !this.size = !dataarr[!sizeindex]
+        handle any
+        endhandle
+        !this.generateStyle = !dataarr[!generateStyleindex]
+        handle any
+        endhandle
+        !this.rccm = !dataarr[!rccmindex]
+        !this.qualitylevel = !dataarr[!qualitylevelindex]
+        !this.unit = !dataarr[!unitindex]
+        !this.perWeight = !dataarr[!perWeightindex].real()
+        !this.weightUnit = !dataarr[!weightUnitindex]
+        !this.remark = !dataarr[!remarkindex]
+
+        --q var !input
+        if !input.objecttype() eq 'STRING' then
+            !this.uniquecode = !this.itemcode
+            if !this.generateStyle.unset() then
+                !this.generateStyle = ''
+            endif
+            if !this.size.unset() then
+                !this.size = ''
+            endif
+            --$p 24
+        else
+        --$p 25
+            if !this.ns.unset() then
+                !nsAndSpref = !input.nsAndSpref
+                !this.ns = !nsAndSpref[1]
+                if !input.objecttype() inset ('ISOPAD','ISOLUG') then
+                    !anglestring = !input.angle.string('D2').replace('.00','') & '°'
+                    if !anglestring.match('.') ne 0 then
+                        !anglestring = !anglestring.replace('0°','°')
+                    endif
+
+                    !this.ns = !this.ns & ' x ' & !anglestring
+                endif
+            endif
+            if !this.size.unset() then
+                !this.size = !this.ns
+            endif
+        endif
+
+	--q var !this.ns  !this.size
+	return true
+endmethod
+
+define method .getweight(!weight is string) is real
+	if !weight.match('(') ne 0 then
+		!weightreal = !weight.after('(').before(')').trim().real()
+	else
+		!weightreal = !weight.real()
+	endif
+	return !weightreal
+endmethod
+缑

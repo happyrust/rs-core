@@ -1,0 +1,57 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= May 9th 2023
+--[Function]:
+------------------------------------------
+
+define function !!getNodeNames(!item is any) is string
+	!struname = name of stru of $!item
+	handle any
+		!nodename = |"nodeNames":[""],|
+		return !nodename
+	endhandle
+	!desc = desc of $!item
+	!nodename = !desc.after('node:').before('|').trim()
+	if !nodename eq '' then
+		!lastpart = !struname.part(-1,'-')
+		!nodename = !struname.before('-' + !lastpart)
+		--!nodename = !struname.before('-MBD')
+	endif
+
+	if !nodename ne '' then
+		!names = !nodename.split()     $* maybe array of item name
+		!string = ''
+		do !name values !names
+			!dbref = !name.dbref()
+			handle any
+				if !name.matchwild('/_*') and !name.split('_').size() eq 3 then
+					!name = !name.replace('/_','=').replace('_','/')
+				else
+					!name = !name.replace('_','/')
+				endif
+				!dbref = !name.dbref()
+				handle any
+					$p Failed to get item name of $!name
+					skip
+				endhandle
+			endhandle
+			if !string eq '' then
+				!string = !name
+			else
+				!string = !string + ' ' + !name
+			endif
+		enddo
+		!nodename = !string
+
+		!nodename = |"nodeNames":["| + !nodename.replace(' ',|","|) + |"],|
+	else
+		!nodename = |"nodeNames":[""],|
+	endif
+
+	return !nodename
+endfunction
+É

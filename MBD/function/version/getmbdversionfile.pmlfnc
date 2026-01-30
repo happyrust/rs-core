@@ -1,0 +1,26 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= February 28th 2024
+--[Function]:
+------------------------------------------
+
+define function !!getmbdversionfile(!form is form) is file
+	!resultfile = object file()
+	!formname = !form.name().lowcase()
+	!fullformname = !form.name().lowcase() + '.pmlfrm'
+	!path = !!pml.getpathname(!fullformname).before(!fullformname) & 'version/' & !formname & 'version.txt'
+	handle any
+		return !resultfile
+	endhandle
+	--q var !path
+	!file = object file(!path)
+	handle any
+		return !resultfile
+	endhandle
+	return !file
+endfunction
+m9

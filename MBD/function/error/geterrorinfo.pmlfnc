@@ -1,0 +1,19 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= June 27th 2023
+--[Function]:	return array whick include information of inputed error
+------------------------------------------
+
+define function !!geterrorinfo() is array
+	!result = array()
+	!result.append(!!error.text)
+	!result.append(!!error.line)
+	!result.append(!!error.command)
+	!result.appendarray(!!error.callstack)
+	return !result
+endfunction
+´

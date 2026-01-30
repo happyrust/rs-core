@@ -1,0 +1,57 @@
+!textwidth = 20
+!tagwidth = 8
+!timetagwidth = 4
+!longtagwidth = 8
+text .wjbm '文件编码' tagwidth $!longtagwidth width 20  is string
+text .nbbm '内部编码' tagwidth $!longtagwidth width 20  is string
+text .rev '版本信息' tagwidth $!longtagwidth width 4  is string
+text .status '状态' tagwidth $!longtagwidth width 4  is string
+
+text .compliation '施设编制' tagwidth $!tagwidth at xmin.rev ymax + 1 width $!textwidth  is string
+text .compliationtime '时间' tagwidth $!timetagwidth at xmax + 2 ymin width $!textwidth  is string
+
+text .proofreading '施设校对' tagwidth $!tagwidth at xmin.rev ymax + 0.3 width $!textwidth  is string
+text .proofreadingtime '时间' tagwidth $!timetagwidth at xmax + 2 ymin width $!textwidth  is string
+
+text .review1 '施设审核1' tagwidth $!tagwidth at xmin.rev ymax + 0.3 width $!textwidth  is string
+text .review1time '时间' tagwidth $!timetagwidth at xmax + 2 ymin width $!textwidth  is string
+text .review2 '施设审核2' tagwidth $!tagwidth at xmin.rev ymax + 0.3 width $!textwidth  is string
+text .review2time '时间' tagwidth $!timetagwidth at xmax + 2 ymin width $!textwidth  is string
+
+text .approval1 '施设审定1' tagwidth $!tagwidth at xmin.rev ymax + 0.3 width $!textwidth  is string
+text .approval1time '时间' tagwidth $!timetagwidth at xmax + 2 ymin width $!textwidth  is string
+
+text .approval2 '施设审定2' tagwidth $!tagwidth at xmin.rev ymax + 0.3 width $!textwidth  is string
+text .approval2time '时间' tagwidth $!timetagwidth at xmax + 2 ymin width $!textwidth  is string
+
+text .counterSignature '施设会签' tagwidth $!tagwidth at xmin.rev ymax + 0.3 width $!textwidth  is string
+text .counterSignaturetime '时间' tagwidth $!timetagwidth at xmax + 2 ymin width $!textwidth  is string
+
+text .ratify '施设批准' tagwidth $!tagwidth at xmin.rev ymax + 0.3 width $!textwidth  is string
+text .ratifytime '时间' tagwidth $!timetagwidth at xmax + 2 ymin width $!textwidth  is string
+
+
+
+
+!this.wjbm.editable = false
+!this.nbbm.editable = false
+!this.rev.editable = false
+!this.status.editable = false
+
+!this.compliation.editable = false
+!this.proofreading.editable = false
+!this.review1.editable = false
+!this.review2.editable = false
+!this.approval1.editable = false
+!this.approval2.editable = false
+!this.counterSignature.editable = false
+!this.ratify.editable = false
+
+!this.compliationtime.editable = false
+!this.proofreadingtime.editable = false
+!this.review1time.editable = false
+!this.review2time.editable = false
+!this.approval1time.editable = false
+!this.approval2time.editable = false
+!this.counterSignaturetime.editable = false
+!this.ratifytime.editable = false

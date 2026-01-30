@@ -1,0 +1,152 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= April 10th 2023
+--[Function]:
+------------------------------------------
+
+--Method:
+--mbdaidline(!item is any) 													$*
+--mbdaidline(!owner is any, !aidlinepos is position, !aidlinepos2 is position, !function is string, !desc is string) is boolean
+-----------
+
+--mbdaidline(!owner is any, !aidlinepos is position, !ori is orientation, !zlen is real, !function is string, !desc is string) is boolean
+-----------
+
+--create() is boolean   													$*
+--json() is array   														$*
+
+
+define object mbdaidline
+	member .owner is string
+	member .name is string
+	member .pos is position
+	member .ori is orientation
+	member .zlen is real
+
+	member .function is string			$*function for
+	member .desc is string				$*nodenames
+
+	member .pos2 is position
+endobject
+
+define method .mbdaidline(!item is any)
+	!this.name = name of aidline of $!item
+	handle any
+		return
+	endhandle
+	!this.owner = name of owner of $!this.name
+	!this.pos = pos of $!this.name wrt/*
+	!this.ori = ori of $!this.name wrt/*
+	!this.zlen = zlen of $!this.name
+	!this.function = function of $!this.name
+	!this.desc = desc of $!this.name
+endmethod
+
+define method .mbdaidline(!owner is any, !aidline is line, !function is string, !desc is string) is boolean
+	!pos1 = !aidline.startposition
+	!pos2 = !aidline.endposition
+	return !this.mbdaidline(!owner, !pos1, !pos2, !function, !desc)
+endmethod
+
+define method .mbdaidline(!owner is any, !aidlinepos is position, !aidlinepos2 is position, !function is string, !desc is string) is boolean
+	!dir = !aidlinepos.direction(!aidlinepos2)
+	handle any
+		return false
+	elsehandle none
+		!ori = z is $!dir
+		!zlen = !aidlinepos.distance(!aidlinepos2)
+		return !this.mbdaidline(!owner, !aidlinepos, !ori, !zlen, !function, !desc)
+	endhandle
+endmethod
+
+define method .mbdaidline(!owner is any, !aidlinepos is position, !ori is orientation, !zlen is real, !function is string, !desc is string) is boolean
+	!this.owner = name of $!owner
+	!this.pos = !aidlinepos
+	!this.ori = !ori
+	!this.zlen = !zlen
+
+	!this.pos2 = !this.pos.offset(!this.ori.zdir(),!this.zlen)
+
+	if !function.trim() ne '' then
+		!this.function = !function.trim()
+	else
+		!this.function = ''
+		--!this.function = '其它'
+	endif
+	if !desc.trim() ne '' then
+		!this.desc = !desc.trim()
+	endif
+
+	return !this.create()
+endmethod
+
+define method .create() is boolean
+	$!this.owner
+	handle any
+		return false
+	endhandle
+
+	new aidline
+	handle any
+		return false
+	endhandle
+
+	if !this.name.set() then
+		name $!this.name
+		handle any
+			return false
+		endhandle
+	else
+		!this.name = name
+	endif
+
+	position $!this.pos
+	ori $!this.ori
+	zlen $!this.zlen
+
+	if !this.function.set() and !this.function.trim() ne '' then
+		function '$!this.function'
+	endif
+
+	if !this.desc.set() and !this.desc.trim() ne '' then
+		desc '$!this.desc'
+	endif
+
+	return true
+endmethod
+
+define method .json() is array
+	!aidline = !this.name
+
+	!temppos = !this.pos.offset(!this.ori.zdir(),!this.zlen)
+
+	!result = array()
+	!result.append(|{|)
+
+	!result.append(!!getNodeNames(!aidline))
+	!result.append(|"type": "line",|)
+	--!result.append(|"function": "| + !this.function + |",|)
+
+	if !this.function ne '' then
+		!result.append(|"function": "| + !this.function + |",|)
+	else
+		!result.append(|"function": "| + |其它| + |",|)
+	endif
+
+	--!result.append(|"Position": [|)	$* sdk 4 cant read it 202309041109
+	!result.append(|"position": [|)
+	!result.appendarray(!!postoArr(!this.pos))
+	!result[!result.size()] = !result[!result.size()] + ','
+	!result.appendarray(!!postoArr(!temppos))
+	!result.append(|]|)
+
+	!result.append(|},|)
+	return !result
+endmethod
+
+
+儎

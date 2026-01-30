@@ -1,0 +1,3 @@
+Materialattarr:order/序号,material/部件描述,quantity/数量,perWeight/单重,weight/重量,remark/备注
+EleMaterialattarr:order/序号,material/部件描述,quantity/数量,perWeight/单重,weight/重量,rev/版本,changetype/升版说明,remark/备注
+suppAttarr:suppname/支架,Function/功能,Room/房间号,tssm/特殊说明,wjbm/外部编码,nbbm/内部编码,rev/版本,status/状态

@@ -1,0 +1,56 @@
+﻿------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= May 10th 2023
+--[Function]:	update the way
+------------------------------------------
+
+define function !!isoGetBestDir(!inputdir is direction,!dirs is array) is direction
+    !dir = !inputdir
+	!angle1 = !dir.angle(!dirs[1])
+	!angle2 = !dir.angle(!dirs[2])
+	!angle3 = !dir.angle(!dirs[3])
+
+
+	--s 202305101858
+	!absangle1 = min(!angle1,180 - !angle1)
+	!absangle2 = min(!angle2,180 - !angle2)
+	!absangle3 = min(!angle3,180 - !angle3)
+
+	!angles = array()
+	!angles.append(!absangle1)
+	!angles.append(!absangle2)
+	!angles.append(!absangle3)
+	!indices = !angles.sortedindices()
+	!num = !indices[1]
+
+
+	if !angle$!num gt 90 then
+		!dir = !dir.opposite()
+	endif
+	return !dir
+	--e
+
+
+	$(
+	--202305101858
+    !angle1 = !dir.angle(!dirs[1])   $*优选以第一个方向做标准判断
+    if !angle1 gt 90 then
+        !dir = !dir.opposite()
+    elseif !angle1 eq 90 then
+        !angle2 = !dir.angle(!dirs[2])   $*第一个方向判断不了时，优选以第二个方向做标准判断
+        if !angle2 gt 90 then
+            !dir = !dir.opposite()
+        elseif !angle2 eq 90 then
+            if !dir.angle(!dirs[3]) gt 90 then   $*前面两个方向判断不了时，用第三个方向判断
+                !dir = !dir.opposite()
+            endif
+        endif
+    endif
+    return !dir
+	$)
+endfunction
+C�

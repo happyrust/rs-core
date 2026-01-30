@@ -1,0 +1,33 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= October 27th 2023
+--[Function]:
+------------------------------------------
+
+define function !!getAverageDir(!dirs is array) is direction
+	!adir = object direction()
+	do !n indices !dirs
+		!dir = !dirs[$!n]
+		if !adir.unset() then
+			!adir = !dir
+		else
+			!posstring = 'E 0 N 0 U 0'
+			!pos = !posstring.position()
+			!pos1 = !pos.offset(!adir,100)
+			!pos2 = !pos.offset(!dir,100)
+			!ori = object orientation('x is $!adir and y is $!dir')
+			handle any         $*  same
+			elsehandle none
+				!angle = !adir.angle(!dir)
+				!arc = object arc(!pos,!ori,0,!angle,100,true)
+				!newpos = !arc.angleposition(!angle / !n)
+				!adir = !pos.direction(!newpos)
+			endhandle
+		endif
+	enddo
+	return !adir
+endfunction

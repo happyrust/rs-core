@@ -1,0 +1,433 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= April 11st 2023
+--[Function]:
+------------------------------------------
+
+--Method:
+--civilRoom(!item is any)   												$*
+--deleteDim() is boolean													$*
+--deleteDimAndMlabel() is boolean   										$*
+--deleteMlabel() is boolean 												$*
+--draw()																	$*
+--drawdim() 																$*
+--drawMlabel()  															$*
+--getPaneArrData()  														$*
+
+
+define object civilRoom
+	member .name is string
+	member .markName is string
+	member .paneArr is array			$* array of vertpoints
+
+	member .textOffSetDis is real
+	member .roomCheight is real
+
+
+	--member .markzone is string
+	--member .markstru is string
+	--member .dimgro is string
+
+	member .mbdStru is mbdStru
+
+	member .drawnum is string
+endobject
+
+define method .civilRoom(!item is any)
+	!this.textoffsetdis = 5
+	!this.roomcheight = 350
+	!roomname = name of frmw of $!item
+	handle any
+		return
+	elsehandle none
+		if !roomname.matchwild('*-RM*') then
+			!this.name = !roomname
+
+			!this.markname = !roomname.part(-1,'-')
+			!this.getPaneArrData()
+			--!this.getDimName()
+			!this.mbdstru = object mbdstru(!this.name)
+		endif
+	endhandle
+	!this.drawnum = :zd_nbbm of $!item
+	handle any
+		!this.drawnum = ''
+	endhandle
+endmethod
+
+define method .getPaneArrData()
+	var !panes coll all pane for $!this.name
+	do !pane values !panes
+		--!paneData = !!getvertpoints(!pane,true)
+		--!this.paneArr.append(!paneData)
+
+		!vertPoints = object vertPoints(!pane,true)
+		!vertPoints.getTwoProfiles()
+		!this.paneArr.append(!vertpoints)
+		--$p Pane $!pane of Room $!this.name is not good, please check
+	enddo
+endmethod
+
+define method .getJsonData() is array
+	!jsonmem = object jsonmem()
+	!jsonmem.node = !this.name
+	!jsonmem.code = !this.name
+	!jsonmem.rev = !this.rev
+	!jsonmem.type = '结构'
+	!json = object json(!this.mbdstru.mbdstru)
+	!jsonmem.content = !json.getJson()
+	!jsonmem.drawingInfo = !this.getDrawingInfoJson()
+	!jsonmem.proofreading = !this.getproofreadingjson()
+	return !jsonmem.getjsontext()
+endmethod
+
+define method .getProofreadingJson() is array
+	!this.getproofreadinginfo()
+	!row = array()
+	!row.append(|{|)
+
+	!row.append(|"批准": [|)
+	!row.append(|"| & !this.approval & |",|)
+	!row.append(|"| & !this.approvaltime & |"|)
+	!row.append(|],|)
+
+	!row.append(|"审核": [|)
+	!row.append(|"| & !this.review & |",|)
+	!row.append(|"| & !this.reviewtime & |"|)
+	!row.append(|],|)
+
+	!row.append(|"校核": [|)
+	!row.append(|"| & !this.verification & |",|)
+	!row.append(|"| & !this.verificationtime & |"|)
+	!row.append(|],|)
+
+	!row.append(|"编制": [|)
+	!row.append(|"| & !this.compliation & |",|)
+	!row.append(|"| & !this.compliationtime & |"|)
+	!row.append(|]|)
+
+	!row.append(|},|)
+
+	!row.insert(2,|"type":"check",|)
+	!row.insert(2,|"nodeNames":["| + !this.name + |"],|)
+	return !row
+
+	$(
+	!row = array()
+	!row.append(|{|)
+
+	!row.append(|"批准": [|)
+	!row.append(|"xxx",|)
+	!row.append(|"2022.4.27"|)
+	!row.append(|],|)
+
+	!row.append(|"审核": [|)
+	!row.append(|"xxx",|)
+	!row.append(|"2022.4.27"|)
+	!row.append(|],|)
+
+	!row.append(|"校核": [|)
+	!row.append(|"xxx",|)
+	!row.append(|"2022.4.27"|)
+	!row.append(|],|)
+
+	!row.append(|"编制": [|)
+	!row.append(|"xxx",|)
+	!row.append(|"2022.4.27"|)
+	!row.append(|]|)
+
+	!row.append(|},|)
+
+	!row.insert(2,|"type":"check",|)
+	!row.insert(2,|"nodeNames":["| + !this.name + |"],|)
+	return !row
+	$)
+endmethod
+
+define method .getproofreadinginfo()
+	if !this.compliation.unset() then
+		!this.compliation = 'xxx'
+		!this.compliationtime = '2022.4.27'
+		!this.verification = 'xxx'
+		!this.verificationtime = '2022.4.27'
+		!this.review = 'xxx'
+		!this.reviewtime = '2022.4.27'
+		!this.approval = 'xxx'
+		!this.approvaltime = '2022.4.27'
+	endif
+endmethod
+
+define method .getdrawinfo()
+	if !this.drawgroup.unset() then
+		!projectdata = object projectdata()
+
+		!this.drawcompany = 'XXXX有限公司'
+		if !this.form.name() eq 'MARKCIVILFORM' then
+			!this.drawmajor = '结构'
+			!this.drawname = '结构三维制作图'
+		else
+			!this.drawmajor = '建筑'
+			!this.drawname = '建筑三维制作图'
+		endif
+		--!this.drawnum = !this.drawnum
+
+		!this.drawproject = !projectdata.project
+		!this.drawengineering = !projectdata.number
+		!this.drawsubprojectnumber = !projectdata.name
+		!this.drawgroup = !projectdata.group
+	endif
+endmethod
+
+define method .getDrawingInfoJson() is array
+	!this.getdrawinfo()
+	!row = array()
+	!row.append(|{|)
+	!row.append(|"项目": "| & !this.drawproject & |",|)
+	!row.append(|"设计公司": "| & !this.drawcompany & |",|)
+	!row.append(|"图名": "| & !this.drawmajor & |",|)
+	!row.append(|"图号": "| + !this.drawnum + |",|)
+	!row.append(|"工程号": "| + !this.drawengineering + |",|)
+	!row.append(|"子项号": "| + !this.drawsubprojectnumber + |",|)
+	!row.append(|"机组": "| + !this.drawgroup + |",|)
+	!row.append(|"专业": "| & !this.drawmajor & |"|)
+	!row.append(|},|)
+
+	!row.insert(2,|"type":"drawing",|)
+	!row.insert(2,|"nodeNames":["| + !this.name + |"],|)
+    --q var !row
+	return !row
+
+	--!row = !!getprojectinfo('XXXX有限公司','结构',!this.name,'房间三维制作图',!this.drawnum)
+	--return !row
+
+	$(
+	!projectarr = !!getprojectinfo()
+
+	!row = array()
+	!row.append(|{|)
+	!row.append(|"项目": "| + !projectarr[2][!projectarr[1].findfirst('project')] + |",|)
+	!row.append(|"设计公司": "xxxx有限公司",|)
+	!row.append(|"图名": "房间三维制作图",|)
+	!row.append(|"图号": "| + !this.drawnum + |",|)
+	!row.append(|"工程号": "| + !projectarr[2][!projectarr[1].findfirst('number')] + |",|)
+	!row.append(|"子项号": "| + !projectarr[2][!projectarr[1].findfirst('name')] + |",|)
+	!row.append(|"机组": "| + !projectarr[2][!projectarr[1].findfirst('group')] + |",|)
+	!row.append(|"专业": "结构"|)
+	!row.append(|},|)
+
+	!row.insert(2,|"type":"drawing",|)
+	!row.insert(2,|"nodeNames":["| + !this.name + |"],|)
+	return !row
+	$)
+endmethod
+
+define method .draw()
+	if !this.name.unset() then
+		return
+	endif
+	!this.deleteDimAndMlabel()
+	!this.drawmlabel()
+	!this.drawdim()
+endmethod
+
+define method .drawdim()
+
+endmethod
+
+define method .drawMlabel()
+	!this.deleteDimAndMlabel()
+	do !paneData values !this.paneArr
+		if !panedata.twoprofiles[1].position.up le !panedata.twoprofiles[2].position.up then
+			!profile = !panedata.twoprofiles[2]
+		else
+			!profile = !panedata.twoprofiles[1]
+		endif
+
+		!cenpos = !profile.position.offset(u,!this.textoffsetdis)
+		--!this.drawoneMlabel(!this.markname,!cenpos,!panedata.ori,!this.roomcheight,false,'Room')
+		!this.mdbstru.todim()
+		!owner = name
+		!desc = 'node:' + !this.name
+		!mlabel = object mlabel(!owner,!cenpos,!panedata.ori,!this.markname,!this.roomcheight,false,'ROOM','',!desc)
+	enddo
+endmethod
+
+$(
+define method .drawOneMlabel(!string is string, !pos is position, !ori is orientation, !cheight is real, !frame is boolean, !function is string) is boolean
+	if !this.drawOneMlabel(!string,!pos,!ori,!cheight,!frame).not() then
+		return false
+	else
+		function '$!function'
+	endif
+	return true
+endmethod
+
+define method .drawOneMlabel(!string is string, !pos is position, !ori is orientation, !cheight is real, !frame is boolean) is boolean
+	if !this.toDimGro().not() then
+		return false
+	endif
+
+	--!pos = !pos.offset(!ori.zdir(),!this.textOffsetDis)
+	new mlabel
+	position $!pos
+	cheight $!cheight
+	ori $!ori
+	lframe $!frame
+	stext '$!string'
+	return true
+endmethod
+
+
+---------------------------
+define method .getDimName() is boolean
+	!site = name of site of $!this.name
+	!zone = name of zone of $!this.name
+	!this.markZone = !zone + '-Mark'
+	!this.markStru = !this.Name + '-Mark'
+	!this.dimGro = !this.Name + '-Dim'
+
+
+	if !this.markzone.substring(1,1) ne '/' then
+		!this.markzone = '/' + !this.markzone.replace('=','_').replace('/','_')
+	endif
+	if !this.markstru.substring(1,1) ne '/' then
+		!this.markstru = '/' + !this.markstru.replace('=','_').replace('/','_')
+	endif
+	if !this.dimGro.substring(1,1) ne '/' then
+		!this.dimGro = '/' + !this.dimGro.replace('=','_').replace('/','_')
+	endif
+
+	add $!this.markStru
+	handle any
+	endhandle
+	return true
+endmethod
+
+define method .toDimGro() is boolean
+	!createzone = false
+	!createstru = false
+
+	$!this.dimGro
+	handle any
+		$!this.markZone
+		handle any
+			!site = name of site of $!this.name
+			$!site
+			new zone name $!this.markZone
+			handle any
+				$p Fail to create zone
+				return false
+			elsehandle none
+				!createzone = true
+			endhandle
+		endhandle
+
+		$!this.markStru
+		handle any
+		--$p new Stru name $!this.markStru
+			new Stru name $!this.markStru
+			--$p asfd
+			handle any
+				$p Fail to create stru
+				if !createzone then
+					$!this.markzone
+					delete zone
+				endif
+				return false
+			elsehandle none
+				!createStru = true
+			endhandle
+		endhandle
+
+		$!this.dimGro
+		handle any
+			new dimgro name $!this.dimgro
+			handle any
+				$p Fail to create dimgro
+				if !createzone then
+					$!this.markzone
+					delete zone
+				else
+					$!this.markstru
+					delete stru
+				endif
+				return false
+			endhandle
+		endhandle
+	endhandle
+	return true
+endmethod
+$)
+
+define method .deleteDimAndMlabel() is boolean
+	return !this.mbdstru.deletestru()
+	$(
+	$!this.markStru
+	handle any
+		return true
+	elsehandle none
+		delete Stru
+		handle any
+			return false
+		endhandle
+	endhandle
+	return true
+	$)
+endmethod
+
+define method .deleteDim() is boolean
+	return !this.mbdstru.deletefunction('LINDIM','')
+	$(
+	$!this.markStru
+	handle any
+		return true
+	elsehandle none
+		var !lindims coll all lindim for CE
+		do !lindim values !lindims
+			$!lindim
+			delete lindim
+			handle any
+				return false
+			endhandle
+		enddo
+		!this.checkdelete()
+	endhandle
+	return true
+	$)
+endmethod
+
+define method .deleteMlabel() is boolean
+	return !this.mbdstru.deletefunction('Mlabel','')
+	$(
+	$!this.markStru
+	handle any
+		return true
+	elsehandle none
+		var !mlabels coll all mlabel for CE
+		do !mlabel values !mlabels
+			$!mlabel
+			delete mlabel
+			handle any
+				return false
+			endhandle
+		enddo
+		!this.checkdelete()
+	endhandle
+	return true
+	$)
+endmethod
+
+$(
+define method .checkdelete()
+	var !items coll all (lindim mlabel) for $!this.markstru
+	if !items.unset() then
+		!this.deleteDimAndMlabel()
+	endif
+endmethod
+$)
+
+

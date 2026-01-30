@@ -1,0 +1,207 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= April 11st 2024
+--[Function]:
+------------------------------------------
+
+define object objectorder
+	member .objects is array
+	member .files is array
+	member .fileobjects is array
+
+	member .big is array
+
+	member .wrongfile is file
+endobject
+
+define method .objectorder(!inputobjects is array)
+	!this.objects = !inputobjects
+	do !x indices !this.objects
+		!this.objects[!x] = !this.objects[!x].lowcase()
+	enddo
+
+	--!this.wrongfile = object file('d:\wrongfile.txt')
+	--!this.wrongfile.open('OVERWRITE')
+
+
+	!this.getobjectdata()
+
+	!this.orderobjects()
+
+endmethod
+
+define method .getobjectdata()
+	!objects = !this.objects
+	!files = array()
+	!fileobjects = array()
+
+	--!delobjects = array()
+	do !x indices !objects
+		!object = !objects[!x]
+		!path = !!pml.getpathname(!object & '.pmlobj')
+		handle any
+			$p $!object fail to get path
+			--!objects[!x].delete()
+			--!delobjects.append(!object)
+			skip
+		endhandle
+		!file = object file(!path)
+		!lines = !file.readfile()
+		handle any
+			$p $!object fail to get file
+			--!objects[!x].delete()
+			--!delobjects.append(!object)
+			skip
+		endhandle
+
+		!oneobjects = array()
+		do !line values !lines
+			!line = !line.lowcase()
+			do
+				if !line.matchwild('* is *') then
+					!line = !line.after(' is ').trim()
+					!tempobject = !line.part(1).before(')').before(',')
+					!fl = !tempobject.substring(1,1)
+					if !fl ne '$' and !fl ne '!' then
+						if !objects.findfirst(!tempobject).set() and !tempobject ne !object then
+							!oneobjects.append(!tempobject)
+						endif
+						!line = !line.after(!tempobject).trim()
+					endif
+				elseif !line.matchwild('*object *(*') then
+					!line = !line.after('object ').trim()
+					!tempobject = !line.part(1).before('(')
+					!fl = !tempobject.substring(1,1)
+					if !fl ne '$' and !fl ne '!' then
+						if !objects.findfirst(!tempobject).set() and !tempobject ne !object then
+							!oneobjects.append(!tempobject)
+						endif
+						!line = !line.after(!tempobject).trim()
+					endif
+				else
+					break
+				endif
+			enddo
+		enddo
+		!oneobjects.unique()
+		!fileobjects[!x] = !oneobjects
+	enddo
+	!this.files = !files
+	!this.fileobjects = !fileobjects
+endmethod
+
+define method .orderobjects() is array
+	!objects = !this.objects
+	!fileobjects = !this.fileobjects
+
+
+	!this.big = array()	$* each object is in one level and only in one level
+	!maxlevelsize = 0
+	do !level indices !this.big
+		!maxlevelsize = max(!maxlevelsize,!this.big[!level].maxindex())
+	enddo
+
+	!maybeuncompareobjects = array()
+	do !x indices !objects
+		!object = !objects[!x]
+		--$p $!x $!object
+		!oneobjects = !fileobjects[!x]
+		handle any
+			!maybeuncompareobjects.append(!object)
+			skip
+		endhandle
+		if !oneobjects.unset() then
+			--$p $!object no asdfasd
+			----q var !object
+			!maybeuncompareobjects.append(!object)
+			skip
+		endif
+
+		!maxlevel = !this.big.maxindex()
+		do !oneobject values !oneobjects
+			!onelevel = !this.findobjectlevel(!oneobject)
+			!ownerlevel = !this.findobjectlevel(!object)
+			if !onelevel.unset() then
+				!onelevel = 1
+			endif
+			if !ownerlevel.unset() then
+				!ownerlevel = !onelevel + 1
+			elseif !ownerlevel gt !onelevel then
+				--ownerlevel is good
+			elseif !ownerlevel eq !onelevel then
+				--$p move $!object before
+				!ownerlevel = !this.moveobjectafter(!object,1,!x.string())
+				--$p move $!object after
+			elseif !ownerlevel lt !onelevel then
+				!indices1 = !this.big[!onelevel].find(!oneobject)
+				!indices2 = !this.big[!ownerlevel].find(!object)
+				if !indices1.intersect(!indices2).set() then
+					!find = true
+					--$p $!object owners $!oneobject and $!oneobject owners $!object (current)
+					skip
+				else
+					!ownerlevel = !this.moveobjectafter(!object,!onelevel - !ownerlevel + 1,!x.string())
+				endif
+			endif
+
+			!maxlevelsize = !maxlevelsize + 1
+			!this.big[!onelevel][!maxlevelsize] = !oneobject
+			!this.big[!ownerlevel][!maxlevelsize] = !object
+		enddo
+	enddo
+
+	!objects = array()
+	do !level indices !this.big
+		!objects.appendarray(!this.big[!level])
+	enddo
+	!objects.appendarray(!maybeuncompareobjects)
+	!objects.unique()
+	!this.objects = !objects
+	--!this.wrongfile.close()
+
+	return !objects
+endmethod
+
+define method .findobjectlevel(!object is string) is real
+	do !level indices !this.big
+		if !this.big[!level].findfirst(!object).set() then
+			return !level
+		endif
+	enddo
+	!level = object real()
+	return !level
+endmethod
+
+define method .moveobjectafter(!object is string, !step is real,!string is string) is real
+
+	!newstring = !string + ' ' + !object
+	--$p $!newstring
+	--!this.wrongfile.writerecord(!newstring)
+	!level = !this.findobjectlevel(!object)
+	if !string.split().findfirst(!object).set() then
+
+		return !level
+	endif
+	!indices = !this.big[!level].find(!object)
+	do !index values !indices
+		do !x from 1 to !step
+			if defined(!this.big[!x + !level][!index]) then
+				!moveobject = !this.big[!x + !level][!index]
+				!this.moveobjectafter(!moveobject,!step - !x + 1,!newstring)
+				break
+			endif
+		enddo
+		if undefined(!this.big[!level + !step]) then
+			!this.big[!level + !step] = array()
+		endif
+		!this.big[!level + !step][!index] = !object
+		!this.big[!level][!index].delete()
+	enddo
+	!newlevel = !level + !step
+	return !newlevel
+endmethod
+H

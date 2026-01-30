@@ -1,0 +1,1726 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= April 19th 2023
+--[Function]:
+------------------------------------------
+
+--Method:
+--Public method:
+
+--Private method:
+--addabakt()																$*add AP/DP monorail
+--addce()   																$*add current item into list
+--addCeObject() is boolean  												$*
+--addRoom() is boolean  													$*
+--changeCheight(!gadget is gadget, !string is string)   					$*change height of charactar
+--changeline()  															$*
+--chooseItem()  															$*
+--clearlist()   															$*remove all items in list
+--dealfunction(!type is string) 											$*remove or add dim or mlabel according to function
+--deleteall()   															$*delete all dim and mlabel
+--drawall() 																$*draw dim and mlabel
+--drawDim() 																$*
+--drawMlabel()  															$*
+--enhance() 																$*
+--instoreset()  															$*
+--markCivilForm()   														$*
+--merge(!arr is array) is string											$*
+--moveto()  																$*change position of mlabel
+--moveto2(!aa is any)   													$*
+--recoverCheight()  														$*
+--recoversetting()  														$*
+--remsel()  																$*remove selection
+--remSelObject(!item is string) 											$*
+--setcheight(!civil is markcivil)   										$*
+--setfunctionlist() 														$*
+--setMlabelLine()   														$*
+--setRoomCheight(!room is civilRoom)										$*
+
+kill !!markcivilform
+setup form !!markCivilForm resize
+	title 'ÍÁ½¨½á¹¹'
+	!framePos = 'at x0 y0 width 20 height 8'
+	member .instoreStrings is array
+	frame .Tabset TABSET 'tabset' at x0.3 y0.15  width 40 anchor all
+        frame .tab1 | ½á¹¹Ä£ÐÍÁÐ±í | $!framePos
+			list .list '½á¹¹Ä£ÐÍÊôÐÔ' call|!this.chooseItem()| AT X1 Y0 anchor l + t + b MULTIPLE Width 55 LEN 15
+			button .AddItem 'Ìí¼ÓCE' call|!this.addCe()| AT x 1  ymax + 0.5   anchor l + b width 5
+			button .remItem 'ÒÆ³ýCE' call|!this.remsel()|   anchor l + b width 6
+			button .clearlist 'Çå³ý' call|!this.clearlist()|   anchor l + b width 4
+			button .drawAll '±ê×¢' call|!this.drawall()|   anchor l + b width 4
+
+			combobox .colcombobox '' tagwidth 0  at xmax + 1 ymin anchor l + b call|!this.instoreset()| width 3
+			!this.colcombobox.dtext = split('blue red green yellow grey')
+			!this.colcombobox.select('dtext','blue')
+			!this.instoreStrings.append('colcombobox')
+
+			toggle .enhancered 'ÑÕÉ«' at xmax + 0.1 ymin anchor l + b tagwidth 4 callback|!this.setred()|
+			!this.instoreStrings.append('enhancered')
+
+			--button .addabakt 'AB/AK/T' call |!this.addabakt()| at xmax - 0.3 ymin  anchor l + b width 6
+			hdis 0.2
+			--button .allline 'No line' call |!this.setMlabelLine()|  at xmax + 0.5 ymin anchor l + b width 6
+			button .allline 'ÇÐ»»ÏÔÊ¾Ä£Ê½' call |!this.setMlabelLine()|  at xmax + 0.5 ymin anchor l + b width 10
+
+
+			--button .alljson 'Éú³ÉJSON' at xmax + 0.5 ymin anchor l + b callback |!this.json()| width 8
+			--button .ToTplant 'ÉÏ´«ÖÁTplant' callback |!this.totplant()| at xmax + 0.3  anchor l + b width 8
+
+
+
+
+			list .functionlist 'Àà±ð' AT Xmax.list + 1 Y0 anchor t + b + l + r MULTIPLE Width 12 LEN 14
+			path right
+			button .remfunction 'Òþ²Ø' call |!this.dealfunction('rem')| at xmin + 1 ymax + 0.1 anchor b width 4
+			button .addfunction 'ÏÔÊ¾' call |!this.dealfunction('add')| at xmax + 1 ymin anchor b width 4
+			button .deleteDim 'É¾³ýÈ«²¿' call|!this.deleteall()|  at xmin.remfunction ymax + 0.2 anchor b width 10
+
+			member .functiondata is array
+
+		exit
+		frame .tabmem | Âñ°å/¿×¶´/µ¼¹ì | $!framePos
+			list .memlist 'Âñ°å/¿×¶´/µ¼¹ì ÊôÐÔ' call|!this.selectmem()| AT X1 Y0 anchor l + t + b + r MULTIPLE Width 60 LEN 15
+			button.remmem 'Òþ²Ø' call|!this.remmem()| at xmax ymin + 3 anchor r width 3
+			path down
+			button.addmem 'ÏÔÊ¾' call|!this.addmem()| at xmin ymax + 2 anchor r width 3
+		exit
+
+		frame .tabroom | ·¿¼ä | $!framePos
+			list .roomlist '·¿¼äºÅ' call|!this.selectroom()| AT X1 Y0 anchor l + t + b + r MULTIPLE Width 60 LEN 15
+		exit
+		frame .tab6 | Í¼Ö½ÊôÐÔ | $!framePos
+			!tempfile = object file(!!commonpath() + 'framedrawingatt.txt')
+			!lines = !tempfile.readfile()
+			do !line values !lines
+				if !line.trim().trim('	') ne '' then
+					$!line
+				endif
+			enddo
+		exit
+
+		frame .tab7 | Ð£Éó | $!framePos
+			!tempfile = object file(!!commonpath() + 'frameproofreading.txt')
+			!lines = !tempfile.readfile()
+			do !line values !lines
+				if !line.trim().trim('	') ne '' then
+					$!line
+				endif
+			enddo
+		exit
+		frame .tab2 | ÉèÖÃ | $!framePos
+			!comboboxlen = 25
+			combobox .textoffsetdis 'ÎÄ×Ö¸¡³öÊµÌå¾àÀë' tagwidth $!comboboxlen call|!this.instoreset()| at x 1 y 0.5 width 4
+			!this.textoffsetdis.dtext = split('0 5 10 20 30 50 100')
+			!this.textoffsetdis.select('dtext','5')
+			!this.instoreStrings.append('textoffsetdis')
+			path down
+
+
+			combobox .Civilcheight 'Ç½Ìå/Â¥°åÎÄ×Ö¸ß¶È' tagwidth $!comboboxlen call|!this.instoreset()| width 4
+			!this.Civilcheight.dtext = split('100 120 150 200 300 350 400')
+			!this.Civilcheight.select('dtext','350')
+			!this.instoreStrings.append('Civilcheight')
+
+			combobox .Roomcheight '·¿¼äÎÄ×Ö¸ß¶È' tagwidth $!comboboxlen call|!this.instoreset()| width 4
+			!this.Roomcheight.dtext = split('70 100 120 150 200 300 350 400')
+			!this.Roomcheight.select('dtext','350')
+			!this.instoreStrings.append('Roomcheight')
+
+			combobox .elThickCheight '±ê¸ß/ºñ¶ÈÎÄ×Ö¸ß¶È' tagwidth $!comboboxlen call|!this.instoreset()|  width 4
+			!this.elThickCheight.dtext = split('20 50 70 100 120 150 200 300 350 400')
+			!this.elThickCheight.select('dtext','70')
+			!this.instoreStrings.append('elThickCheight')
+
+			combobox .apdpcheight 'Âñ°åÎÄ×Ö¸ß¶È' tagwidth $!comboboxlen call|!this.instoreset()| width 4
+			!this.apdpcheight.dtext = split('20 50 70 100 120 150 200 300 350 400')
+			!this.apdpcheight.select('dtext','70')
+			!this.instoreStrings.append('apdpcheight')
+
+			combobox .openingcheight '¿×¶´ÎÄ×Ö¸ß¶È' tagwidth $!comboboxlen call|!this.instoreset()|  width 4
+			!this.openingcheight.dtext = split('20 50 70 100 120 150 200 300 350 400')
+			!this.openingcheight.select('dtext','70')
+			!this.instoreStrings.append('openingcheight')
+
+			combobox .memdimcheight '¿×¶´ Âñ°å³ß´ç±ê×¢ÎÄ×Ö¸ß¶È' tagwidth $!comboboxlen call|!this.instoreset()| width 4
+			!this.memdimcheight.dtext = split('20 50 70 100 120 150 200 300 350 400')
+			!this.memdimcheight.select('dtext','50')
+			!this.instoreStrings.append('memdimcheight')
+
+			combobox .civildimcheight '½á¹¹³ß´ç±ê×¢ÎÄ×Ö¸ß¶È' tagwidth $!comboboxlen call|!this.instoreset()| width 4
+			!this.civildimcheight.dtext = split('20 50 70 100 120 150 200 300 350 400')
+			!this.civildimcheight.select('dtext','120')
+			!this.instoreStrings.append('civildimcheight')
+
+
+
+			combobox .autocheight '×Ô¶¯µ÷Õû³ß´ç±ê×¢ÎÄ×Ö´óÐ¡' tagwidth $!comboboxlen call|!this.instoreset(false)| width 4
+			!this.autocheight.dtext = split('true false')
+			!this.autocheight.select('dtext','true')
+			!this.instoreStrings.append('autocheight')
+
+			combobox .autocheightbili 'ÎÄ×Ö×Ô¶¯µ÷Õû´óÐ¡×îÐ¡±ÈÀý' tagwidth $!comboboxlen call|!this.instoreset(false)| width 4
+			!this.autocheightbili.dtext = split('ÎÞÏÞÖÆ 0.1 0.2 0.3 0.5 0.7')
+			!this.autocheightbili.select('dtext','ÎÞÏÞÖÆ')
+			!this.instoreStrings.append('autocheightbili')
+
+			combobox .sepSmallDim 'ÎÄ×Öµ÷ÕûÖÁ×îÐ¡ÈÔ²¼ÖÃ²»ÁË£¬·Ö²ã´¦Àí' tagwidth $!comboboxlen call|!this.instoreset(false)| width 4
+			!this.sepSmallDim.dtext = split('true false')
+			!this.sepSmallDim.select('dtext','true')
+			!this.instoreStrings.append('sepSmallDim')
+
+
+
+
+
+			option .vertDim 'Á¢Ãæ·½ÏòÇ½Ìå³¤¶È' tagwidth $!comboboxlen call|!this.instoreset()|  at x 40 y 0.5 width 4
+			!this.vertDim.dtext = split('True False')
+			!this.vertDim.select('dtext','False')
+			!this.instoreStrings.append('vertDim')
+
+			option .wallThickAfterName 'Ç½ÌåÃû×ÖºóÃæ¼Óºñ¶È' tagwidth $!comboboxlen call|!this.instoreset()| width 4
+			!this.wallThickAfterName.dtext = split('True False')
+			!this.wallThickAfterName.select('dtext','False')
+			!this.instoreStrings.append('wallThickAfterName')
+
+			option .mat 'Ì×¹Ü²ÄÖÊ' tagwidth $!comboboxlen call|!this.instoreset()| width 4
+			!this.mat.dtext = split('True False')
+			!this.mat.select('dtext','False')
+			!this.instoreStrings.append('mat')
+
+			option .secondcon '¶þ´Î½½×¢' tagwidth $!comboboxlen call|!this.instoreset()| width 4
+			!this.secondcon.dtext = split('True False')
+			!this.secondcon.select('dtext','False')
+			!this.instoreStrings.append('secondcon')
+
+			option .openingpos '¿×¶´Î»ÖÃ' tagwidth $!comboboxlen call|!this.instoreset()|  width 4
+			!this.openingpos.dtext = split('True False')
+			!this.openingpos.select('dtext','False')
+			!this.instoreStrings.append('openingpos')
+
+			combobox .lookdir 'FloorÊÓÍ¼·½Ïò' tagwidth $!comboboxlen call|!this.instoreset()| width 4
+			!this.lookdir.dtext = split('N E S W')
+			!this.lookdir.select('dtext','N')
+			!this.instoreStrings.append('lookdir')
+
+			combobox .generatejson '±ê×¢ºóÉú³ÉÎÄ¼þ' tagwidth $!comboboxlen call|!this.instoreset()| width 4
+			!this.generatejson.dtext = split('True False')
+			!this.generatejson.select('dtext','False')
+			!this.instoreStrings.append('generatejson')
+
+			text .filepath '´æ´¢ÎÄ¼þ¼Ð' tagwidth 12 call|!this.inputpath()| width 20 scroll 100 is string
+			!this.filepath.val = 'D:\'
+			!this.instoreStrings.append('filepath')
+		exit
+		frame .tab3 | ÎÄ×ÖÎ»ÖÃºÍ´óÐ¡ | $!framePos
+			--text .currentcheight 'µ±Ç°ÎÄ×Ö¸ß¶È' tagwidth 10 width 3
+			--path right
+			combo .changecheight 'ËùÑ¡ÎÄ×Ö¸ß¶È' tagwidth 10 call |!this.changeCheight(| at x 1 y 0.5 width 3
+			!this.changecheight.dtext = split('20 50 70 100 120 150 200 300 350 400 500 800 1000')
+			!this.changeCheight.select('dtext','70')
+
+			path down
+			vdis 0.7
+			button .recovercheight '»¹Ô­ÎÄ×Ö¸ß¶È' call |!this.recovercheight()|  width 15
+
+			button .moveto '¶¨Î»±êÇ©Î»ÖÃ' call |!this.moveto()|  width 15
+
+			--vdis 2
+			combobox .autoupdatejson '¸Ä¶¯ºó×Ô¶¯¸üÐÂJSON' tagwidth 15 call|!this.instoreset()| at xmax + 8 y 0.5 width 4
+			!this.autoupdatejson.dtext = split('True False')
+			!this.autoupdatejson.select('dtext','False')
+			!this.instoreStrings.append('autoupdatejson')
+		exit
+		frame .versioninfo | °æ±¾ÐÅÏ¢ | $!framePos
+			textpane .versioncontext   anchor T + R + L + B width 37 height 15
+			!session = current session
+			if !session.login ne 'pdms-bj-c103-03' then
+				!this.versioncontext.setEditable(false)
+			else
+				button.updateversion 'Update' call '!!writembdversion(!this)' width 8 at xmax - 10 ymax - 1 anchor R + B
+			endif
+		exit
+
+	exit
+	member .civildatas is array
+
+	member .listcivilindices is array
+
+	member .rooms is array
+
+	member .oldCheights is array
+
+	member .civilatts is array
+	member .civilattshow is array
+
+	member .mematts is array
+	member .memattshow is array
+
+	member .roomatts is array
+	member .roomattshow is array
+exit
+define method .markCivilForm()
+	!!updatembdfiles()
+	!!setmbdfmt()
+	!!setmbdformtitle(!this)
+	handle any
+		q var !!error
+	endhandle
+	if !!checkmbdproject().not() then
+		--!formname = !this.fullname()
+		--hide $!formname
+		!this.AddItem.active = false
+		!this.remItem.active = false
+		!this.clearlist.active = false
+		!this.drawAll.active = false
+		!!alert.warning('´ËÏîÄ¿ÉÐ²»ÄÜÊ¹ÓÃMBD')
+	endif
+	!this.cancelcall = '!this.cancelform()'
+	!this.recoversetting()
+
+	!result = !!getattlist('civil')
+	do !x indices !result[1]
+		!com = '!this.' + !result[2][!x] + ' = !result[1][!x]'
+		$!com
+	enddo
+endmethod
+
+define method .cancelform()
+	!this.recoversetting()
+	HIDE !!markcivilform
+endmethod
+
+define method .getjsonarray() is array
+	!result = !this.civildatas[1].getjsonarray()
+	handle any
+		!result = array()
+	endhandle
+	return !result
+endmethod
+
+define method .instoreset()
+	!this.settotplant()
+	!result = array()
+	!strings = !this.instoreStrings
+	do !string values !strings
+		!com = '!this.' + !string + '.refresh()'
+		$!com
+
+		!com = '!dtext = !this.' + !string + '.dtext'
+		$!com
+		handle any
+			!com = '!val = !this.' + !string + '.val.string()'
+		elsehandle none
+			!com = '!val = !this.' + !string + '.displaytext()'
+		endhandle
+
+		$!com
+		!line = !string & ':' & !val
+		!result.append(!line)
+	enddo
+	!path = !!pml.getpathname(!this.name().lowcase() + '.pmlfrm').before(!this.name().lowcase() + '.pmlfrm') + 'setting\markcivilformSetting.txt'
+	!file = object file(!path)
+	!file.writefile('overwrite',!result)
+	!this.red()
+
+	$(
+	--HIDE !!markcivilform
+    --SHOW !!markcivilform
+	!result = array()
+	!strings = split('textoffsetdis Civilcheight Roomcheight elThickCheight apdpcheight openingcheight dimcheight vertDim wallThickAfterName mat secondcon openingpos')
+
+	do !string values !strings
+		!com = '!this.' + !string + '.refresh()'
+		$!com
+		if !string eq 'enhancered' then
+			!com = '!val = !this.' + !string + '.val.string()'
+		else
+			!com = '!val = !this.' + !string + '.displaytext()'
+		endif
+		$!com
+		!line = !string + ':' + !val
+		!result.append(!line)
+	enddo
+	!path = !!pml.getpathname('markcivilform.pmlfrm').before('markcivilform.pmlfrm') + 'setting\markcivilformSetting.txt'
+	!file = object file(!path)
+	!file.writefile('overwrite',!result)
+	$)
+endmethod
+
+define method .settotplant()
+	return
+	if !this.generatejson.selection('dtext').boolean() then
+		!this.ToTplant.active = true
+	else
+		!this.ToTplant.active = false
+	endif
+endmethod
+
+define method .recoversetting()
+	!path = !!pml.getpathname(!this.name().lowcase() + '.pmlfrm').before(!this.name().lowcase() + '.pmlfrm') + 'setting\markcivilformSetting.txt'
+	!file = object file(!path)
+	!lines = !file.readfile()
+	handle any
+		return
+	elsehandle none
+		do !line values !lines
+			!name = !line.before(':')
+			!val = !line.after(':')
+
+			!com = '!dtext = !this.' + !name + '.dtext'
+			$!com
+			handle any
+				!com = '!this.' + !name + '.val = ' & !val
+			elsehandle none
+				!com = '!this.' + !name + '.select(|dtext|,|' + !val + '|)'
+			endhandle
+			$!com
+			handle any
+				!com = '!this.' + !name + '.val = |' &!val & '|'
+				$!com
+				handle any
+				endhandle
+			endhandle
+		enddo
+	endhandle
+	!this.settotplant()
+
+	$(
+	!path = !!pml.getpathname('markcivilform.pmlfrm').before('markcivilform.pmlfrm') + 'setting\markcivilformSetting.txt'
+	!file = object file(!path)
+	!lines = !file.readfile()
+	handle any
+		return
+	elsehandle none
+		do !line values !lines
+			!name = !line.part(1,':')
+			!val = !line.part(2,':')
+			!com = '!this.' + !name + '.select(|dtext|,|' + !val + '|)'
+			--$p $!com
+			$!com
+			handle any
+			endhandle
+		enddo
+	endhandle
+	$)
+endmethod
+define method .setred()
+	!this.instoreset()
+	!this.red()
+endmethod
+define method .red()
+	!vals = !this.list.val
+	if !vals.unset() then
+		!vals = !this.list.dtext.indices()
+		!indices = !this.civildatas.indices()
+		$(
+	else
+		!indices = array()
+		do !val values !vals
+			!name = !this.list.rtext[!val]
+			!index = !this.getcivilindex(!name)
+			!indices.append(!index)
+		enddo
+		$)
+	endif
+	--q var !vals
+	--q var !this.civildatas
+	!col = !this.colcombobox.displaytext()
+	do !val values !vals
+	--do !index values !indices
+		!name = !this.list.rtext[!val]
+
+		!index = !this.getcivilindex(!name)
+		!object = !this.civildatas[!index]
+		$(
+		do !x indices !this.civildatas
+		--q var !this.civildatas[!x].civilname
+			if !this.civildatas[!x].civilname eq !name then
+				!object = !this.civildatas[!x]
+				golabel /objectok
+			endif
+		enddo
+		$)
+
+		--label /objectok
+		!mbdstru = !object.mbdstru.mbdstru
+		-----------------------
+		-----------------------sometimes only part of mbdstru are enhanced when unenhance are not used
+		unenhance $!mbdstru
+		handle any
+		elsehandle none
+			if !this.enhancered.val then
+				--enhance $!mbdstru col red
+				--enhance $!mbdstru col blue
+				enhance $!mbdstru col $!col
+			endif
+		endhandle
+	enddo
+endmethod
+define method .inputpath()
+	!string = !this.filepath.val.trim()
+	if !string eq '' then
+		!this.filepath.val = 'D:\'
+		golabel /end
+	endif
+	!folder = object file(!string)
+	if !folder.exists().not() then
+		!ans = !!alert.confirm('Â·¾¶²»´æÔÚ,ÊÇ·ñÐÂ½¨£¿')
+		if !ans ne 'YES' then
+			!this.filepath.val = 'D:\'
+			golabel /end
+		else
+			syscom |mkdir $!folder|
+		endif
+	endif
+	if !string.substring(-1,1) ne '/' and !string.substring(-1,1) ne '\' then
+		!string = !string + '\'
+	endif
+	!this.filepath.val = !string
+
+	label /end
+	!this.instoreset()
+endmethod
+define method .changeCheight(!gadget is gadget, !string is string)
+	--$p $!string
+	if !this.checkfilepath().not() then
+		return
+	endif
+
+	if !string ne 'SELECT' then
+		return
+	endif
+	!sel = object selection()
+	!sel.getcurrent()
+	!arr = !sel.getselection()
+	!cheight = !this.changecheight.displaytext().real()
+	!this.oldcheights = array()
+	--q var !arr
+	!newarr = array()
+	do !one values !arr
+		!onetype = type of $!one
+	--$p $!onetype
+		if !onetype ne 'LINDIM' and !onetype ne 'MLABEL' then
+			skip
+		endif
+		!function = function of $!one
+		--if !function.upcase() inset ('CIVIL','CIVIL MEM','EL THICK') then
+
+			!this.oldcheights.append(!one.string() + ' ' + !one.cheight.string())
+			!one.cheight = !cheight
+		--endif
+		!newarr.append(!one)
+	enddo
+	if !this.autoupdatejson.displaytext().boolean() then
+		!this.updatejson(!newarr)
+	endif
+endmethod
+
+define method .updatejson(!arr is array)
+	--!types = split('WALL GWALL STWALL FLOOR')
+	!vals = array()
+	do !mlabel values !arr
+		!nodename = desc of $!mlabel
+		!civilname = !nodename.after(':').split()[1]
+		!index = !this.getcivilindex(!civilname)
+		!vals.append(!index)
+	enddo
+
+	!vals.unique()
+	do !val values !vals
+		if !val.set() then
+			!this.civildatas[!val].generatejson = !this.generatejson.displaytext().boolean()
+			!this.civildatas[!val].filepath = !this.filepath.displaytext()
+			!this.civildatas[!val].generatejsonattrvm()
+		endif
+	enddo
+endmethod
+
+define method .moveto()
+	if !this.checkfilepath().not() then
+		return
+	endif
+	!a = object edgpacket()
+	!a.defineposition('Pick one point')
+	!a.action = '!!markcivilform.moveto2(!this.return) !!edgcntrl.escape()'
+	!!edgcntrl.add(!a)
+endmethod
+
+define method .moveto2(!aa is any)
+	--q var !aa
+	!mlabel = name of mlabel
+	handle any
+		return
+	endhandle
+
+	!thickstring = 'ºñ¶È'
+	if function of $!mlabel eq !thickstring then
+		!mlabelpos = pos of $!mlabel wrt/*
+		!owner = name of owner of $!mlabel
+		!owner = !owner.replace('-DIM','-AID')
+		var !circles coll all aidcir with (function eq !thickstring) for $!owner
+
+		!offsetdis = !this.textoffsetdis.displaytext().real()
+		do !x indices !circles
+			!aidcir = !circles[!x]
+			!cirori = ori of $!aidcir wrt/*
+			!cirpos = pos of $!aidcir wrt/*
+			if abs(!!suidirdis(!cirpos,!cirori.zdir(),!mlabelpos)) gt !offsetdis then
+				!circles[!x].delete()
+			else
+				!cirradius = radius of $!aidcir
+				if !cirpos.distance(!mlabelpos) gt !cirradius then
+					!circles[!x].delete()
+				endif
+			endif
+		enddo
+		!circles.compress()
+		--q var !circles
+	endif
+
+
+	!pickpos = !aa[1].position.wrt(world)
+	!ori = ori of mlabel wrt/*
+	handle any
+		!!alert.message('Choose Mlabel')
+	endhandle
+	!pos = pos of mlabel wrt/*
+
+	!plane = object plane(!pos,!ori)
+	!newpos = !plane.near(!pickpos)
+	$(
+	if !pickpos.distance(!newpos) gt 100 then
+		!ans = !!alert.confirm('Sure to move?')
+		if !ans ne 'YES' then
+			return
+		endif
+	endif
+	$)
+	!movedir = !pos.direction(!newpos)
+	!movedis = !pos.distance(!newpos)
+
+
+
+
+	$!mlabel
+	var !dimposs coll all dimpos for ce
+	!dimpos = pos of $!dimposs[1] wrt/*
+	handle any
+	endhandle
+	pos $!newpos
+	$!dimposs[1]
+	handle any
+	elsehandle none
+		pos $!dimpos
+	endhandle
+
+	if defined(!circles) then
+		do !circle values !circles
+		--$p $!circle
+			!cirpos = pos of $!circle wrt/*
+			!newcirpos = !cirpos.offset(!movedir,!movedis)
+			$!circle
+			pos $!newcirpos
+		enddo
+		$!mlabel
+	endif
+
+
+	$(
+	!offsetdis = !this.textoffsetdis.displaytext().real()
+	--!ans = !!alert.confirm('ÊÇ·ñÏòÍâÒÆ¶¯' + !offsetdis.string() + 'mm')
+	--if !ans eq 'YES' then
+		!newpos = !newpos.offset(!ori.zdir(),!offsetdis)
+		pos $!newpos
+		$!dimposs[1]
+		handle any
+		elsehandle none
+			pos $!dimpos
+		endhandle
+	--endif
+	$)
+
+	if !this.autoupdatejson.displaytext().boolean() then
+		!arr = array()
+		!arr.append(!mlabel)
+		!this.updatejson(!arr)
+	endif
+endmethod
+
+define method .recoverCheight()
+	if !this.checkfilepath().not() then
+		return
+	endif
+	!newarr = array()
+	do !line values !this.oldcheights
+		!arr = !line.split()
+		$!arr[1]
+		!newarr.append(!arr[1])
+		!dbref = object dbref(!arr[1])
+		!dbref.cheight = !arr[2].real()
+		handle any
+			if !dbref.badref() then
+				$p $!arr[1] does not exists
+			else
+				$p $!arr[1] cant be set back
+			endif
+			skip
+		endhandle
+	enddo
+	if !this.autoupdatejson.displaytext().boolean() then
+	--$p asdf
+	--q var !newarr
+		!this.updatejson(!newarr)
+	endif
+endmethod
+
+define method .chooseItem()
+	!item = !this.list.selection('rtext')[1]
+	$p $!item
+	unenhance all
+	$!item
+	handle any
+	elsehandle none
+		add $!item
+		--enhance $!item col red
+	endhandle
+
+	!this.setotherlist()
+	--!this.setmemlist()
+	!this.red()
+endmethod
+
+define method .getlistIndex() is real
+	!vals = !this.list.val
+	!val = !vals[1]
+	handle any
+		if !this.list.dtext.set() then
+			!val = 1
+		else
+			return 0
+		endif
+	endhandle
+	return !val
+endmethod
+
+
+define method .getmemthings() is array
+	!items = array()
+	!val = !this.getlistindex()
+	if !val eq 0 then
+		return !items
+	endif
+	!civildata = !this.civildatas[!this.listcivilindices[!val]]
+	!mbdstru = !civildata.mbdstru.mbdstru
+
+	!vals = !this.memlist.val
+	if !vals.unset() then
+		!vals = !this.memlist.dtext.indices()
+		if !vals.unset() then
+			return !items
+		endif
+	endif
+
+	!mems = array()
+	do !val values !vals
+		!mems.append(!civildata.mems[!val])
+	enddo
+
+
+	do !mem values !mems
+		!desc = 'node:' + !civildata.civilname + ' ' + !mem.name
+		var !items append coll all (mlabel lindim aidlin) with(desc eq !desc) for $!mbdstru
+	enddo
+	return !items
+endmethod
+
+define method .remmem()
+	!items = !this.getmemthings()
+	do !item values !items
+		rem $!item
+	enddo
+endmethod
+
+define method .addmem()
+	!items = !this.getmemthings()
+	do !item values !items
+		add $!item
+	enddo
+	!this.red()
+endmethod
+
+define method .selectmem()
+	pin1 off
+	pin2 off
+
+	!vals = !this.memlist.val
+	--q var !vals
+	!val = !vals[1]
+	handle any
+		return
+	endhandle
+
+	!civilvals = !this.list.val
+	!civilval = !civilvals[1]
+	handle any
+		if !this.list.dtext.set() then
+			!civilval = 1
+		else
+			return
+		endif
+	endhandle
+
+	!mem = !this.civildatas[!this.listcivilindices[!civilval]].mems[!val]
+	do !times indices !mem.cenpoints
+		!cenpoint = !mem.cenpoints[!times]
+		pin$!times at $!cenpoint
+	enddo
+
+	!name = !mem.name
+	if !name.set() and !name ne '' then
+		$!name
+		handle any
+		endhandle
+	endif
+
+
+	--q var !mem.startposs
+	--pin3 at $!mem.startposs[1]
+	--pin4 at $!mem.startposs[2]
+endmethod
+
+define method .getJsonIndex() is real
+	!vals = !this.list.val
+	!val = !vals[1]
+	handle any
+		if !this.list.dtext.size() eq 1 then
+			!val = 1
+		else
+			return 0
+		endif
+	endhandle
+	return !val
+endmethod
+
+define method .setotherlist()
+	!val = !this.getJsonIndex()
+	if !val eq 0 then
+		return
+	endif
+
+	!this.setmemlist(!val)
+	!this.setroomlist(!val)
+
+	!this.setlist6(!val)
+	!this.setlist7(!val)
+endmethod
+
+define method .setlist6(!val is real)
+	!object = !this.civildatas[!val]
+	!tempfile = object file(!!commonpath() + 'functionsetdrawinfo.txt')
+	!lines = !tempfile.readfile()
+	do !line values !lines
+		if !line.trim().trim('	') ne '' then
+			$!line
+		endif
+	enddo
+endmethod
+
+define method .setlist7(!val is real)
+	!object = !this.civildatas[!val]
+	!tempfile = object file(!!commonpath() + 'functionsetproofreading.txt')
+	!lines = !tempfile.readfile()
+	do !line values !lines
+		if !line.trim().trim('	') ne '' then
+			$!line
+		endif
+	enddo
+endmethod
+
+
+define method .setmemlist(!val is real)
+$(
+	!vals = !this.list.val
+	!val = !vals[1]
+	handle any
+		!val = 1
+	endhandle
+	if !this.list.dtext.unset() then
+		return
+	endif
+	$)
+
+	!this.memlist.setheadings(!this.memAttShow)
+	!rows = !this.civildatas[!this.listcivilindices[!val]].getMeminfo(!this.memAttS)
+
+	!newrows = array()
+	do !x indices !rows
+		do !y indices !rows[!x]
+			!newrows[!x][!y] = !rows[!x][!y].string()					$* to string
+		enddo
+	enddo
+	!this.memlist.setrows(!newrows)
+endmethod
+
+
+
+define method .setroomlist(!val is real)
+$(
+	!vals = !this.list.val
+	!val = !vals[1]
+	handle any
+		!val = 1
+	endhandle
+	if !this.list.dtext.unset() then
+		return
+	endif
+	$)
+
+	!this.roomlist.setheadings(!this.roomAttShow)
+	!rows = !this.civildatas[!this.listcivilindices[!val]].getroominfo(!this.roomAttS)
+
+	!newrows = array()
+	do !x indices !rows
+		do !y indices !rows[!x]
+			!newrows[!x][!y] = !rows[!x][!y].string()					$* to string
+		enddo
+	enddo
+	!this.roomlist.setrows(!newrows)
+endmethod
+
+define method .selectroom()
+	!vals = !this.roomlist.val
+	!val = !vals[1]
+	handle any
+		return
+	endhandle
+
+	!civilvals = !this.list.val
+	!civilval = !civilvals[1]
+	handle any
+		if !this.list.dtext.set() then
+			!civilval = 1
+		else
+			return
+		endif
+	endhandle
+
+	!roomname = !this.civildatas[!civilval].rooms[!val].name
+	$!roomname
+endmethod
+
+define method .addCeObject() is boolean
+	var !cons coll all (FLOOR WALL GWALL STWALL) for ce
+	if !cons.unset() then
+		!cons = array()
+		!types = split('FLOOR WALL GWALL STWALL')
+		do !type values !types
+			!name = name of $!type
+			handle any
+			elsehandle none
+				$!name
+				!cons.append(!name)
+				break
+			endhandle
+		enddo
+	endif
+	if !cons.unset() then
+		return false
+	endif
+	do !con values !cons
+		!conname = name of $!con
+		!find = false
+		do !civil values !this.civildatas
+			if !civil.civilname eq !conname then
+				!find = true
+				break
+			endif
+		enddo
+		if !find.not() then
+			!markcivil = object markcivil(!con,!this)
+			if !markcivil.civilname.set() then
+				!this.civildatas.append(!markcivil)
+			endif
+		endif
+	enddo
+	return true
+endmethod
+
+define method .addRoom() is boolean
+	var !frmws coll all frmw for ce
+	if !frmws.unset() then
+		!frmwname = name of frmw
+		handle any
+			return false
+		endhandle
+		!goodfrmw = !frmwname
+		!frmws = array()
+		!frmws.append(!frmwname)
+	endif
+
+	if !frmws.unset() then
+		return false
+	endif
+	!find = false
+	do !frmw values !frmws
+		!room = object civilroom(!frmw)
+		if !room.name.set() then
+			!find = true
+			!this.rooms.append(!room)
+		endif
+	enddo
+	if !find then
+		if defined(!goodfrmw) then
+			$!goodfrmw
+		endif
+	endif
+	return true
+endmethod
+
+define method .clearlist()
+	!this.list.dtext = array()
+	!this.memlist.dtext = array()
+	!this.roomlist.dtext = array()
+	!this.civildatas  = array()
+	!this.listcivilindices = array()
+	!this.rooms = array()
+
+	!this.setfunctionlist()
+endmethod
+
+define method .remSelObject(!item is string)
+	var !cons coll all (FLOOR WALL GWALL STWALL) for $!item
+	$(
+	if !cons.unset() then
+		!cons = array()
+		!types = split('FLOOR WALL GWALL STWALL')
+		do !type values !types
+			!name = name of $!type
+			handle any
+			elsehandle none
+				!cons.append(!name)
+				break
+			endhandle
+		enddo
+	endif
+	$)
+
+	do !name values !cons
+		!index = !this.getcivilindex(!name)
+		if !index.set() then
+			!this.civildatas[!index].delete()
+			!listindex = !this.listcivilindices.findfirst(!index)
+			!this.listcivilindices[!listindex].delete()
+
+			--!this.civildatas.compress()
+			--!this.listcivilindices.compress()	$* a lot of element in this array would change value
+		endif
+
+		$(
+		do !x indices !this.civildatas
+			!markcivil = !this.civildatas[!x]
+			if !markcivil.civilname eq !name then
+				!this.civildatas[!x].delete()
+				break
+			endif
+		enddo
+		$)
+	enddo
+
+
+	$(
+	var !frmws coll all frmw for $!item
+	do !frmw values !frmws
+		!frmwname = name of $!frmw
+		do !x indices !this.rooms
+			if !this.rooms[!x].name eq !frmwname then
+				!this.rooms[!x].delete()
+				break
+			endif
+		enddo
+	enddo
+	$)
+endmethod
+
+define method .getcivilindex(!input is any) is real
+	!ot = !input.objecttype()
+	if !ot eq 'MARKCIVIL' then
+		!name = !input.civilname
+	else
+		!name = name of $!input
+	endif
+	do !x indices !this.civildatas
+		if !this.civildatas[!x].civilname eq !name then
+			return !x
+		endif
+	enddo
+	!real = object real()
+	return !real
+endmethod
+
+
+define method .addce()
+	!!updatembdfiles()
+	!this.addonece()
+endmethod
+
+define method .addonece()
+	var !names coll all (FLOOR WALL GWALL STWALL) for ce
+	if !names.unset() then
+		!names = array()
+		!types = split('FLOOR WALL GWALL STWALL')
+		do !type values !types
+			!name = name of $!type
+			handle any
+			elsehandle none
+				$!name
+				!names.append(!name)
+				break
+			endhandle
+		enddo
+	endif
+	if !names.unset() then
+		!struname = name of stru	$*aid things
+		--q var !struname
+			handle any
+			elsehandle none
+				if !struname.matchwild('*-MBD') then
+					!civilname = !struname.before('-MBD')
+					if !civilname.substring(1,2) eq '/_' then
+						!civilname = !civilname.replace('/_','=').replace('_','/')
+					endif
+					!type = type of $!civilname
+					handle any
+					elsehandle none
+						if !type inset ('FLOOR','GWALL','STWALL','WALL') then
+							!names[1] = !civilname
+						endif
+					endhandle
+				endif
+			endhandle
+			if !names.unset() then
+				return error 1 'Select Wall/STWALL/GWALL/Floor pls'
+			endif
+	endif
+
+
+
+	!dtext = !this.list.dtext
+	!Rtext = !this.list.Rtext
+
+	!headings = !this.civilAttShow
+	!this.list.setheadings(!headings)
+
+	!size = !names.size()
+	!alltimes = !size + 5  	$* 5 is for memlist
+
+	!errors = array()
+	!x = 0
+	do !name values !names
+		$p $!name
+		!x = !x + 1
+
+		!tempindex = !this.getcivilindex(!name)
+
+		if !tempindex.unset() then
+		--if !rtext.findfirst(!name).unset() then
+			!markcivil = object markcivil(!name,!this)
+			handle any
+				--!errors.append(!name + ' Failed to get markcivil of this civil')
+				q var !!error
+				!errors.append(!name + ' Î´µÃµ½markcivil')
+				!errors.appendarray(!!geterrorinfo())
+				skip
+			elsehandle none
+				!errors.appendarray(!markcivil.wrongs)
+			endhandle
+		else
+			!markcivil = !this.civildatas[!tempindex]
+			if !this.listcivilindices.findfirst(!tempindex).set() then
+				golabel /alreadyinside
+			endif
+		endif
+
+			!this.civildatas.append(!markcivil)
+			!this.listcivilindices.append(!this.civildatas.maxindex())
+
+			!rowarr = !markcivil.getcivilAttArr(!this.civilAtts)
+			handle any
+				!errors.append(!name + ' Failed to get attribution list of this civil')
+				!errors.appendarray(!!geterrorinfo())
+				skip
+			endhandle
+
+			!oneline = ''
+			do !string values !rowarr
+				if !oneline ne '' then
+					!oneline = !oneline + '	' + !string.string()
+				else
+					!oneline = !string.string()
+				endif
+			enddo
+			!Rtext.append(!markcivil.civilname)
+			!Dtext.append(!oneline)
+
+		label /alreadyinside
+		!mbdstru = !markcivil.mbdstru
+		add $!markcivil.owner
+		!mbdstru.addstru()
+
+
+		!percent = nint(100 * !x / !alltimes)
+		!!fmsys.setProgress(!percent)
+	enddo
+	!lastname = !names.last()
+	--auto $!lastname
+
+	--q var !dtext !rtext
+
+	!this.list.dtext = !dtext
+	!this.list.Rtext = !Rtext
+
+	!this.setfunctionlist()
+
+	!this.red()
+
+	!this.setotherlist()
+
+	!this.writeerror(!errors)
+	!!fmsys.setProgress(0)
+return
+	!civilresult = !this.addceobject()
+	!roomresult = !this.addroom()
+	if !civilresult.not() and !roomresult.not() then
+	--if !this.addCeObject().not() then
+		--if !this.addRoom.not() then
+			!!alert.warning('Choose Civil or Room element please')
+			return
+		--endif
+	else
+		!name = name
+	endif
+	!dtext = !this.list.dtext
+	!dtext.append(!name)
+	!dtext.unique()
+	!this.list.dtext = !dtext
+
+	!this.list.val = !dtext.findfirst(!name)
+	!this.chooseItem()
+
+
+	!this.setfunctionlist()
+	!this.red()
+endmethod
+
+define method .setfunctionlist()
+--q var !this.civildatas
+	!strus = array()
+	do !x values !this.listcivilindices
+	--do !x indices !this.civildatas
+	--q var !this.civildatas[!x].mbdstru.mbdstru
+		!strus.append(!this.civildatas[!x].mbdstru.mbdstru)
+	enddo
+
+	$(
+	do !x indices !this.rooms
+		!strus.append(!this.rooms[!x].mbdstru.mbdstru)
+	enddo
+	$)
+	!result = !!getstrudata(!strus)
+	!this.functionlist.dtext = !result[1]
+	!this.functiondata = !result
+endmethod
+
+define method .dealfunction(!type is string)
+	--!!setmbdfmt()
+	!functions = !this.functionlist.selection('dtext')
+	if !functions.unset() then
+		!functions = !this.functionlist.dtext
+	endif
+	do !function values !functions
+		!index = !this.functiondata[1].findfirst(!function)
+		do !item values !this.functiondata[2][!index]
+			if !type eq 'add' then
+				add only $!item
+			else
+				remove only $!item
+			endif
+		enddo
+	enddo
+	!this.red()
+endmethod
+
+define method .checkfilepath() is boolean
+	if !this.generatejson.selection('dtext').boolean() then
+		if !this.filepath.val ne '' then
+			!file = object file(!this.filepath.val)
+			if !file.exists().not() then
+				return false
+			else
+				return true
+			endif
+		else
+			return false
+		endif
+	else
+		return true
+	endif
+endmethod
+define method .writeerror(!errors is array)
+	if !errors.set() then
+		!dt = object datetime()
+		!errors.insert(1,!dt.string())
+		!errors.insert(1,'')
+		!path = !!pml.getpathname(!this.name().lowcase() + '.pmlfrm').before(!this.name().lowcase() + '.pmlfrm') + 'civilerror.txt'
+		!file = object file(!path)
+		!lines = !file.readfile(100000)
+		handle any
+			!lines = array()
+			!file.writefile('overwrite',!lines)
+		endhandle
+		if !lines.size() gt 10000 then
+			--!lines = !lines.from(!lines.size() - 1000)
+			--!lines.appendarray(!errors)
+
+			!lines = !lines.from(9000)
+
+		--else
+		--	!file.writefile('append',!errors)
+		endif
+
+		!lines.insertarray(1,!errors)
+		!file.writefile('overwrite',!lines)
+
+		syscom 'start $!file &'
+	endif
+endmethod
+define method .remsel()
+$(
+	!name = !this.list.selection('Dtext')
+	!dtext = !this.list.dtext
+	!val = !this.list.val
+	if !val ne 0 then
+		!dtext[!val].delete()
+		!dtext.compress()
+	endif
+	!this.list.dtext = !dtext
+
+	!this.remSelObject(!name)
+	$)
+
+	!val = !this.getlistIndex()
+
+	!name = !this.list.rtext[!val]
+	--q var !name
+	!this.remSelObject(!name)
+
+	!dtext = !this.list.dtext
+	!rtext = !this.list.rtext
+	!dtext[!val].delete()
+	!rtext[!val].delete()
+	!dtext.compress()
+	!rtext.compress()
+	!this.list.dtext = !dtext
+	!this.list.rtext = !rtext
+
+	!this.setfunctionlist()
+endmethod
+
+
+define method .enhance()
+	unenhance all
+	do !name values !this.list.dtext
+		enhance $!name col red
+	enddo
+endmethod
+
+define method .addabakt()
+	!temparr = !this.getabakt()
+	!addnames = !temparr[1]
+	do !name values !addnames
+		add $!name
+		handle any
+		endhandle
+	enddo
+endmethod
+
+
+define method .merge(!arr is array) is string
+	!string = !arr[1]
+	do !x from 2 to !arr.size()
+		!string = !string + '-' + !arr[!x]
+	enddo
+	return !string
+endmethod
+
+define method .drawall()
+	if !this.checkfilepath().not() then
+		return
+	endif
+	--!!setmbdfmt()
+	!errors = array()
+	$p
+	!size = !this.listcivilindices.size()
+	do !x values !this.listcivilindices
+		!civilname = !this.civildatas[!x].civilname
+		$p $!civilname
+		!this.civildatas[!x].draw()
+		handle any
+			q var !!error
+			!errors.append('$!this.civildatas[$!x].civilname failed to draw')
+			!errors.appendarray(!!geterrorinfo())
+			skip
+		endhandle
+		!percent = nint(100 * !x / !size)
+		!!fmsys.setProgress(!percent)
+	enddo
+
+	$(
+	!size = !this.civildatas.size() * 10 + !this.rooms.size()
+	!x = 0
+	do !civil values !this.civildatas
+		----!this.setcivilfilepath(!civil)
+		--!this.setCheight(!civil)
+		!civil.draw()
+
+		!x = !x + 10
+		!percent = nint(100 * !x / !size)
+		!!fmsys.setProgress(!percent)
+	enddo
+	$)
+	$(
+	do !room values !this.rooms
+		!this.setROOMCheight(!Room)
+		!room.drawMlabel()
+
+		!x = !x + 1
+		!percent = nint(100 * !x / !size)
+		!!fmsys.setProgress(!percent)
+	enddo
+	$)
+
+	!this.setfunctionlist()
+	!this.writeerror(!errors)
+	!this.red()
+	!!fmsys.setProgress(0)
+
+	!this.allLine.val = true
+	--q var !this.allLine.val
+endmethod
+
+$(
+define method .drawMlabel()
+	do !civil values !this.civildatas
+		!this.setCheight(!civil)
+		!civil.drawMlabel()
+	enddo
+
+	do !room values !this.rooms
+		!this.setRoomCheight(!Room)
+		!room.drawMlabel()
+	enddo
+endmethod
+
+define method .drawDim()
+	do !civil values !this.civildatas
+		!this.setCheight(!civil)
+		!civil.drawdim()
+	enddo
+endmethod
+$)
+
+define method .changeline()
+	do !x values !this.listcivilindices
+		!this.civildatas[!x].changeline()
+	enddo
+	$(
+	do !civil values !this.civildatas
+		!civil.ChangeLine()
+	enddo
+	$)
+endmethod
+
+define method .setMlabelLine()
+	!mems = array()
+	do !x values !this.listcivilindices
+		!civil = !this.civildatas[!x]
+	--do !civil values !this.civildatas
+		!mem1 = member of $!civil.mbdstru.dimgro
+		!mem2 = member of $!civil.mbdstru.aidgro
+		!mems.appendarray(!mem1)
+	enddo
+	do !x indices !mems
+		if !mems[!x].desc.split().size() eq 1 then
+			!mems[!x].delete()
+		elseif !mems[!x].function eq 'Ô¤Âñ¼þ±àºÅ' then
+			!mems[!x].delete()
+		endif
+	enddo
+	!mems.compress()
+--q var !this.allLine.val
+	if !this.allLine.val then
+	--if !this.allLine.tag.upcase() eq 'LINE' then
+		--!this.allLine.tag = 'No line'
+		do !mem values !mems
+			add $!mem
+		enddo
+		!this.red()
+	else
+		--!this.allLine.tag = 'Line'
+		do !mem values !mems
+			rem $!mem
+		enddo
+	endif
+
+return
+	if !this.allLine.tag.upcase() eq 'LINE' then
+		do !civil values !this.civildatas
+			!civil.setMlabelLine(true)
+		enddo
+		!this.allLine.tag = 'No line'
+	else
+		do !civil values !this.civildatas
+			!civil.setMlabelLine(false)
+		enddo
+		!this.allLine.tag = 'Line'
+	endif
+endmethod
+
+define method .deleteall()
+	$(
+	do !civil values !this.civildatas
+		!civil.deleteDimAndMlabel()
+	enddo
+	$)
+
+	do !x values !this.listcivilindices
+		!this.civildatas[!x].deleteDimAndMlabel()
+	enddo
+
+
+	$(
+	!objects = !this.civildatas
+	!objects.appendarray(!this.rooms)
+	do !object values !objects
+		!object.deleteDimAndMlabel()
+	enddo
+	$)
+
+	!this.setfunctionlist()
+endmethod
+
+$(
+define method .setcivilfilepath(!civil is markcivil) $* set filepath for civil
+	!civil.generatejson = !this.generatejson.displaytext().boolean()
+	!civil.filepath = !this.filepath.displaytext()
+endmethod
+$)
+
+define method .setcheight(!civil is markcivil)	$*useless now
+	!civil.generatejson = !this.generatejson.displaytext().boolean()
+	!civil.filepath = !this.filepath.displaytext()
+
+	!civil.textoffsetdis = !this.textoffsetdis.displaytext().real()
+	!civil.civilCheight = !this.civilCheight.displaytext().real()
+	!civil.roomCheight = !this.roomCheight.displaytext().real()
+	!civil.elThickCheight = !this.elThickCheight.displaytext().real()
+	!civil.apdpCheight = !this.apdpCheight.displaytext().real()
+	!civil.openingCheight = !this.openingCheight.displaytext().real()
+	!civil.memdimcheight = !this.memdimcheight.displaytext().real()
+	!civil.civildimCheight = !this.civildimCheight.displaytext().real()
+	!civil.lookdir = !this.lookdir.displaytext().direction()
+
+	!civil.vertDim = !this.vertDim.selection('dtext').boolean()
+	!civil.markThickAfterName = !this.wallThickAfterName.selection('dtext').boolean()
+	!civil.mat = !this.mat.selection('dtext').boolean()
+	!civil.secondcon = !this.secondcon.selection('dtext').boolean()
+	!civil.openingpos = !this.openingpos.selection('dtext').boolean()
+endmethod
+
+define method .setRoomCheight(!room is civilRoom)
+	!room.textoffsetdis = !this.textoffsetdis.displaytext().real()
+	!room.roomCheight = !this.roomCheight.displaytext().real()
+endmethod
+
+define method .generatefiles() is array
+	if !this.checkfilepath().not() then
+		return
+	endif
+	!filepath = !this.filepath.displaytext().trim()
+	!resultpaths = array()
+	do !x values !this.listcivilindices
+		!this.civildatas[!x].generatejson = true
+		!this.civildatas[!x].filepath = !filepath
+		!paths = !this.civildatas[!x].generatejsonattrvm()
+		!resultpaths.appendarray(!paths)
+	enddo
+	return !resultpaths
+endmethod
+
+define method .Json()	$* save json file
+	if !this.generatefiles().set() then
+		!filepath = !this.filepath.displaytext().trim()
+		!folder = object file(!filepath)
+		Syscom 'start $!folder &'
+	else
+		$p No Files generated
+	endif
+	return
+
+	if !this.checkfilepath().not() then
+		return
+	endif
+	!filepath = !this.filepath.displaytext().trim()
+	do !x values !this.listcivilindices
+		!this.civildatas[!x].generatejson = true
+		!this.civildatas[!x].filepath = !filepath
+		!this.civildatas[!x].generatejsonattrvm()
+	enddo
+	!folder = object file(!filepath)
+	Syscom 'start $!folder &'
+return
+
+	import 'PMLFileBrowser'
+	Handle Any
+	Endhandle
+	var !banner banner
+	if !banner.matchwild('*PDMS*') then
+		using namespace 'Aveva.PDMS.Presentation'
+	else
+		using namespace 'Aveva.Core.Presentation'
+	endif
+	!browser = object pmlfolderbrowser()
+	!browser.show('Choose Folder',true)	$*true´ú±íÓÐÐÂ½¨ÎÄ¼þ¼ÐÑ¡Ïî
+	!path = !browser.selectedpath()
+	if !path eq '' then
+		return
+	endif
+
+
+	!objects = !this.civildatas
+	!objects.appendarray(!this.rooms)
+
+	do !object values !objects
+		!lines = !object.getjsondata()
+		--!json = object json(!object.mbdstru.mbdstru)
+		--!lines = !json.getpackjson()
+
+		!filename = !object.civilname.replace('=','_').replace('/','_').replace('\','_')
+		!this.instore(!lines,!filename,!path)
+	enddo
+
+	!folder = object file(!path)
+	Syscom 'start $!folder &'
+endmethod
+
+define method .getabakt() is array	$* rules changed, this method is useless now
+	!cnames = array()
+	--q var !this.civildatas
+	do !x values !this.listcivilindices
+		!civil = !this.civildatas[!x]
+	--do !civil values !this.civildatas
+		if !civil.type eq 'FLOOR' then
+			!cname = name of cfloor of $!civil.civilname
+			handle any	$*6DA-CIVI-G-S-C has no CFLOOR
+				!cname = name of owner of $!civil.civilname
+				--skip
+			endhandle
+		else
+			!cname = name of cwall of $!civil.civilname
+		endif
+		!cnames.append(!cname)
+	enddo
+	!cnames.unique()
+
+	!addnames = array()
+	do !owner values !cnames
+		!parts = !owner.split('-')
+		!abparts = !parts
+		!abparts[!abparts.size() - 1] = 'AB'
+		!abname = !this.merge(!abparts)
+
+		!akparts = !parts
+		!akparts[!akparts.size() - 1] = 'AK'
+		!akname = !this.merge(!akparts)
+
+		!tparts = !parts
+		!tparts[!tparts.size() - 1] = 'T'
+		!tname = !this.merge(!tparts)
+
+		!addnames.append(!abname)
+		!addnames.append(!akname)
+		!addnames.append(!tname)
+	enddo
+	--q var !addnames
+	!addnames.unique()
+
+
+	!adds = array()
+	do !name values !addnames
+		!aaname = name of $!name
+		handle any
+		elsehandle none
+			!adds.append(!aaname)
+		endhandle
+	enddo
+
+	!result = array()
+	!result.append(!adds)
+	!result.append(!cnames)
+	return !result
+endmethod
+
+define method .toTplant()		$* for test
+	if !this.checkfilepath().not() then
+		return
+	endif
+	!filepath = !this.filepath.displaytext().trim()
+	do !x values !this.listcivilindices
+		!this.civildatas[!x].generatejson = true
+		!this.civildatas[!x].filepath = !filepath
+		!this.civildatas[!x].totplant()
+	enddo
+	!folder = object file(!filepath)
+	Syscom 'start $!folder &'
+	RETURN
+$(
+	!temparr = !this.getabakt()
+	--q var !temparr
+	!items = !temparr[2]
+	!items.appendarray(!temparr[1])
+	$)
+
+	--q var !items
+
+--$(
+	!vals = !this.list.dtext.indices()
+	if !vals.unset() then
+		return
+	endif
+
+	!items = array()
+	do !val values !vals
+		!items.append(!this.civildatas[!val].civilname)
+	enddo
+	--q var !items
+	--return
+	--$)
+
+	--!items = !this.list.dtext
+	!a = !!jsontotplant(!items,'','','','','','','civil')
+endmethod
+
+define method .instore(!result is array,!filename is string,!path is string)
+	!goodpath = !path
+	if !goodpath.matchwild('*\').not() or !goodpath.matchwild('*/').not() then
+		!goodpath = !goodpath + '\'
+	endif
+	!file = object file(!goodpath + !filename + '.json')
+	!file.writefile('overwrite',!result)
+endmethod
+
+
+µ

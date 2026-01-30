@@ -1,0 +1,54 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= November 2nd 2023
+--[Function]:
+--
+------------------------------------------
+
+define function !!getCenPoint(!poss is array) is position
+    --Q VAR !poss
+	do !pos values !poss
+		if undefined(!w) then
+			!e = !pos.east
+			!w = !pos.east
+			!n = !pos.north
+			!s = !pos.north
+			!u = !pos.up
+			!d = !pos.up
+		else
+			!e = max(!e,!pos.east)
+			!w = min(!w,!pos.east)
+			!n = max(!n,!pos.north)
+			!s = min(!s,!pos.north)
+			!u = max(!u,!pos.up)
+			!d = min(!d,!pos.up)
+		endif
+	enddo
+	!e = (!w + !e) / 2
+	!n = (!s + !n) / 2
+	!u = (!d + !u) / 2
+	!pos = e $!e n $!n u $!u
+
+	return !pos
+
+	if !poss.size() eq 1 then
+		!indices = !poss.indices()
+		return !poss[!indices[1]]
+	endif
+	!pos = !poss[1]
+	!size = !poss.size()
+	do !x from 2 to !size
+		!pos.east = !pos.east + !poss[!x].east
+		!pos.north = !pos.north + !poss[!x].north
+		!pos.up = !pos.up + !poss[!x].up
+	enddo
+	!pos.east = !pos.east / !size
+	!pos.north = !pos.north / !size
+	!pos.up = !pos.up / !size
+	return !pos
+endfunction
+.œ

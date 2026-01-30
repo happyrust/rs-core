@@ -1,0 +1,423 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= April 24th 2023
+--[Function]:	instore json of items into files and return string or merged path of json file
+--
+--[REV]
+--Revision		= 1.1
+--Date			= May 5th 2023
+--[Function]:	add one agr to set file name of json. and merge all json into one file. add agr_remitems£ºdo not need to get att for item in remitems
+--
+--[REV]
+--Revision		= 1.2
+--Date			= June 10th 2023
+--[Function]:	change the result to a array of names
+------------------------------------------
+--input args: 1 items is array of item to get json   2 remitems is array of item not to get json   3 jsonname is full name of file to store json
+--return return: full name of file store json
+
+
+define function !!getjson(!items is array, !jsonname is string) is array
+--define function !!getjson(!items is array, !remitems is array, !jsonname is string) is array
+	!cename = name
+
+	!filemaxlinenumber = 100000			$*merge json files into one file when the number of lines are less than filemaxlinenumber
+	$(
+	!dealtypes = 'bran floor wall gwall stwall equi :SUPP STRU REST'
+	!remnames = array()
+	do !item values !remitems
+		var !remnames append coll all ($!dealtypes) for $!item
+		var !remnames append coll all frmw with(matchwild(name,'*-RM*')) for $!item
+	enddo
+
+	!allitems = array()
+	do !item values !items
+	--$p $!item
+		var !oneitems coll all ($!dealtypes) for $!item
+		--!oneitems = !oneitems.difference(!remnames)
+		var !oneitems append coll all frmw with(matchwild(name,'*-RM*')) for $!item
+		!allitems.appendarray(!oneitems)
+	enddo
+
+	!allitems = !allitems.difference(!remnames)
+	$)
+
+	!allitems = !items
+
+
+	if !jsonname.unset() or !jsonname eq '' then
+		!jsonpath = 'D:\json' & '.json'
+	else
+		!jsonpath = !jsonname
+	endif
+
+
+	!alllines = array()
+	!filenum = 0
+
+	!names = array()
+
+	!contentsize = 0
+	!maxsize = !filemaxlinenumber
+
+	!existnames = array()
+	!objects = array()
+
+	!ots = array()
+	do !item values !allitems
+		!type = acttype of $!item
+		--q var !type !item
+		if !type eq 'frmw' then
+			!object = object civilroom(!item)
+			!name = !object.name
+		elseif !type eq 'BRAN' then
+			if type of owner of $!item eq 'HVAC' then
+				!object = object setHvac(!item)
+				!name = name of bran of $!item
+			else
+				!object = object isobran(!item)
+				!name = !object.branname
+			endif
+		elseif !type inset ('FLOOR','WALL','GWALL','STWALL') then
+			!object = object markcivil(!item)
+			!name = !object.civilname
+		elseif !type eq 'EQUI' then
+			!object = object markequi(!item)
+			!name = !object.equiname
+		elseif !type inset (':SUPP','STRU','REST') then
+			!sitename = name of site of $!item
+			if !sitename.upcase().match('INST') ne 0 then
+				!object = object instsupport(!item)
+			else
+				!object = object suisupport(!item)
+			endif
+			!name = !object.suppname
+		endif
+
+		if !names.findfirst(!name).unset() then
+			!objects.append(!object)
+			!names.append(!name)
+			!ot = !object.objecttype()
+			if !ot eq 'ISOBRAN' then
+				if !object.isinstpipe then
+					!ots.append(!ot + '_INST')
+				else
+					!ots.append(!ot)
+				endif
+			elseif !ot eq 'INSTSUPPORT' then
+				!zonename = name of owner of $!object.suppname
+				if !zonename.upcase().match('RACK') ne 0 then
+					!ots.append('INSTSUPPORT')
+				else
+					!ots.append('INSTPIPESUPPORT')
+				endif
+			elseif !ot eq 'MARKCIVIL' then
+				if !object.form.name() eq 'MARKCIVILFORM' then
+					!ots.append(!ot)
+				else
+					!ots.append('MARKARCH')
+				endif
+			else
+				!ots.append(!ot)
+			endif
+		endif
+	enddo
+
+	!ots.unique()
+	do !ot values !ots
+		if !ot eq 'ISOBRAN' then
+			!result = !!getattlist('bran')
+			do !x indices !result[1]
+				!com = '!' + !result[2][!x] + ' = !result[1][!x]'
+				$!com
+			enddo
+		elseif !ot eq 'ISOBRAN_INST' then
+			!result = !!getattlist('instbran')
+			do !x indices !result[1]
+				!com = '!inst' + !result[2][!x] + ' = !result[1][!x]'
+				$!com
+			enddo
+		elseif !ot eq 'SUISUPPORT' then
+			!result = !!getattlist('supp')
+			do !x indices !result[1]
+				if !result[2][!x].lowcase().match('material') ne 0 then
+					!com = '!supp' + !result[2][!x] + ' = !result[1][!x]'
+				else
+					!com = '!' + !result[2][!x] + ' = !result[1][!x]'
+				endif
+				$!com
+			enddo
+		elseif !ot eq 'INSTSUPPORT' then
+			!result = !!getattlist('instsupp')
+			do !x indices !result[1]
+				if !result[2][!x].lowcase().match('material') ne 0 then
+					!com = '!instsupp' + !result[2][!x] + ' = !result[1][!x]'
+				else
+					!com = '!inst' + !result[2][!x] + ' = !result[1][!x]'
+				endif
+				$!com
+			enddo
+		elseif !ot eq 'INSTPIPESUPPORT' then
+			!result = !!getattlist('instpipesupp')
+			do !x indices !result[1]
+				if !result[2][!x].lowcase().match('material') ne 0 then
+					!com = '!instpipesupp' + !result[2][!x] + ' = !result[1][!x]'
+				else
+					!com = '!instpipe' + !result[2][!x] + ' = !result[1][!x]'
+				endif
+				$!com
+			enddo
+		elseif !ot eq 'MARKEQUI' then
+			!result = !!getattlist('equi')
+			do !x indices !result[1]
+				!com = '!' + !result[2][!x] + ' = !result[1][!x]'
+				$!com
+			enddo
+		elseif !ot eq 'MARKCIVIL' then
+			!result = !!getattlist('civil')
+			do !x indices !result[1]
+				!com = '!' + !result[2][!x] + ' = !result[1][!x]'
+				$!com
+			enddo
+		elseif !ot eq 'MARKARCH' then
+			!result = !!getattlist('arch')
+			do !x indices !result[1]
+				!com = '!' + !result[2][!x] + ' = !result[1][!x]'
+				$!com
+			enddo
+		endif
+	enddo
+
+	--Q VAR !objects
+	do !x indices !objects
+		!objecttype = !objects[!x].objecttype()
+		if !objecttype eq 'MARKCIVIL' then
+			!lines = !objects[!x].getjsondata(!civilAtts ,!civilAttShow,!memAtts ,!memAttShow,!roomAtts ,!roomAttShow)
+		elseif !objecttype eq 'MARKARCH' then
+			!lines = !objects[!x].getjsondata(!civilAtts ,!civilAttShow,!memAtts ,!memAttShow,!roomAtts ,!roomAttShow,!doorAtts ,!doorAttShow)
+		elseif !objecttype eq 'CIVILROOM' then
+			!lines = !objects[!x].getjsondata()
+		elseif !objecttype eq 'MARKEQUI' then
+			!lines = !objects[!x].getjsondata(!equiatts,!equiattshow)
+		elseif !objecttype eq 'ISOBRAN' then
+			if !objects[!x].isinstpipe then
+				--!lines = !objects[!x].getjsondata(!instmaterialAttS, !instmaterialAttShow, !instBranAtts ,!instbranAttShow , !instcutpipelengthatts, !instcutpipelengthattshow)
+				!lines = !objects[!x].getjsondata(!instmaterialAttS, !instmaterialAttShow,!instelematerialAttS, !instelematerialAttShow, !instBranAtts ,!instbranAttShow , !instcutpipelengthatts, !instcutpipelengthattshow)
+			else
+				!lines = !objects[!x].getjsondata(!materialAttS, !materialAttShow,!elematerialAttS, !elematerialAttShow, !BranAtts ,!branAttShow , !cutpipelengthatts, !cutpipelengthattshow)
+			endif
+		elseif !objecttype eq 'SUISUPPORT' then
+			!lines = !objects[!x].getjsondata(!suppmaterialAttS, !suppmaterialAttShow, !suppAtts ,!suppAttShow)
+		elseif !objecttype eq 'INSTSUPPORT' then
+			!zonename = name of owner of $!objects[$!x].suppname
+			if !zonename.upcase().match('RACK') ne 0 then
+				!lines = !objects[!x].getjsondata(!instsuppmaterialAttS, !instsuppmaterialAttShow, !instsuppAtts ,!instsuppAttShow)
+			else
+				!lines = !objects[!x].getjsondata(!instpipesuppmaterialAttS, !instpipesuppmaterialAttShow, !instpipesuppAtts ,!instpipesuppAttShow)
+			endif
+		elseif !objecttype eq 'SETHVAC' then
+			!lines = !objects[!x].getjsondata()
+		else
+			!lines = !objects[!x].getjsondata()
+		endif
+
+	--Q VAR !LINES.SIZE()
+
+	$(
+	do !x indices !allitems
+
+		!item = !allitems[!x]
+		!type = type of $!item
+		!lines = array()
+		if !type eq 'PANE' then
+			!object = object civilroom(!item)
+			!lines = !object.getjsondata()
+		elseif !type eq 'BRAN' then
+			!object = object isobran(!item)
+			!lines = !object.getjsondata(!materialAttS, !materialAttShow, !BranAtts ,!branAttShow , !cutpipelengthatts, !cutpipelengthattshow)
+		elseif !type inset ('FLOOR','WALL','GWALL','STWALL') then
+			!object = object markcivil(!item)
+			!lines = !object.getjsondata()
+		elseif !type eq 'EQUI' then
+			!object = object markequi(!item)
+			!lines = !object.getjsondata()
+		endif
+
+		!object.delete()
+		handle any
+		endhandle
+
+
+
+
+
+		------------new way 202306120901 s
+
+		--empty and it is not last one, skip
+		if !lines.unset() and !x ne !allitems.size() then
+			skip
+		endif
+		$)
+
+		if !lines.unset() and !x ne !objects.size() then
+			skip
+		endif
+
+		!filenames = array()
+		--too much content, close previous file( different with next closing file)
+		if !file.isopen() and !contentsize ne 0 and !lines.size() + !contentsize gt !maxsize then
+			!file.close()
+			!filenames.append(!filepath)
+			!contentsize = 0
+		endif
+
+		--if content is 0 and there is content to store, a new file is needed, open a new file
+		if !contentsize eq 0 and !lines.size() ne 0 then
+			!filenum = !filenum + 1
+			!filepath = !jsonpath.before('.json') & !filenum & '.json'
+			!file = object file(!filepath)
+			!file.open('overwrite')
+			handle any
+				$p Cant overwrite file $!filepath
+				return !filenames
+			endhandle
+		endif
+
+		--if file is not empty, delete the file line '[' in lines
+		if !contentsize ne 0 and !lines.set() then
+			!lines[1].delete()   			$* delete first '['
+		endif
+
+		--if it is last one or content is more then maxsize, append lines and close file
+		--it is different with previous closing file, this one : first step is appending lines, then close. Previous is close file only.
+
+		if !x eq !objects.size() or !contentsize + !lines.size() gt !maxsize then
+			if !lines.unset() then
+				!lines = array()
+				!lines[1] = ']'
+			endif
+			!file.writefile('APPEND',!lines)
+			--$p $!filepath
+			!file.close()
+			!filenames.append(!filepath)
+			!contentsize = 0
+
+		--normally append lines into exist file
+		elseif !lines.set() then
+			!lines[!lines.maxindex()].delete()  		$* delete last ']'
+			!lines[!lines.maxindex()] = !lines[!lines.maxindex()] + ','
+			!file.writefile('APPEND',!lines)
+			!contentsize = !contentsize + !lines.size()
+		endif
+		---------------new way 202306120901 e
+
+
+
+		$(
+		--old way 202306101501 s
+		if !lines.set() then
+			!lines[1].delete()   			$* delete first [
+			!lines[!lines.maxindex()].delete()  		$* delete last ]
+			!lines[!lines.maxindex()] = !lines[!lines.maxindex()] + ','
+			!alllines.appendarray(!lines)
+		endif
+
+		if !alllines.size() gt 8000 or !x eq !allitems.size() then
+			!alllines[!alllines.maxindex()] = !alllines[!alllines.maxindex()].substring(1,!alllines[!alllines.maxindex()].length() - 1)
+			--delete last ,
+
+			!alllines.insert(1,'[')
+			!alllines.append(']')
+
+			!filepath = !jsonpath.before('.json') & !filenum & '.json'
+
+			!filenum = !filenum + 1
+			!file = object file(!filepath)
+			!file.writefile('overwrite',!alllines)
+			!file.close()
+
+			!filenames.append(!jsonpath)
+
+			!alllines = array()
+		endif
+		--old way 202306101501 e
+		$)
+
+	enddo
+	$!cename
+
+	return !filenames
+
+	$(
+	--202306101543
+	if !alllines.set() then
+		do !x indices !alllines
+			!alllines[!x] = '    ' + !alllines[!x]
+		enddo
+		!alllines.insert(1,'[')
+		!alllines.append(']')
+	else
+		return ''
+	endif
+
+
+	if !jsonname.unset() or !jsonname eq '' then
+		!jsonpath = 'D:\json' & '.json'
+	else
+		!jsonpath = !jsonname
+	endif
+	!file = object file(!jsonpath)
+	!file.writefile('overwrite',!alllines)
+	!file.close()
+
+	$!cename
+
+	return !jsonpath
+$)
+
+	$(
+	!string = ''
+	do !x indices !items
+		!item = !items[!x]
+		!type = type of $!item
+		if !type eq 'PANE' then
+			!object = object civilroom(!item)
+			!lines = !object.getjsondata()
+		elseif !type eq 'BRAN' then
+			!object = object isobran(!item)
+			!lines = !object.getjsondata(!materialAttS, !materialAttShow, !BranAtts ,!branAttShow , !cutpipelengthatts, !cutpipelengthattshow)
+		elseif !type inset ('FLOOR','WALL','GWALL','STWALL') then
+			!object = object markcivil(!item)
+			!lines = !object.getjsondata()
+		elseif !type eq 'EQUI' then
+			!object = object markequi(!item)
+			!lines = !object.getjsondata()
+		endif
+
+		!jsonpath = 'D:\json' & !x & '.json'
+		!file = object file(!jsonpath)
+		!file.writefile('overwrite',!lines)
+		!file.close()
+
+		if !string eq '' then
+			!string = !jsonpath
+		else
+			!string = !string + ';' + !jsonpath
+		endif
+
+		!object.delete()
+		handle any
+		endhandle
+	enddo
+
+
+	$!cename
+
+	return !string
+	$)
+endfunction
+*B

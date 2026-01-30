@@ -1,0 +1,40 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= February 27th 2024
+--[Function]:
+------------------------------------------
+
+define function !!setmbdformtitle(!form is form)
+	!file = !!getmbdversionfile(!form)
+	if !file.unset() then
+		return
+	endif
+	!lines = !file.readfile()
+	handle any
+		return
+	endhandle
+
+	!line = !lines[1]
+	handle any
+		return
+	endhandle
+	!version = !line.after(':')
+	!form.formtitle = !form.formtitle & '  °æ±¾:' & !version.before(' ')
+	handle any
+		return
+	endhandle
+
+	--!format = object dateformat('Y-M-D')
+	--!timestring = !format.string(!file.dtm())
+	--q var !timestring
+	--!form.formtitle = !form.formtitle & '  °æ±¾:' & !version & '  ' & !timestring
+	--handle any
+	--	return
+	--endhandle
+	!form.versioncontext.val = !lines
+endfunction
+ó¯

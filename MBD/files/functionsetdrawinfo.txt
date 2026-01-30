@@ -1,0 +1,8 @@
+!this.drawproject.val = !object.drawproject
+!this.drawcompany.val = !object.drawcompany
+!this.drawname.val = !object.drawname
+!this.drawnum.val = !object.drawnum
+!this.drawengineering.val = !object.drawengineering
+!this.drawsubprojectnumber.val = !object.drawsubprojectnumber
+!this.drawgroup.val = !object.drawgroup
+!this.drawmajor.val = !object.drawmajor

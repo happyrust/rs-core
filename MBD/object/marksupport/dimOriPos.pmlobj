@@ -1,0 +1,283 @@
+define object dimOriPos
+	member .line is line				$*input data 1 (Necessary)		$* return data 1
+	member .cenPoint is position		$*input data 2
+	member .lookDirs is array			$*input data 3
+	member .maxDis is real				$*input data 4				$*offset distance
+	member .cheight is real				$*input data 5
+	member .dimDirRule is real		$*input data 6	--121 cenpos lookdirs reverse(false)		 	122 cenpos lookdirs reverse(true)
+													--211 lookdirs cenpos reverse(false) 			212 lookdirs cenpos reverse(true)
+													--11 cenpos reverse(false))					12 cenpos reverse(true))
+													--21 lookdirs reverse(false))					22 lookdirs reverse(true))
+
+	member .reverse is boolean			$*input data included in dimDirRule	(true dimdir would be opposite)
+
+
+
+
+	member .maxHoriTextAngle is real
+	member .maxVertTextAngle is real
+
+	member .dimDir is direction			$* return data 2
+	member .ori is orientation			$* return data 3
+	member .dimPos is position			$* return data 4
+	member .invert is boolean			$* return data 5
+endobject
+
+define method .dimOriPos(!line is line, !cenpoint is position, !lookDirs is array, !maxDis is real, !cheight is real, !dimDirRule is real)
+	!this.dimOriPos()
+	!this.line = !line
+	!this.cenPoint = !cenPoint
+	!this.lookDirs = !lookDirs
+	!this.maxDis = !maxDis
+	!this.cheight = !cheight
+
+	!String = !dimDirRule.string()
+	!reverseString = !string.substring(!string.length(),1)
+	if !reverseString eq '1' then
+		!this.reverse = false
+	else
+		!this.reverse = true
+	endif
+	!this.dimDirRule = !string.substring(1,!string.length() - 1).real()
+
+	--!this.reverse = !reverse
+	!this.getOriAndPos()
+	!this.dimDirRule = !dimDirRule
+endmethod
+
+
+define method .dimOriPos()
+	!this.maxHoriTextAngle = 30
+	!this.maxVertTextAngle = 5
+endmethod
+
+define method .getOriAndPos()
+	!this.getDimDir()				$* first use direction of CenPoint to midpoint of line, if failed then use lookDirs, if failed use U and N
+	!this.getTextOri()
+	!this.getDimPos()
+
+
+endmethod
+
+
+define method .getDimDir()
+	if !this.dimDirRule eq 12 then
+		!this.getDimDirFromCenPos()
+		!this.getDimdirFromLookDir()
+	elseif !this.dimDirRule eq 21 or !this.dimDirRule eq 2 then
+		!this.getDimdirFromLookDir()
+		!this.getDimDirFromCenPos()
+	elseif !this.dimdirRule eq 1 then
+		!this.getDimDirFromCenPos()
+	elseif !this.dimdirRule eq 2 then
+		!this.getDimdirFromLookDir()
+	endif
+	if undefined(!this.dimDir) then
+		!linedir = !this.line.direction()
+		!this.dimDir = !linedir.orthogonal(U)
+		handle any
+			!this.dimDir = !linedir.orthogonal(N)
+		endhandle
+	endif
+	if !this.reverse then
+		!this.dimDir = !this.dimDir.opposite()
+	endif
+endmethod
+
+--get dimdir according cenpos
+define method .getDimDirFromCenPos()
+	if !this.dimdir.set() or !this.cenpoint.unset() or !this.line.on(!this.cenpoint) then
+		return
+	endif
+	!linedir = !this.line.direction()
+	!cenDir = !this.cenpoint.direction(!this.line.startposition.midpoint(!this.line.endposition))
+	!tempdir = !linedir.orthogonal(!cendir)
+	!this.dimDir = !tempdir.orthogonal(!linedir)
+endmethod
+
+--get dimdir according best looking direction
+define method .getDimdirFromLookDir()
+	if !this.dimdir.set() or !this.lookDirs.unset() then
+		return
+	endif
+	!linedir = !this.line.direction()
+	!toleAngle = !this.maxHoriTextAngle
+
+	!minAngle = 90 - !toleAngle
+
+	!angles = array()
+	do !onedir values !this.lookDirs
+		!angle = !linedir.angle(!onedir)
+		!angle = min(!angle,180 - !angle)
+		!angles.append(!angle)
+		if !angle ge !minAngle then
+			!this.dimDir = !linedir.orthogonal(!onedir)	$*prioritize in order
+			golabel /end
+		endif
+	enddo
+
+	if !angles.set() then
+		!indices = !angles.sortedindices()
+		!bestLookDir = !this.lookdirs[!indices.last()]	$*priority by angle
+		!this.dimDir = !linedir.orthogonal(!bestLookDir)
+	endif
+
+	label /end
+	if !this.cenpoint.set() and !this.line.on(!this.cenpoint).not() then									$*
+			!cenDir = !this.cenpoint.direction(!this.line.startposition.midpoint(!this.line.endposition))
+			if !cendir.angle(!this.dimDir) gt 90 then
+				!this.dimdir = !this.dimdir.opposite()
+			endif
+	endif
+endmethod
+
+define method .getTextOri() is result
+	!dimdir = !this.dimdir
+	!linedir = !this.line.direction()
+	if !dimDir.angle(d) lt 90 then
+		!textDir = !dimDir.opposite()
+	else
+		!textDir = !dimDir
+	endif
+
+
+
+	!zdir = !linedir.orthogonal(!textdir)
+	!tempangle = !zdir.angle(d)					$*angle between D and direction of CHAR
+
+
+	!invert = false
+	!toleAngle = !this.maxVertTextAngle
+
+
+
+	if !tempangle lt 90 - !toleAngle then	$*zlr near d
+	--$p 1
+		--!xdir = !linedir.opposite()
+		--!invert = true
+
+
+		!zdir = !zdir.opposite()
+		if !this.keepDir(!textDir).not() then
+			!textdir = !textdir.opposite()
+		endif
+		!ori = y is $!textdir and z is $!zdir
+		--!xdir = !ori.xdir()
+	elseif !tempangle gt 90 + !toleAngle then	$* zlr is near up
+	--$p 2 $!tempangle $!zdir
+	--q var !this.keepDir(!textDir)
+		if !tempangle gt 180 - !toleangle and !this.keepDir(!textDir).not() then	$* check if need to change textdir to keep same with view
+			!textdir = !textdir.opposite()
+		endif
+		!ori = y is $!textdir and z is $!zdir
+
+	$(
+		if !tempangle gt 180 - !toleangle and !this.keepDir(!textDir).not() then	$* check if need to change textdir to keep same with view
+			!invert = true
+			!xdir = !linedir.opposite()
+		else
+			!xdir = !linedir
+		endif
+	$)
+		--$p $!invert
+	else										$*zlr is near horizontal
+	--$p 3
+		!invert = !this.checkIfReverseTextLookDir(!zdir)
+		if !invert then
+			!zdir = !zdir.opposite()
+		endif
+		--q var !this.keepDir(!textDir)
+		if !this.keepDir(!textDir).not() then
+			!textdir = !textdir.opposite()
+		endif
+		!ori = y is $!textdir and z is $!zdir
+
+		$(
+		if !invert then
+			!xdir = !linedir.opposite()
+			!invert = true
+		else
+			!xdir = !linedir
+		endif
+		$)
+	endif
+	!this.ori = !ori
+	return
+
+	$(
+	!xdir = !ori.xdir()
+	if !linedir.angle(!xdir) gt 90 then
+		!this.invert = true
+		!this.line = !this.line.endposition.line(!this.line.startposition)
+	else
+		!this.invert = false
+	endif
+	return
+	$)
+
+	$(
+	if !invert then
+		--!textdir = !textdir.opposite()
+		!this.line = !this.line.endposition.line(!this.line.startposition)
+	endif
+	!this.invert = !invert
+	!this.ori = object orientation('X is $!xdir and Y is $!textdir')
+
+
+	$)
+endmethod
+
+define method .keepDir(!textDir is direction) is boolean	$* if direction of text(zdir is near u), check if need to reverse the textdir
+	!toleAngle = !this.maxHoriTextAngle
+	!maxAngle = 90 + !toleAngle
+	!minAngle = 90 - !toleAngle
+	--q var !this.lookdirs
+	do !onedir values !this.lookDirs
+		!angle = !onedir.angle(d)
+		if !angle lt !maxAngle and !angle gt !minAngle then		$*horizontal
+		--$p $!onedir
+			!tempdir = !onedir.orthogonal(u)
+			!lookdir = !tempdir.orthogonal(u).opposite()
+		--$p $!textdir $!lookdir
+
+			if !textDir.angle(!lookDir) lt 88 then
+			--if !textDir.angle(!lookDir) lt 90 then
+				return true
+			--elseif !textDir.angle(!lookDir) gt 90 then
+			elseif !textDir.angle(!lookDir) gt 92 then
+				return false
+			endif
+		endif
+	enddo
+	--return false
+	return true
+endmethod
+
+define method .checkIfReverseTextLookDir(!zdir is direction) is boolean
+	!invert = false
+	--!toleAngle = 30
+	!toleAngle = !this.maxHoriTextAngle
+
+	do !onedir values !this.lookDirs
+		!angle = !zdir.angle(!onedir)
+
+		if !angle le !toleAngle then					$*zdir of text is similar with dir in lookdirs, the zdir of text should change to opposite direction
+			!invert = true
+			break
+		endif
+	enddo
+	return !invert
+endmethod
+
+define method .getDimPos()
+	if !this.ori.ydir().angle(!this.dimDir) lt 90 then
+		!extendDis = !this.cheight * 1.5
+	else
+		!extendDis = !this.cheight * 3
+	endif
+	!midpoint = !this.line.startposition.midpoint(!this.line.endposition)
+	!this.dimpos = !midpoint.offset(!this.dimDir,!this.maxDis + !extendDis)
+endmethod
+
+
+´

@@ -1,0 +1,1376 @@
+﻿
+14:10:19 21 March 2025
+/1VCP002MT failed to draw
+(2,754)   Argument 2 to + or & is unset
+ In line 70 of PML function jsonmem.GETJSONTEXT
+	!result.append(|   "E3DProject": "| + !this.E3DProject + |",|)
+ Called from line 807 of PML function markequi.GETJSONDATA
+	return !jsonmem.getjsontext()
+ Called from line 880 of PML function markequi.GETJSONARRAY
+        !result = !this.getjsondata(!!markinstequiform.equiAtts ,!!markinstequiform.equiAttShow )
+ Called from line 904 of PML function markequi.GENERATEJSONATTRVM
+	!result = !this.getjsonarray()
+ Called from line 857 of PML function markequi.DRAW
+		!this.generatejsonattrvm()
+ Called from line 1481 of PML function markinstequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+10:45:57 23 September 2024
+/1CCV013MT failed to draw
+(2,754)   Argument 2 to + or & is unset
+ In line 71 of PML function jsonmem.GETJSONTEXT
+    !result.append(|   "refno": "| + !this.refno + |",|)
+ Called from line 803 of PML function markequi.GETJSONDATA
+	return !jsonmem.getjsontext()
+ Called from line 874 of PML function markequi.GETJSONARRAY
+        !result = !this.getjsondata(!!markinstequiform.equiAtts ,!!markinstequiform.equiAttShow )
+ Called from line 897 of PML function markequi.GENERATEJSONATTRVM
+	!result = !this.getjsonarray()
+ Called from line 852 of PML function markequi.DRAW
+	!this.generatejsonattrvm()
+ Called from line 1478 of PML function markinstequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:07:29 8 August 2024
+/1VNA915MT failed to draw
+(2,751)   Variable !!MARKEQUIFORM does not exist
+ In line 883 of PML function markequi.GENERATEJSONATTRVM
+	!!markequiform.instore(!result,!filename,!filepath)
+ Called from line 841 of PML function markequi.DRAW
+	!this.generatejsonattrvm()
+ Called from line 1478 of PML function markinstequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:06:45 8 August 2024
+/1VNA915MT failed to draw
+(2,751)   Variable !!MARKEQUIFORM does not exist
+ In line 883 of PML function markequi.GENERATEJSONATTRVM
+	!!markequiform.instore(!result,!filename,!filepath)
+ Called from line 841 of PML function markequi.DRAW
+	!this.generatejsonattrvm()
+ Called from line 1478 of PML function markinstequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:06:20 8 August 2024
+/1VNA915MT failed to draw
+(2,751)   Variable !!MARKEQUIFORM does not exist
+ In line 883 of PML function markequi.GENERATEJSONATTRVM
+	!!markequiform.instore(!result,!filename,!filepath)
+ Called from line 841 of PML function markequi.DRAW
+	!this.generatejsonattrvm()
+ Called from line 1478 of PML function markinstequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+13:44:12 29 July 2024
+/Copy-of-1ZLT002CR failed to draw
+(2,751)   Variable !!MARKEQUIFORM does not exist
+ In line 842 of PML function markequi.GETJSONARRAY
+	!result = !this.getjsondata(!!markequiform.equiAtts ,!!markequiform.equiAttShow )
+ Called from line 860 of PML function markequi.GENERATEJSONATTRVM
+	!result = !this.getjsonarray()
+ Called from line 822 of PML function markequi.DRAW
+	!this.generatejsonattrvm()
+ Called from line 1478 of PML function markinstequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+11:31:02 29 July 2024
+/1RBM058CQ failed to draw
+(2,751)   Variable !!MARKEQUIFORM does not exist
+ In line 861 of PML function markequi.GENERATEJSONATTRVM
+	!!markequiform.instore(!result,!filename,!filepath)
+ Called from line 822 of PML function markequi.DRAW
+	!this.generatejsonattrvm()
+ Called from line 1478 of PML function markinstequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+/1ZBR107CR failed to draw
+(2,751)   Variable !!MARKEQUIFORM does not exist
+ In line 861 of PML function markequi.GENERATEJSONATTRVM
+	!!markequiform.instore(!result,!filename,!filepath)
+ Called from line 822 of PML function markequi.DRAW
+	!this.generatejsonattrvm()
+ Called from line 1478 of PML function markinstequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+11:30:06 29 July 2024
+/1RBM058CQ failed to draw
+(2,751)   Variable !!MARKINSTQUIFORM does not exist
+ In line 842 of PML function markequi.GETJSONARRAY
+	!result = !this.getjsondata(!!markinstquiform.equiAtts ,!!markinstquiform.equiAttShow )
+ Called from line 860 of PML function markequi.GENERATEJSONATTRVM
+	!result = !this.getjsonarray()
+ Called from line 822 of PML function markequi.DRAW
+	!this.generatejsonattrvm()
+ Called from line 1478 of PML function markinstequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+/1ZBR107CR failed to draw
+(2,751)   Variable !!MARKINSTQUIFORM does not exist
+ In line 842 of PML function markequi.GETJSONARRAY
+	!result = !this.getjsondata(!!markinstquiform.equiAtts ,!!markinstquiform.equiAttShow )
+ Called from line 860 of PML function markequi.GENERATEJSONATTRVM
+	!result = !this.getjsonarray()
+ Called from line 822 of PML function markequi.DRAW
+	!this.generatejsonattrvm()
+ Called from line 1478 of PML function markinstequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+11:27:55 29 July 2024
+/1RBM058CQ failed to draw
+(2,751)   Variable !!MARKEINSTQUIFORM does not exist
+ In line 842 of PML function markequi.GETJSONARRAY
+	!result = !this.getjsondata(!!markeinstquiform.equiAtts ,!!markeinstquiform.equiAttShow )
+ Called from line 860 of PML function markequi.GENERATEJSONATTRVM
+	!result = !this.getjsonarray()
+ Called from line 822 of PML function markequi.DRAW
+	!this.generatejsonattrvm()
+ Called from line 1478 of PML function markinstequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+/1ZBR107CR failed to draw
+(2,751)   Variable !!MARKEINSTQUIFORM does not exist
+ In line 842 of PML function markequi.GETJSONARRAY
+	!result = !this.getjsondata(!!markeinstquiform.equiAtts ,!!markeinstquiform.equiAttShow )
+ Called from line 860 of PML function markequi.GENERATEJSONATTRVM
+	!result = !this.getjsonarray()
+ Called from line 822 of PML function markequi.DRAW
+	!this.generatejsonattrvm()
+ Called from line 1478 of PML function markinstequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+11:22:39 29 July 2024
+/1RBM058CQ failed to draw
+(2,751)   Variable !!MARKEQUIFORM does not exist
+ In line 842 of PML function markequi.GETJSONARRAY
+	!result = !this.getjsondata(!!markequiform.equiAtts ,!!markequiform.equiAttShow )
+ Called from line 860 of PML function markequi.GENERATEJSONATTRVM
+	!result = !this.getjsonarray()
+ Called from line 822 of PML function markequi.DRAW
+	!this.generatejsonattrvm()
+ Called from line 1478 of PML function markinstequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+11:21:57 29 July 2024
+/1ZBR107CR failed to draw
+(2,751)   Variable !!MARKEQUIFORM does not exist
+ In line 842 of PML function markequi.GETJSONARRAY
+	!result = !this.getjsondata(!!markequiform.equiAtts ,!!markequiform.equiAttShow )
+ Called from line 860 of PML function markequi.GENERATEJSONATTRVM
+	!result = !this.getjsonarray()
+ Called from line 822 of PML function markequi.DRAW
+	!this.generatejsonattrvm()
+ Called from line 1478 of PML function markinstequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+10:57:53 29 July 2024
+/1ZBR107CR failed to draw
+(2,751)   Variable !!MARKEQUIFORM does not exist
+ In line 842 of PML function markequi.GETJSONARRAY
+	!result = !this.getjsondata(!!markequiform.equiAtts ,!!markequiform.equiAttShow )
+ Called from line 860 of PML function markequi.GENERATEJSONATTRVM
+	!result = !this.getjsonarray()
+ Called from line 822 of PML function markequi.DRAW
+	!this.generatejsonattrvm()
+ Called from line 1478 of PML function markinstequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+10:49:45 8 March 2024
+/6CSP001BA 未得到markequi
+PML: Function not found
+ In line 132 of PML function markequi.GETATTS
+	!!setproofreadinginfo(!this,!name)
+ Called from line 107 of PML function markequi.MARKEQUI
+		!this.getatts()
+ Called from line 1121 of PML function markequiform.ADDCE
+			!markequi = object markequi(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+
+10:39:07 8 March 2024
+/6CSP001BA 未得到markequi
+PML: Function not found
+ In line 164 of PML function markequi.GETDRAWINFO
+		!!getdrawinginfo(!this)
+ Called from line 130 of PML function markequi.GETATTS
+	!this.getdrawinfo()
+ Called from line 107 of PML function markequi.MARKEQUI
+		!this.getatts()
+ Called from line 1121 of PML function markequiform.ADDCE
+			!markequi = object markequi(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+
+10:08:01 8 March 2024
+/6CSP001BA 未得到markequi
+(46,28)   ERROR - Variable CIVIL not defined
+ In line 355 of PML function markcivil.GETATTS
+	if type of $!civil eq 'FLOOR' then
+ Called from line 276 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 238 of PML function markcivil.MARKCIVIL
+	!this.markcivil(!item)
+ Called from line 502 of PML function mbdlocation.GETGOODCON
+			!civil = object markcivil(!con,true)
+ Called from line 463 of PML function mbdlocation.GETCONWITHDIRPOS
+		!civil = !this.getgoodcon(!dir,!contype,!extenddis,!preextenddis,!usedcons,!nearpoint)
+ Called from line 314 of PML function mbdlocation.READBACKDIMDATA
+			!this.floor = !this.getconwithdirpos(d,!this.upnearpoint)
+ Called from line 124 of PML function mbdlocation.MBDLOCATION
+		!this.readbackdimdata()
+ Called from line 97 of PML function mbdlocation.MBDLOCATION
+	!this.mbdlocation(!pos,!item)
+ Called from line 109 of PML function markequi.MARKEQUI
+		!this.mbdlocation = object mbdlocation(!this.equiname)
+ Called from line 1121 of PML function markequiform.ADDCE
+			!markequi = object markequi(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+
+10:07:38 8 March 2024
+/6CSP001BA 未得到markequi
+(47,62)   CP: Incomplete command line
+ In line 348 of PML function markcivil.GETATTS
+	!this.setattvalue(!name,split('room/:room_no,tssm/:zd_tssm,wjbm/:zd_wjbm,nbbm/:zd_nbbm,status/:zd_status,rev/:zd_rev',',')^^
+ Called from line 276 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 238 of PML function markcivil.MARKCIVIL
+	!this.markcivil(!item)
+ Called from line 502 of PML function mbdlocation.GETGOODCON
+			!civil = object markcivil(!con,true)
+ Called from line 463 of PML function mbdlocation.GETCONWITHDIRPOS
+		!civil = !this.getgoodcon(!dir,!contype,!extenddis,!preextenddis,!usedcons,!nearpoint)
+ Called from line 314 of PML function mbdlocation.READBACKDIMDATA
+			!this.floor = !this.getconwithdirpos(d,!this.upnearpoint)
+ Called from line 124 of PML function mbdlocation.MBDLOCATION
+		!this.readbackdimdata()
+ Called from line 97 of PML function mbdlocation.MBDLOCATION
+	!this.mbdlocation(!pos,!item)
+ Called from line 109 of PML function markequi.MARKEQUI
+		!this.mbdlocation = object mbdlocation(!this.equiname)
+ Called from line 1121 of PML function markequiform.ADDCE
+			!markequi = object markequi(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+
+09:17:52 8 March 2024
+/6CSP001BA 未得到markequi
+(2,759)   Object does not have a member OBJECTTYPE
+ In line 414 of PML function markcivil.SETATTVALUE
+				!objecttype = !this.$!att.objecttype()
+ Called from line 347 of PML function markcivil.GETATTS
+	!this.setattvalue(!name,split('purpose/purpose,drawnum/:zd_nbbm,thick/:jj_qthd,strongclass/:jj_qddj',','))
+ Called from line 276 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 238 of PML function markcivil.MARKCIVIL
+	!this.markcivil(!item)
+ Called from line 502 of PML function mbdlocation.GETGOODCON
+			!civil = object markcivil(!con,true)
+ Called from line 463 of PML function mbdlocation.GETCONWITHDIRPOS
+		!civil = !this.getgoodcon(!dir,!contype,!extenddis,!preextenddis,!usedcons,!nearpoint)
+ Called from line 314 of PML function mbdlocation.READBACKDIMDATA
+			!this.floor = !this.getconwithdirpos(d,!this.upnearpoint)
+ Called from line 124 of PML function mbdlocation.MBDLOCATION
+		!this.readbackdimdata()
+ Called from line 97 of PML function mbdlocation.MBDLOCATION
+	!this.mbdlocation(!pos,!item)
+ Called from line 109 of PML function markequi.MARKEQUI
+		!this.mbdlocation = object mbdlocation(!this.equiname)
+ Called from line 1121 of PML function markequiform.ADDCE
+			!markequi = object markequi(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+
+09:17:27 8 March 2024
+/6CSP001BA 未得到markequi
+(2,761)   Cannot assign variable to result - incompatible types (STRING=REAL)
+ In line 414 of PML function markcivil.SETATTVALUE
+				!objecttype = !this.$!att
+ Called from line 347 of PML function markcivil.GETATTS
+	!this.setattvalue(!name,split('purpose/purpose,drawnum/:zd_nbbm,thick/:jj_qthd,strongclass/:jj_qddj',','))
+ Called from line 276 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 238 of PML function markcivil.MARKCIVIL
+	!this.markcivil(!item)
+ Called from line 502 of PML function mbdlocation.GETGOODCON
+			!civil = object markcivil(!con,true)
+ Called from line 463 of PML function mbdlocation.GETCONWITHDIRPOS
+		!civil = !this.getgoodcon(!dir,!contype,!extenddis,!preextenddis,!usedcons,!nearpoint)
+ Called from line 314 of PML function mbdlocation.READBACKDIMDATA
+			!this.floor = !this.getconwithdirpos(d,!this.upnearpoint)
+ Called from line 124 of PML function mbdlocation.MBDLOCATION
+		!this.readbackdimdata()
+ Called from line 97 of PML function mbdlocation.MBDLOCATION
+	!this.mbdlocation(!pos,!item)
+ Called from line 109 of PML function markequi.MARKEQUI
+		!this.mbdlocation = object mbdlocation(!this.equiname)
+ Called from line 1121 of PML function markequiform.ADDCE
+			!markequi = object markequi(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+
+09:16:23 8 March 2024
+/6CSP001BA 未得到markequi
+(2,761)   Cannot assign variable to result - incompatible types (REAL=STRING)
+ In line 417 of PML function markcivil.SETATTVALUE
+				$!com
+ Called from line 347 of PML function markcivil.GETATTS
+	!this.setattvalue(!name,split('purpose/purpose,drawnum/:zd_nbbm,thick/:jj_qthd,strongclass/:jj_qddj',','))
+ Called from line 276 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 238 of PML function markcivil.MARKCIVIL
+	!this.markcivil(!item)
+ Called from line 502 of PML function mbdlocation.GETGOODCON
+			!civil = object markcivil(!con,true)
+ Called from line 463 of PML function mbdlocation.GETCONWITHDIRPOS
+		!civil = !this.getgoodcon(!dir,!contype,!extenddis,!preextenddis,!usedcons,!nearpoint)
+ Called from line 314 of PML function mbdlocation.READBACKDIMDATA
+			!this.floor = !this.getconwithdirpos(d,!this.upnearpoint)
+ Called from line 124 of PML function mbdlocation.MBDLOCATION
+		!this.readbackdimdata()
+ Called from line 97 of PML function mbdlocation.MBDLOCATION
+	!this.mbdlocation(!pos,!item)
+ Called from line 109 of PML function markequi.MARKEQUI
+		!this.mbdlocation = object mbdlocation(!this.equiname)
+ Called from line 1121 of PML function markequiform.ADDCE
+			!markequi = object markequi(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+
+09:15:23 8 March 2024
+/6CSP001BA 未得到markequi
+(2,761)   Cannot assign variable to result - incompatible types (REAL=STRING)
+ In line 415 of PML function markcivil.SETATTVALUE
+				$!com
+ Called from line 347 of PML function markcivil.GETATTS
+	!this.setattvalue(!name,split('purpose/purpose,drawnum/:zd_nbbm,thick/:jj_qthd,strongclass/:jj_qddj',','))
+ Called from line 276 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 238 of PML function markcivil.MARKCIVIL
+	!this.markcivil(!item)
+ Called from line 502 of PML function mbdlocation.GETGOODCON
+			!civil = object markcivil(!con,true)
+ Called from line 463 of PML function mbdlocation.GETCONWITHDIRPOS
+		!civil = !this.getgoodcon(!dir,!contype,!extenddis,!preextenddis,!usedcons,!nearpoint)
+ Called from line 314 of PML function mbdlocation.READBACKDIMDATA
+			!this.floor = !this.getconwithdirpos(d,!this.upnearpoint)
+ Called from line 124 of PML function mbdlocation.MBDLOCATION
+		!this.readbackdimdata()
+ Called from line 97 of PML function mbdlocation.MBDLOCATION
+	!this.mbdlocation(!pos,!item)
+ Called from line 109 of PML function markequi.MARKEQUI
+		!this.mbdlocation = object mbdlocation(!this.equiname)
+ Called from line 1121 of PML function markequiform.ADDCE
+			!markequi = object markequi(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+
+09:13:46 8 March 2024
+/6CSP001BA 未得到markequi
+(2,779)   Method <MARKCIVIL>.SETATTVALUE(<STRING>,<ARRAY>) not found
+ In line 347 of PML function markcivil.GETATTS
+	!this.setattvalue(!name,split('purpose/purpose,drawnum/:zd_nbbm,thick/:jj_qthd,strongclass/:jj_qddj',','))
+ Called from line 276 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 238 of PML function markcivil.MARKCIVIL
+	!this.markcivil(!item)
+ Called from line 502 of PML function mbdlocation.GETGOODCON
+			!civil = object markcivil(!con,true)
+ Called from line 463 of PML function mbdlocation.GETCONWITHDIRPOS
+		!civil = !this.getgoodcon(!dir,!contype,!extenddis,!preextenddis,!usedcons,!nearpoint)
+ Called from line 314 of PML function mbdlocation.READBACKDIMDATA
+			!this.floor = !this.getconwithdirpos(d,!this.upnearpoint)
+ Called from line 124 of PML function mbdlocation.MBDLOCATION
+		!this.readbackdimdata()
+ Called from line 97 of PML function mbdlocation.MBDLOCATION
+	!this.mbdlocation(!pos,!item)
+ Called from line 109 of PML function markequi.MARKEQUI
+		!this.mbdlocation = object mbdlocation(!this.equiname)
+ Called from line 1121 of PML function markequiform.ADDCE
+			!markequi = object markequi(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+
+09:13:28 8 March 2024
+/6CSP001BA 未得到markequi
+(2,779)   Method <MARKCIVIL>.SETATTVALUE(<STRING>,<ARRAY>) not found
+ In line 347 of PML function markcivil.GETATTS
+	!this.setattvalue(!name,split('purpose/purpose,drawnum/:zd_nbbm,thick/:jj_qthd,strongclass/:jj_qddj',','))
+ Called from line 276 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 238 of PML function markcivil.MARKCIVIL
+	!this.markcivil(!item)
+ Called from line 502 of PML function mbdlocation.GETGOODCON
+			!civil = object markcivil(!con,true)
+ Called from line 463 of PML function mbdlocation.GETCONWITHDIRPOS
+		!civil = !this.getgoodcon(!dir,!contype,!extenddis,!preextenddis,!usedcons,!nearpoint)
+ Called from line 314 of PML function mbdlocation.READBACKDIMDATA
+			!this.floor = !this.getconwithdirpos(d,!this.upnearpoint)
+ Called from line 124 of PML function mbdlocation.MBDLOCATION
+		!this.readbackdimdata()
+ Called from line 97 of PML function mbdlocation.MBDLOCATION
+	!this.mbdlocation(!pos,!item)
+ Called from line 109 of PML function markequi.MARKEQUI
+		!this.mbdlocation = object mbdlocation(!this.equiname)
+ Called from line 1121 of PML function markequiform.ADDCE
+			!markequi = object markequi(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+
+09:13:05 8 March 2024
+/6CSP001BA 未得到markequi
+(47,15)   CP: Syntax error
+ In line 346 of PML function markcivil.GETATTS
+	!name = name of frmw of ^^!this.civilname
+ Called from line 276 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 238 of PML function markcivil.MARKCIVIL
+	!this.markcivil(!item)
+ Called from line 502 of PML function mbdlocation.GETGOODCON
+			!civil = object markcivil(!con,true)
+ Called from line 463 of PML function mbdlocation.GETCONWITHDIRPOS
+		!civil = !this.getgoodcon(!dir,!contype,!extenddis,!preextenddis,!usedcons,!nearpoint)
+ Called from line 314 of PML function mbdlocation.READBACKDIMDATA
+			!this.floor = !this.getconwithdirpos(d,!this.upnearpoint)
+ Called from line 124 of PML function mbdlocation.MBDLOCATION
+		!this.readbackdimdata()
+ Called from line 97 of PML function mbdlocation.MBDLOCATION
+	!this.mbdlocation(!pos,!item)
+ Called from line 109 of PML function markequi.MARKEQUI
+		!this.mbdlocation = object mbdlocation(!this.equiname)
+ Called from line 1121 of PML function markequiform.ADDCE
+			!markequi = object markequi(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+
+17:46:16 7 March 2024
+/6CSP001BA 未得到markequi
+(46,68)   PML: Argument type mismatch
+ In line 11 of PML function setproofreadinginfo
+define function !!setproofreadinginfo(!object is any, !name is string)
+ Called from line 125 of PML function markequi.GETATTS
+	!!setproofreadinginfo(!this)
+ Called from line 107 of PML function markequi.MARKEQUI
+		!this.getatts()
+ Called from line 1121 of PML function markequiform.ADDCE
+			!markequi = object markequi(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+
+17:45:42 7 March 2024
+/6CSP001BA 未得到markequi
+(47,62)   CP: Incomplete command line
+ In line 121 of PML function markequi.GETATTS
+	!this.setattvalue(!name,split('room/:room_no,tssm/:zd_tssm,wjbm/:zd_wjbm,nbbm/:zd_nbbm,status/:zd_status,rev/:zd_rev',',')^^
+ Called from line 107 of PML function markequi.MARKEQUI
+		!this.getatts()
+ Called from line 1121 of PML function markequiform.ADDCE
+			!markequi = object markequi(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+
+11:29:19 7 March 2024
+/6CSP001BA 未得到markequi
+PML: Function not found
+ In line 966 of PML function markequi.GETDRAWINFO
+			$!line
+ Called from line 162 of PML function markequi.MARKEQUI
+		!this.getdrawinfo()
+ Called from line 1119 of PML function markequiform.ADDCE
+			!markequi = object markequi(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+
+11:28:07 7 March 2024
+/6CSP001BA 未得到markequi
+(2,751)   Variable !OBJECT does not exist
+ In line 966 of PML function markequi.GETDRAWINFO
+			$!line
+ Called from line 162 of PML function markequi.MARKEQUI
+		!this.getdrawinfo()
+ Called from line 1119 of PML function markequiform.ADDCE
+			!markequi = object markequi(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+
+17:06:08 6 March 2024
+/6CSP001BA 未得到markequi
+(2,759)   Object does not have a member TSSM
+ In line 216 of PML function markequi.GETATTS
+			$!com
+ Called from line 161 of PML function markequi.MARKEQUI
+		!this.getatts()
+ Called from line 1181 of PML function markequiform.ADDCE
+			!markequi = object markequi(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+
+09:43:22 6 March 2024
+/6CSP001BA 未得到markequi
+(61,615)  F&M: Object or Value is unset
+ In line 377 of PML function markcivil.GETATTS
+	if !this.form.name() eq 'MARKARCHFORM' then
+ Called from line 291 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 253 of PML function markcivil.MARKCIVIL
+	!this.markcivil(!item)
+ Called from line 502 of PML function mbdlocation.GETGOODCON
+			!civil = object markcivil(!con,true)
+ Called from line 463 of PML function mbdlocation.GETCONWITHDIRPOS
+		!civil = !this.getgoodcon(!dir,!contype,!extenddis,!preextenddis,!usedcons,!nearpoint)
+ Called from line 314 of PML function mbdlocation.READBACKDIMDATA
+			!this.floor = !this.getconwithdirpos(d,!this.upnearpoint)
+ Called from line 124 of PML function mbdlocation.MBDLOCATION
+		!this.readbackdimdata()
+ Called from line 97 of PML function mbdlocation.MBDLOCATION
+	!this.mbdlocation(!pos,!item)
+ Called from line 153 of PML function markequi.MARKEQUI
+		!this.mbdlocation = object mbdlocation(!this.equiname)
+ Called from line 1152 of PML function markequiform.ADDCE
+			!markequi = object markequi(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+
+09:31:01 6 March 2024
+/6CSP001BA failed to draw
+(2,759)   Object does not have a member NAME
+ In line 1240 of PML function mbdlocation.DRAWANGLE
+		!this.angledims.append(!arc.name)
+ Called from line 966 of PML function mbdlocation.REPAIRDIM
+		!this.drawangle()
+ Called from line 913 of PML function mbdlocation.DRAW
+	!this.repairdim()
+ Called from line 989 of PML function markequi.DRAW
+	!this.mbdlocation.draw(!this.dimcheight,!this.equiCheight,true,true,true,true)
+ Called from line 1474 of PML function markequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:28:46 1 March 2024
+/6RVD001BA failed to draw
+(2,779)   Method <MBDLOCATION>.ADDCIVIL(<POSITION>,<DIRECTION>,<REAL>,<MARKCIVIL>,<BOOLEAN>) not found
+ In line 753 of PML function mbdlocation.GETCONINDIR
+			!this.addcivil(!nearpoints[!val],!dir,!diss[!val],!civils[!val],false)
+ Called from line 597 of PML function mbdlocation.GETDIMDATA
+			if !this.getconindir(!dir,!contype,!extenddis,!preextenddis,!maxdis,!usedcons) then 		$* already find con in this direction
+ Called from line 126 of PML function mbdlocation.MBDLOCATION
+		!this.getdimdata()
+ Called from line 987 of PML function markequi.DRAW
+	!this.mbdlocation = object mbdlocation(!this.pos,!this.equiname)
+ Called from line 1466 of PML function markequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:27:37 1 March 2024
+/6RVD001BA 未得到markequi
+(2,759)   Object does not have a member REV
+ In line 194 of PML function markequi.GETATTS
+	!this.rev = 'A' $*4月30日前
+ Called from line 151 of PML function markequi.MARKEQUI
+		!this.getatts()
+ Called from line 1144 of PML function markequiform.ADDCE
+			!markequi = object markequi(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+
+09:23:13 1 March 2024
+/6WAS001LD failed to draw
+(2,779)   Method <MBDLOCATION>.CHECKMBDSTRU() not found
+ In line 124 of PML function mbdlocation.MBDLOCATION
+	if !this.checkmbdstru().not() then
+ Called from line 981 of PML function markequi.DRAW
+	!this.mbdlocation = object mbdlocation(!this.pos,!this.equiname)
+ Called from line 1469 of PML function markinstequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:38:38 29 February 2024
+/6WAS001LD 未得到markequi
+(2,759)   Object does not have a member MARKNAME
+ In line 147 of PML function markequi.MARKEQUI
+		!this.markname = !equiname
+ Called from line 121 of PML function markequi.MARKEQUI
+	!this.markEqui(!item)
+ Called from line 1136 of PML function markinstequiform.ADDCE
+			!markequi = object markequi(!name,'EM9')
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+
+17:38:00 29 February 2024
+/6WAS001LD 未得到markequi
+(2,759)   Object does not have a member POS
+ In line 146 of PML function markequi.MARKEQUI
+		!this.pos = pos of $!this.equiname wrt/*
+ Called from line 121 of PML function markequi.MARKEQUI
+	!this.markEqui(!item)
+ Called from line 1136 of PML function markinstequiform.ADDCE
+			!markequi = object markequi(!name,'EM9')
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+
+17:05:51 29 February 2024
+/6WAS001LD failed to draw
+(2,759)   Object does not have a member EQUINAME
+ In line 972 of PML function mbdlocation.DRAWEQUIMLABEL
+	!desc = 'node:' + !this.equiname
+ Called from line 554 of PML function mbdlocation.DRAWMLABEL
+			!this.drawequimlabel()
+ Called from line 532 of PML function mbdlocation.REPAIRDIM
+		!this.drawmlabel()
+ Called from line 475 of PML function mbdlocation.DRAW
+	!this.repairdim()
+ Called from line 964 of PML function markequi.DRAW
+	!mbdlocation.draw(!this.dimcheight,!this.equiCheight,true,true,true,true)
+ Called from line 1452 of PML function markinstequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:04:58 29 February 2024
+/6WAS001LD failed to draw
+(2,759)   Object does not have a member MARKNAME
+ In line 963 of PML function mbdlocation.DRAWEQUIMLABEL
+	!length = !this.markname.length() * !this.mlabelcheight
+ Called from line 554 of PML function mbdlocation.DRAWMLABEL
+			!this.drawequimlabel()
+ Called from line 532 of PML function mbdlocation.REPAIRDIM
+		!this.drawmlabel()
+ Called from line 475 of PML function mbdlocation.DRAW
+	!this.repairdim()
+ Called from line 964 of PML function markequi.DRAW
+	!mbdlocation.draw(!this.dimcheight,!this.equiCheight,true,true,true,true)
+ Called from line 1452 of PML function markinstequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:04:04 29 February 2024
+/6WAS001LD failed to draw
+(2,751)   Variable !MLABELCHEIGHT does not exist
+ In line 956 of PML function mbdlocation.DRAWEQUIMLABEL
+	!movedis =  3 * !mlabelcheight
+ Called from line 554 of PML function mbdlocation.DRAWMLABEL
+			!this.drawequimlabel()
+ Called from line 532 of PML function mbdlocation.REPAIRDIM
+		!this.drawmlabel()
+ Called from line 475 of PML function mbdlocation.DRAW
+	!this.repairdim()
+ Called from line 964 of PML function markequi.DRAW
+	!mbdlocation.draw(!this.dimcheight,!this.equiCheight,true,true,true,true)
+ Called from line 1452 of PML function markinstequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:03:37 29 February 2024
+/6WAS001LD failed to draw
+(2,759)   Object does not have a member TEXTOFFSETDIS
+ In line 107 of PML function mbdlocation.MBDLOCATION
+	!this.textoffsetdis = 5
+ Called from line 962 of PML function markequi.DRAW
+	!mbdlocation = object mbdlocation(!pos,!this.equiname)
+ Called from line 1452 of PML function markinstequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+15:43:25 22 February 2024
+/6RVD001BA failed to draw
+(2,779)   Method <MARKCIVIL>.SETFORM() not found
+ In line 1104 of PML function markcivil.GETORIGINALPOINTORI
+		!this.setform()
+ Called from line 1005 of PML function markcivil.GETDATAOFCIVIL
+	!this.getoriginalpointori()
+ Called from line 376 of PML function markcivil.GETATTS
+		!this.getdataofcivil()
+ Called from line 290 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 252 of PML function markcivil.MARKCIVIL
+	!this.markcivil(!item)
+ Called from line 355 of PML function markequi.GETCONINDIR
+			!civil = object markcivil(!con,true)
+ Called from line 227 of PML function markequi.GETDIMDATA
+				if !this.getconindir(!dir,!contype,!extenddis,!preextenddis,!maxdis,!usedcons) then 		$* already find con in this direction
+ Called from line 960 of PML function markequi.DRAW
+	!this.getdimdata()
+ Called from line 1437 of PML function markequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+15:40:37 22 February 2024
+/6RVD001BA failed to draw
+(61,615)  F&M: Object or Value is unset
+ In line 1106 of PML function markcivil.GETORIGINALPOINTORI
+			!ydir1 = !this.form.lookdir.displaytext().direction()
+ Called from line 1005 of PML function markcivil.GETDATAOFCIVIL
+	!this.getoriginalpointori()
+ Called from line 376 of PML function markcivil.GETATTS
+		!this.getdataofcivil()
+ Called from line 290 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 252 of PML function markcivil.MARKCIVIL
+	!this.markcivil(!item)
+ Called from line 355 of PML function markequi.GETCONINDIR
+			!civil = object markcivil(!con,true)
+ Called from line 227 of PML function markequi.GETDIMDATA
+				if !this.getconindir(!dir,!contype,!extenddis,!preextenddis,!maxdis,!usedcons) then 		$* already find con in this direction
+ Called from line 960 of PML function markequi.DRAW
+	!this.getdimdata()
+ Called from line 1437 of PML function markequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+15:39:16 22 February 2024
+/6RVD001BA failed to draw
+(61,615)  F&M: Object or Value is unset
+ In line 1105 of PML function markcivil.GETORIGINALPOINTORI
+			!ydir1 = !this.form.lookdir.displaytext().direction()
+ Called from line 1005 of PML function markcivil.GETDATAOFCIVIL
+	!this.getoriginalpointori()
+ Called from line 376 of PML function markcivil.GETATTS
+		!this.getdataofcivil()
+ Called from line 290 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 252 of PML function markcivil.MARKCIVIL
+	!this.markcivil(!item)
+ Called from line 355 of PML function markequi.GETCONINDIR
+			!civil = object markcivil(!con,true)
+ Called from line 227 of PML function markequi.GETDIMDATA
+				if !this.getconindir(!dir,!contype,!extenddis,!preextenddis,!maxdis,!usedcons) then 		$* already find con in this direction
+ Called from line 960 of PML function markequi.DRAW
+	!this.getdimdata()
+ Called from line 1437 of PML function markequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+15:35:02 22 February 2024
+/6RVD001BA failed to draw
+(61,615)  F&M: Object or Value is unset
+ In line 1101 of PML function markcivil.GETORIGINALPOINTORI
+			!ydir1 = !this.form.lookdir.displaytext().direction()
+ Called from line 1001 of PML function markcivil.GETDATAOFCIVIL
+	!this.getoriginalpointori()
+ Called from line 372 of PML function markcivil.GETATTS
+		!this.getdataofcivil()
+ Called from line 290 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 252 of PML function markcivil.MARKCIVIL
+	!this.markcivil(!item)
+ Called from line 355 of PML function markequi.GETCONINDIR
+			!civil = object markcivil(!con,true)
+ Called from line 227 of PML function markequi.GETDIMDATA
+				if !this.getconindir(!dir,!contype,!extenddis,!preextenddis,!maxdis,!usedcons) then 		$* already find con in this direction
+ Called from line 960 of PML function markequi.DRAW
+	!this.getdimdata()
+ Called from line 1437 of PML function markequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+14:05:10 6 February 2024
+/6CCV-002ZK-RX-19 未得到markequi
+(2,759)   Object does not have a member MAJOR
+ In line 117 of PML function markequi.MARKEQUI
+	if !this.major.unset() then
+ Called from line 1083 of PML function markequiform.ADDCE
+			!markequi = object markequi(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+
+19:41:37 4 February 2024
+/6PCS302RF failed to draw
+(2,201)   Element NOZZLE 1 of EQUIPMENT /6PCS302RF does not have attribute PDIR
+ In line 220 of PML function markequi.GETNOZZDIM
+		!zdir = p1 dir of $!nozz wrt/*
+ Called from line 209 of PML function markequi.GETDIMDATA
+	!this.getnozzdim()
+ Called from line 841 of PML function markequi.DRAW
+	!this.getdimdata()
+ Called from line 1306 of PML function markequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+19:32:35 4 February 2024
+/6CCV-002ZK-RX-19 failed to draw
+(2,766)   This function does not return a result
+ In line 676 of PML function markequi.ADDCIVIL
+		!nsReplace = !this.checkreplace(!this.nsnearpoint,!this.nsdis,n,!this.nswall,!nsangle,!mindis,!dir)
+ Called from line 365 of PML function markequi.GETCONINDIR
+			!this.addcivil(!nearpoints[!val],!dir,!diss[!val],!civils[!val],false)
+ Called from line 196 of PML function markequi.GETDIMDATA
+				if !this.getconindir(!dir,!contype,!extenddis,!preextenddis,!maxdis,!usedcons) then 		$* already find con in this direction
+ Called from line 838 of PML function markequi.DRAW
+	!this.getdimdata()
+ Called from line 1306 of PML function markequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+19:32:27 4 February 2024
+/6CCV-002ZK-RX-19 failed to draw
+(2,766)   This function does not return a result
+ In line 676 of PML function markequi.ADDCIVIL
+		!nsReplace = !this.checkreplace(!this.nsnearpoint,!this.nsdis,n,!this.nswall,!nsangle,!mindis,!dir)
+ Called from line 365 of PML function markequi.GETCONINDIR
+			!this.addcivil(!nearpoints[!val],!dir,!diss[!val],!civils[!val],false)
+ Called from line 196 of PML function markequi.GETDIMDATA
+				if !this.getconindir(!dir,!contype,!extenddis,!preextenddis,!maxdis,!usedcons) then 		$* already find con in this direction
+ Called from line 838 of PML function markequi.DRAW
+	!this.getdimdata()
+ Called from line 1306 of PML function markequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+19:30:22 4 February 2024
+/6CCV-002ZK-RX-19 failed to draw
+(2,766)   This function does not return a result
+ In line 676 of PML function markequi.ADDCIVIL
+		!nsReplace = !this.checkreplace(!this.nsnearpoint,!this.nsdis,n,!this.nswall,!nsangle,!mindis,!dir)
+ Called from line 365 of PML function markequi.GETCONINDIR
+			!this.addcivil(!nearpoints[!val],!dir,!diss[!val],!civils[!val],false)
+ Called from line 196 of PML function markequi.GETDIMDATA
+				if !this.getconindir(!dir,!contype,!extenddis,!preextenddis,!maxdis,!usedcons) then 		$* already find con in this direction
+ Called from line 836 of PML function markequi.DRAW
+	!this.getdimdata()
+ Called from line 1306 of PML function markequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+19:26:05 4 February 2024
+/6ETL051BE failed to draw
+(2,891)   An invalid zero direction has been obtained
+ In line 1052 of PML function markequi.DRAWANGLE
+	!dir1 = !dir.projected(!plane)
+ Called from line 1017 of PML function markequi.DRAWDIM
+		!this.drawangle()
+ Called from line 844 of PML function markequi.DRAWDIMANDMLABEL
+	!this.drawdim()
+ Called from line 837 of PML function markequi.DRAW
+	!this.drawdimandmlabel()
+ Called from line 1306 of PML function markequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:50:44 4 February 2024
+/6VNA-008ZV-NH-48 failed to draw
+(2,891)   An invalid zero direction has been obtained
+ In line 1051 of PML function markequi.DRAWANGLE
+	!dir1 = !dir.projected(!plane)
+ Called from line 1017 of PML function markequi.DRAWDIM
+		!this.drawangle()
+ Called from line 844 of PML function markequi.DRAWDIMANDMLABEL
+	!this.drawdim()
+ Called from line 837 of PML function markequi.DRAW
+	!this.drawdimandmlabel()
+ Called from line 1306 of PML function markequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+11:29:53 31 January 2024
+/6VNA-008ZV-NH-48 failed to draw
+(2,891)   An invalid zero direction has been obtained
+ In line 1051 of PML function markequi.DRAWANGLE
+	!dir1 = !dir.projected(!plane)
+ Called from line 1017 of PML function markequi.DRAWDIM
+		!this.drawangle()
+ Called from line 844 of PML function markequi.DRAWDIMANDMLABEL
+	!this.drawdim()
+ Called from line 837 of PML function markequi.DRAW
+	!this.drawdimandmlabel()
+ Called from line 1306 of PML function markequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+11:24:47 31 January 2024
+/6CCV-002ZK-RX-19 failed to draw
+(2,766)   This function does not return a result
+ In line 675 of PML function markequi.ADDCIVIL
+		!nsReplace = !this.checkreplace(!this.nsnearpoint,!this.nsdis,n,!this.nswall,!nsangle,!mindis,!dir)
+ Called from line 364 of PML function markequi.GETCONINDIR
+			!this.addcivil(!nearpoints[!val],!dir,!diss[!val],!civils[!val],false)
+ Called from line 196 of PML function markequi.GETDIMDATA
+				if !this.getconindir(!dir,!contype,!extenddis,!preextenddis,!maxdis,!usedcons) then 		$* already find con in this direction
+ Called from line 835 of PML function markequi.DRAW
+	!this.getdimdata()
+ Called from line 1306 of PML function markequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+11:12:09 31 January 2024
+/6EAC001TB failed to draw
+(2,891)   An invalid zero direction has been obtained
+ In line 1051 of PML function markequi.DRAWANGLE
+	!dir1 = !dir.projected(!plane)
+ Called from line 1017 of PML function markequi.DRAWDIM
+		!this.drawangle()
+ Called from line 844 of PML function markequi.DRAWDIMANDMLABEL
+	!this.drawdim()
+ Called from line 837 of PML function markequi.DRAW
+	!this.drawdimandmlabel()
+ Called from line 1306 of PML function markequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+/6EAA001TB failed to draw
+(2,891)   An invalid zero direction has been obtained
+ In line 1051 of PML function markequi.DRAWANGLE
+	!dir1 = !dir.projected(!plane)
+ Called from line 1017 of PML function markequi.DRAWDIM
+		!this.drawangle()
+ Called from line 844 of PML function markequi.DRAWDIMANDMLABEL
+	!this.drawdim()
+ Called from line 837 of PML function markequi.DRAW
+	!this.drawdimandmlabel()
+ Called from line 1306 of PML function markequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+/6EAE360CR failed to draw
+(2,891)   An invalid zero direction has been obtained
+ In line 1051 of PML function markequi.DRAWANGLE
+	!dir1 = !dir.projected(!plane)
+ Called from line 1017 of PML function markequi.DRAWDIM
+		!this.drawangle()
+ Called from line 844 of PML function markequi.DRAWDIMANDMLABEL
+	!this.drawdim()
+ Called from line 837 of PML function markequi.DRAW
+	!this.drawdimandmlabel()
+ Called from line 1306 of PML function markequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+/6ETL051BE failed to draw
+(2,891)   An invalid zero direction has been obtained
+ In line 1051 of PML function markequi.DRAWANGLE
+	!dir1 = !dir.projected(!plane)
+ Called from line 1017 of PML function markequi.DRAWDIM
+		!this.drawangle()
+ Called from line 844 of PML function markequi.DRAWDIMANDMLABEL
+	!this.drawdim()
+ Called from line 837 of PML function markequi.DRAW
+	!this.drawdimandmlabel()
+ Called from line 1306 of PML function markequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+/6ETA003CR failed to draw
+(2,891)   An invalid zero direction has been obtained
+ In line 1051 of PML function markequi.DRAWANGLE
+	!dir1 = !dir.projected(!plane)
+ Called from line 1017 of PML function markequi.DRAWDIM
+		!this.drawangle()
+ Called from line 844 of PML function markequi.DRAWDIMANDMLABEL
+	!this.drawdim()
+ Called from line 837 of PML function markequi.DRAW
+	!this.drawdimandmlabel()
+ Called from line 1306 of PML function markequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+/6LNST001CR failed to draw
+(2,891)   An invalid zero direction has been obtained
+ In line 1051 of PML function markequi.DRAWANGLE
+	!dir1 = !dir.projected(!plane)
+ Called from line 1017 of PML function markequi.DRAWDIM
+		!this.drawangle()
+ Called from line 844 of PML function markequi.DRAWDIMANDMLABEL
+	!this.drawdim()
+ Called from line 837 of PML function markequi.DRAW
+	!this.drawdimandmlabel()
+ Called from line 1306 of PML function markequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+/6LNSF001CR failed to draw
+(2,891)   An invalid zero direction has been obtained
+ In line 1051 of PML function markequi.DRAWANGLE
+	!dir1 = !dir.projected(!plane)
+ Called from line 1017 of PML function markequi.DRAWDIM
+		!this.drawangle()
+ Called from line 844 of PML function markequi.DRAWDIMANDMLABEL
+	!this.drawdim()
+ Called from line 837 of PML function markequi.DRAW
+	!this.drawdimandmlabel()
+ Called from line 1306 of PML function markequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+/6LESF001CR failed to draw
+(2,891)   An invalid zero direction has been obtained
+ In line 1051 of PML function markequi.DRAWANGLE
+	!dir1 = !dir.projected(!plane)
+ Called from line 1017 of PML function markequi.DRAWDIM
+		!this.drawangle()
+ Called from line 844 of PML function markequi.DRAWDIMANDMLABEL
+	!this.drawdim()
+ Called from line 837 of PML function markequi.DRAW
+	!this.drawdimandmlabel()
+ Called from line 1306 of PML function markequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+11:07:54 31 January 2024
+/6PCS302RF failed to draw
+(2,201)   Element NOZZLE 1 of EQUIPMENT /6PCS302RF does not have attribute PDIR
+ In line 220 of PML function markequi.GETNOZZDIM
+		!zdir = p1 dir of $!nozz wrt/*
+ Called from line 209 of PML function markequi.GETDIMDATA
+	!this.getnozzdim()
+ Called from line 835 of PML function markequi.DRAW
+	!this.getdimdata()
+ Called from line 1306 of PML function markequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+10:52:40 31 January 2024
+/6RFT005FI failed to draw
+(2,751)   Variable !!MARKARCHFORM does not exist
+ In line 290 of PML function markcivil.SETFORM
+				!this.form = !!markarchform
+ Called from line 267 of PML function markcivil.MARKCIVIL
+		!this.setform(!item)
+ Called from line 231 of PML function markcivil.MARKCIVIL
+	!this.markcivil(!item)
+ Called from line 321 of PML function markequi.GETCONINDIR
+			!civil = object markcivil(!con,true)
+ Called from line 196 of PML function markequi.GETDIMDATA
+				if !this.getconindir(!dir,!contype,!extenddis,!preextenddis,!maxdis,!usedcons) then 		$* already find con in this direction
+ Called from line 835 of PML function markequi.DRAW
+	!this.getdimdata()
+ Called from line 1306 of PML function markequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:48:18 24 January 2024
+/6RHR008MT-K203 failed to draw
+(47,15)   CP: Syntax error
+ In line 240 of PML function markequi.GETNOZZDIM
+		!ori = ori of ^^MARKEQUI.name wrt/*
+ Called from line 209 of PML function markequi.GETDIMDATA
+	!this.getnozzdim()
+ Called from line 835 of PML function markequi.DRAW
+	!this.getdimdata()
+ Called from line 1306 of PML function markequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:43:09 24 January 2024
+/6RFT001PO failed to draw
+(2,751)   Variable !XDIR does not exist
+ In line 1089 of PML function markequi.DRAWANGLE
+		!textpos = !endpos.offset(!dir1, !this.dimcheight / 2).offset(!xdir,!textlen / 2)
+ Called from line 1017 of PML function markequi.DRAWDIM
+		!this.drawangle()
+ Called from line 844 of PML function markequi.DRAWDIMANDMLABEL
+	!this.drawdim()
+ Called from line 837 of PML function markequi.DRAW
+	!this.drawdimandmlabel()
+ Called from line 1306 of PML function markequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:40:40 24 January 2024
+/6RFT001PO failed to draw
+(46,58)   PML: Method AIDTEXT could not be found
+ In line 1089 of PML function markequi.DRAWANGLE
+		!aidtext = object aidtext(!owner,!textpos,!this.gettext(!dir2),!this.dimcheight / 2,!functiontext,'node:' + !this.equiname)
+ Called from line 1017 of PML function markequi.DRAWDIM
+		!this.drawangle()
+ Called from line 844 of PML function markequi.DRAWDIMANDMLABEL
+	!this.drawdim()
+ Called from line 837 of PML function markequi.DRAW
+	!this.drawdimandmlabel()
+ Called from line 1306 of PML function markequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:39:30 24 January 2024
+/6RFT001PO failed to draw
+(46,58)   PML: Method AIDTEXT could not be found
+ In line 1088 of PML function markequi.DRAWANGLE
+		!aidtext = object aidtext(!owner,!textpos,!this.gettext(!dir2),!this.dimcheight / 2,!functiontext,'node:' + !this.equiname)
+ Called from line 1017 of PML function markequi.DRAWDIM
+		!this.drawangle()
+ Called from line 844 of PML function markequi.DRAWDIMANDMLABEL
+	!this.drawdim()
+ Called from line 837 of PML function markequi.DRAW
+	!this.drawdimandmlabel()
+ Called from line 1306 of PML function markequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:38:32 24 January 2024
+/6RFT001PO failed to draw
+(46,58)   PML: Method AIDTEXT could not be found
+ In line 1088 of PML function markequi.DRAWANGLE
+		!aidtext = object aidtext(!owner,!textpos,!this.gettext(!dir2),!this.dimcheight / 2,!functiontext,'node:' + !this.equiname)
+ Called from line 1017 of PML function markequi.DRAWDIM
+		!this.drawangle()
+ Called from line 844 of PML function markequi.DRAWDIMANDMLABEL
+	!this.drawdim()
+ Called from line 837 of PML function markequi.DRAW
+	!this.drawdimandmlabel()
+ Called from line 1306 of PML function markequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:37:13 24 January 2024
+/6RFT001PO failed to draw
+(2,751)   Variable !DIR2 does not exist
+ In line 1075 of PML function markequi.DRAWANGLE
+		!aidtext = object aidtext(!owner,!textpos,!this.gettext(!dir2),!this.dimcheight / 2,!functiontext,'node:' + !this.equiname)
+ Called from line 1017 of PML function markequi.DRAWDIM
+		!this.drawangle()
+ Called from line 844 of PML function markequi.DRAWDIMANDMLABEL
+	!this.drawdim()
+ Called from line 837 of PML function markequi.DRAW
+	!this.drawdimandmlabel()
+ Called from line 1306 of PML function markequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:36:32 24 January 2024
+/6RFT001PO failed to draw
+(2,751)   Variable !RADIUS does not exist
+ In line 1068 of PML function markequi.DRAWANGLE
+		!endpos = !anglepos.offset(!dir1,!radius + !this.dimcheight / 2)
+ Called from line 1017 of PML function markequi.DRAWDIM
+		!this.drawangle()
+ Called from line 844 of PML function markequi.DRAWDIMANDMLABEL
+	!this.drawdim()
+ Called from line 837 of PML function markequi.DRAW
+	!this.drawdimandmlabel()
+ Called from line 1306 of PML function markequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:27:48 24 January 2024
+/6RFT001PO failed to draw
+(2,759)   Object does not have a member CHEIGHT
+ In line 1140 of PML function markequi.DRAWANGLE
+			!dirtextpos = !anglepos.offset(!ydir,!radius + !this.cheight / 2 + !cheight / 10).offset(!xdir, - !textlen / 2)
+ Called from line 1017 of PML function markequi.DRAWDIM
+		!this.drawangle()
+ Called from line 844 of PML function markequi.DRAWDIMANDMLABEL
+	!this.drawdim()
+ Called from line 837 of PML function markequi.DRAW
+	!this.drawdimandmlabel()
+ Called from line 1306 of PML function markequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:27:06 24 January 2024
+/6RFT001PO failed to draw
+(2,751)   Variable !OBJECT does not exist
+ In line 1140 of PML function markequi.DRAWANGLE
+			!dirtextpos = !object.anglepos.offset(!ydir,!radius + !this.cheight / 2 + !cheight / 10).offset(!xdir, - !textlen / 2)
+ Called from line 1017 of PML function markequi.DRAWDIM
+		!this.drawangle()
+ Called from line 844 of PML function markequi.DRAWDIMANDMLABEL
+	!this.drawdim()
+ Called from line 837 of PML function markequi.DRAW
+	!this.drawdimandmlabel()
+ Called from line 1306 of PML function markequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:26:47 24 January 2024
+/6RFT001PO failed to draw
+(2,751)   Variable !ANGLES does not exist
+ In line 1059 of PML function markequi.DRAWANGLE
+		!angles.append(!dir.angle(!onedir))
+ Called from line 1017 of PML function markequi.DRAWDIM
+		!this.drawangle()
+ Called from line 844 of PML function markequi.DRAWDIMANDMLABEL
+	!this.drawdim()
+ Called from line 837 of PML function markequi.DRAW
+	!this.drawdimandmlabel()
+ Called from line 1306 of PML function markequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:26:29 24 January 2024
+/6RFT001PO failed to draw
+(2,779)   Method <DIRECTION>.PROFJECTED(<PLANE>) not found
+ In line 1051 of PML function markequi.DRAWANGLE
+	!dir1 = !dir.profjected(!plane)
+ Called from line 1017 of PML function markequi.DRAWDIM
+		!this.drawangle()
+ Called from line 844 of PML function markequi.DRAWDIMANDMLABEL
+	!this.drawdim()
+ Called from line 837 of PML function markequi.DRAW
+	!this.drawdimandmlabel()
+ Called from line 1306 of PML function markequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:26:00 24 January 2024
+/6RFT001PO failed to draw
+(2,751)   Variable !POS does not exist
+ In line 1050 of PML function markequi.DRAWANGLE
+	!plane = object plane(!pos,!ori)
+ Called from line 1017 of PML function markequi.DRAWDIM
+		!this.drawangle()
+ Called from line 844 of PML function markequi.DRAWDIMANDMLABEL
+	!this.drawdim()
+ Called from line 837 of PML function markequi.DRAW
+	!this.drawdimandmlabel()
+ Called from line 1306 of PML function markequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:25:40 24 January 2024
+/6RFT001PO failed to draw
+(47,15)   CP: Syntax error
+ In line 213 of PML function markequi.GETNOZZDIM
+	var !nozzs coll all nozz for ^^MARKEQUI.name
+ Called from line 209 of PML function markequi.GETDIMDATA
+	!this.getnozzdim()
+ Called from line 835 of PML function markequi.DRAW
+	!this.getdimdata()
+ Called from line 1306 of PML function markequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:24:46 24 January 2024
+/6RFT001PO failed to draw
+(2,779)   Method <MARKEQUI>.GETNOZZDIM() not found
+ In line 209 of PML function markequi.GETDIMDATA
+	!this.getnozzdim()
+ Called from line 835 of PML function markequi.DRAW
+	!this.getdimdata()
+ Called from line 1306 of PML function markequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+12:11:01 17 January 2024
+/6TFA001PO failed to draw
+(47,15)   CP: Syntax error
+ In line 976 of PML function markequi.ADDCONINFO
+	add ^^MARKCIVIL.name
+ Called from line 851 of PML function markequi.DRAWDIM
+			!this.addconinfo(!this.nswall)
+ Called from line 787 of PML function markequi.DRAWDIMANDMLABEL
+	!this.drawdim()
+ Called from line 780 of PML function markequi.DRAW
+	!this.drawdimandmlabel()
+ Called from line 1300 of PML function markequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+16:56:06 19 December 2023
+/6WAI003LD failed to draw
+(2,785)   Unset/Invalid object passed to method
+ In line 148 of PML function vertpoints.GETTWOPROFILES
+		if !profile.iswithin(!cenpoint).not() then
+ Called from line 334 of PML function markcivil.GETDATAOFCIVIL
+		!vertresult.getTwoProfiles()
+ Called from line 127 of PML function markcivil.MARKCIVIL
+		!this.getDataOfCivil()
+ Called from line 269 of PML function markequi.GETCONINDIR
+			!civil = object markcivil(!con)
+ Called from line 198 of PML function markequi.GETDIMDATA
+				if !this.getconindir(!dir,!contype,!extenddis,!preextenddis,!maxdis,!usedcons) then 		$* already find con in this direction
+ Called from line 804 of PML function markequi.DRAW
+	!this.getdimdata()
+ Called from line 1244 of PML function markequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:00:44 19 December 2023
+/6WAI003LD failed to draw
+(2,785)   Unset/Invalid object passed to method
+ In line 148 of PML function vertpoints.GETTWOPROFILES
+		if !profile.iswithin(!cenpoint).not() then
+ Called from line 334 of PML function markcivil.GETDATAOFCIVIL
+		!vertresult.getTwoProfiles()
+ Called from line 127 of PML function markcivil.MARKCIVIL
+		!this.getDataOfCivil()
+ Called from line 269 of PML function markequi.GETCONINDIR
+			!civil = object markcivil(!con)
+ Called from line 198 of PML function markequi.GETDIMDATA
+				if !this.getconindir(!dir,!contype,!extenddis,!preextenddis,!maxdis,!usedcons) then 		$* already find con in this direction
+ Called from line 804 of PML function markequi.DRAW
+	!this.getdimdata()
+ Called from line 1244 of PML function markequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:02:11 19 December 2023
+/6WAI003LD failed to draw
+(2,785)   Unset/Invalid object passed to method
+ In line 148 of PML function vertpoints.GETTWOPROFILES
+		if !profile.iswithin(!cenpoint).not() then
+ Called from line 334 of PML function markcivil.GETDATAOFCIVIL
+		!vertresult.getTwoProfiles()
+ Called from line 127 of PML function markcivil.MARKCIVIL
+		!this.getDataOfCivil()
+ Called from line 269 of PML function markequi.GETCONINDIR
+			!civil = object markcivil(!con)
+ Called from line 198 of PML function markequi.GETDIMDATA
+				if !this.getconindir(!dir,!contype,!extenddis,!preextenddis,!maxdis,!usedcons) then 		$* already find con in this direction
+ Called from line 804 of PML function markequi.DRAW
+	!this.getdimdata()
+ Called from line 1244 of PML function markequiform.DRAWALL
+		!equi.draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()

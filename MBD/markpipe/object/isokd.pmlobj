@@ -1,0 +1,131 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= April 23rd 2024
+--[Function]:
+------------------------------------------
+
+define object isokd
+	member .name is string
+	member .pos is position
+	member .weldpos is position
+	member .weldradius is real
+	member .weldshop is boolean
+endobject
+
+define method .isokd(!kd is any)
+	!this.name = name of $!kd
+	!this.pos = pos of $!kd wrt/*
+	!this.weldshop = true
+	!this.getkdgeo()
+endmethod
+
+
+define method .getkdgeo()
+	!kd = !this.name
+	!gm = name of gstref of catref of $!kd
+	handle any
+		!gm = name of gmre of catref of $!kd
+		handle any
+			!result = array()
+			return !result
+		endhandle
+	endhandle
+	--q var !gm
+	!considertypes = split('LSNO')
+    --q var !considertypes
+	!mems = mem of $!gm
+	do !onemem values !mems
+		!mem = name of $!onemem
+		!memtype = type of $!mem
+		if !considertypes.findfirst(!memtype).unset() then
+			skip
+		endif
+		!tuflag = tuflag of $!mem
+		handle any
+			skip
+		elsehandle none
+			if !tuflag.not() then
+				skip
+			endif
+		endhandle
+
+		!level = level of $!mem
+		if !level[1] gt 6 or !level[2] lt 6 then
+			skip
+		endif
+		!obst = obstruction of $!mem
+		if !obst ne 2 and !obst ne 0 then
+			skip
+		endif
+		!this.getlsnodata(!mem)
+		break
+	enddo
+endmethod
+
+
+
+define method .getlsnodata(!mem is string) is any
+	!kd = !this.name
+	!result = array()
+
+	!kdpos = !this.pos
+
+	!memtype = type of $!mem
+	if !memtype eq 'LSNO' then
+		!atts = split('paax pbax pbdi ptdi pbdm ptdm poff')
+	else
+		return !result
+	endif
+	do !x indices !atts
+		!att = !atts[!x]
+		!com = '!string = ' + !att + ' of $' + '!mem'
+		$!com
+		handle any
+			return !result
+		elsehandle none
+			!values[!x] = !!evalCata(!kd,!string)
+			handle any
+				return !result
+			endhandle
+		endhandle
+	enddo
+
+	if !memtype eq 'LSNO' then
+		!ptdm = !values[!atts.findfirst('ptdm')]
+		!pbdm = !values[!atts.findfirst('pbdm')]
+
+		if !pbdm gt !ptdm then
+			!ptdis = !values[!atts.findfirst('ptdi')]
+
+			!dirpos1 = !values[!atts.findfirst('paax')]
+			if !dirpos1.objecttype() ne 'ARRAY' then
+				!dir1 = !dirpos1
+				!pos1 = !kdpos.offset(!dir1,!ptdis)
+			else
+				!dir1 = !dirpos1[1]
+				!pos1 = !dirpos1[2]
+			endif
+			!this.weldpos = !pos1
+			!this.weldradius = !ptdm / 2
+		else
+			!pbdis = !values[!atts.findfirst('ptdi')]
+
+			!dirpos2 = !values[!atts.findfirst('pbax')]
+			if !dirpos2.objecttype() ne 'ARRAY' then
+				!dir2 = !dirpos2
+				!pos2 = !kdpos.offset(!dir2,!pbdis)
+			else
+				!dir2 = !dirpos2[1]
+				!pos2 = !dirpos2[2]
+			endif
+			!this.weldpos = !pos2
+			!this.weldradius = !pbdm / 2
+		endif
+        --q var !this.weldpos
+	endif
+endmethod
+

@@ -1,0 +1,12 @@
+﻿colcombobox:blue
+enhancered:TRUE
+cheightbili:3.0
+autocheight:true
+autocheightbili:0.5
+sepSmallDim:true
+ignoreline:true
+considerprenextdir:true
+lookangle:0
+plusstringcheightbili:0.7
+generatejson:false
+filepath:D:\MBD\EM9PIPE\

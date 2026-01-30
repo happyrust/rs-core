@@ -1,0 +1,110 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= September 7th 2023
+--[Function]:
+------------------------------------------
+
+define object isombdangle
+	member .name is string
+	member .pos is position
+
+	member .anglepos is position
+	member .aod is real
+	member .dir1 is direction
+	member .dir2 is direction
+	member .text is string
+
+	member .linetext1 is string
+	member .linetext2 is string
+	--member .radius is real
+endobject
+
+define method .isombdangle(!mem is string, !dir1 is direction, !dir2 is direction, !aod is real)
+	!this.aod = !aod
+	!this.getdata(!mem,!dir1,!dir2)
+endmethod
+define method .isombdangle(!mem is string, !dir1 is direction, !dir2 is direction)
+	!this.aod = aod of $!mem
+	!this.getdata(!mem,!dir1,!dir2)
+endmethod
+
+define method .getdata(!mem is string, !dir1 is direction, !dir2 is direction)
+	!this.name = !mem
+	!this.pos = pos of $!mem wrt/*
+
+	!this.dir1 = !dir1
+	!this.dir2 = !dir2
+
+
+	--!this.radius = !radius
+	!angle = !dir1.angle(!dir2)
+	!this.text = !angle.string('d1').real().string() + 'бу'
+	$(
+	!tempzdir = !dir1.orthogonal(!dir2)
+	!tempdir2 = !tempzdir.orthogonal(!dir1)
+
+	!text1 = !this.gettext(!dir1)
+	!text2 = !this.gettext(!tempdir2)
+
+	!this.linetext1 = !text1
+	!this.linetext2 = !text1 + !this.text + !text2
+	$)
+	!this.linetext1 = !this.gettext(!dir1,1)
+	!this.linetext2 = !this.gettext(!dir2,1)
+
+	!adir = adir of $!mem wrt/*
+	handle any 	$*202406270907
+		!this.anglepos = !this.pos.offset(!dir2,!this.aod / 2)
+		return
+	endhandle
+	!tempangle = !adir.angle(!dir2)
+	!cos = !tempangle.cosine().abs()
+
+	if !cos gt 0.01 then
+		!this.anglepos = !this.pos.offset(!dir2,!this.aod / 2 / !cos)
+	else
+		!this.anglepos = !this.pos.offset(!dir2,!this.aod / 2)	$* in case the angle is near 90 or equl to 90
+	endif
+endmethod
+
+define method .gettext(!dir is direction, !notnumber is real) is string
+	!string = !dir.wrt(world).string().before(' WRT')
+	if !string.match(' ') eq 0 then
+		if !dir.angle(E) lt 1 then
+			!text = 'X'
+		elseif !dir.angle(W) lt 1 then
+			!text = '-X'
+		elseif !dir.angle(N) lt 1 then
+			!text = 'Y'
+		elseif !dir.angle(S) lt 1 then
+			!text = '-Y'
+		elseif !dir.angle(U) lt 1 then
+			!text = 'Z'
+		elseif !dir.angle(D) lt 1 then
+			!text = '-Z'
+		endif
+	else
+		!parts = !string.split()
+		if !parts.size() eq 3 then
+			!text1 = !this.gettext(!parts[1].direction(),!notnumber)
+			!text2 = !this.gettext(!parts[3].direction(),!notnumber)
+			!text = !text1 + ' ' + !parts[2].real().string('d' & !notnumber).real().string() + 'бу' + ' ' + !text2
+		else
+			!tempstring = !parts[1] + ' ' + !parts[2] + ' ' + !parts[3]
+			!text1 = !this.gettext(!tempstring.direction(),!notnumber)
+			!text2 = !this.gettext(!parts[5].direction(),!notnumber)
+			!text = !text1 + ' ' + !parts[4].real().string('d' & !notnumber).real().string() + 'бу' + ' ' + !text2
+		endif
+	endif
+	return !text
+endmethod
+
+
+
+
+
+Тщ

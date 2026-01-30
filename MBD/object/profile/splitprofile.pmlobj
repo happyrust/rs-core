@@ -1,0 +1,341 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= January 8th 2024
+--[Function]:
+------------------------------------------
+
+--
+--<<Method>>:
+--<<Public method>>:
+--splitprofile(!profile is profile) 										$*
+--splitprofile()															$*
+--
+--<<Private method>>:
+--getinsidepointdirs()  													$*
+--splitwithinsidepointdir() 												$*
+--splitoneprofile(!profile is profile,!insidepoint is position,!dir is direction) is array  	$*
+--cutedge(!interpoint is position,!edge is any) is array					$*
+--getinterpoint(!line is line,!edge is any) is array						$*
+--getposdir(!edge is any, !headortail is boolean) is array  				$* head true,tail false
+-------------------------------------
+
+define object splitprofile
+	member .profile is profile
+	member .profiles is array
+	member .cenpoints is array
+
+	member .insidepoints is array
+	member .insidedirs is array
+endobject
+
+define method .splitprofile(!profile is profile)
+	!this.profile = !profile
+	!this.splitprofile()
+	!this.getcenpoints()
+endmethod
+
+define method .splitprofile()
+	!this.getinsidepointdirs()
+	!this.splitwithinsidepointdir()
+endmethod
+
+define method .getinsidepointdirs()
+	!profile = !this.profile
+	!edgex = 0
+	!edges = !profile.edges()
+	!zdirs = array()
+	!dir1s = array()
+	!dir2s = array()
+	!points = array()
+	do !edge values !edges
+		!edgex = !edgex + 1
+		if !edgex eq 1 then
+			!preedge = !edges.last()
+		else
+			!preedge = !edges[!edgex - 1]
+		endif
+		!preposdir = !this.getposdir(!preedge,false)
+
+		!currentposdir = !this.getposdir(!edge,true)
+		!zdir = !preposdir[2].orthogonal(!currentposdir[2])
+		handle any
+			if !edge.objecttype() eq 'ARC' then
+				!currentposdir[2] = !edge.angleposition(!edge.startangle).direction(!edge.angleposition(!edge.endangle))
+			elseif !preedge.objecttype() eq 'ARC' then
+				!preposdir[2] = !preedge.angleposition(!preedge.startangle).direction(!preedge.angleposition(!preedge.endangle))
+			else
+				!zdir = object direction()
+			endif
+		endhandle
+
+		!zdirs.append(!zdir)
+		!points.append(!currentposdir[1])
+		!dir1s.append(!preposdir[2])
+		!dir2s.append(!currentposdir[2])
+
+		!preedge.delete()
+	enddo
+	--q var !zdirs
+	do !x indices !zdirs
+		if !zdirs[!x].set() then
+			!trydir = !dir1s[!x].opposite().bisect(!dir2s[!x])
+			!trypos = !points[!x].offset(!trydir,1)
+			if !!posinprofile(!trypos,!profile) then
+				!firstpointinprofile = true
+			else
+				!firstpointinprofile = false
+			endif
+			!firstdir = !zdirs[!x]
+			break
+		endif
+	enddo
+	--q var !firstdir
+
+	!insides = array()
+	do !x indices !zdirs
+		if !zdirs[!x].unset() then
+			!insides[!x] = false
+		else
+			if !zdirs[!x].angle(!firstdir) lt 90 then
+				if !firstpointinprofile then
+					!insides[!x] = false
+				else
+					!insides[!x] = true
+				endif
+			else
+				if !firstpointinprofile then
+					!insides[!x] = true
+				else
+					!insides[!x] = false
+				endif
+			endif
+		endif
+	enddo
+	--q var !insides
+
+	!insidepoints = array()
+	!insidedirs = array()
+	do !x indices !insides
+		if !insides[!x] then
+			!linedir = !dir1s[!x].bisect(!dir2s[!x].opposite())
+			!insidepoints.append(!points[!x])
+			!insidedirs.append(!linedir)
+		endif
+	enddo
+	!this.insidepoints = !insidepoints
+	!this.insidedirs = !insidedirs
+endmethod
+
+
+define method .splitwithinsidepointdir()
+	!insidepoints = !this.insidepoints
+	!insidedirs = !this.insidedirs
+
+	!profiles = array()
+	!profiles.append(!this.profile)
+	do !x indices !insidepoints
+		!insidepoint = !insidepoints[!x]
+		!newprofiles = array()
+		!find = false
+		do !profile values !profiles
+			if !find.not() then
+				!splitprofiles = !this.splitoneprofile(!profile,!insidepoints[!x],!insidedirs[!x])
+				!newprofiles.appendarray(!splitprofiles)
+				if !splitprofiles.size() gt 1 then
+					!find = true
+				endif
+			else
+				!newprofiles.append(!profile)
+			endif
+		enddo
+		!profiles = !newprofiles
+	enddo
+
+	!this.profiles = !profiles
+endmethod
+
+define method .getcenpoints()
+	!this.cenpoints = array()
+	do !profile values !this.profiles
+		!cenpoint = !!getcenpoint(!!getPointsOfProfile(!profile))
+		!this.cenpoints.append(!cenpoint)
+	enddo
+endmethod
+
+define method .splitoneprofile(!profile is profile,!insidepoint is position,!dir is direction) is array
+	!result = array()
+	if !!posinprofile(!insidepoint,!profile).not() then
+		golabel /nosplit
+	endif
+
+	!interpoints = array()
+	!line = !insidepoint.line(!insidepoint.offset(!dir,1000))
+
+	!cutedgeindices = array()
+
+	!edgex = 0
+	!edges = !profile.edges()
+	do !edge values !edges
+		!edgex = !edgex + 1
+		!temppoints = !this.getinterpoint(!line,!edge)
+		do !point values !temppoints
+			!interpoints.append(!point)
+			!cutedgeindices.append(!edgex)
+		enddo
+	enddo
+	if !interpoints.unset() then
+		golabel /nosplit
+	endif
+
+	!mindis = 1000000
+	do !y indices !interpoints
+		!point = !interpoints[!y]
+		!dis = !!suidirdis(!insidepoint,!line.direction(),!point)
+		if !dis gt 0 and !dis lt !mindis then
+			!mindis = !dis
+			!cutpoint = !point
+			!cutedgeindex = !cutedgeindices[!y]
+		endif
+	enddo
+
+	if undefined(!cutedgeindex) then
+		golabel /nosplit
+	endif
+
+	!cutedge = !edges[!cutedgeindex]
+
+	!cutedges = !this.cutedge(!cutpoint,!cutedge)
+
+	!newedges1 = array()
+	!newedges1.append(!insidepoint.line(!cutpoint))
+	if defined(!cutedges[2]) then
+		!newedges1.append(!cutedges[2])
+	endif
+
+	!maxsize = !cutedgeindex + !edges.size()
+	!edgesize = !edges.size()
+	do !x from !cutedgeindex + 1 to !maxsize
+		if !x gt !edgesize then
+			!xx = !x - !edgesize
+		else
+			!xx = !x
+		endif
+		!tempedge = !edges[!xx]
+		!newedges1.append(!tempedge)
+		!temparr = !this.getposdir(!tempedge,false)
+		if !temparr[1].distance(!insidepoint) lt 0.1 then
+			!cutxx = !xx
+			break
+		endif
+	enddo
+
+
+	!newedges2 = array()
+	do !x from !cutxx + 1 to !maxsize
+		if !x gt !edgesize then
+			!xx = !x - !edgesize
+		else
+			!xx = !x
+		endif
+
+		if !xx eq !cutedgeindex then
+			!newedges2.append(!cutedges[1])
+			break
+		else
+			!newedges2.append(!edges[!xx])
+		endif
+	enddo
+	!newedges2.append(!cutpoint.line(!insidepoint))
+
+
+
+	!profile1 = object profile(!insidepoint,!profile.orientation,!newedges1)
+	!profile2 = object profile(!insidepoint,!profile.orientation,!newedges2)
+
+	!result.append(!profile1)
+	!result.append(!profile2)
+	return !result
+
+	label /nosplit
+	!result.append(!profile)
+	return !result
+endmethod
+
+define method .cutedge(!interpoint is position,!edge is any) is array
+	!result = array()
+	if !edge.objecttype() eq 'LINE' then
+		if !edge.startposition.distance(!interpoint) lt 0.1 then
+			!result[2] = !edge
+		elseif !edge.endposition.distance(!interpoint) lt 0.1 then
+			!result[1] = !edge
+		else
+			!result[1] = !edge
+			!result[2] = !edge
+			!result[1].endposition = !interpoint
+			!result[2].startposition = !interpoint
+		endif
+	else
+		if !edge.angleposition(!edge.startangle).distance(!interpoint) lt 0.1 then
+			!result[2] = !edge
+		elseif !edge.angleposition(!edge.endangle).distance(!interpoint) lt 0.1 then
+			!result[1] = !edge
+		else
+			!result[1] = !edge
+			!result[2] = !edge
+			!angle = !edge.near(!interpoint)
+			!result[1].endangle = !angle
+			!result[2].startangle = !angle
+		endif
+	endif
+	return !result
+endmethod
+
+define method .getinterpoint(!line is line,!edge is any) is array
+	!points = array()
+	if !edge.objecttype() eq 'LINE' then
+		!interpoint = !line.intersection(!edge)
+		handle any
+		elsehandle none
+			if !edge.onprojected(!interpoint) then
+				!points.append(!interpoint)
+			endif
+		endhandle
+	else
+		!intertpoints = !line.intersections(!edge)
+		do !interpoint values !interpoints
+			if !edge.onprojected(!interpoint) then
+				!points.append(!interpoint)
+			endif
+		enddo
+	endif
+	return !points
+endmethod
+
+define method .getposdir(!edge is any, !headortail is boolean) is array	$*head true,tail false
+	if !edge.objecttype() eq 'LINE' then
+		!dir = !edge.direction()
+		if !headortail then
+			!pos = !edge.startposition
+		else
+			!pos = !edge.endposition
+		endif
+	else
+		if !headortail then
+			!pos = !edge.angleposition(!edge.startangle)
+			!dir = !edge.starttangent()
+		else
+			!pos = !edge.angleposition(!edge.endangle)
+			!dir = !edge.endtangent()
+		endif
+	endif
+	!result = array()
+	!result.append(!pos)
+	!result.append(!dir)
+	return !result
+endmethod
+
+í

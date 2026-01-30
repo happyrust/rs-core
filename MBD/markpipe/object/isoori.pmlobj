@@ -1,0 +1,97 @@
+﻿------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= May 6th 2023
+--[Function]:
+------------------------------------------
+
+--Method:
+--Public method:
+--getori()  																$*
+--isoOri(!dimdirs is array, !chardirs is array) 							$*
+--isoori(!pipedir is direction,!dimdirs is array, !chardirs is array)   	$*
+--isoori(!pipedir is direction,!dimdirs is array, !chardirs is array, !usedDirs is array) 	$*
+--isoori(!pipedir is direction,!dimdirs is array, !chardirs is array,!usedDirs is array, !minangle is real)   	$*
+
+--Private method:
+
+define object isoOri
+    member .pipedir is direction $* xdir
+    member .dimdir is direction $* ydir
+    member .chardir is direction $* zdir
+    member .ori is orientation
+
+    member .minangle is real
+    --member .handledirs is array $*array of direction
+	member .usedDirs is array $*array of usedDir
+
+    member .dimdirs is array    $*preferential directions for dimension
+    member .chardirs is array    $*preferential directions for character
+
+    --member .usedDirs is array $*array of isoUseDir
+endobject
+
+define method .isoOri(!dimdirs is array, !chardirs is array)
+    !this.dimdirs = !dimdirs
+    !this.chardirs = !chardirs
+endmethod
+
+define method .isoori(!pipedir is direction,!dimdirs is array, !chardirs is array)
+    !usedDirs = array()
+    !this.isoori(!pipedir,!dimdirs,!chardirs,!usedDirs)
+endmethod
+
+define method .isoori(!pipedir is direction,!dimdirs is array, !chardirs is array, !usedDirs is array)
+    !minangle = 60
+    !this.isoori(!pipedir,!dimdirs,!chardirs,!usedDirs,!minangle)
+endmethod
+
+define method .isoori(!pipedir is direction,!dimdirs is array, !chardirs is array, !usedDirs is array, !minangle is real)
+    !this.pipedir = !pipedir
+    !this.dimdirs = !dimdirs
+    !this.chardirs = !chardirs
+    !this.usedDirs = !usedDirs
+    !this.minangle = !minangle
+    !this.getori()
+endmethod
+
+define method .getori()
+    if !this.pipedir.unset() then
+        $p Pipedir unset
+        return
+    endif
+
+    if !this.usedDirs.set() then
+        if !this.minangle.unset() then
+            !this.minangle = 30
+        endif
+
+
+		--q var !this.dimdirs
+        !this.dimdir = !!isoGetHandleDimDir(!this.pipedir,!this.usedDirs,!this.minangle,!this.dimdirs)
+
+    elseif !this.dimdir.unset() then
+        !this.dimdir = !!isogetdimdir(!this.pipedir,!this.dimdirs)
+    endif
+
+    --q var !this.pipedir !this.dimdir
+    !this.charDir = !this.pipeDir.orthogonal(!this.dimDir)      $*文字朝向
+    !bestCharDir = !!isoGetBestdir(!this.charDir,!this.chardirs)
+    if !this.CharDir.angle(!bestCharDir) gt 90 then     $*如果文字朝向不是最优，切换第一个方向，到时zdir方向自然就变了
+        !this.pipeDir = !this.pipeDir.opposite()
+    endif
+    !this.charDir = !this.pipeDir.orthogonal(!this.dimDir)
+    --Q VAR !this.chardir
+    !this.ori = y is $!this.dimdir and z is $!this.chardir
+
+    $(
+    return
+    !this.ori = !ori
+    !this.pipedir = !pipedir
+    !this.dimdir = !dimdir
+    !this.chardir = !chardir
+    $)
+endmethod

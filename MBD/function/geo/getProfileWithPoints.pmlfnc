@@ -1,0 +1,27 @@
+define function !!getProfileWithPoints(!points is array) is profile
+	!cenpoint = !!getcenpoint(!points)
+	!ori = !!getoriwithpoints(!points)
+	!profile = object profile(!cenpoint,!ori,!points)
+	!profile.close()
+
+	if !profile.isValidClosed().not() then
+		!profile = !profile.mergepoints(0.1)
+		!profile = !profile.mergelines(1)
+	endif
+
+	if !!posinprofile(!cenpoint,!profile).not() then
+	--if !profile.iswithout(!cenpoint) then
+		!nearpos = !profile.near(!cenpoint)
+		!tempdir = !cenpoint.direction(!nearpos)
+		!cenpoint = !nearpos.offset(!tempdir,500)
+		!profile = object profile(!cenpoint,!ori,!points)
+		!profile.close()
+	endif
+
+	if !profile.isValidClosed().not() then
+		!profile = !profile.mergepoints(0.1)
+		!profile = !profile.mergelines(1)
+	endif
+
+	return !profile
+endfunction

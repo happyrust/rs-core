@@ -1,0 +1,205 @@
+﻿------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= September 22nd 2023
+--[Function]:
+------------------------------------------
+
+define function !!gettubespco(!radius is real, !mem is string, !usecalvalue is boolean) is array
+	--!usecalvalue = false	$*如果itemcode码错误，报错
+	----!usecalvalue = true	$*如果itemcode码错误，用推断值代替
+	!spco = name of spref of pre tubi of $!mem
+	handle any
+		!spco = name of spref of next tubi of $!mem
+		handle any
+			!spco = name of lstube of $!mem	$*only to get sele of tube, so it is not problem if the spco is wrong  202404081012
+			handle any
+				--$p Cant find tube spco for $!mem
+				$p 获取 $!mem 当前管道的TUBI等级失败
+				!result = array()
+				!result.append('获取 $!mem 当前管道的TUBI等级失败')
+				return !result
+			endhandle
+		endhandle
+	endhandle
+	--q var !mem !spco
+	!tubeqa = !!getquestionanswer(!spco)
+
+	--$p spco $!spco
+	!owner = !spco
+	do
+		!owner = name of owner of $!owner
+		if tanswer of $!owner eq 'TUBE' then
+			break
+		endif
+	enddo
+
+	!itemcode = :itemcode of $!mem
+	!doublecheck = true
+	--$(
+	if !itemcode.set() and !itemcode ne '' then
+	------------------------------------------------------
+	------------------------------------------------------
+		!doublecheck = false		$*itemcode exists, dont use geo to calculate itemcode
+		var !spcos coll all spco with(matchwild(name,'*' + !itemcode + '*')) for $!owner
+		--$p owner $!owner
+		--!spcos = array()
+		if !spcos.set() then
+			!goodspco = name of $!spcos[1]
+		else
+			!memtype = type of $!mem
+			--$p Warning: Item code $!itemcode of $!memtype $!mem is not in $!owner
+			--$p Error: $!memtype $!mem 与主管材料等级不同/ $!memtype $!mem is not in the same spec with pipe
+
+			var !pipespecs coll all spec with (purpose eq 'PIPE')
+
+			!spcos = array()
+			do !pipespec values !pipespecs
+			--$p $!pipespec $!itemcode
+				!seles = mem of $!pipespec
+				do !sele values !seles
+					!tanswer = tanswer of $!sele
+					handle any
+						skip
+					endhandle
+					if !tanswer eq 'TUBE' then
+						--var !spcos append coll all spco with(matchwild(name,'*SPP00241*')) for $!sele
+						var !spcos coll all spco with(matchwild(name,'*' + !itemcode + '*')) for $!sele
+						if !spcos.set() then
+							break
+						endif
+					endif
+				enddo
+				if !spcos.set() then
+					break
+				endif
+			enddo
+			--var !spcos coll all spco with(matchwild(name,'*' + !itemcode + '*'))
+			if !spcos.set() then
+				!goodspco = name of $!spcos[1]
+			else
+				--$p Cant find tube spco for $!mem
+				--$p :Itemcode 设置错误 $!mem
+				!doublecheck = true
+				--return $* dont return a array to cause a error
+			endif
+		endif
+
+	endif
+	--$)
+
+	--!doublecheck = true
+	if !doublecheck then	$* use geo to match spco
+		-----------------------
+		-----------------------new way
+		!aodGaps = array()
+		var !spcos coll all spco for $!owner
+		do !spco values !spcos
+			!para = para of catref of $!spco
+			!aodGaps.append(abs(!radius - !para[2]))
+		enddo
+		!indices = !aodGaps.sortedindices()
+		!spcos.reindex(!indices)
+		!aodGaps.reindex(!indices)
+
+		!goodspcos = array()
+		!qamatchs = array()
+		!qas = array()
+		do !x indices !spcos
+			if !aodgaps[!x] - !aodgaps[1] lt 0.1 then
+				!goodspcos.append(!spcos[!x])
+				!tempqa = !!getquestionanswer(!spcos[!x])
+				!qas.append(!tempqa)
+				!qamatchs.append(!!compareqa(!tubeqa,!tempqa))
+			else
+				break
+			endif
+		enddo
+
+		!indices = !qamatchs.sortedindices().invert()
+		!goodspcos.reindex(!indices)
+		!qas.reindex(!indices)
+
+		!spconame = name of $!goodspcos[1]
+		!qa = !qas[1]
+
+		if defined(!goodspco) then
+			if !spconame ne !goodspco then
+				$p
+				$p ATTA $!mem
+				$p cal code $!spconame
+				$p :itemcode $!goodspco
+				$p calculate is wrong about itemcode of atta in the object isomaterial
+				!spconame = !goodspco
+				!qa = !!getquestionanswer(!spconame)
+				--else
+				--	$p same
+			endif
+		else
+			!shoulditemcode = !spconame.part(-1,'/').before(':')
+			!memtype = type of $!mem
+			if !itemcode eq '' then
+				!tempitemcode = 'unset'
+			else
+				!tempitemcode = !itemcode
+			endif
+			$p $!memtype $!mem 错误设置itemcode(或项目中不存在此Itemcode):$!tempitemcode   推断值为:$!shoulditemcode (请自行验证)
+            handle any
+            endhandle
+			if !usecalvalue.not() then
+				!session = current session
+				if !session.login ne 'pdms-bj-c103-03' then	$*我需要测试,不能中断
+					--return $* dont return a array to cause a error
+
+					!result = array()
+					!result.append(!memtype & | | & !mem & | 错误设置itemcode(或项目中不存在此Itemcode): | & !tempitemcode & |  推断值为: | & !shoulditemcode & | (请自行验证)|)
+
+                    --modify by jyg 20241030 存在设计人员手动录入和自动计算不一致的情况
+                    --return !result
+				endif
+			endif
+		endif
+	else
+		!spconame = !goodspco
+		!qa = !!getquestionanswer(!spconame)
+	endif
+
+
+	do !x indices !qa
+		if !qa[1][!x].lowcase().match('bor') ne 0 then
+			!answer = !qa[2][!x]
+			break
+		endif
+	enddo
+
+
+
+	$(
+	--old way
+	!seles = mem of $!owner
+	!answers = array()
+	!seles.evaluate(object block('!answers.append(!seles[!evalindex].answer.real().value())'))
+	--!maxanswers = array()
+	--!seles.evaluate(object block('!answers.append(!seles[!evalindex].dbref().maxanswer.real().value())'))
+
+	!gaps = array()
+	do !answer values !answers
+		!gaps.append(min(abs(!answer - !rin),abs(!answer - !rout)))
+	enddo
+	!indices = !gaps.sortedindices()
+	!sele = !seles[!indices[1]]
+	!answer = !answers[!indices[1]]
+
+	!spconame = !!getspcofromsele(!sele)
+	$)
+
+	!result = array()
+	!result.append(!answer.real().value().string())
+	!result.append(!spconame)
+    --q var !result
+	return !result
+endfunction
+��

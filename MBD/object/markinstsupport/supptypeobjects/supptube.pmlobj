@@ -1,0 +1,567 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= October 12nd 2023
+--[Function]:
+------------------------------------------
+
+define object supptube
+	member .pos1 is position
+	member .pos2 is position
+	member .axis is line
+	--member .dia is real
+
+	member .pos is position
+	member .ori is orientation
+	member .height is real
+	member .india is real
+	member .outdia is real
+
+	member .isleg is boolean
+
+	member .mems is array
+
+	member .upstream is array		$*instore suppconnection of upstream
+	member .downstream is array		$*instore suppconnection of downstream
+
+	member .connections is array	$*instore rest suppconnection which is hard to say upstream or downstream
+endobject
+
+define method .supptube(!isoleg is isoleg)
+	!this.pos = !isoleg.pos
+	!this.ori = !isoleg.ori
+	!this.height = !isoleg.ori
+	!this.india = !isoleg.india
+	!this.outdia = !isoleg.outdia
+	!this.pos1 = !this.pos.offset(!this.ori.zdir(), - !this.height / 2)
+	!this.pos2 = !this.pos.offset(!this.ori.zdir(), !this.height / 2)
+	!this.axis = !this.pos1.line(!this.pos2)
+	!this.isleg = true
+	!this.mems.append(!isoleg.name)
+endmethod
+
+define method .supptube(!item is string)
+	!type = type of $!item
+	!name = name of $!item
+	if !type eq 'ATTA' then
+		!arr = !this.getattageo(!item)
+		!tubeobject = !arr[1]
+		handle any
+		elsehandle none
+			!this.pos = !tubeobject.pos
+			!this.ori = !tubeobject.ori
+			!this.height = !tubeobject.height
+			!this.india = !tubeobject.india
+			!this.outdia = !tubeobject.outdia
+			!this.pos1 = !this.pos.offset(!this.ori.zdir(), - !this.height / 2)
+			!this.pos2 = !this.pos.offset(!this.ori.zdir(), !this.height / 2)
+			!this.axis = !this.pos1.line(!this.pos2)
+		endhandle
+		!this.isleg = true
+	else
+		!this.isleg = false
+		$p This type for TUBE is not considered yet
+	endif
+
+	!this.mems.append(!name)
+endmethod
+
+define method .supptube(!item is string, !mem is string)
+	!this.isleg = false
+	!arr = !this.getmemgeo(!item,!mem)
+
+	!tubeobject = !arr[1]
+	handle any
+	elsehandle none
+		!this.pos = !tubeobject.pos
+		!this.ori = !tubeobject.ori
+		!this.height = !tubeobject.height
+		!this.india = !tubeobject.india
+		!this.outdia = !tubeobject.outdia
+		!this.pos1 = !this.pos.offset(!this.ori.zdir(), - !this.height / 2)
+		!this.pos2 = !this.pos.offset(!this.ori.zdir(), !this.height / 2)
+		!this.axis = !this.pos1.line(!this.pos2)
+	endhandle
+	!name = name of $!item
+	!this.mems.append(!name)
+
+endmethod
+
+define method .getmemgeo(!item is string, !mem is string) is array
+	!considertypes = split('LCYL SCYL SSCY')
+	!allarrs = array()
+	--$p 1
+	!nsandsprefs = array()
+	!nss = array()
+	!memtype = type of $!mem
+
+	if !considertypes.findfirst(!memtype).unset() then
+		golabel /end
+	endif
+
+	!tuflag = tuflag of $!mem
+	handle any
+		golabel /end
+	elsehandle none
+		if !tuflag.not() then
+			golabel /end
+		endif
+	endhandle
+	--$p 2
+	!level = level of $!mem
+	if !level[1] gt 6 or !level[2] lt 6 then
+		golabel /end
+	endif
+	!obst = obstruction of $!mem
+	if !obst ne 2 and !obst ne 0 then
+		golabel /end
+	endif
+
+	--$p 3
+	!object = !this.getitemcatamemdata(!mem,!item)
+	if !object.objecttype() ne 'ARRAY' then
+		$(
+		if !object.objecttype() eq 'ISOLEG' then
+			!dia = !object.outdia
+		else
+			!dia = !object.rinside * 2
+		endif
+		!tempindex = !nss.findfirst(!dia)
+		if !tempindex.unset() then
+			!nsAndSpref = !!gettubespco(!dia,!item)
+			!nsandsprefs.append(!nsandspref)
+			!nss.append(!dia)
+		else
+			!nsAndSpref = !nsAndSprefs[!tempindex]
+		endif
+		!object.nsAndSpref = !nsAndSpref
+		$)
+		!allarrs.append(!object)
+	endif
+
+	label /end
+	return !allarrs
+endmethod
+
+define method .getitemcatamemdata(!mem is string, !atta is string) is any
+	!result = array()
+	!attapos = pos of $!atta wrt/*
+	--!temparr = !this.getattatube(!atta)
+	--!aod = !temparr[3]
+	!memtype = type of $!mem
+
+	if !memtype eq 'LCYL' or !memtype eq 'NLCY' then
+		!atts = split('paxi pdia pbdi ptdi')
+	elseif !memtype eq 'SCYL' or !memtype eq 'NSCY' then
+		!atts = split('paxi phei pdia pdis')
+	elseif !memtype eq 'SSCY' or !memtype eq 'NSSC' then
+		!atts = split('paxi phei pdia pdis')
+	else
+		return !result
+	endif
+    --$p 1
+	do !x indices !atts
+		!att = !atts[!x]
+		!com = '!string = ' + !att + ' of $' + '!mem'
+		$!com
+		handle any
+			return !result
+		elsehandle none
+			!values[!x] = !!evalCata(!atta,!string)
+			handle any
+				return !result
+			endhandle
+		endhandle
+	enddo
+
+
+	if !memtype eq 'LCYL' or !memtype eq 'NLCY' then
+		!dirpos = !values[!atts.findfirst('paxi')]
+		if !dirpos.objecttype() eq 'ARRAY' then
+			!dir = !dirpos[1]
+			!ppos = !dirpos[2]
+		else
+			!dir = !dirpos
+			!ppos = !attapos
+		endif
+
+		!theight = !values[!atts.findfirst('ptdi')]
+		!bheight = !values[!atts.findfirst('pbdi')]
+		!height = abs(!theight - !bheight)
+		!diameter = !values[!atts.findfirst('pdia')]
+		!pos = !ppos.offset(!dir,(!bheight + !theight) / 2)
+		!ori = z is $!dir
+	elseif !memtype eq 'SCYL' or !memtype eq 'NSCY' then
+		!dirpos = !values[!atts.findfirst('paxi')]
+		if !dirpos.objecttype() eq 'ARRAY' then
+			!dir = !dirpos[1]
+			!ppos = !dirpos[2]
+		else
+			!dir = !dirpos
+			!ppos = !attapos
+		endif
+		!bdis = !values[!atts.findfirst('pdis')]
+		!height = abs(!values[!atts.findfirst('phei')])
+		!diameter = !values[!atts.findfirst('pdia')]
+		!pos = !ppos.offset(!dir,!bdis + !height / 2)
+		!ori = z is $!dir
+		if !height lt 0 then
+			!height = - !height
+		endif
+	elseif !memtype eq 'SSCY' or !memtype eq 'NSSC' then
+		!dirpos = !values[!atts.findfirst('paxi')]
+		if !dirpos.objecttype() eq 'ARRAY' then
+			!dir = !dirpos[1]
+			!ppos = !dirpos[2]
+		else
+			!dir = !dirpos
+			!ppos = !attapos
+		endif
+		!bdis = !values[!atts.findfirst('pdis')]
+		!height = !values[!atts.findfirst('phei')]
+		!diameter = !values[!atts.findfirst('pdia')]
+		!pos = !ppos.offset(!dir,!bdis + !height / 2)
+		!ori = z is $!dir
+	else
+		return !result
+	endif
+	if !height eq 0 or !diameter eq 0 then
+		return !result
+	endif
+
+	--$P $!mem $!atta
+	!memtype = type of $!mem
+	if not(!memtype inset ('NLCY','NSCY','NSSL')) then
+		var !nmems coll all (nlcy nscy nssl) for $!mem
+	else
+		!nmems = array()
+	endif
+	if !nmems.set() then
+		do !nmem values !nmems
+			--$p $!nmem $!atta nmem
+			!leg = !this.getcatamemdata(!nmem,!atta)
+			handle any
+				skip
+			endhandle
+			if !leg.objecttype() ne 'ISOLEG' then
+				skip
+			endif
+
+			!tempangle = !leg.ori.zdir().angle(!ori.zdir())
+			if !tempangle lt 1 or !tempangle gt 179 then
+				!india = !leg.outdia
+				$(
+			else
+				if !aod lt !diameter then		$*it means the atta is large than pipe
+					skip
+				else
+					!cutlen = sqrt(!onenarr[5].power(2) / 4 - !diameter.power(2) / 4)
+					!tempdir = !onearr[2].direction(!pos)
+					if !tempdir.angle(!ori.zdir()) lt 90 then
+						!offdir = !ori.zdir()
+					else
+						!offdir = !ori.zdir().opposite()
+					endif
+					!pos = !pos.offset(!offdir,!cutlen / 2)
+					!height = !height - !cutlen
+				endif
+				$)
+			endif
+			!leg.delete()
+		enddo
+	else
+		$(
+		!line = !pos.offset(!ori.zdir(),!height / 2).line(!pos.offset(!ori.zdir(), - !height / 2))
+
+		if !line.onprojected(!attapos) then
+			-----------------------------------------------------------------------------------
+			-----------------------------------------------------------------------------------remove normal ATTA which is like X
+			return !result
+		endif
+
+
+		------------------------------------------------------new way
+		!line = !pos.offset(!ori.zdir(),!height / 2).line(!pos.offset(!ori.zdir(), - !height / 2))
+		if !memtype.substring(1,1) ne 'N' and !line.onprojected(!attapos) then
+			!adir = adir of $!atta wrt/*
+			!ldir = ldir of $!atta wrt/*
+			if !adir.angle(!ldir) gt 179 then
+				--if  !line.onprojected(!attapos) then
+				-----------------------------------------------------------------------------------
+				-----------------------------------------------------------------------------------remove normal ATTA which is like X
+				return !result
+			else
+				--leg on elbo
+			endif
+		endif
+		$)
+	endif
+	if undefined(!india) then
+		!india = 0
+	endif
+
+	!object = object isoleg(!atta,!pos,!ori,!height,!india,!diameter)
+	--q var !object
+	return !object
+endmethod
+
+define method .getattageo(!atta is string) is array
+
+	!gm = name of gstref of catref of $!atta
+	handle any
+		!gm = name of gmre of catref of $!atta
+		handle any
+			!result = array()
+			return !result
+		endhandle
+	endhandle
+
+
+	!considertypes = split('LCYL SCYL SSCY')
+	!allarrs = array()
+
+	!nsandsprefs = array()
+	!nss = array()
+	!mems = mem of $!gm
+    --q var !mems
+	do !onemem values !mems
+		!mem = name of $!onemem
+		!memtype = type of $!mem
+
+		if !considertypes.findfirst(!memtype).unset() then
+			skip
+		endif
+
+		!tuflag = tuflag of $!mem
+		handle any
+			skip
+		elsehandle none
+			if !tuflag.not() then
+				skip
+			endif
+		endhandle
+
+		!level = level of $!mem
+		if !level[1] gt 6 or !level[2] lt 6 then
+			skip
+		endif
+		!obst = obstruction of $!mem
+		if !obst ne 2 and !obst ne 0 then
+			skip
+		endif
+
+
+		!object = !this.getcatamemdata(!mem,!atta)
+		if !object.objecttype() ne 'ARRAY' then
+			if !object.objecttype() eq 'ISOLEG' then
+				!dia = !object.outdia
+			else
+				!dia = !object.rinside * 2
+			endif
+			!tempindex = !nss.findfirst(!dia)
+			if !tempindex.unset() then
+				!nsAndSpref = !!gettubespco(!dia,!atta,true)
+				!nsandsprefs.append(!nsandspref)
+				!nss.append(!dia)
+			else
+				!nsAndSpref = !nsAndSprefs[!tempindex]
+			endif
+			!object.nsAndSpref = !nsAndSpref
+			!allarrs.append(!object)
+		endif
+	enddo
+	return !allarrs
+endmethod
+
+define method .getcatamemdata(!mem is string, !atta is string) is any
+	!result = array()
+	!attapos = pos of $!atta wrt/*
+	--!aod = aod of $!atta
+	!temparr = !this.getattatube(!atta)
+	!aod = !temparr[3]
+	!memtype = type of $!mem
+
+	if !memtype eq 'LCYL' or !memtype eq 'NLCY' then
+		!atts = split('paxi pdia pbdi ptdi')
+	elseif !memtype eq 'SCYL' or !memtype eq 'NSCY' then
+		!atts = split('paxi phei pdia pdis')
+	elseif !memtype eq 'SSCY' or !memtype eq 'NSSC' then
+		!atts = split('paxi phei pdia pdis')
+	else
+		return !result
+	endif
+
+	do !x indices !atts
+		!att = !atts[!x]
+		!com = '!string = ' + !att + ' of $' + '!mem'
+		$!com
+		handle any
+			return !result
+		elsehandle none
+			!values[!x] = !!evalCata(!atta,!string)
+			handle any
+				return !result
+			endhandle
+		endhandle
+	enddo
+
+
+	if !memtype eq 'LCYL' or !memtype eq 'NLCY' then
+		!dirpos = !values[!atts.findfirst('paxi')]
+		if !dirpos.objecttype() eq 'ARRAY' then
+			!dir = !dirpos[1]
+			!ppos = !dirpos[2]
+		else
+			!dir = !dirpos
+			!ppos = !attapos
+		endif
+
+		!theight = !values[!atts.findfirst('ptdi')]
+		!bheight = !values[!atts.findfirst('pbdi')]
+		!height = abs(!theight - !bheight)
+		!diameter = !values[!atts.findfirst('pdia')]
+		!pos = !ppos.offset(!dir,(!bheight + !theight) / 2)
+		!ori = z is $!dir
+	elseif !memtype eq 'SCYL' or !memtype eq 'NSCY' then
+		!dirpos = !values[!atts.findfirst('paxi')]
+		if !dirpos.objecttype() eq 'ARRAY' then
+			!dir = !dirpos[1]
+			!ppos = !dirpos[2]
+		else
+			!dir = !dirpos
+			!ppos = !attapos
+		endif
+		!bdis = !values[!atts.findfirst('pdis')]
+		!height = abs(!values[!atts.findfirst('phei')])
+		!diameter = !values[!atts.findfirst('pdia')]
+		!pos = !ppos.offset(!dir,!bdis + !height / 2)
+		!ori = z is $!dir
+		if !height lt 0 then
+			!height = - !height
+		endif
+	elseif !memtype eq 'SSCY' or !memtype eq 'NSSC' then
+		!dirpos = !values[!atts.findfirst('paxi')]
+		if !dirpos.objecttype() eq 'ARRAY' then
+			!dir = !dirpos[1]
+			!ppos = !dirpos[2]
+		else
+			!dir = !dirpos
+			!ppos = !attapos
+		endif
+		!bdis = !values[!atts.findfirst('pdis')]
+		!height = !values[!atts.findfirst('phei')]
+		!diameter = !values[!atts.findfirst('pdia')]
+		!pos = !ppos.offset(!dir,!bdis + !height / 2)
+		!ori = z is $!dir
+	else
+		return !result
+	endif
+	if !height eq 0 or !diameter eq 0 then
+		return !result
+	endif
+
+	--$P $!mem $!atta
+	!memtype = type of $!mem
+	if not(!memtype inset ('NLCY','NSCY','NSSL')) then
+		var !nmems coll all (nlcy nscy nssl) for $!mem
+	else
+		!nmems = array()
+	endif
+
+	if !nmems.set() then
+		do !nmem values !nmems
+			--$p $!nmem $!atta nmem
+			!leg = !this.getcatamemdata(!nmem,!atta)
+			handle any
+				skip
+			endhandle
+			if !leg.objecttype() ne 'ISOLEG' then
+				skip
+			endif
+
+			!tempangle = !leg.ori.zdir().angle(!ori.zdir())
+			if !tempangle lt 1 or !tempangle gt 179 then
+				!india = !leg.outdia
+			else
+				if !aod lt !diameter then		$*it means the atta is large than pipe
+					skip
+				else
+					!cutlen = sqrt(!onenarr[5].power(2) / 4 - !diameter.power(2) / 4)
+					!tempdir = !onearr[2].direction(!pos)
+					if !tempdir.angle(!ori.zdir()) lt 90 then
+						!offdir = !ori.zdir()
+					else
+						!offdir = !ori.zdir().opposite()
+					endif
+					!pos = !pos.offset(!offdir,!cutlen / 2)
+					!height = !height - !cutlen
+				endif
+			endif
+			!leg.delete()
+		enddo
+	else
+		!line = !pos.offset(!ori.zdir(),!height / 2).line(!pos.offset(!ori.zdir(), - !height / 2))
+		if !line.onprojected(!attapos) then
+			-----------------------------------------------------------------------------------
+			-----------------------------------------------------------------------------------remove normal ATTA which is like X
+			return !result
+		endif
+	endif
+	if undefined(!india) then
+		!india = 0
+	endif
+	!object = object isoleg(!atta,!pos,!ori,!height,!india,!diameter)
+	--q var !object
+	return !object
+endmethod
+
+define method .getattatube(!atta is string) is array
+	!abore = abore of $!atta
+	handle any
+	endhandle
+	!aod = aod of $!atta
+	handle any
+		!aod = 0
+	endhandle
+
+	if undefined(!bore) or !bore.unset() or !aod.unset() or !bore eq 0 or !aod eq 0 then
+		var !mode mode
+		if !mode eq 'Forwards' then
+			!tube = pre tubi of $!atta
+			handle any
+			elsehandle none
+				golabel /gottube
+			endhandle
+		else
+			!tube = next tubi of $!atta
+			handle any
+			elsehandle none
+				golabel /gottube
+			endhandle
+		endif
+
+		!tube = !!getpremem(!atta)
+		if !tube eq '' then
+			!tube = !!getnextmem(!atta)
+		endif
+
+		label /gottube
+		!bore = abore of $!tube
+		--!dir = ldir of $!tube
+		!aod = aod of $!tube
+	endif
+	!dir = ldir of $!atta
+
+	!dn = !bore.real().value()
+	!result = array()
+	!result.append(!dn)
+	!result.append(!dir)
+	!result.append(!aod)
+	!result
+	return !result
+endmethod
+
+Ö

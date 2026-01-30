@@ -1,0 +1,90 @@
+define function !!removeview(!view is gadget,!killform is boolean)
+    --return
+  -- Initialise Variables
+  !form  = !view.owner()
+
+  --add code to automatically close the comSpaceManagement view form if it is currently storing the view that is to be removed
+  if(defined(!!comSpaceManagement)) then
+    !removeAdvancedViewForm = !!comSpaceManagement.isCurrentForm(!form)
+  else
+    !removeAdvancedViewForm = FALSE
+  endif
+
+  -- Get view index
+  !index = !!gphviews.viewIndex(!view)
+
+  -- Return if we can't find the view in the system
+  if(!index.unset()) then
+    return
+  endif
+
+
+  !number = !form.number
+  handle (2, 759) $* Form does not have a member 'number'
+    !number = 0
+  endhandle
+
+
+  -- If form is a "design" form, then remove from edg system
+  if(defined(!form.type)) then
+  --q var !form.type
+    if !form.type.set() then
+        if(!form.type.upcase() eq 'DESIGN') then
+      -- Remove from edg system
+        !!edgCntrl.removeView(!view)
+        endif
+    endif
+  endif
+
+  -- Detach it from any draw lists
+  if (defined(!!gphDrawlists)) then
+    !!gphDrawlists.detachView(!view)
+    handle any
+    endhandle
+  endif
+--$p asfdasdf remove view
+  -- Remove view and its form from the lists
+  !!gphviews.views.remove(!index)
+
+
+
+  if !killform then
+        -- Kill the form
+        !formString = '!!' & !form.string()
+        kill $!<formString>
+  endif
+
+  -- Update control form if exists and shown
+  if(defined(!!gphControl)) then
+    if(!!gphControl.shown()) then
+      !!gphControl.initialise()
+    endif
+  endif
+
+  --remove the comSpaceManagement form because it has now lost the view that it was assigned to
+  if(!removeAdvancedViewForm) then
+    if(!!comSpaceManagement.shown()) then
+      !!comSpaceManagement.tidy()
+      !!comSpaceManagement.hide()
+    endif
+  endif
+
+  if( !number eq 1 ) then
+    !!alert.warning('3D View 1 cannot be closed. Opening a new 3D View 1')
+
+    -- reinstate the first view with draw list 1
+    !form = !!gphviews.addDesignForm()
+    !token = !!gphDrawlists.token(!form.view)
+
+    -- Clear the drawlist as the system does not seem to like it with contents
+    !drawlist = !!gphdrawlists.drawlist(!token)
+    !drawlist.removeall()
+
+    -- Check if the view was monochrome, if so clear it
+    if (defined(!!gphDrawlists.monoControl[!token])) then
+    	!!gphdrawlists.monoControl.deleteFrom(!token,1)
+    endif
+
+  endif
+endfunction
+'}

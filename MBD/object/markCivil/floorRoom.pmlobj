@@ -1,0 +1,102 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= January 8th 2024
+--[Function]:
+--
+
+------------------------------------------
+
+--
+--<<Method>>:
+--<<Public method>>:
+--floorRoom(!item is any)   												$*
+--
+--<<Private method>>:
+--getroomvertpoints()   													$*
+--getatts() 																$*
+--getdrawpoints()   														$*
+--getdrawpoints2(!profile is profile)   									$*
+--getdrawpoints3(!insidepoints is array, !insidedirs is array,!profile is profile)  	$*
+--split(!profile is profile,!insidepoint is position,!dir is direction) is array	$*
+--cutedge(!interpoint is position,!edge is any) is array					$*
+--getinterpoint(!line is line,!edge is any) is array						$*
+--getposdir(!edge is any, !headortail is boolean) is array  				$* head true,tail false
+-------------------------------------
+
+define object floorRoom
+	member .order is real
+	member .name is string
+	member .markName is string
+	member .roomvertpoints is array			$* array of vertpoints
+	member .drawpoints is array
+endobject
+
+define method .floorRoom(!item is any)
+	--$p $!item
+	!roomname = name of frmw of $!item
+	handle any
+		return
+	elsehandle none
+		--$p $!roomname
+		if !roomname.match('-ARCH-') ne 0 or !roomname.match('-RM') ne 0 or !roomname.match('-R-') ne 0 then
+		--if !roomname.match('-ARCH-') ne 0 then
+			--if !roomname.matchwild('*-RM*') then
+			--q var !roomname
+			!sbfr = name of first sbfr of $!roomname
+			handle any
+				return
+			endhandle
+
+			!this.name = !roomname
+
+			!this.markname = !roomname.part(-1,'-')
+			!this.getatts()
+			!this.getroomvertpoints()
+			!this.getdrawpoints()
+		endif
+	endhandle
+endmethod
+
+define method .getroomvertpoints()
+	var !panes coll all pane for $!this.name
+	do !pane values !panes
+		!vertPoints = object vertPoints(!pane,true)
+		!vertPoints.getTwoProfiles()
+		!this.roomvertpoints.append(!vertpoints)
+	enddo
+endmethod
+
+define method .getatts()
+
+endmethod
+
+define method .getdrawpoints()
+	do !x indices !this.roomvertpoints
+		if !this.roomvertpoints[!x].cenpoint1.up lt !this.roomvertpoints[!x].cenpoint2.up then
+			!profile = !this.roomvertpoints[!x].twoprofiles[1]
+			!cenpoint = !this.roomvertpoints[!x].cenpoint1
+		else
+			!profile = !this.roomvertpoints[!x].twoprofiles[2]
+			!cenpoint = !this.roomvertpoints[!x].cenpoint2
+		endif
+		if !!posinprofile(!cenpoint,!profile).not() then
+			!splitprofile = object splitprofile(!profile)
+			handle any
+				$p $!this.name split
+				!this.drawpoints.append(!cenpoint)
+			elsehandle none
+				!this.drawpoints.appendarray(!splitprofile.cenpoints)
+			endhandle
+			--if !splitprofile.profiles.size() gt 1 then
+
+			--endif
+		else
+			!this.drawpoints.append(!cenpoint)
+		endif
+	enddo
+endmethod
+[

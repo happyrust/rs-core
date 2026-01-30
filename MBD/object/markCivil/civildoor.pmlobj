@@ -1,0 +1,197 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= January 24th 2024
+--[Function]:
+------------------------------------------
+
+define object civildoor
+	member .order is real
+	member .name is string
+	member .room1 is string
+	member .room2 is string
+	member .netwidth is real
+	member .nethigh is real
+	member .openingwidth is real
+	member .openinghigh is real
+	member .wall is string
+
+	member .desc is string
+	member .type is string
+	member .drawnum is string
+	member .shape is string
+
+	member .ref is string
+	member .civilmem is civilmem
+endobject
+
+define method .civildoor(!civilmem is civilmem)
+	!this.civilmem = !civilmem
+	!this.name = !civilmem.name
+	var !ref ref of $!this.name
+	!this.ref = !ref
+	!this.desc = :JGOBJBASE of $!this.ref
+
+	!this.setnetsize()
+	!this.setopeningsize()
+	!this.setrooms()
+	!this.setwall()
+	!this.settype()
+	!this.setshape()
+	!this.setdrawnum()
+endmethod
+
+define method .setnetsize()
+	do !points values !this.civilmem.pointarr
+		if abs(!points[2].up - !points[1].up) lt 1 then
+			!this.netwidth = !points[2].distance(!points[1]).string('D0').real().value()
+			!this.nethigh = !points[2].distance(!points[3]).string('D0').real().value()
+		else
+			!this.netwidth = !points[2].distance(!points[3]).string('D0').real().value()
+			!this.nethigh = !points[2].distance(!points[1]).string('D0').real().value()
+		endif
+		return
+	enddo
+endmethod
+
+define method .setopeningsize()
+	!sizestring = !this.desc.part(-1,'|')
+	--q var !this.ref
+	--q var !this.desc
+	--q var !sizestring
+	--q var !sizestring.part(1,'*').real()
+	!this.openinghigh = !sizestring.part(1,'*').real().string('D0').real()
+	!this.openingwidth = !sizestring.part(2,'*').real().string('D0').real()
+endmethod
+
+define method .settype()
+	!string = !this.desc.part(2,'|').after('¼òÍ¼')
+	do !x from 1 to !string .length()
+		!letter = !string .substring(!x,1)
+		if not(!letter inset ('0','1','2','3','4','5','6','7','8','9')) then
+			!this.type = !string.substring(!x)
+			break
+		endif
+	enddo
+endmethod
+define method .setshape()
+	!this.shape = !this.desc.part(3,'|')
+endmethod
+define method .setdrawnum()
+	!string = !this.desc.part(2,'|')
+	!drawstring = !string.after('¼òÍ¼')
+	!newstring = ''
+	do !x from 1 to !drawstring.length()
+		!letter = !drawstring.substring(!x,1)
+		if !letter inset ('0','1','2','3','4','5','6','7','8','9') then
+			!newstring = !newstring + !letter
+		endif
+	enddo
+	!this.drawnum = !newstring
+endmethod
+
+define method .setwall()
+	!types = split('WALL GWALL STWALL')
+	do !type values !types
+		!this.wall = name of $!type of $!this.name
+		handle any
+		elsehandle none
+			return
+		endhandle
+	enddo
+endmethod
+
+define method .setrooms()
+	!cenpoint = !this.civilmem.cenpoints[1]
+	handle any
+		!cenpoint = !this.civilmem.cenpoints[2]
+		!zdir = !this.civilmem.profiles[2].orientation.zdir()
+	elsehandle none
+		!zdir = !this.civilmem.profiles[1].orientation.zdir()
+	endhandle
+
+	!thick = !this.civilmem.form.civildatas[!this.civilmem.civilindex].thick
+	!cenpoint = !cenpoint.offset(!zdir,  - !thick / 2)
+
+	!line = !cenpoint.offset(!zdir,1000).line(!cenpoint.offset(!zdir, - 1000))
+	!pos1 = !cenpoint.offset(!zdir,1000)
+	!pos2 = !cenpoint.offset(!zdir, - 1000)
+
+
+	var !panes coll all pane with(type of owner eq 'SBFR') within $!pos1 to $!pos2
+
+	!goodpanes = array()
+	do !pane values !panes
+		!vertPoints = object vertPoints(!pane,true)
+		!vertPoints.getTwoProfiles()
+		!adis = !vertpoints.cenpoint1.up - !cenpoint.up
+		!bdis = !vertpoints.cenpoint2.up - !cenpoint.up
+		if (!adis gt 0 and !bdis lt 0) or (!adis lt 0 and !bdis gt 0) then
+			!goodpanes.append(!vertpoints)
+		endif
+	enddo
+
+	!rooms = array()
+	!roomdiss = array()
+	do !vertpoints values !goodpanes
+		!profile = !vertpoints.twoprofiles[1]
+		!profile.position.up = !cenpoint.up
+		!edges = !profile.edges()
+		do !edge values !edges
+			!points = !this.getinterpoint(!line,!edge)
+			!mindis = 100000
+			do !point values !points
+				!dis = !point.distance(!cenpoint)
+				!dis = !!suidirdis(!cenpoint,!zdir,!point)
+				if abs(!dis) lt abs(!mindis) then
+					!mindis = !dis
+				endif
+			enddo
+			if !mindis ne 100000 then
+				!roomname = name of frmw of $!vertpoints.name
+				!rooms.append(!roomname.part(-1,'-'))
+				!roomdiss.append(!mindis)
+			endif
+		enddo
+	enddo
+	!indices = !roomdiss.sortedindices()
+	!rooms.reindex(!indices)
+	!roomdiss.reindex(!indices)
+
+
+	do !x indices !roomdiss
+		if !roomdiss[!x] lt 0 then
+			!this.room1 = !rooms[!x]
+		else
+			!this.room2 = !rooms[!x]
+			break
+		endif
+	enddo
+endmethod
+
+
+
+define method .getinterpoint(!line is line,!edge is any) is array
+	!points = array()
+	if !edge.objecttype() eq 'LINE' then
+		!interpoint = !line.intersection(!edge)
+		handle any
+		elsehandle none
+			if !edge.onprojected(!interpoint) then
+				!points.append(!interpoint)
+			endif
+		endhandle
+	else
+		!intertpoints = !line.intersections(!edge)
+		do !interpoint values !interpoints
+			if !edge.onprojected(!interpoint) then
+				!points.append(!interpoint)
+			endif
+		enddo
+	endif
+	return !points
+endmethod
+o

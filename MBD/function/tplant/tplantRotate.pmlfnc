@@ -1,0 +1,44 @@
+define function !!tplantRotate(!cpos is position,!item is string,!xangle is real,!yangle is real,!zangle is real)
+	!cename = name
+	!ori = x is E and Y is N
+	do !x from 1 to 3
+		if !x eq 1 then
+			!dir = !ori.xdir()
+			!angle = !xangle
+		elseif !x eq 2 then
+			!dir = !ori.ydir()
+			!angle = !yangle
+		else
+			!dir = !ori.zdir()
+			!angle = !zangle
+		endif
+		!axis = !cpos.line(!cpos.offset(!ori.xdir(),1000))
+
+--$(
+		$!item
+		rotate about $!dir by $!angle thro $!cpos
+--$)
+
+$(
+		!!suitool.transarr = array()
+		!!suitool.transarr.append(!item)
+		!!suitool.transarr.append(!axis)
+		!!suitool.transarr.append(!angle)
+
+		!!suitool.transarr.append(true)
+		$m d:\test\functions\rotate.txt
+$)
+
+
+		!!suitool.transarr = array()
+		!!suitool.transarr.append(!ori)
+		!!suitool.transarr.append(!axis)
+		!!suitool.transarr.append(!angle)
+
+		!!suitool.transarr.append(true)
+		$m d:\test\functions\rotate.txt
+
+		!ori = !!suitool.transarr[1]
+	enddo
+	$!cename
+endfunction

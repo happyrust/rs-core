@@ -1,0 +1,3226 @@
+﻿
+14:29:33 12 March 2024
+=17450/5470 failed to draw
+(2,890)   An invalid zero orthogonal direction has been obtained. Check for parallel directions
+ In line 4565 of PML function markcivil.DRAWEDGELINES
+		!ydir = !linedir.orthogonal(u)
+ Called from line 4548 of PML function markcivil.DRAWEDGES
+	!this.drawedgelines(!lines,!conangles)
+ Called from line 2014 of PML function markcivil.DRAW
+		!this.drawedges(!wallindices)
+ Called from line 1360 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+=17450/5496 failed to draw
+(2,890)   An invalid zero orthogonal direction has been obtained. Check for parallel directions
+ In line 4565 of PML function markcivil.DRAWEDGELINES
+		!ydir = !linedir.orthogonal(u)
+ Called from line 4548 of PML function markcivil.DRAWEDGES
+	!this.drawedgelines(!lines,!conangles)
+ Called from line 2014 of PML function markcivil.DRAW
+		!this.drawedges(!wallindices)
+ Called from line 1360 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+=17450/5524 failed to draw
+(2,890)   An invalid zero orthogonal direction has been obtained. Check for parallel directions
+ In line 4565 of PML function markcivil.DRAWEDGELINES
+		!ydir = !linedir.orthogonal(u)
+ Called from line 4548 of PML function markcivil.DRAWEDGES
+	!this.drawedgelines(!lines,!conangles)
+ Called from line 2014 of PML function markcivil.DRAW
+		!this.drawedges(!wallindices)
+ Called from line 1360 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+=17450/5530 failed to draw
+(2,890)   An invalid zero orthogonal direction has been obtained. Check for parallel directions
+ In line 4565 of PML function markcivil.DRAWEDGELINES
+		!ydir = !linedir.orthogonal(u)
+ Called from line 4548 of PML function markcivil.DRAWEDGES
+	!this.drawedgelines(!lines,!conangles)
+ Called from line 2014 of PML function markcivil.DRAW
+		!this.drawedges(!wallindices)
+ Called from line 1360 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+11:48:36 8 March 2024
+=17399/44 failed to draw
+(2,752)   Array element 1 does not exist
+ In line 5668 of PML function markcivil.MARKCIVILSELF
+			!points = !!getpointsofprofile(!this.profiles[!x])
+ Called from line 2000 of PML function markcivil.DRAW
+	!this.markCivilSelf()
+ Called from line 1360 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+11:47:07 8 March 2024
+=17399/44 failed to draw
+(2,752)   Array element 1 does not exist
+ In line 5670 of PML function markcivil.MARKCIVILSELF
+			!points = !!getpointsofprofile(!this.profiles[!x])
+ Called from line 2002 of PML function markcivil.DRAW
+	!this.markCivilSelf()
+ Called from line 1360 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+11:46:49 8 March 2024
+=17399/44 failed to draw
+(2,752)   Array element 1 does not exist
+ In line 5670 of PML function markcivil.MARKCIVILSELF
+			!points = !!getpointsofprofile(!this.profiles[!x])
+ Called from line 2002 of PML function markcivil.DRAW
+	!this.markCivilSelf()
+ Called from line 1360 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+11:46:40 8 March 2024
+=17399/44 failed to draw
+(2,752)   Array element 1 does not exist
+ In line 5670 of PML function markcivil.MARKCIVILSELF
+			!points = !!getpointsofprofile(!this.profiles[!x])
+ Called from line 2002 of PML function markcivil.DRAW
+	!this.markCivilSelf()
+ Called from line 1360 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+11:46:26 8 March 2024
+=17399/44 failed to draw
+(2,752)   Array element 1 does not exist
+ In line 5669 of PML function markcivil.MARKCIVILSELF
+			!points = !!getpointsofprofile(!this.profiles[!x])
+ Called from line 2001 of PML function markcivil.DRAW
+	!this.markCivilSelf()
+ Called from line 1360 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+11:45:00 8 March 2024
+=17399/44 failed to draw
+(2,752)   Array element 1 does not exist
+ In line 5669 of PML function markcivil.MARKCIVILSELF
+			!points = !!getpointsofprofile(!this.profiles[!x])
+ Called from line 2001 of PML function markcivil.DRAW
+	!this.markCivilSelf()
+ Called from line 1360 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+11:43:57 8 March 2024
+=17399/44 failed to draw
+(2,752)   Array element 1 does not exist
+ In line 5669 of PML function markcivil.MARKCIVILSELF
+			!points = !!getpointsofprofile(!this.profiles[!x])
+ Called from line 2000 of PML function markcivil.DRAW
+	!this.markCivilSelf()
+ Called from line 1360 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+11:42:35 8 March 2024
+=17399/44 failed to draw
+(2,752)   Array element 1 does not exist
+ In line 5668 of PML function markcivil.MARKCIVILSELF
+			!points = !!getpointsofprofile(!this.profiles[!x])
+ Called from line 2000 of PML function markcivil.DRAW
+	!this.markCivilSelf()
+ Called from line 1360 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+11:38:41 23 February 2024
+=17400/2155 failed to draw
+(2,785)   Unset/Invalid object passed to method
+ In line 1009 of PML function civilmem.SETDATAWITHLINES
+				!this.profiles[!x] = object profile(!pointArr[!x][1],!!getoriwithpoints(!pointArr[!x]),!pointArr[!x])
+ Called from line 971 of PML function civilmem.GETDATA
+	!this.setDataWithLines(!lines)
+ Called from line 1713 of PML function civilmem.GETSHAPE
+		!this.getdata(!this.name)
+ Called from line 193 of PML function civilmem.CIVILMEM
+	!this.getShape()
+ Called from line 129 of PML function civilmem.CIVILMEM
+	!this.civilMem(!item,!civildata)
+ Called from line 118 of PML function civilmem.CIVILMEM
+	!this.civilmem(!item,!civilindex)
+ Called from line 1356 of PML function markcivil.GETDATAOFMEM
+		!civilMem = object civilmem(!mem,!civilindex,!this.form)
+ Called from line 2111 of PML function markcivil.DRAW
+		!this.getdataofmem()
+ Called from line 1371 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+11:37:43 23 February 2024
+=17400/47652 failed to draw
+(2,358)   Orientation incorrectly defined
+ In line 5761 of PML function markcivil.MARKCIVILSELF
+				!ori = y is $!oriydir and z is $!orizdir
+ Called from line 2096 of PML function markcivil.DRAW
+	!this.markCivilSelf()
+ Called from line 1371 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+=17400/47702 failed to draw
+(2,358)   Orientation incorrectly defined
+ In line 5761 of PML function markcivil.MARKCIVILSELF
+				!ori = y is $!oriydir and z is $!orizdir
+ Called from line 2096 of PML function markcivil.DRAW
+	!this.markCivilSelf()
+ Called from line 1371 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+=17400/47746 failed to draw
+(2,358)   Orientation incorrectly defined
+ In line 5761 of PML function markcivil.MARKCIVILSELF
+				!ori = y is $!oriydir and z is $!orizdir
+ Called from line 2096 of PML function markcivil.DRAW
+	!this.markCivilSelf()
+ Called from line 1371 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+=17400/48514 failed to draw
+(2,890)   An invalid zero orthogonal direction has been obtained. Check for parallel directions
+ In line 4643 of PML function markcivil.DRAWEDGELINES
+		!ydir = !linedir.orthogonal(u)
+ Called from line 4626 of PML function markcivil.DRAWEDGES
+	!this.drawedgelines(!lines,!conangles)
+ Called from line 2106 of PML function markcivil.DRAW
+		!this.drawedges(!wallindices)
+ Called from line 1371 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+=17400/48539 failed to draw
+(2,890)   An invalid zero orthogonal direction has been obtained. Check for parallel directions
+ In line 4643 of PML function markcivil.DRAWEDGELINES
+		!ydir = !linedir.orthogonal(u)
+ Called from line 4626 of PML function markcivil.DRAWEDGES
+	!this.drawedgelines(!lines,!conangles)
+ Called from line 2106 of PML function markcivil.DRAW
+		!this.drawedges(!wallindices)
+ Called from line 1371 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+=17400/48583 failed to draw
+(2,890)   An invalid zero orthogonal direction has been obtained. Check for parallel directions
+ In line 4643 of PML function markcivil.DRAWEDGELINES
+		!ydir = !linedir.orthogonal(u)
+ Called from line 4626 of PML function markcivil.DRAWEDGES
+	!this.drawedgelines(!lines,!conangles)
+ Called from line 2106 of PML function markcivil.DRAW
+		!this.drawedges(!wallindices)
+ Called from line 1371 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+11:33:05 23 February 2024
+=17400/47652 failed to draw
+(2,358)   Orientation incorrectly defined
+ In line 5761 of PML function markcivil.MARKCIVILSELF
+				!ori = y is $!oriydir and z is $!orizdir
+ Called from line 2096 of PML function markcivil.DRAW
+	!this.markCivilSelf()
+ Called from line 1371 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+=17400/47702 failed to draw
+(2,358)   Orientation incorrectly defined
+ In line 5761 of PML function markcivil.MARKCIVILSELF
+				!ori = y is $!oriydir and z is $!orizdir
+ Called from line 2096 of PML function markcivil.DRAW
+	!this.markCivilSelf()
+ Called from line 1371 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+=17400/47746 failed to draw
+(2,358)   Orientation incorrectly defined
+ In line 5761 of PML function markcivil.MARKCIVILSELF
+				!ori = y is $!oriydir and z is $!orizdir
+ Called from line 2096 of PML function markcivil.DRAW
+	!this.markCivilSelf()
+ Called from line 1371 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+=17400/48514 failed to draw
+(2,890)   An invalid zero orthogonal direction has been obtained. Check for parallel directions
+ In line 4643 of PML function markcivil.DRAWEDGELINES
+		!ydir = !linedir.orthogonal(u)
+ Called from line 4626 of PML function markcivil.DRAWEDGES
+	!this.drawedgelines(!lines,!conangles)
+ Called from line 2106 of PML function markcivil.DRAW
+		!this.drawedges(!wallindices)
+ Called from line 1371 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+=17400/48539 failed to draw
+(2,890)   An invalid zero orthogonal direction has been obtained. Check for parallel directions
+ In line 4643 of PML function markcivil.DRAWEDGELINES
+		!ydir = !linedir.orthogonal(u)
+ Called from line 4626 of PML function markcivil.DRAWEDGES
+	!this.drawedgelines(!lines,!conangles)
+ Called from line 2106 of PML function markcivil.DRAW
+		!this.drawedges(!wallindices)
+ Called from line 1371 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+=17400/48583 failed to draw
+(2,890)   An invalid zero orthogonal direction has been obtained. Check for parallel directions
+ In line 4643 of PML function markcivil.DRAWEDGELINES
+		!ydir = !linedir.orthogonal(u)
+ Called from line 4626 of PML function markcivil.DRAWEDGES
+	!this.drawedgelines(!lines,!conangles)
+ Called from line 2106 of PML function markcivil.DRAW
+		!this.drawedges(!wallindices)
+ Called from line 1371 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:38:35 16 January 2024
+=17394/4515 failed to draw
+(2,779)   Method <ARC>.ANGLEPOSITION(<POSITION>) not found
+ In line 1018 of PML function markcivil.DRAWONEORIGIN
+				!dp2 = !shortarc.angleposition(!dp2)
+ Called from line 977 of PML function markcivil.DRAWORIGIN
+		!this.drawoneorigin(!point,!ori)
+ Called from line 1735 of PML function markcivil.DRAW
+	!this.draworigin()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:38:14 16 January 2024
+=17394/4515 failed to draw
+(2,499)   DIMENSION(UNIT) MISMATCH in real arithmetic (+-*/ POW): cannot combine physical quantities PDIS and ANGL (element =0/0)
+ In line 1014 of PML function markcivil.DRAWONEORIGIN
+					!tempangle = !shortarc.near(!dp1) - !offsetangle
+ Called from line 977 of PML function markcivil.DRAWORIGIN
+		!this.drawoneorigin(!point,!ori)
+ Called from line 1735 of PML function markcivil.DRAW
+	!this.draworigin()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+15:26:17 16 January 2024
+=17394/4515 failed to draw
+(2,751)   Variable !TEXTOFFDIS does not exist
+ In line 5045 of PML function markcivil.MARKWALLEL
+				!cenpos = !cenpos.offset(!ori.zdir(),!textoffdis)
+ Called from line 1629 of PML function markcivil.DRAW
+	!this.markwallEl()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+15:20:16 16 January 2024
+=17394/4515 failed to draw
+(2,779)   Method <REAL>.OFFSET(<DIRECTION>,<REAL>) not found
+ In line 5018 of PML function markcivil.MARKWALLEL
+					!startpos = !startpos.offset(!this.zdir,!this.height)
+ Called from line 1629 of PML function markcivil.DRAW
+	!this.markwallEl()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+15:18:55 16 January 2024
+=17394/4515 failed to draw
+(2,499)   DIMENSION(UNIT) MISMATCH in real arithmetic (+-*/ POW): cannot combine physical quantities PDIS and ANGL (element =0/0)
+ In line 5018 of PML function markcivil.MARKWALLEL
+					!startangle = !ppangle - !offsetangle
+ Called from line 1629 of PML function markcivil.DRAW
+	!this.markwallEl()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+13:51:57 16 January 2024
+/0454 failed to draw
+(2,890)   An invalid zero orthogonal direction has been obtained. Check for parallel directions
+ In line 2281 of PML function markcivil.DRAWOPENINGDIMLINE
+	!movedir = !ori.zdir().orthogonal(!linedir)
+ Called from line 2254 of PML function markcivil.DIMONEMEM
+					!cheight = !this.drawOpeningDimLine(!yline,!ori,!profile,!cheight,!desc)
+ Called from line 1652 of PML function markcivil.DRAW
+				!cheightbili = !this.dimOneMem(!mem)
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+13:49:49 16 January 2024
+/0443 failed to draw
+(2,890)   An invalid zero orthogonal direction has been obtained. Check for parallel directions
+ In line 4116 of PML function markcivil.DRAWEDGELINES
+		!ydir = !linedir.orthogonal(u)
+ Called from line 4099 of PML function markcivil.DRAWEDGES
+	!this.drawedgelines(!lines,!conangles)
+ Called from line 1638 of PML function markcivil.DRAW
+		!this.drawedges(!wallindices)
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+11:32:53 16 January 2024
+/0443 failed to draw
+(2,109)   Undefined name /0443-AID
+ In line 67 of PML function mbdaidline.MBDAIDLINE
+	!this.owner = name of $!owner
+ Called from line 62 of PML function mbdaidline.MBDAIDLINE
+		return !this.mbdaidline(!owner, !aidlinepos, !ori, !zlen, !function, !desc)
+ Called from line 922 of PML function markcivil.DRAWONEORIGIN
+		!aidline = object mbdaidline(!this.mbdstru.aidgro,!dp1,!dp2,'局部坐标',!nodename)
+ Called from line 896 of PML function markcivil.DRAWORIGIN
+		!this.drawoneorigin(!point,!ori)
+ Called from line 1627 of PML function markcivil.DRAW
+	!this.draworigin()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+/0444 failed to draw
+(2,109)   Undefined name /0444-AID
+ In line 67 of PML function mbdaidline.MBDAIDLINE
+	!this.owner = name of $!owner
+ Called from line 62 of PML function mbdaidline.MBDAIDLINE
+		return !this.mbdaidline(!owner, !aidlinepos, !ori, !zlen, !function, !desc)
+ Called from line 922 of PML function markcivil.DRAWONEORIGIN
+		!aidline = object mbdaidline(!this.mbdstru.aidgro,!dp1,!dp2,'局部坐标',!nodename)
+ Called from line 896 of PML function markcivil.DRAWORIGIN
+		!this.drawoneorigin(!point,!ori)
+ Called from line 1627 of PML function markcivil.DRAW
+	!this.draworigin()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+/0445 failed to draw
+(2,109)   Undefined name /0445-AID
+ In line 67 of PML function mbdaidline.MBDAIDLINE
+	!this.owner = name of $!owner
+ Called from line 62 of PML function mbdaidline.MBDAIDLINE
+		return !this.mbdaidline(!owner, !aidlinepos, !ori, !zlen, !function, !desc)
+ Called from line 922 of PML function markcivil.DRAWONEORIGIN
+		!aidline = object mbdaidline(!this.mbdstru.aidgro,!dp1,!dp2,'局部坐标',!nodename)
+ Called from line 896 of PML function markcivil.DRAWORIGIN
+		!this.drawoneorigin(!point,!ori)
+ Called from line 1627 of PML function markcivil.DRAW
+	!this.draworigin()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+/0446 failed to draw
+(2,109)   Undefined name /0446-AID
+ In line 67 of PML function mbdaidline.MBDAIDLINE
+	!this.owner = name of $!owner
+ Called from line 62 of PML function mbdaidline.MBDAIDLINE
+		return !this.mbdaidline(!owner, !aidlinepos, !ori, !zlen, !function, !desc)
+ Called from line 922 of PML function markcivil.DRAWONEORIGIN
+		!aidline = object mbdaidline(!this.mbdstru.aidgro,!dp1,!dp2,'局部坐标',!nodename)
+ Called from line 896 of PML function markcivil.DRAWORIGIN
+		!this.drawoneorigin(!point,!ori)
+ Called from line 1627 of PML function markcivil.DRAW
+	!this.draworigin()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+/0447 failed to draw
+(2,109)   Undefined name /0447-AID
+ In line 67 of PML function mbdaidline.MBDAIDLINE
+	!this.owner = name of $!owner
+ Called from line 62 of PML function mbdaidline.MBDAIDLINE
+		return !this.mbdaidline(!owner, !aidlinepos, !ori, !zlen, !function, !desc)
+ Called from line 922 of PML function markcivil.DRAWONEORIGIN
+		!aidline = object mbdaidline(!this.mbdstru.aidgro,!dp1,!dp2,'局部坐标',!nodename)
+ Called from line 896 of PML function markcivil.DRAWORIGIN
+		!this.drawoneorigin(!point,!ori)
+ Called from line 1627 of PML function markcivil.DRAW
+	!this.draworigin()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+/0448 failed to draw
+(2,109)   Undefined name /0448-AID
+ In line 67 of PML function mbdaidline.MBDAIDLINE
+	!this.owner = name of $!owner
+ Called from line 62 of PML function mbdaidline.MBDAIDLINE
+		return !this.mbdaidline(!owner, !aidlinepos, !ori, !zlen, !function, !desc)
+ Called from line 922 of PML function markcivil.DRAWONEORIGIN
+		!aidline = object mbdaidline(!this.mbdstru.aidgro,!dp1,!dp2,'局部坐标',!nodename)
+ Called from line 896 of PML function markcivil.DRAWORIGIN
+		!this.drawoneorigin(!point,!ori)
+ Called from line 1627 of PML function markcivil.DRAW
+	!this.draworigin()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+/0449 failed to draw
+(2,890)   An invalid zero orthogonal direction has been obtained. Check for parallel directions
+ In line 2278 of PML function markcivil.DRAWOPENINGDIMLINE
+	!movedir = !ori.zdir().orthogonal(!linedir)
+ Called from line 2251 of PML function markcivil.DIMONEMEM
+					!cheight = !this.drawOpeningDimLine(!yline,!ori,!profile,!cheight,!desc)
+ Called from line 1649 of PML function markcivil.DRAW
+				!cheightbili = !this.dimOneMem(!mem)
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+/0453 failed to draw
+(2,890)   An invalid zero orthogonal direction has been obtained. Check for parallel directions
+ In line 2278 of PML function markcivil.DRAWOPENINGDIMLINE
+	!movedir = !ori.zdir().orthogonal(!linedir)
+ Called from line 2251 of PML function markcivil.DIMONEMEM
+					!cheight = !this.drawOpeningDimLine(!yline,!ori,!profile,!cheight,!desc)
+ Called from line 1649 of PML function markcivil.DRAW
+				!cheightbili = !this.dimOneMem(!mem)
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+/0454 failed to draw
+(2,890)   An invalid zero orthogonal direction has been obtained. Check for parallel directions
+ In line 2278 of PML function markcivil.DRAWOPENINGDIMLINE
+	!movedir = !ori.zdir().orthogonal(!linedir)
+ Called from line 2251 of PML function markcivil.DIMONEMEM
+					!cheight = !this.drawOpeningDimLine(!yline,!ori,!profile,!cheight,!desc)
+ Called from line 1649 of PML function markcivil.DRAW
+				!cheightbili = !this.dimOneMem(!mem)
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+/0455 failed to draw
+(2,890)   An invalid zero orthogonal direction has been obtained. Check for parallel directions
+ In line 2278 of PML function markcivil.DRAWOPENINGDIMLINE
+	!movedir = !ori.zdir().orthogonal(!linedir)
+ Called from line 2251 of PML function markcivil.DIMONEMEM
+					!cheight = !this.drawOpeningDimLine(!yline,!ori,!profile,!cheight,!desc)
+ Called from line 1649 of PML function markcivil.DRAW
+				!cheightbili = !this.dimOneMem(!mem)
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+10:43:10 16 January 2024
+=17394/4618 failed to draw
+(2,752)   Array element 1 does not exist
+ In line 3379 of PML function markcivil.DRAWWALLANGLE
+		!tempposs1 = !this.getinterpoints(!line1,!lines2[1])
+ Called from line 3274 of PML function markcivil.DRAWINTERLINEARCS
+		!this.drawWallAngle(!dimgro,!twoedges, !alledgepoints, !alledgepointsymbles)
+ Called from line 3262 of PML function markcivil.DRAWOTHERWALLS
+	!this.drawinterlinearcs(!dimgro,!twoedges,!alledgepoints,!alledgepointsymbles)
+ Called from line 2791 of PML function markcivil.GETWALLSONFLOOR
+		!this.form.civildatas[!index].drawotherwalls()
+ Called from line 1632 of PML function markcivil.DRAW
+		!wallindices = !this.getwallsonfloor()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+10:42:17 16 January 2024
+=17394/4618 failed to draw
+(2,752)   Array element 1 does not exist
+ In line 3378 of PML function markcivil.DRAWWALLANGLE
+		!tempposs1 = !this.getinterpoints(!line1,!lines2[1])
+ Called from line 3274 of PML function markcivil.DRAWINTERLINEARCS
+		!this.drawWallAngle(!dimgro,!twoedges, !alledgepoints, !alledgepointsymbles)
+ Called from line 3262 of PML function markcivil.DRAWOTHERWALLS
+	!this.drawinterlinearcs(!dimgro,!twoedges,!alledgepoints,!alledgepointsymbles)
+ Called from line 2791 of PML function markcivil.GETWALLSONFLOOR
+		!this.form.civildatas[!index].drawotherwalls()
+ Called from line 1632 of PML function markcivil.DRAW
+		!wallindices = !this.getwallsonfloor()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+10:41:06 16 January 2024
+=17394/4618 failed to draw
+(2,752)   Array element 1 does not exist
+ In line 3377 of PML function markcivil.DRAWWALLANGLE
+		!tempposs1 = !this.getinterpoints(!line1,!lines2[1])
+ Called from line 3274 of PML function markcivil.DRAWINTERLINEARCS
+		!this.drawWallAngle(!dimgro,!twoedges, !alledgepoints, !alledgepointsymbles)
+ Called from line 3262 of PML function markcivil.DRAWOTHERWALLS
+	!this.drawinterlinearcs(!dimgro,!twoedges,!alledgepoints,!alledgepointsymbles)
+ Called from line 2791 of PML function markcivil.GETWALLSONFLOOR
+		!this.form.civildatas[!index].drawotherwalls()
+ Called from line 1632 of PML function markcivil.DRAW
+		!wallindices = !this.getwallsonfloor()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+10:39:44 16 January 2024
+=17394/4618 failed to draw
+(2,752)   Array element 1 does not exist
+ In line 3377 of PML function markcivil.DRAWWALLANGLE
+		!tempposs1 = !this.getinterpoints(!line1,!lines2[1])
+ Called from line 3274 of PML function markcivil.DRAWINTERLINEARCS
+		!this.drawWallAngle(!dimgro,!twoedges, !alledgepoints, !alledgepointsymbles)
+ Called from line 3262 of PML function markcivil.DRAWOTHERWALLS
+	!this.drawinterlinearcs(!dimgro,!twoedges,!alledgepoints,!alledgepointsymbles)
+ Called from line 2791 of PML function markcivil.GETWALLSONFLOOR
+		!this.form.civildatas[!index].drawotherwalls()
+ Called from line 1632 of PML function markcivil.DRAW
+		!wallindices = !this.getwallsonfloor()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+10:38:56 16 January 2024
+=17394/4618 failed to draw
+(2,752)   Array element 1 does not exist
+ In line 3377 of PML function markcivil.DRAWWALLANGLE
+		!tempposs1 = !this.getinterpoints(!line1,!lines2[1])
+ Called from line 3274 of PML function markcivil.DRAWINTERLINEARCS
+		!this.drawWallAngle(!dimgro,!twoedges, !alledgepoints, !alledgepointsymbles)
+ Called from line 3262 of PML function markcivil.DRAWOTHERWALLS
+	!this.drawinterlinearcs(!dimgro,!twoedges,!alledgepoints,!alledgepointsymbles)
+ Called from line 2791 of PML function markcivil.GETWALLSONFLOOR
+		!this.form.civildatas[!index].drawotherwalls()
+ Called from line 1632 of PML function markcivil.DRAW
+		!wallindices = !this.getwallsonfloor()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+10:36:44 16 January 2024
+=17394/4618 failed to draw
+(2,752)   Array element 1 does not exist
+ In line 3377 of PML function markcivil.DRAWWALLANGLE
+		!tempposs1 = !this.getinterpoints(!line1,!lines2[1])
+ Called from line 3274 of PML function markcivil.DRAWINTERLINEARCS
+		!this.drawWallAngle(!dimgro,!twoedges, !alledgepoints, !alledgepointsymbles)
+ Called from line 3262 of PML function markcivil.DRAWOTHERWALLS
+	!this.drawinterlinearcs(!dimgro,!twoedges,!alledgepoints,!alledgepointsymbles)
+ Called from line 2791 of PML function markcivil.GETWALLSONFLOOR
+		!this.form.civildatas[!index].drawotherwalls()
+ Called from line 1632 of PML function markcivil.DRAW
+		!wallindices = !this.getwallsonfloor()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+10:36:31 16 January 2024
+=17394/4618 failed to draw
+(2,751)   Variable !CLASHWALLTEMP does not exist
+ In line 3302 of PML function markcivil.DRAWWALLANGLE
+					!clashwall$!x = !clashwalltemp
+ Called from line 3274 of PML function markcivil.DRAWINTERLINEARCS
+		!this.drawWallAngle(!dimgro,!twoedges, !alledgepoints, !alledgepointsymbles)
+ Called from line 3262 of PML function markcivil.DRAWOTHERWALLS
+	!this.drawinterlinearcs(!dimgro,!twoedges,!alledgepoints,!alledgepointsymbles)
+ Called from line 2791 of PML function markcivil.GETWALLSONFLOOR
+		!this.form.civildatas[!index].drawotherwalls()
+ Called from line 1632 of PML function markcivil.DRAW
+		!wallindices = !this.getwallsonfloor()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+10:36:11 16 January 2024
+=17394/4618 failed to draw
+(46,28)   ERROR - Variable CLASHWALL not defined
+ In line 3299 of PML function markcivil.DRAWWALLANGLE
+				if type of $!clashwall ne 'WALL 'then
+ Called from line 3274 of PML function markcivil.DRAWINTERLINEARCS
+		!this.drawWallAngle(!dimgro,!twoedges, !alledgepoints, !alledgepointsymbles)
+ Called from line 3262 of PML function markcivil.DRAWOTHERWALLS
+	!this.drawinterlinearcs(!dimgro,!twoedges,!alledgepoints,!alledgepointsymbles)
+ Called from line 2791 of PML function markcivil.GETWALLSONFLOOR
+		!this.form.civildatas[!index].drawotherwalls()
+ Called from line 1632 of PML function markcivil.DRAW
+		!wallindices = !this.getwallsonfloor()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+10:29:57 16 January 2024
+=17394/4618 failed to draw
+(2,752)   Array element 1 does not exist
+ In line 3377 of PML function markcivil.DRAWWALLANGLE
+		!tempposs1 = !this.getinterpoints(!line1,!lines2[1])
+ Called from line 3274 of PML function markcivil.DRAWINTERLINEARCS
+		!this.drawWallAngle(!dimgro,!twoedges, !alledgepoints, !alledgepointsymbles)
+ Called from line 3262 of PML function markcivil.DRAWOTHERWALLS
+	!this.drawinterlinearcs(!dimgro,!twoedges,!alledgepoints,!alledgepointsymbles)
+ Called from line 2791 of PML function markcivil.GETWALLSONFLOOR
+		!this.form.civildatas[!index].drawotherwalls()
+ Called from line 1632 of PML function markcivil.DRAW
+		!wallindices = !this.getwallsonfloor()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+10:13:25 16 January 2024
+=17394/4618 failed to draw
+(2,752)   Array element 1 does not exist
+ In line 3374 of PML function markcivil.DRAWWALLANGLE
+		!tempposs1 = !this.getinterpoints(!line1,!lines2[1])
+ Called from line 3274 of PML function markcivil.DRAWINTERLINEARCS
+		!this.drawWallAngle(!dimgro,!twoedges, !alledgepoints, !alledgepointsymbles)
+ Called from line 3262 of PML function markcivil.DRAWOTHERWALLS
+	!this.drawinterlinearcs(!dimgro,!twoedges,!alledgepoints,!alledgepointsymbles)
+ Called from line 2791 of PML function markcivil.GETWALLSONFLOOR
+		!this.form.civildatas[!index].drawotherwalls()
+ Called from line 1632 of PML function markcivil.DRAW
+		!wallindices = !this.getwallsonfloor()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+10:05:13 16 January 2024
+=17394/4618 failed to draw
+(2,766)   This function does not return a result
+ In line 1632 of PML function markcivil.DRAW
+		!wallindices = !this.getwallsonfloor()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+10:04:48 16 January 2024
+=17394/4618 failed to draw
+(2,766)   This function does not return a result
+ In line 1632 of PML function markcivil.DRAW
+		!wallindices = !this.getwallsonfloor()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+10:04:03 16 January 2024
+=17394/4618 failed to draw
+(2,766)   This function does not return a result
+ In line 1632 of PML function markcivil.DRAW
+		!wallindices = !this.getwallsonfloor()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+10:03:19 16 January 2024
+=17394/4618 failed to draw
+(2,766)   This function does not return a result
+ In line 1632 of PML function markcivil.DRAW
+		!wallindices = !this.getwallsonfloor()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+10:01:51 16 January 2024
+=17394/4618 failed to draw
+(2,766)   This function does not return a result
+ In line 1632 of PML function markcivil.DRAW
+		!wallindices = !this.getwallsonfloor()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+10:01:23 16 January 2024
+=17394/4618 failed to draw
+(2,766)   This function does not return a result
+ In line 1632 of PML function markcivil.DRAW
+		!wallindices = !this.getwallsonfloor()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+09:57:45 16 January 2024
+=17394/4618 failed to draw
+(2,766)   This function does not return a result
+ In line 1632 of PML function markcivil.DRAW
+		!wallindices = !this.getwallsonfloor()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+09:26:32 16 January 2024
+=17394/4618 未得到markcivil
+(46,58)   PML: Method MARKCIVIL could not be found
+ In line 1069 of PML function markcivilform.ADDCE
+			!markcivil = object markcivil(!name,!this)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+
+09:15:00 16 January 2024
+=17394/4618 failed to draw
+(2,752)   Array element 2 does not exist
+ In line 3013 of PML function markcivil.ADDOTHERWALL
+	if !this.form.civildatas[!civilindex].otherwallindices.findfirst(!currentindex).unset() then
+ Called from line 3004 of PML function markcivil.ADDOTHERWALLS
+			!this.addotherwall(!index)
+ Called from line 2769 of PML function markcivil.GETWALLSONFLOOR
+		!this.form.civildatas[!index].addotherwalls(!onwallindices)
+ Called from line 1624 of PML function markcivil.DRAW
+		!wallindices = !this.getwallsonfloor()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+09:13:22 16 January 2024
+=17394/4618 failed to draw
+(2,752)   Array element 2 does not exist
+ In line 3013 of PML function markcivil.ADDOTHERWALL
+	if !this.form.civildatas[!civilindex].otherwallindices.findfirst(!currentindex).unset() then
+ Called from line 3004 of PML function markcivil.ADDOTHERWALLS
+			!this.addotherwall(!index)
+ Called from line 2769 of PML function markcivil.GETWALLSONFLOOR
+		!this.form.civildatas[!index].addotherwalls(!onwallindices)
+ Called from line 1624 of PML function markcivil.DRAW
+		!wallindices = !this.getwallsonfloor()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+09:12:16 16 January 2024
+=17394/4618 failed to draw
+(2,752)   Array element 2 does not exist
+ In line 3013 of PML function markcivil.ADDOTHERWALL
+	if !this.form.civildatas[!civilindex].otherwallindices.findfirst(!currentindex).unset() then
+ Called from line 3004 of PML function markcivil.ADDOTHERWALLS
+			!this.addotherwall(!index)
+ Called from line 2769 of PML function markcivil.GETWALLSONFLOOR
+		!this.form.civildatas[!index].addotherwalls(!onwallindices)
+ Called from line 1624 of PML function markcivil.DRAW
+		!wallindices = !this.getwallsonfloor()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+09:11:24 16 January 2024
+=17394/4618 failed to draw
+(2,752)   Array element 2 does not exist
+ In line 3012 of PML function markcivil.ADDOTHERWALL
+
+ Called from line 3004 of PML function markcivil.ADDOTHERWALLS
+			!this.addotherwall(!index)
+ Called from line 2769 of PML function markcivil.GETWALLSONFLOOR
+		!this.form.civildatas[!index].addotherwalls(!onwallindices)
+ Called from line 1624 of PML function markcivil.DRAW
+		!wallindices = !this.getwallsonfloor()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+09:06:45 16 January 2024
+=17394/4618 failed to draw
+(2,752)   Array element 2 does not exist
+ In line 3012 of PML function markcivil.ADDOTHERWALL
+	if !this.form.civildatas[!civilindex].otherwallindices.findfirst(!currentindex).unset() then
+ Called from line 3004 of PML function markcivil.ADDOTHERWALLS
+			!this.addotherwall(!index)
+ Called from line 2769 of PML function markcivil.GETWALLSONFLOOR
+		!this.form.civildatas[!index].addotherwalls(!onwallindices)
+ Called from line 1624 of PML function markcivil.DRAW
+		!wallindices = !this.getwallsonfloor()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+09:03:22 16 January 2024
+=17394/4618 failed to draw
+(2,752)   Array element 50 does not exist
+ In line 3012 of PML function markcivil.ADDOTHERWALL
+	if !this.form.civildatas[!civilindex].otherwallindices.findfirst(!currentindex).unset() then
+ Called from line 3004 of PML function markcivil.ADDOTHERWALLS
+			!this.addotherwall(!index)
+ Called from line 2769 of PML function markcivil.GETWALLSONFLOOR
+		!this.form.civildatas[!index].addotherwalls(!onwallindices)
+ Called from line 1624 of PML function markcivil.DRAW
+		!wallindices = !this.getwallsonfloor()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:57:24 15 January 2024
+=17394/79 failed to draw
+(2,891)   An invalid zero direction has been obtained
+ In line 5251 of PML function markcivil.MARKCIVILSELF
+			!xdir = !this.arcs[1].angleposition(!this.arcs[1].startangle).direction(!this.arcs[1].angleposition(!this.arcs[1].endangle))
+ Called from line 1616 of PML function markcivil.DRAW
+	!this.markCivilSelf()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:56:30 15 January 2024
+=17394/79 failed to draw
+(2,785)   Unset/Invalid object passed to method
+ In line 5112 of PML function markcivil.MARKCIVILSELF
+			!startPos = !this.arcs[!x].angleposition(!startAngle)
+ Called from line 1616 of PML function markcivil.DRAW
+	!this.markCivilSelf()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:55:11 15 January 2024
+=17394/79 failed to draw
+(2,785)   Unset/Invalid object passed to method
+ In line 5111 of PML function markcivil.MARKCIVILSELF
+			!startPos = !this.arcs[!x].angleposition(!startAngle)
+ Called from line 1616 of PML function markcivil.DRAW
+	!this.markCivilSelf()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:51:35 15 January 2024
+=17394/79 failed to draw
+(2,785)   Unset/Invalid object passed to method
+ In line 5111 of PML function markcivil.MARKCIVILSELF
+			!startPos = !this.arcs[!x].angleposition(!startAngle)
+ Called from line 1616 of PML function markcivil.DRAW
+	!this.markCivilSelf()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:11:38 15 January 2024
+=17394/4526 failed to draw
+(2,779)   Method <PLANE>.DISTANCE(<POSITION>) not found
+ In line 1753 of PML function civilmem.CHECKIFOK
+			if !this.civildata[!x].plane().distance(!this.cenpoints[!x]) gt 30 or !!posinprofile(!this.cenpoints[!x],!this.civildata[!x]).not() then
+ Called from line 1746 of PML function civilmem.GETSHAPE
+	!this.checkifok()
+ Called from line 193 of PML function civilmem.CIVILMEM
+	!this.getShape()
+ Called from line 129 of PML function civilmem.CIVILMEM
+	!this.civilMem(!item,!civildata)
+ Called from line 118 of PML function civilmem.CIVILMEM
+	!this.civilmem(!item,!civilindex)
+ Called from line 1152 of PML function markcivil.GETDATAOFMEM
+		!civilMem = object civilmem(!mem,!civilindex,!this.form)
+ Called from line 1619 of PML function markcivil.DRAW
+		!this.getdataofmem()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+=17394/79 failed to draw
+(46,58)   PML: Method PLANE could not be found
+ In line 1758 of PML function civilmem.CHECKIFOK
+			!plane = object plane(!this.civildata[!x],position,!this.civildata[!x].orientation)
+ Called from line 1746 of PML function civilmem.GETSHAPE
+	!this.checkifok()
+ Called from line 193 of PML function civilmem.CIVILMEM
+	!this.getShape()
+ Called from line 129 of PML function civilmem.CIVILMEM
+	!this.civilMem(!item,!civildata)
+ Called from line 118 of PML function civilmem.CIVILMEM
+	!this.civilmem(!item,!civilindex)
+ Called from line 1152 of PML function markcivil.GETDATAOFMEM
+		!civilMem = object civilmem(!mem,!civilindex,!this.form)
+ Called from line 1619 of PML function markcivil.DRAW
+		!this.getdataofmem()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+=17394/4520 failed to draw
+(46,58)   PML: Method PLANE could not be found
+ In line 1758 of PML function civilmem.CHECKIFOK
+			!plane = object plane(!this.civildata[!x],position,!this.civildata[!x].orientation)
+ Called from line 1746 of PML function civilmem.GETSHAPE
+	!this.checkifok()
+ Called from line 193 of PML function civilmem.CIVILMEM
+	!this.getShape()
+ Called from line 129 of PML function civilmem.CIVILMEM
+	!this.civilMem(!item,!civildata)
+ Called from line 118 of PML function civilmem.CIVILMEM
+	!this.civilmem(!item,!civilindex)
+ Called from line 1152 of PML function markcivil.GETDATAOFMEM
+		!civilMem = object civilmem(!mem,!civilindex,!this.form)
+ Called from line 1619 of PML function markcivil.DRAW
+		!this.getdataofmem()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+=17394/4515 failed to draw
+(46,58)   PML: Method PLANE could not be found
+ In line 1758 of PML function civilmem.CHECKIFOK
+			!plane = object plane(!this.civildata[!x],position,!this.civildata[!x].orientation)
+ Called from line 1746 of PML function civilmem.GETSHAPE
+	!this.checkifok()
+ Called from line 193 of PML function civilmem.CIVILMEM
+	!this.getShape()
+ Called from line 129 of PML function civilmem.CIVILMEM
+	!this.civilMem(!item,!civildata)
+ Called from line 118 of PML function civilmem.CIVILMEM
+	!this.civilmem(!item,!civilindex)
+ Called from line 1152 of PML function markcivil.GETDATAOFMEM
+		!civilMem = object civilmem(!mem,!civilindex,!this.form)
+ Called from line 1619 of PML function markcivil.DRAW
+		!this.getdataofmem()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+=17394/143 failed to draw
+(2,779)   Method <PLANE>.DISTANCE(<POSITION>) not found
+ In line 1753 of PML function civilmem.CHECKIFOK
+			if !this.civildata[!x].plane().distance(!this.cenpoints[!x]) gt 30 or !!posinprofile(!this.cenpoints[!x],!this.civildata[!x]).not() then
+ Called from line 1746 of PML function civilmem.GETSHAPE
+	!this.checkifok()
+ Called from line 193 of PML function civilmem.CIVILMEM
+	!this.getShape()
+ Called from line 129 of PML function civilmem.CIVILMEM
+	!this.civilMem(!item,!civildata)
+ Called from line 118 of PML function civilmem.CIVILMEM
+	!this.civilmem(!item,!civilindex)
+ Called from line 1152 of PML function markcivil.GETDATAOFMEM
+		!civilMem = object civilmem(!mem,!civilindex,!this.form)
+ Called from line 1619 of PML function markcivil.DRAW
+		!this.getdataofmem()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+=17394/130 failed to draw
+(2,779)   Method <PLANE>.DISTANCE(<POSITION>) not found
+ In line 1753 of PML function civilmem.CHECKIFOK
+			if !this.civildata[!x].plane().distance(!this.cenpoints[!x]) gt 30 or !!posinprofile(!this.cenpoints[!x],!this.civildata[!x]).not() then
+ Called from line 1746 of PML function civilmem.GETSHAPE
+	!this.checkifok()
+ Called from line 193 of PML function civilmem.CIVILMEM
+	!this.getShape()
+ Called from line 129 of PML function civilmem.CIVILMEM
+	!this.civilMem(!item,!civildata)
+ Called from line 118 of PML function civilmem.CIVILMEM
+	!this.civilmem(!item,!civilindex)
+ Called from line 1152 of PML function markcivil.GETDATAOFMEM
+		!civilMem = object civilmem(!mem,!civilindex,!this.form)
+ Called from line 1619 of PML function markcivil.DRAW
+		!this.getdataofmem()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:10:48 15 January 2024
+=17394/4526 failed to draw
+(2,779)   Method <PROFILE>.DISTANCE(<POSITION>) not found
+ In line 1753 of PML function civilmem.CHECKIFOK
+			if !this.civildata[!x].distance(!this.cenpoints[!x]) gt 30 or !!posinprofile(!this.cenpoints[!x],!this.civildata[!x]).not() then
+ Called from line 1746 of PML function civilmem.GETSHAPE
+	!this.checkifok()
+ Called from line 193 of PML function civilmem.CIVILMEM
+	!this.getShape()
+ Called from line 129 of PML function civilmem.CIVILMEM
+	!this.civilMem(!item,!civildata)
+ Called from line 118 of PML function civilmem.CIVILMEM
+	!this.civilmem(!item,!civilindex)
+ Called from line 1152 of PML function markcivil.GETDATAOFMEM
+		!civilMem = object civilmem(!mem,!civilindex,!this.form)
+ Called from line 1619 of PML function markcivil.DRAW
+		!this.getdataofmem()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+=17394/79 failed to draw
+(46,58)   PML: Method PLANE could not be found
+ In line 1758 of PML function civilmem.CHECKIFOK
+			!plane = object plane(!this.civildata[!x],position,!this.civildata[!x].orientation)
+ Called from line 1746 of PML function civilmem.GETSHAPE
+	!this.checkifok()
+ Called from line 193 of PML function civilmem.CIVILMEM
+	!this.getShape()
+ Called from line 129 of PML function civilmem.CIVILMEM
+	!this.civilMem(!item,!civildata)
+ Called from line 118 of PML function civilmem.CIVILMEM
+	!this.civilmem(!item,!civilindex)
+ Called from line 1152 of PML function markcivil.GETDATAOFMEM
+		!civilMem = object civilmem(!mem,!civilindex,!this.form)
+ Called from line 1619 of PML function markcivil.DRAW
+		!this.getdataofmem()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+=17394/4520 failed to draw
+(46,58)   PML: Method PLANE could not be found
+ In line 1758 of PML function civilmem.CHECKIFOK
+			!plane = object plane(!this.civildata[!x],position,!this.civildata[!x].orientation)
+ Called from line 1746 of PML function civilmem.GETSHAPE
+	!this.checkifok()
+ Called from line 193 of PML function civilmem.CIVILMEM
+	!this.getShape()
+ Called from line 129 of PML function civilmem.CIVILMEM
+	!this.civilMem(!item,!civildata)
+ Called from line 118 of PML function civilmem.CIVILMEM
+	!this.civilmem(!item,!civilindex)
+ Called from line 1152 of PML function markcivil.GETDATAOFMEM
+		!civilMem = object civilmem(!mem,!civilindex,!this.form)
+ Called from line 1619 of PML function markcivil.DRAW
+		!this.getdataofmem()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+=17394/4515 failed to draw
+(46,58)   PML: Method PLANE could not be found
+ In line 1758 of PML function civilmem.CHECKIFOK
+			!plane = object plane(!this.civildata[!x],position,!this.civildata[!x].orientation)
+ Called from line 1746 of PML function civilmem.GETSHAPE
+	!this.checkifok()
+ Called from line 193 of PML function civilmem.CIVILMEM
+	!this.getShape()
+ Called from line 129 of PML function civilmem.CIVILMEM
+	!this.civilMem(!item,!civildata)
+ Called from line 118 of PML function civilmem.CIVILMEM
+	!this.civilmem(!item,!civilindex)
+ Called from line 1152 of PML function markcivil.GETDATAOFMEM
+		!civilMem = object civilmem(!mem,!civilindex,!this.form)
+ Called from line 1619 of PML function markcivil.DRAW
+		!this.getdataofmem()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+=17394/143 failed to draw
+(2,779)   Method <PROFILE>.DISTANCE(<POSITION>) not found
+ In line 1753 of PML function civilmem.CHECKIFOK
+			if !this.civildata[!x].distance(!this.cenpoints[!x]) gt 30 or !!posinprofile(!this.cenpoints[!x],!this.civildata[!x]).not() then
+ Called from line 1746 of PML function civilmem.GETSHAPE
+	!this.checkifok()
+ Called from line 193 of PML function civilmem.CIVILMEM
+	!this.getShape()
+ Called from line 129 of PML function civilmem.CIVILMEM
+	!this.civilMem(!item,!civildata)
+ Called from line 118 of PML function civilmem.CIVILMEM
+	!this.civilmem(!item,!civilindex)
+ Called from line 1152 of PML function markcivil.GETDATAOFMEM
+		!civilMem = object civilmem(!mem,!civilindex,!this.form)
+ Called from line 1619 of PML function markcivil.DRAW
+		!this.getdataofmem()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+=17394/130 failed to draw
+(2,779)   Method <PROFILE>.DISTANCE(<POSITION>) not found
+ In line 1753 of PML function civilmem.CHECKIFOK
+			if !this.civildata[!x].distance(!this.cenpoints[!x]) gt 30 or !!posinprofile(!this.cenpoints[!x],!this.civildata[!x]).not() then
+ Called from line 1746 of PML function civilmem.GETSHAPE
+	!this.checkifok()
+ Called from line 193 of PML function civilmem.CIVILMEM
+	!this.getShape()
+ Called from line 129 of PML function civilmem.CIVILMEM
+	!this.civilMem(!item,!civildata)
+ Called from line 118 of PML function civilmem.CIVILMEM
+	!this.civilmem(!item,!civilindex)
+ Called from line 1152 of PML function markcivil.GETDATAOFMEM
+		!civilMem = object civilmem(!mem,!civilindex,!this.form)
+ Called from line 1619 of PML function markcivil.DRAW
+		!this.getdataofmem()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:10:09 15 January 2024
+=17394/4526 failed to draw
+(2,779)   Method <CIVILMEM>.CHECKIFOK() not found
+ In line 1746 of PML function civilmem.GETSHAPE
+	!this.checkifok()
+ Called from line 193 of PML function civilmem.CIVILMEM
+	!this.getShape()
+ Called from line 129 of PML function civilmem.CIVILMEM
+	!this.civilMem(!item,!civildata)
+ Called from line 118 of PML function civilmem.CIVILMEM
+	!this.civilmem(!item,!civilindex)
+ Called from line 1152 of PML function markcivil.GETDATAOFMEM
+		!civilMem = object civilmem(!mem,!civilindex,!this.form)
+ Called from line 1619 of PML function markcivil.DRAW
+		!this.getdataofmem()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+=17394/4454 failed to draw
+(2,779)   Method <CIVILMEM>.CHECKIFOK() not found
+ In line 1746 of PML function civilmem.GETSHAPE
+	!this.checkifok()
+ Called from line 193 of PML function civilmem.CIVILMEM
+	!this.getShape()
+ Called from line 129 of PML function civilmem.CIVILMEM
+	!this.civilMem(!item,!civildata)
+ Called from line 118 of PML function civilmem.CIVILMEM
+	!this.civilmem(!item,!civilindex)
+ Called from line 1152 of PML function markcivil.GETDATAOFMEM
+		!civilMem = object civilmem(!mem,!civilindex,!this.form)
+ Called from line 1619 of PML function markcivil.DRAW
+		!this.getdataofmem()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+=17394/79 failed to draw
+(2,779)   Method <CIVILMEM>.CHECKIFOK() not found
+ In line 1746 of PML function civilmem.GETSHAPE
+	!this.checkifok()
+ Called from line 193 of PML function civilmem.CIVILMEM
+	!this.getShape()
+ Called from line 129 of PML function civilmem.CIVILMEM
+	!this.civilMem(!item,!civildata)
+ Called from line 118 of PML function civilmem.CIVILMEM
+	!this.civilmem(!item,!civilindex)
+ Called from line 1152 of PML function markcivil.GETDATAOFMEM
+		!civilMem = object civilmem(!mem,!civilindex,!this.form)
+ Called from line 1619 of PML function markcivil.DRAW
+		!this.getdataofmem()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+=17394/60423 failed to draw
+(2,779)   Method <CIVILMEM>.CHECKIFOK() not found
+ In line 1746 of PML function civilmem.GETSHAPE
+	!this.checkifok()
+ Called from line 193 of PML function civilmem.CIVILMEM
+	!this.getShape()
+ Called from line 129 of PML function civilmem.CIVILMEM
+	!this.civilMem(!item,!civildata)
+ Called from line 118 of PML function civilmem.CIVILMEM
+	!this.civilmem(!item,!civilindex)
+ Called from line 1152 of PML function markcivil.GETDATAOFMEM
+		!civilMem = object civilmem(!mem,!civilindex,!this.form)
+ Called from line 1619 of PML function markcivil.DRAW
+		!this.getdataofmem()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+=17394/4520 failed to draw
+(2,779)   Method <CIVILMEM>.CHECKIFOK() not found
+ In line 1746 of PML function civilmem.GETSHAPE
+	!this.checkifok()
+ Called from line 193 of PML function civilmem.CIVILMEM
+	!this.getShape()
+ Called from line 129 of PML function civilmem.CIVILMEM
+	!this.civilMem(!item,!civildata)
+ Called from line 118 of PML function civilmem.CIVILMEM
+	!this.civilmem(!item,!civilindex)
+ Called from line 1152 of PML function markcivil.GETDATAOFMEM
+		!civilMem = object civilmem(!mem,!civilindex,!this.form)
+ Called from line 1619 of PML function markcivil.DRAW
+		!this.getdataofmem()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+=17394/4515 failed to draw
+(2,779)   Method <CIVILMEM>.CHECKIFOK() not found
+ In line 1746 of PML function civilmem.GETSHAPE
+	!this.checkifok()
+ Called from line 193 of PML function civilmem.CIVILMEM
+	!this.getShape()
+ Called from line 129 of PML function civilmem.CIVILMEM
+	!this.civilMem(!item,!civildata)
+ Called from line 118 of PML function civilmem.CIVILMEM
+	!this.civilmem(!item,!civilindex)
+ Called from line 1152 of PML function markcivil.GETDATAOFMEM
+		!civilMem = object civilmem(!mem,!civilindex,!this.form)
+ Called from line 1619 of PML function markcivil.DRAW
+		!this.getdataofmem()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+=17394/143 failed to draw
+(2,779)   Method <CIVILMEM>.CHECKIFOK() not found
+ In line 1746 of PML function civilmem.GETSHAPE
+	!this.checkifok()
+ Called from line 193 of PML function civilmem.CIVILMEM
+	!this.getShape()
+ Called from line 129 of PML function civilmem.CIVILMEM
+	!this.civilMem(!item,!civildata)
+ Called from line 118 of PML function civilmem.CIVILMEM
+	!this.civilmem(!item,!civilindex)
+ Called from line 1152 of PML function markcivil.GETDATAOFMEM
+		!civilMem = object civilmem(!mem,!civilindex,!this.form)
+ Called from line 1619 of PML function markcivil.DRAW
+		!this.getdataofmem()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+=17394/130 failed to draw
+(2,779)   Method <CIVILMEM>.CHECKIFOK() not found
+ In line 1746 of PML function civilmem.GETSHAPE
+	!this.checkifok()
+ Called from line 193 of PML function civilmem.CIVILMEM
+	!this.getShape()
+ Called from line 129 of PML function civilmem.CIVILMEM
+	!this.civilMem(!item,!civildata)
+ Called from line 118 of PML function civilmem.CIVILMEM
+	!this.civilmem(!item,!civilindex)
+ Called from line 1152 of PML function markcivil.GETDATAOFMEM
+		!civilMem = object civilmem(!mem,!civilindex,!this.form)
+ Called from line 1619 of PML function markcivil.DRAW
+		!this.getdataofmem()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:09:24 15 January 2024
+=17394/4526 failed to draw
+(2,779)   Method <CIVILMEM>.CHECKIFOK() not found
+ In line 1746 of PML function civilmem.GETSHAPE
+	!this.checkifok()
+ Called from line 193 of PML function civilmem.CIVILMEM
+	!this.getShape()
+ Called from line 129 of PML function civilmem.CIVILMEM
+	!this.civilMem(!item,!civildata)
+ Called from line 118 of PML function civilmem.CIVILMEM
+	!this.civilmem(!item,!civilindex)
+ Called from line 1152 of PML function markcivil.GETDATAOFMEM
+		!civilMem = object civilmem(!mem,!civilindex,!this.form)
+ Called from line 1619 of PML function markcivil.DRAW
+		!this.getdataofmem()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+=17394/4454 failed to draw
+(2,779)   Method <CIVILMEM>.CHECKIFOK() not found
+ In line 1746 of PML function civilmem.GETSHAPE
+	!this.checkifok()
+ Called from line 193 of PML function civilmem.CIVILMEM
+	!this.getShape()
+ Called from line 129 of PML function civilmem.CIVILMEM
+	!this.civilMem(!item,!civildata)
+ Called from line 118 of PML function civilmem.CIVILMEM
+	!this.civilmem(!item,!civilindex)
+ Called from line 1152 of PML function markcivil.GETDATAOFMEM
+		!civilMem = object civilmem(!mem,!civilindex,!this.form)
+ Called from line 1619 of PML function markcivil.DRAW
+		!this.getdataofmem()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+=17394/79 failed to draw
+(2,779)   Method <CIVILMEM>.CHECKIFOK() not found
+ In line 1746 of PML function civilmem.GETSHAPE
+	!this.checkifok()
+ Called from line 193 of PML function civilmem.CIVILMEM
+	!this.getShape()
+ Called from line 129 of PML function civilmem.CIVILMEM
+	!this.civilMem(!item,!civildata)
+ Called from line 118 of PML function civilmem.CIVILMEM
+	!this.civilmem(!item,!civilindex)
+ Called from line 1152 of PML function markcivil.GETDATAOFMEM
+		!civilMem = object civilmem(!mem,!civilindex,!this.form)
+ Called from line 1619 of PML function markcivil.DRAW
+		!this.getdataofmem()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+=17394/60423 failed to draw
+(2,779)   Method <CIVILMEM>.CHECKIFOK() not found
+ In line 1746 of PML function civilmem.GETSHAPE
+	!this.checkifok()
+ Called from line 193 of PML function civilmem.CIVILMEM
+	!this.getShape()
+ Called from line 129 of PML function civilmem.CIVILMEM
+	!this.civilMem(!item,!civildata)
+ Called from line 118 of PML function civilmem.CIVILMEM
+	!this.civilmem(!item,!civilindex)
+ Called from line 1152 of PML function markcivil.GETDATAOFMEM
+		!civilMem = object civilmem(!mem,!civilindex,!this.form)
+ Called from line 1619 of PML function markcivil.DRAW
+		!this.getdataofmem()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+=17394/4520 failed to draw
+(2,779)   Method <CIVILMEM>.CHECKIFOK() not found
+ In line 1746 of PML function civilmem.GETSHAPE
+	!this.checkifok()
+ Called from line 193 of PML function civilmem.CIVILMEM
+	!this.getShape()
+ Called from line 129 of PML function civilmem.CIVILMEM
+	!this.civilMem(!item,!civildata)
+ Called from line 118 of PML function civilmem.CIVILMEM
+	!this.civilmem(!item,!civilindex)
+ Called from line 1152 of PML function markcivil.GETDATAOFMEM
+		!civilMem = object civilmem(!mem,!civilindex,!this.form)
+ Called from line 1619 of PML function markcivil.DRAW
+		!this.getdataofmem()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+=17394/4515 failed to draw
+(2,779)   Method <CIVILMEM>.CHECKIFOK() not found
+ In line 1746 of PML function civilmem.GETSHAPE
+	!this.checkifok()
+ Called from line 193 of PML function civilmem.CIVILMEM
+	!this.getShape()
+ Called from line 129 of PML function civilmem.CIVILMEM
+	!this.civilMem(!item,!civildata)
+ Called from line 118 of PML function civilmem.CIVILMEM
+	!this.civilmem(!item,!civilindex)
+ Called from line 1152 of PML function markcivil.GETDATAOFMEM
+		!civilMem = object civilmem(!mem,!civilindex,!this.form)
+ Called from line 1619 of PML function markcivil.DRAW
+		!this.getdataofmem()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+=17394/143 failed to draw
+(2,779)   Method <CIVILMEM>.CHECKIFOK() not found
+ In line 1746 of PML function civilmem.GETSHAPE
+	!this.checkifok()
+ Called from line 193 of PML function civilmem.CIVILMEM
+	!this.getShape()
+ Called from line 129 of PML function civilmem.CIVILMEM
+	!this.civilMem(!item,!civildata)
+ Called from line 118 of PML function civilmem.CIVILMEM
+	!this.civilmem(!item,!civilindex)
+ Called from line 1152 of PML function markcivil.GETDATAOFMEM
+		!civilMem = object civilmem(!mem,!civilindex,!this.form)
+ Called from line 1619 of PML function markcivil.DRAW
+		!this.getdataofmem()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+=17394/130 failed to draw
+(2,779)   Method <CIVILMEM>.CHECKIFOK() not found
+ In line 1746 of PML function civilmem.GETSHAPE
+	!this.checkifok()
+ Called from line 193 of PML function civilmem.CIVILMEM
+	!this.getShape()
+ Called from line 129 of PML function civilmem.CIVILMEM
+	!this.civilMem(!item,!civildata)
+ Called from line 118 of PML function civilmem.CIVILMEM
+	!this.civilmem(!item,!civilindex)
+ Called from line 1152 of PML function markcivil.GETDATAOFMEM
+		!civilMem = object civilmem(!mem,!civilindex,!this.form)
+ Called from line 1619 of PML function markcivil.DRAW
+		!this.getdataofmem()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+16:50:22 15 January 2024
+=17394/4454 failed to draw
+(2,114)   =0/0 has no attribute
+ In line 1398 of PML function civilmem.GETCATADATA
+		!ngms = name of ngmref of catref of $!item
+ Called from line 1723 of PML function civilmem.GETSHAPE
+		!this.getCataData(!this.name)
+ Called from line 193 of PML function civilmem.CIVILMEM
+	!this.getShape()
+ Called from line 129 of PML function civilmem.CIVILMEM
+	!this.civilMem(!item,!civildata)
+ Called from line 118 of PML function civilmem.CIVILMEM
+	!this.civilmem(!item,!civilindex)
+ Called from line 1154 of PML function markcivil.GETDATAOFMEM
+		!civilMem = object civilmem(!mem,!civilindex,!this.form)
+ Called from line 1621 of PML function markcivil.DRAW
+		!this.getdataofmem()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+16:41:39 15 January 2024
+=17394/64353 未得到markcivil
+(2,754)   Argument 1 to NINT is unset
+ In line 758 of PML function markcivil.GETDATAOFCIVIL
+	if abs(!this.thick - !this.thick.nint()) lt 0.1 then
+ Called from line 251 of PML function markcivil.GETATTS
+		!this.getdataofcivil()
+ Called from line 175 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 1069 of PML function markcivilform.ADDCE
+			!markcivil = object markcivil(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+
+16:41:07 15 January 2024
+=17394/64353 未得到markcivil
+(2,754)   Argument 1 to NINT is unset
+ In line 758 of PML function markcivil.GETDATAOFCIVIL
+	if abs(!this.thick - !this.thick.nint()) lt 0.1 then
+ Called from line 251 of PML function markcivil.GETATTS
+		!this.getdataofcivil()
+ Called from line 175 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 1069 of PML function markcivilform.ADDCE
+			!markcivil = object markcivil(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+
+16:40:16 15 January 2024
+=17394/64353 未得到markcivil
+(2,754)   Argument 1 to NINT is unset
+ In line 758 of PML function markcivil.GETDATAOFCIVIL
+	if abs(!this.thick - !this.thick.nint()) lt 0.1 then
+ Called from line 251 of PML function markcivil.GETATTS
+		!this.getdataofcivil()
+ Called from line 175 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 1069 of PML function markcivilform.ADDCE
+			!markcivil = object markcivil(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+
+16:39:32 15 January 2024
+=17394/64353 未得到markcivil
+(2,754)   Argument 1 to NINT is unset
+ In line 758 of PML function markcivil.GETDATAOFCIVIL
+	if abs(!this.thick - nint(!this.thick)) lt 0.1 then
+ Called from line 251 of PML function markcivil.GETATTS
+		!this.getdataofcivil()
+ Called from line 175 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 1069 of PML function markcivilform.ADDCE
+			!markcivil = object markcivil(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+
+16:17:29 15 January 2024
+=17394/64461 failed to draw
+(2,891)   An invalid zero direction has been obtained
+ In line 785 of PML function markcivil.GETDATAOFCIVIL
+			!zdir = !this.cenpoint.direction(!this.profiles[!x].plane().near(!this.cenpoint))
+ Called from line 251 of PML function markcivil.GETATTS
+		!this.getdataofcivil()
+ Called from line 175 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 138 of PML function markcivil.MARKCIVIL
+	!this.markcivil(!item)
+ Called from line 2706 of PML function markcivil.GETWALLSONFLOOR
+			!aaa = object markcivil(!walls[!x],true)
+ Called from line 1612 of PML function markcivil.DRAW
+		!wallindices = !this.getwallsonfloor()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+16:09:21 15 January 2024
+=17394/64461 failed to draw
+(2,891)   An invalid zero direction has been obtained
+ In line 785 of PML function markcivil.GETDATAOFCIVIL
+			!zdir = !this.cenpoint.direction(!this.profiles[!x].plane().near(!this.cenpoint))
+ Called from line 251 of PML function markcivil.GETATTS
+		!this.getdataofcivil()
+ Called from line 175 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 138 of PML function markcivil.MARKCIVIL
+	!this.markcivil(!item)
+ Called from line 2709 of PML function markcivil.GETWALLSONFLOOR
+			!aaa = object markcivil(!walls[!x],true)
+ Called from line 1615 of PML function markcivil.DRAW
+		!wallindices = !this.getwallsonfloor()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+15:56:23 15 January 2024
+=17394/79809 failed to draw
+(2,891)   An invalid zero direction has been obtained
+ In line 785 of PML function markcivil.GETDATAOFCIVIL
+			!zdir = !this.cenpoint.direction(!this.profiles[!x].plane().near(!this.cenpoint))
+ Called from line 251 of PML function markcivil.GETATTS
+		!this.getdataofcivil()
+ Called from line 175 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 138 of PML function markcivil.MARKCIVIL
+	!this.markcivil(!item)
+ Called from line 2709 of PML function markcivil.GETWALLSONFLOOR
+			!aaa = object markcivil(!walls[!x],true)
+ Called from line 1615 of PML function markcivil.DRAW
+		!wallindices = !this.getwallsonfloor()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+15:53:48 15 January 2024
+=17394/79809 failed to draw
+(2,891)   An invalid zero direction has been obtained
+ In line 785 of PML function markcivil.GETDATAOFCIVIL
+			!zdir = !this.cenpoint.direction(!this.profiles[!x].plane().near(!this.cenpoint))
+ Called from line 251 of PML function markcivil.GETATTS
+		!this.getdataofcivil()
+ Called from line 175 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 138 of PML function markcivil.MARKCIVIL
+	!this.markcivil(!item)
+ Called from line 2709 of PML function markcivil.GETWALLSONFLOOR
+			!aaa = object markcivil(!walls[!x],true)
+ Called from line 1615 of PML function markcivil.DRAW
+		!wallindices = !this.getwallsonfloor()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+=17394/64461 failed to draw
+(2,891)   An invalid zero direction has been obtained
+ In line 785 of PML function markcivil.GETDATAOFCIVIL
+			!zdir = !this.cenpoint.direction(!this.profiles[!x].plane().near(!this.cenpoint))
+ Called from line 251 of PML function markcivil.GETATTS
+		!this.getdataofcivil()
+ Called from line 175 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 138 of PML function markcivil.MARKCIVIL
+	!this.markcivil(!item)
+ Called from line 2709 of PML function markcivil.GETWALLSONFLOOR
+			!aaa = object markcivil(!walls[!x],true)
+ Called from line 1615 of PML function markcivil.DRAW
+		!wallindices = !this.getwallsonfloor()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+=17394/37 failed to draw
+(2,754)   Argument 1 to * is unset
+ In line 548 of PML function civilmem.GETMARKSTRING
+		!dia = !this.radiuss.last() * 2
+ Called from line 194 of PML function civilmem.CIVILMEM
+	!this.getmarkString()
+ Called from line 129 of PML function civilmem.CIVILMEM
+	!this.civilMem(!item,!civildata)
+ Called from line 118 of PML function civilmem.CIVILMEM
+	!this.civilmem(!item,!civilindex)
+ Called from line 1154 of PML function markcivil.GETDATAOFMEM
+		!civilMem = object civilmem(!mem,!civilindex,!this.form)
+ Called from line 1621 of PML function markcivil.DRAW
+		!this.getdataofmem()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+15:46:31 15 January 2024
+=17400/334 failed to draw
+(2,751)   Variable !ASD does not exist
+ In line 3295 of PML function markcivil.DRAWWALLANGLE
+
+ Called from line 3231 of PML function markcivil.DRAWINTERLINEARCS
+		!this.drawWallAngle(!dimgro,!twoedges, !alledgepoints, !alledgepointsymbles)
+ Called from line 3219 of PML function markcivil.DRAWOTHERWALLS
+	!this.drawinterlinearcs(!dimgro,!twoedges,!alledgepoints,!alledgepointsymbles)
+ Called from line 2757 of PML function markcivil.GETWALLSONFLOOR
+		!this.form.civildatas[!index].drawotherwalls()
+ Called from line 1615 of PML function markcivil.DRAW
+		!wallindices = !this.getwallsonfloor()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+15:40:26 15 January 2024
+=17400/334 failed to draw
+(2,891)   An invalid zero direction has been obtained
+ In line 3291 of PML function markcivil.DRAWWALLANGLE
+		!tempdir = !twoedges[2].near(!twoedges[1].startposition).direction(!twoedges[1].startposition)
+ Called from line 3231 of PML function markcivil.DRAWINTERLINEARCS
+		!this.drawWallAngle(!dimgro,!twoedges, !alledgepoints, !alledgepointsymbles)
+ Called from line 3219 of PML function markcivil.DRAWOTHERWALLS
+	!this.drawinterlinearcs(!dimgro,!twoedges,!alledgepoints,!alledgepointsymbles)
+ Called from line 2757 of PML function markcivil.GETWALLSONFLOOR
+		!this.form.civildatas[!index].drawotherwalls()
+ Called from line 1615 of PML function markcivil.DRAW
+		!wallindices = !this.getwallsonfloor()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:41:52 12 January 2024
+=17415/4052 failed to draw
+(2,761)   Cannot assign variable to result - incompatible types (ARRAY=PROFILE)
+ In line 2099 of PML function markcivil.DIMONEARCHMEM
+			!profiles = !profiles[!x]
+ Called from line 1425 of PML function markcivil.DRAWARCH
+				!cheightbili = !this.dimOnearchMem(!mem)
+ Called from line 1190 of PML function markarchform.DRAWALL
+		!this.civildatas[!x].drawarch()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+16:22:53 12 January 2024
+=17415/4052 failed to draw
+(46,73)   PML: Variable value not set
+ In line 5258 of PML function markcivil.MARKONEMEM
+		if !this.openingpos then
+ Called from line 1427 of PML function markcivil.DRAWARCH
+				!this.markonemem(!owner,!mem,!cheightbili)
+ Called from line 1190 of PML function markarchform.DRAWALL
+		!this.civildatas[!x].drawarch()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+16:22:34 12 January 2024
+=17415/4052 failed to draw
+(2,751)   Variable !CONPOINT does not exist
+ In line 1766 of PML function markcivil.DRAWARCHROOM
+			!this.drawarchel(!conpoint,!ori,!down,!up)
+ Called from line 1412 of PML function markcivil.DRAWARCH
+		!this.drawarchroom()
+ Called from line 1190 of PML function markarchform.DRAWALL
+		!this.civildatas[!x].drawarch()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+16:05:56 12 January 2024
+=17415/4052 failed to draw
+(2,759)   Object does not have a member DRAW
+ In line 1766 of PML function markcivil.DRAWARCHROOM
+			!this.draw
+ Called from line 1412 of PML function markcivil.DRAWARCH
+		!this.drawarchroom()
+ Called from line 1190 of PML function markarchform.DRAWALL
+		!this.civildatas[!x].drawarch()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+16:04:32 12 January 2024
+=17415/4052 failed to draw
+(2,109)   Undefined name /_17415_4052-DIM
+ In line 1581 of PML function markcivil.DRAWARCHNAME
+		$!dimgro
+ Called from line 1474 of PML function markcivil.DRAWARCHWALLS
+					!aaa.drawarchname(!this.mbdstru.dimgro)
+ Called from line 1407 of PML function markcivil.DRAWARCH
+		!this.drawarchwalls()
+ Called from line 1190 of PML function markarchform.DRAWALL
+		!this.civildatas[!x].drawarch()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+16:03:16 12 January 2024
+=17415/4052 failed to draw
+(2,752)   Array element 5 does not exist
+ In line 2887 of PML function markcivil.ADDOTHERWALL
+	if !this.form.civildatas[!civilindex].otherwallindices.findfirst(!currentindex).unset() then
+ Called from line 2879 of PML function markcivil.ADDOTHERWALLS
+			!this.addotherwall(!index)
+ Called from line 2644 of PML function markcivil.GETWALLSONFLOOR
+		!this.form.civildatas[!index].addotherwalls(!onwallindices)
+ Called from line 1603 of PML function markcivil.DRAW
+		!wallindices = !this.getwallsonfloor()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+16:02:50 12 January 2024
+=17415/4052 failed to draw
+(2,109)   Undefined name /_17415_4052-DIM
+ In line 1581 of PML function markcivil.DRAWARCHNAME
+		$!dimgro
+ Called from line 1474 of PML function markcivil.DRAWARCHWALLS
+					!aaa.drawarchname(!this.mbdstru.dimgro)
+ Called from line 1407 of PML function markcivil.DRAWARCH
+		!this.drawarchwalls()
+ Called from line 1190 of PML function markarchform.DRAWALL
+		!this.civildatas[!x].drawarch()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+16:00:34 12 January 2024
+=17415/4052 failed to draw
+(2,751)   Variable !!MARKCIVILFORM does not exist
+ In line 191 of PML function markcivil.SETFORM
+			!this.form = !!markcivilform
+ Called from line 173 of PML function markcivil.MARKCIVIL
+		!this.setform(!item)
+ Called from line 138 of PML function markcivil.MARKCIVIL
+	!this.markcivil(!item)
+ Called from line 1443 of PML function markcivil.DRAWARCHWALLS
+		!aaa = object markcivil(!walls[!x],true)
+ Called from line 1401 of PML function markcivil.DRAWARCH
+		!this.drawarchwalls()
+ Called from line 1190 of PML function markarchform.DRAWALL
+		!this.civildatas[!x].drawarch()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+14:11:33 12 January 2024
+=17415/4052 failed to draw
+(2,869)   Error in conversion to world co-ordinates. Check for unset objects
+ In line 1841 of PML function markcivil.DIMONEMEMXYDIS
+			!xstartpos = !goodxinterpoint.offset(!xdir, - !xlen)
+ Called from line 1391 of PML function markcivil.DRAWARCH
+				!this.dimonememxydis(!owner,!mem,!cheightbili)
+ Called from line 1218 of PML function markarchform.DRAWALL
+		!this.civildatas[!x].drawarch()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+14:07:03 12 January 2024
+=17415/4052 failed to draw
+(2,869)   Error in conversion to world co-ordinates. Check for unset objects
+ In line 1836 of PML function markcivil.DIMONEMEMXYDIS
+			!xstartpos = !goodxinterpoint.offset(!xdir, - !xlen)
+ Called from line 1391 of PML function markcivil.DRAWARCH
+				!this.dimonememxydis(!owner,!mem,!cheightbili)
+ Called from line 1218 of PML function markarchform.DRAWALL
+		!this.civildatas[!x].drawarch()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+14:04:31 12 January 2024
+=17415/4052 failed to draw
+(2,779)   Method <MARKCIVIL>.DIMONEMEM(<CIVILMEM>) not found
+ In line 1390 of PML function markcivil.DRAWARCH
+				!cheightbili = !this.dimOneMem(!mem)
+ Called from line 1218 of PML function markarchform.DRAWALL
+		!this.civildatas[!x].drawarch()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+11:29:26 12 January 2024
+=17415/4052 failed to draw
+(2,751)   Variable !ELTHICKCHEIGHT does not exist
+ In line 1470 of PML function markcivil.DRAWARCHNAME
+			!needLen = !textLen + !!mbdtextlen(!this.thick.value().string('d0')) * !elthickcheight * 1.5 + !!mbdtextlen(!this.strongclass) * !elthickcheight
+ Called from line 1443 of PML function markcivil.DRAWARCHWALLS
+					!aaa.drawarchname(!this.mbdstru.dimgro)
+ Called from line 1376 of PML function markcivil.DRAWARCH
+		!this.drawarchwalls()
+ Called from line 1218 of PML function markarchform.DRAWALL
+		!this.civildatas[!x].drawarch()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+09:51:13 12 January 2024
+=17415/4052 failed to draw
+(47,15)   CP: Syntax error
+ In line 2711 of PML function markcivil.DRAWOTHERWALLS
+		if !this.form.civildatas[^^].mbdstru.todim().not() then
+ Called from line 2382 of PML function markcivil.GETWALLSONFLOOR
+		!this.form.civildatas[!index].drawotherwalls()
+ Called from line 1376 of PML function markcivil.DRAW
+		!wallindices = !this.getwallsonfloor()
+ Called from line 1218 of PML function markarchform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+09:48:30 12 January 2024
+=17415/4052 failed to draw
+(47,15)   CP: Syntax error
+ In line 2711 of PML function markcivil.DRAWOTHERWALLS
+		if !this.form.civildatas[^^].mbdstru.todim().not() then
+ Called from line 2382 of PML function markcivil.GETWALLSONFLOOR
+		!this.form.civildatas[!index].drawotherwalls()
+ Called from line 1376 of PML function markcivil.DRAW
+		!wallindices = !this.getwallsonfloor()
+ Called from line 1218 of PML function markarchform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+09:47:25 12 January 2024
+=17415/4052 failed to draw
+(47,15)   CP: Syntax error
+ In line 2711 of PML function markcivil.DRAWOTHERWALLS
+		if !this.form.civildatas[^^].mbdstru.todim().not() then
+ Called from line 2382 of PML function markcivil.GETWALLSONFLOOR
+		!this.form.civildatas[!index].drawotherwalls()
+ Called from line 1376 of PML function markcivil.DRAW
+		!wallindices = !this.getwallsonfloor()
+ Called from line 1218 of PML function markarchform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+09:45:17 12 January 2024
+=17415/4052 failed to draw
+(47,15)   CP: Syntax error
+ In line 2710 of PML function markcivil.DRAWOTHERWALLS
+		if !this.form.civildatas[^^].mbdstru.todim().not() then
+ Called from line 2382 of PML function markcivil.GETWALLSONFLOOR
+		!this.form.civildatas[!index].drawotherwalls()
+ Called from line 1376 of PML function markcivil.DRAW
+		!wallindices = !this.getwallsonfloor()
+ Called from line 1218 of PML function markarchform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+09:35:42 12 January 2024
+=17415/4052 failed to draw
+(47,15)   CP: Syntax error
+ In line 2710 of PML function markcivil.DRAWOTHERWALLS
+		if !this.form.civildatas[^^].mbdstru.todim().not() then
+ Called from line 2382 of PML function markcivil.GETWALLSONFLOOR
+		!this.form.civildatas[!index].drawotherwalls()
+ Called from line 1376 of PML function markcivil.DRAW
+		!wallindices = !this.getwallsonfloor()
+ Called from line 1232 of PML function markarchform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+09:20:23 12 January 2024
+=17398/2911 failed to draw
+(2,779)   Method <MARKCIVIL>.DIMONEMEM(<CIVILMEM>) not found
+ In line 1391 of PML function markcivil.DRAW
+				!cheightbili = !this.dimOneMem(!mem)
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+18:50:50 11 January 2024
+=17394/1128 failed to draw
+(2,752)   Array element 1 does not exist
+ In line 1611 of PML function markcivil.DIMONEMEMXYDIS
+				!goodxinterpoint = !cenpoint.offset(!xdir, - !mem.radiuss[!x])
+ Called from line 1381 of PML function markcivil.DRAW
+				!this.dimonememxydis(!owner,!mem,!cheightbili)
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+18:49:47 11 January 2024
+=17394/1128 failed to draw
+(2,752)   Array element 1 does not exist
+ In line 1610 of PML function markcivil.DIMONEMEMXYDIS
+				!goodxinterpoint = !cenpoint.offset(!xdir, - !mem.radiuss[!x])
+ Called from line 1381 of PML function markcivil.DRAW
+				!this.dimonememxydis(!owner,!mem,!cheightbili)
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:47:25 11 January 2024
+=17394/1128 failed to draw
+(2,759)   Object does not have a member DIRECTION
+ In line 4581 of PML function markcivil.MARKWALLEL
+			if !line.direction.angle(!ori.xdir()) lt 90 then
+ Called from line 1354 of PML function markcivil.DRAW
+	!this.markwallEl()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:08:10 11 January 2024
+=17394/1128 未得到markcivil
+(2,751)   Variable !XDISS does not exist
+ In line 1010 of PML function markcivil.GETORIGINPOINT
+		!indices = !xdiss.sortedindices()
+ Called from line 945 of PML function markcivil.GETORIGINALPOINTORI
+		!this.getoriginpoint()
+ Called from line 855 of PML function markcivil.GETDATAOFCIVIL
+	!this.getoriginalpointori()
+ Called from line 232 of PML function markcivil.GETATTS
+		!this.getdataofcivil()
+ Called from line 172 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 1069 of PML function markcivilform.ADDCE
+			!markcivil = object markcivil(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+
+16:08:17 11 January 2024
+=17394/359 failed to draw
+(2,752)   Array element 2 does not exist
+ In line 1599 of PML function markcivil.DIMONEMEMXYDIS
+				!goodxinterpoint = !cenpoint.offset(!xdir, - !mem.radiuss[!x])
+ Called from line 1370 of PML function markcivil.DRAW
+				!this.dimonememxydis(!owner,!mem,!cheightbili)
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+15:53:11 11 January 2024
+=17394/4618 未得到markcivil
+(2,752)   Array element 2 does not exist
+ In line 1013 of PML function markcivil.GETORIGINPOINT
+			if abs(!xdiss[!x] - !xdiss[!x + 1]) gt 1 then
+ Called from line 945 of PML function markcivil.GETORIGINALPOINTORI
+		!this.getoriginpoint()
+ Called from line 855 of PML function markcivil.GETDATAOFCIVIL
+	!this.getoriginalpointori()
+ Called from line 232 of PML function markcivil.GETATTS
+		!this.getdataofcivil()
+ Called from line 172 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 1069 of PML function markcivilform.ADDCE
+			!markcivil = object markcivil(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+
+15:20:21 11 January 2024
+=17394/4454 failed to draw
+(2,114)   =0/0 has no attribute
+ In line 1347 of PML function civilmem.GETCATADATA
+		!ngms = name of ngmref of catref of $!item
+ Called from line 1657 of PML function civilmem.GETSHAPE
+		!this.getCataData(!this.name)
+ Called from line 171 of PML function civilmem.CIVILMEM
+	!this.getShape()
+ Called from line 123 of PML function civilmem.CIVILMEM
+	!this.civilMem(!item,!civildata)
+ Called from line 1125 of PML function markcivil.GETDATAOFMEM
+		!civilMem = object civilmem(!mem,!civilindex)
+ Called from line 1360 of PML function markcivil.DRAW
+		!this.getdataofmem()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+=17394/60423 failed to draw
+(2,752)   Array element 5 does not exist
+ In line 681 of PML function civilmem.GETBOXTWELVELINESWITHPOSS
+			!lines.append(!poss[!x].line(!poss[!x + 1]))
+ Called from line 1891 of PML function civilmem.GETAKPANEDATA
+	!lines = !this.getBoxTwelveLinesWithPoss(!poss)
+ Called from line 1664 of PML function civilmem.GETSHAPE
+			!this.getAKPaneData(!this.name)
+ Called from line 171 of PML function civilmem.CIVILMEM
+	!this.getShape()
+ Called from line 123 of PML function civilmem.CIVILMEM
+	!this.civilMem(!item,!civildata)
+ Called from line 1125 of PML function markcivil.GETDATAOFMEM
+		!civilMem = object civilmem(!mem,!civilindex)
+ Called from line 1360 of PML function markcivil.DRAW
+		!this.getdataofmem()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+=17394/4520 failed to draw
+(2,752)   Array element 5 does not exist
+ In line 681 of PML function civilmem.GETBOXTWELVELINESWITHPOSS
+			!lines.append(!poss[!x].line(!poss[!x + 1]))
+ Called from line 1891 of PML function civilmem.GETAKPANEDATA
+	!lines = !this.getBoxTwelveLinesWithPoss(!poss)
+ Called from line 1664 of PML function civilmem.GETSHAPE
+			!this.getAKPaneData(!this.name)
+ Called from line 171 of PML function civilmem.CIVILMEM
+	!this.getShape()
+ Called from line 123 of PML function civilmem.CIVILMEM
+	!this.civilMem(!item,!civildata)
+ Called from line 1125 of PML function markcivil.GETDATAOFMEM
+		!civilMem = object civilmem(!mem,!civilindex)
+ Called from line 1360 of PML function markcivil.DRAW
+		!this.getdataofmem()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+=17394/4515 failed to draw
+(2,752)   Array element 5 does not exist
+ In line 681 of PML function civilmem.GETBOXTWELVELINESWITHPOSS
+			!lines.append(!poss[!x].line(!poss[!x + 1]))
+ Called from line 1891 of PML function civilmem.GETAKPANEDATA
+	!lines = !this.getBoxTwelveLinesWithPoss(!poss)
+ Called from line 1664 of PML function civilmem.GETSHAPE
+			!this.getAKPaneData(!this.name)
+ Called from line 171 of PML function civilmem.CIVILMEM
+	!this.getShape()
+ Called from line 123 of PML function civilmem.CIVILMEM
+	!this.civilMem(!item,!civildata)
+ Called from line 1125 of PML function markcivil.GETDATAOFMEM
+		!civilMem = object civilmem(!mem,!civilindex)
+ Called from line 1360 of PML function markcivil.DRAW
+		!this.getdataofmem()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+=17394/143 failed to draw
+(2,752)   Array element 5 does not exist
+ In line 681 of PML function civilmem.GETBOXTWELVELINESWITHPOSS
+			!lines.append(!poss[!x].line(!poss[!x + 1]))
+ Called from line 1891 of PML function civilmem.GETAKPANEDATA
+	!lines = !this.getBoxTwelveLinesWithPoss(!poss)
+ Called from line 1664 of PML function civilmem.GETSHAPE
+			!this.getAKPaneData(!this.name)
+ Called from line 171 of PML function civilmem.CIVILMEM
+	!this.getShape()
+ Called from line 123 of PML function civilmem.CIVILMEM
+	!this.civilMem(!item,!civildata)
+ Called from line 1125 of PML function markcivil.GETDATAOFMEM
+		!civilMem = object civilmem(!mem,!civilindex)
+ Called from line 1360 of PML function markcivil.DRAW
+		!this.getdataofmem()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+=17394/130 failed to draw
+(2,752)   Array element 5 does not exist
+ In line 681 of PML function civilmem.GETBOXTWELVELINESWITHPOSS
+			!lines.append(!poss[!x].line(!poss[!x + 1]))
+ Called from line 1891 of PML function civilmem.GETAKPANEDATA
+	!lines = !this.getBoxTwelveLinesWithPoss(!poss)
+ Called from line 1664 of PML function civilmem.GETSHAPE
+			!this.getAKPaneData(!this.name)
+ Called from line 171 of PML function civilmem.CIVILMEM
+	!this.getShape()
+ Called from line 123 of PML function civilmem.CIVILMEM
+	!this.civilMem(!item,!civildata)
+ Called from line 1125 of PML function markcivil.GETDATAOFMEM
+		!civilMem = object civilmem(!mem,!civilindex)
+ Called from line 1360 of PML function markcivil.DRAW
+		!this.getdataofmem()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+15:16:43 11 January 2024
+=17394/84313 未得到markcivil
+(2,752)   Array element 2 does not exist
+ In line 1013 of PML function markcivil.GETORIGINPOINT
+			if abs(!xdiss[!x] - !xdiss[!x + 1]) gt 1 then
+ Called from line 945 of PML function markcivil.GETORIGINALPOINTORI
+		!this.getoriginpoint()
+ Called from line 855 of PML function markcivil.GETDATAOFCIVIL
+	!this.getoriginalpointori()
+ Called from line 232 of PML function markcivil.GETATTS
+		!this.getdataofcivil()
+ Called from line 172 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 1069 of PML function markcivilform.ADDCE
+			!markcivil = object markcivil(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+=17394/64513 未得到markcivil
+(2,752)   Array element 2 does not exist
+ In line 1013 of PML function markcivil.GETORIGINPOINT
+			if abs(!xdiss[!x] - !xdiss[!x + 1]) gt 1 then
+ Called from line 945 of PML function markcivil.GETORIGINALPOINTORI
+		!this.getoriginpoint()
+ Called from line 855 of PML function markcivil.GETDATAOFCIVIL
+	!this.getoriginalpointori()
+ Called from line 232 of PML function markcivil.GETATTS
+		!this.getdataofcivil()
+ Called from line 172 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 1069 of PML function markcivilform.ADDCE
+			!markcivil = object markcivil(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+=17394/37 未得到markcivil
+(2,752)   Array element 2 does not exist
+ In line 1013 of PML function markcivil.GETORIGINPOINT
+			if abs(!xdiss[!x] - !xdiss[!x + 1]) gt 1 then
+ Called from line 945 of PML function markcivil.GETORIGINALPOINTORI
+		!this.getoriginpoint()
+ Called from line 855 of PML function markcivil.GETDATAOFCIVIL
+	!this.getoriginalpointori()
+ Called from line 232 of PML function markcivil.GETATTS
+		!this.getdataofcivil()
+ Called from line 172 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 1069 of PML function markcivilform.ADDCE
+			!markcivil = object markcivil(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+
+15:12:22 11 January 2024
+=17400/47793 未得到markcivil
+(2,752)   Array element 30 does not exist
+ In line 1013 of PML function markcivil.GETORIGINPOINT
+			if abs(!xdiss[!x] - !xdiss[!x + 1]) gt 1 then
+ Called from line 945 of PML function markcivil.GETORIGINALPOINTORI
+		!this.getoriginpoint()
+ Called from line 855 of PML function markcivil.GETDATAOFCIVIL
+	!this.getoriginalpointori()
+ Called from line 232 of PML function markcivil.GETATTS
+		!this.getdataofcivil()
+ Called from line 172 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 1069 of PML function markcivilform.ADDCE
+			!markcivil = object markcivil(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+=17400/21578 未得到markcivil
+(2,752)   Array element 37 does not exist
+ In line 1013 of PML function markcivil.GETORIGINPOINT
+			if abs(!xdiss[!x] - !xdiss[!x + 1]) gt 1 then
+ Called from line 945 of PML function markcivil.GETORIGINALPOINTORI
+		!this.getoriginpoint()
+ Called from line 855 of PML function markcivil.GETDATAOFCIVIL
+	!this.getoriginalpointori()
+ Called from line 232 of PML function markcivil.GETATTS
+		!this.getdataofcivil()
+ Called from line 172 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 1069 of PML function markcivilform.ADDCE
+			!markcivil = object markcivil(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+
+14:54:21 11 January 2024
+=17398/3053 failed to draw
+(2,759)   Object does not have a member ENDTANGLE
+ In line 3601 of PML function markcivil.DRAWEDGES
+			!lines.append(!civildata.arcs[1].angleposition(!civildata.arcs[1].endtangle).line(!civildata.arcs[2].angleposition(!civildata.arcs[2].endangle)))
+ Called from line 1355 of PML function markcivil.DRAW
+		!this.drawedges(!wallindices)
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+14:44:22 11 January 2024
+=17397/35835 failed to draw
+(2,109)   Undefined name /_17397_35835-AID
+ In line 67 of PML function mbdaidline.MBDAIDLINE
+	!this.owner = name of $!owner
+ Called from line 62 of PML function mbdaidline.MBDAIDLINE
+		return !this.mbdaidline(!owner, !aidlinepos, !ori, !zlen, !function, !desc)
+ Called from line 889 of PML function markcivil.DRAWONEORIGIN
+		!aidline = object mbdaidline(!this.mbdstru.aidgro,!dp1,!dp2,'局部坐标',!nodename)
+ Called from line 863 of PML function markcivil.DRAWORIGIN
+		!this.drawoneorigin(!point,!ori)
+ Called from line 1348 of PML function markcivil.DRAW
+	!this.draworigin()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+=17397/35826 failed to draw
+(2,109)   Undefined name /_17397_35826-AID
+ In line 67 of PML function mbdaidline.MBDAIDLINE
+	!this.owner = name of $!owner
+ Called from line 62 of PML function mbdaidline.MBDAIDLINE
+		return !this.mbdaidline(!owner, !aidlinepos, !ori, !zlen, !function, !desc)
+ Called from line 889 of PML function markcivil.DRAWONEORIGIN
+		!aidline = object mbdaidline(!this.mbdstru.aidgro,!dp1,!dp2,'局部坐标',!nodename)
+ Called from line 863 of PML function markcivil.DRAWORIGIN
+		!this.drawoneorigin(!point,!ori)
+ Called from line 1348 of PML function markcivil.DRAW
+	!this.draworigin()
+ Called from line 1308 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+10:53:24 11 January 2024
+=17398/3032 failed to draw
+(2,752)   Array element 1 does not exist
+ In line 3835 of PML function markcivil.CUTLINE
+						!newconangles[!newonelines.size()] = !conangles[!x]
+ Called from line 3592 of PML function markcivil.DRAWEDGES
+		!this.cutline(!line,!alllines,!alllinedirs,!alllineconangles,!tolerance)
+ Called from line 1355 of PML function markcivil.DRAW
+		!this.drawedges(!wallindices)
+ Called from line 1291 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+10:51:08 11 January 2024
+=17398/3032 failed to draw
+(2,752)   Array element 1 does not exist
+ In line 3834 of PML function markcivil.CUTLINE
+						!newconangles[!newonelines.size()] = !conangles[!x]
+ Called from line 3592 of PML function markcivil.DRAWEDGES
+		!this.cutline(!line,!alllines,!alllinedirs,!alllineconangles,!tolerance)
+ Called from line 1355 of PML function markcivil.DRAW
+		!this.drawedges(!wallindices)
+ Called from line 1291 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+10:50:08 11 January 2024
+=17398/3032 failed to draw
+(2,752)   Array element 1 does not exist
+ In line 3834 of PML function markcivil.CUTLINE
+						!newconangles[!newonelines.size()] = !conangles[!x]
+ Called from line 3592 of PML function markcivil.DRAWEDGES
+		!this.cutline(!line,!alllines,!alllinedirs,!alllineconangles,!tolerance)
+ Called from line 1355 of PML function markcivil.DRAW
+		!this.drawedges(!wallindices)
+ Called from line 1291 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+10:49:07 11 January 2024
+=17398/3032 failed to draw
+(2,752)   Array element 1 does not exist
+ In line 3837 of PML function markcivil.CUTLINE
+						!newconangles[!newonelines.size()] = !conangles[!x]
+ Called from line 3596 of PML function markcivil.DRAWEDGES
+		!this.cutline(!line,!alllines,!alllinedirs,!alllineconangles,!tolerance)
+ Called from line 1355 of PML function markcivil.DRAW
+		!this.drawedges(!wallindices)
+ Called from line 1291 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+10:45:10 11 January 2024
+=17398/3032 failed to draw
+(2,752)   Array element 1 does not exist
+ In line 3834 of PML function markcivil.CUTLINE
+						!newconangles[!newonelines.size()] = !conangles[!x]
+ Called from line 3593 of PML function markcivil.DRAWEDGES
+		!this.cutline(!line,!alllines,!alllinedirs,!alllineconangles,!tolerance)
+ Called from line 1355 of PML function markcivil.DRAW
+		!this.drawedges(!wallindices)
+ Called from line 1291 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+19:46:58 10 January 2024
+=17398/3032 failed to draw
+(2,751)   Variable !MIDPOINT does not exist
+ In line 3697 of PML function markcivil.DRAWEDGEARCS
+		!trypos = !midpoint.offset(!odir,1)
+ Called from line 3604 of PML function markcivil.DRAWEDGES
+	!this.drawedgearcs(!arcs)
+ Called from line 1355 of PML function markcivil.DRAW
+		!this.drawedges(!wallindices)
+ Called from line 1291 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+19:45:51 10 January 2024
+=17398/3032 failed to draw
+(2,751)   Variable !ARC1 does not exist
+ In line 3691 of PML function markcivil.DRAWEDGEARCS
+	!anglearc = object arc(!arc1.position,!ori,0,360,1000,true)
+ Called from line 3604 of PML function markcivil.DRAWEDGES
+	!this.drawedgearcs(!arcs)
+ Called from line 1355 of PML function markcivil.DRAW
+		!this.drawedges(!wallindices)
+ Called from line 1291 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+19:43:54 10 January 2024
+=17398/3032 failed to draw
+(2,754)   Argument 2 to + or & is unset
+ In line 2964 of PML function markcivil.DRAWANGLE
+	!desc = 'node:' + !this.currentfloorname + ' ' + !this.civilname
+ Called from line 3678 of PML function markcivil.DRAWEDGELINEANGLE
+	!this.drawangle(!nearpoint,!dir,!edgedir2)
+ Called from line 3635 of PML function markcivil.DRAWEDGELINES
+		!this.drawedgelineangle(!line,!ydir)
+ Called from line 3598 of PML function markcivil.DRAWEDGES
+	!this.drawedgelines(!lines)
+ Called from line 1355 of PML function markcivil.DRAW
+		!this.drawedges(!wallindices)
+ Called from line 1291 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+19:43:20 10 January 2024
+=17398/3032 failed to draw
+(2,759)   Object does not have a member ENDTPOSITION
+ In line 3824 of PML function markcivil.CUTONELINE
+		!diss.append(!!suidirdis(!pos,!dir,!line.endtposition))
+ Called from line 3799 of PML function markcivil.CUTLINE
+			!cutlines = !this.cutoneline(!line,!oneline,!tolerance)
+ Called from line 3580 of PML function markcivil.DRAWEDGES
+		!this.cutline(!line,!alllines,!alllinedirs,!tolerance)
+ Called from line 1355 of PML function markcivil.DRAW
+		!this.drawedges(!wallindices)
+ Called from line 1291 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+19:42:50 10 January 2024
+=17398/3032 failed to draw
+(2,752)   Array element 2 does not exist
+ In line 3569 of PML function markcivil.DRAWEDGES
+			!lines.append(!civildata.lines[1].startposition.line(!civildata.arcs[2].startposition))
+ Called from line 1355 of PML function markcivil.DRAW
+		!this.drawedges(!wallindices)
+ Called from line 1291 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+19:38:02 10 January 2024
+=17398/3032 failed to draw
+(2,752)   Array element 0.1 does not exist
+ In line 3532 of PML function markcivil.DRAWEDGES
+				!alllines[!goodx].append(!edge)
+ Called from line 1355 of PML function markcivil.DRAW
+		!this.drawedges(!wallindices)
+ Called from line 1291 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+19:37:06 10 January 2024
+=17398/3032 failed to draw
+(2,752)   Array element 0.1 does not exist
+ In line 3530 of PML function markcivil.DRAWEDGES
+				!alllines[!goodx].append(!edge)
+ Called from line 1355 of PML function markcivil.DRAW
+		!this.drawedges(!wallindices)
+ Called from line 1291 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+19:36:33 10 January 2024
+=17398/3032 failed to draw
+(2,752)   Array element 0.1 does not exist
+ In line 3530 of PML function markcivil.DRAWEDGES
+				!alllines[!goodx].append(!edge)
+ Called from line 1355 of PML function markcivil.DRAW
+		!this.drawedges(!wallindices)
+ Called from line 1291 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+19:34:26 10 January 2024
+=17398/3032 failed to draw
+(2,752)   Array element 0.1 does not exist
+ In line 3529 of PML function markcivil.DRAWEDGES
+				!alllines[!goodx].append(!edge)
+ Called from line 1355 of PML function markcivil.DRAW
+		!this.drawedges(!wallindices)
+ Called from line 1291 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+19:33:27 10 January 2024
+=17398/3032 failed to draw
+(2,752)   Array element 0.1 does not exist
+ In line 3529 of PML function markcivil.DRAWEDGES
+				!alllines[!goodx].append(!edge)
+ Called from line 1355 of PML function markcivil.DRAW
+		!this.drawedges(!wallindices)
+ Called from line 1291 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+19:32:47 10 January 2024
+=17398/3032 failed to draw
+(2,752)   Array element 0.1 does not exist
+ In line 3527 of PML function markcivil.DRAWEDGES
+				!alllines[!goodx].append(!edge)
+ Called from line 1355 of PML function markcivil.DRAW
+		!this.drawedges(!wallindices)
+ Called from line 1291 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+19:32:01 10 January 2024
+=17398/3032 failed to draw
+(2,752)   Array element 0.1 does not exist
+ In line 3527 of PML function markcivil.DRAWEDGES
+				!alllines[!goodx].append(!edge)
+ Called from line 1355 of PML function markcivil.DRAW
+		!this.drawedges(!wallindices)
+ Called from line 1291 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+19:30:52 10 January 2024
+=17398/3032 failed to draw
+(2,779)   Method <ARRAY>.EDGES() not found
+ In line 3512 of PML function markcivil.DRAWEDGES
+	!edges = !this.profiles.edges()
+ Called from line 1355 of PML function markcivil.DRAW
+		!this.drawedges(!wallindices)
+ Called from line 1291 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+19:27:25 10 January 2024
+=17398/3032 failed to draw
+(2,759)   Object does not have a member CHEIGHT
+ In line 3008 of PML function markcivil.GETGOODORI
+		!textpos = !textpos.offset(!orixdir,!textlen).offset(!ori.ydir(),!this.cheight)
+ Called from line 2993 of PML function markcivil.DRAWANGLE
+	!temparr = !this.getgoodori(!ori,!textpos,!textlen)
+ Called from line 2928 of PML function markcivil.DRAWWALLANGLE
+		!this.drawangle(!nearpoint,!edgedir1,!edgedir2)
+ Called from line 2810 of PML function markcivil.DRAWINTERLINEARCS
+		!this.drawWallAngle(!dimgro,!twoedges, !alledgepoints, !alledgepointsymbles)
+ Called from line 2799 of PML function markcivil.DRAWOTHERWALLS
+	!this.drawinterlinearcs(!dimgro,!twoedges,!alledgepoints,!alledgepointsymbles)
+ Called from line 2338 of PML function markcivil.GETWALLSONFLOOR
+		!!markcivilform.civildatas[!index].drawotherwalls()
+ Called from line 1354 of PML function markcivil.DRAW
+		!wallindices = !this.getwallsonfloor()
+ Called from line 1291 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+09:42:04 21 December 2023
+=17398/2975 未得到markcivil
+(2,779)   Method <MARKCIVIL>.GETATTS() not found
+ In line 132 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 688 of PML function markcivilform.ADDCE
+			!markcivil = object markcivil(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+
+09:42:20 21 December 2023
+=17398/2975 Failed to get attribution list of this civil
+(2,759)   Object does not have a member ROOM
+ In line 187 of PML function markcivil.GETCIVILATTARR
+	if !this.room.unset() then
+ Called from line 698 of PML function markcivilform.ADDCE
+			!rowarr = !markcivil.getcivilAttArr(!this.civilAtts)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+
+14:00:48 21 December 2023
+=17398/2911 未得到markcivil
+(2,761)   Cannot assign variable to result - incompatible types (REAL=STRING)
+ In line 209 of PML function markcivil.GETATTS
+		!this.level = !pos.up.string('D1').replace('.0','')
+ Called from line 141 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 718 of PML function markcivilform.ADDCE
+			!markcivil = object markcivil(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+
+14:00:59 21 December 2023
+=17398/2911 未得到markcivil
+(2,761)   Cannot assign variable to result - incompatible types (REAL=STRING)
+ In line 209 of PML function markcivil.GETATTS
+		!this.level = !pos.up.string('D1').replace('.0','')
+ Called from line 141 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 718 of PML function markcivilform.ADDCE
+			!markcivil = object markcivil(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+
+14:38:32 21 December 2023
+=17398/2977 未得到markcivil
+(2,754)   Argument 2 to - is unset
+ In line 699 of PML function markcivil.GETDATAOFCIVIL
+	if !this.thick ne 0 and abs(!thick - !this.thick) gt 0.1 then
+ Called from line 204 of PML function markcivil.GETATTS
+		!this.getdataofcivil()
+ Called from line 145 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 718 of PML function markcivilform.ADDCE
+			!markcivil = object markcivil(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+
+14:38:46 21 December 2023
+=17398/2977 未得到markcivil
+(2,754)   Argument 2 to - is unset
+ In line 699 of PML function markcivil.GETDATAOFCIVIL
+	if !this.thick ne 0 and abs(!thick - !this.thick) gt 0.1 then
+ Called from line 204 of PML function markcivil.GETATTS
+		!this.getdataofcivil()
+ Called from line 145 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 718 of PML function markcivilform.ADDCE
+			!markcivil = object markcivil(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+
+14:38:52 21 December 2023
+=17398/2977 未得到markcivil
+(2,754)   Argument 2 to - is unset
+ In line 699 of PML function markcivil.GETDATAOFCIVIL
+	if !this.thick ne 0 and abs(!thick - !this.thick) gt 0.1 then
+ Called from line 204 of PML function markcivil.GETATTS
+		!this.getdataofcivil()
+ Called from line 145 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 718 of PML function markcivilform.ADDCE
+			!markcivil = object markcivil(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+
+09:07:24 29 December 2023
+=17398/2911 未得到markcivil
+(46,87)   PML: Object definition for INDEX could not be found.
+ In line 990 of PML function markcivilform.ADDCE
+			!markcivil = object markcivil(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+
+10:11:55 9 January 2024
+=17398/2945 failed to draw
+(2,779)   Method <MARKCIVIL>.DRAWTHICK(<POSITION>,<ORIENTATION>,<REAL>) not found
+ In line 3833 of PML function markcivil.MARKCIVILSELF
+				if !this.drawthick(!thickPos,!ori,!elthickcheight).not() then
+ Called from line 1144 of PML function markcivil.DRAW
+	!this.markCivilSelf()
+ Called from line 1285 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+=17398/2944 failed to draw
+(2,779)   Method <MARKCIVIL>.DRAWTHICK(<POSITION>,<ORIENTATION>,<REAL>) not found
+ In line 3833 of PML function markcivil.MARKCIVILSELF
+				if !this.drawthick(!thickPos,!ori,!elthickcheight).not() then
+ Called from line 1144 of PML function markcivil.DRAW
+	!this.markCivilSelf()
+ Called from line 1285 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+10:12:12 9 January 2024
+=17398/2944 failed to draw
+(2,779)   Method <REAL>.+(<STRING>) not found
+ In line 3936 of PML function markcivil.MARKCIVILSELF
+			!textLen = !textlen + !!mbdtextlen(!this.thick + ' ') * !elthickcheight * 1.5
+ Called from line 1144 of PML function markcivil.DRAW
+	!this.markCivilSelf()
+ Called from line 1285 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+10:51:58 9 January 2024
+=17398/3010 failed to draw
+(2,759)   Object does not have a member STARTPOSITION
+ In line 3778 of PML function markcivil.MARKCIVILSELF
+		!templen = !this.arcs[1].angleposition(!this.arcs[1].startposition).distance(!this.arcs[1].angleposition(!this.arcs[1].endposition))
+ Called from line 1144 of PML function markcivil.DRAW
+	!this.markCivilSelf()
+ Called from line 1285 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+11:39:30 9 January 2024
+=17396/389 failed to draw
+(2,499)   DIMENSION(UNIT) MISMATCH in real arithmetic (+-*/ POW): cannot combine physical quantities DIST and ANGL (element =0/0)
+ In line 4148 of PML function markcivil.MARKONEMEM
+					!endangle = !startangle + !textangle
+ Called from line 1166 of PML function markcivil.DRAW
+				!this.markonemem(!owner,!mem,!cheightbili)
+ Called from line 1285 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+16:19:47 9 January 2024
+=17396/389 未得到markcivil
+(2,779)   Method <MARKCIVIL>.GETORIGINALPOINTORI() not found
+ In line 850 of PML function markcivil.GETDATAOFCIVIL
+	!this.getoriginalpointori()
+ Called from line 227 of PML function markcivil.GETATTS
+		!this.getdataofcivil()
+ Called from line 167 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 1069 of PML function markcivilform.ADDCE
+			!markcivil = object markcivil(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+
+16:20:09 9 January 2024
+=17396/389 未得到markcivil
+(2,759)   Object does not have a member ORIGINORI1
+ In line 902 of PML function markcivil.GETORIGINALPOINTORI
+			!this.originori$!x = object orientation('x is $!xdir and y is u')
+ Called from line 850 of PML function markcivil.GETDATAOFCIVIL
+	!this.getoriginalpointori()
+ Called from line 227 of PML function markcivil.GETATTS
+		!this.getdataofcivil()
+ Called from line 167 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 1069 of PML function markcivilform.ADDCE
+			!markcivil = object markcivil(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+
+17:09:31 9 January 2024
+=17396/389 failed to draw
+(2,779)   Method <REAL>.DISTANCE(<POSITION>) not found
+ In line 1794 of PML function markcivil.DRAWOPENINGDIMLINE
+		if !this.arcs[1].near(!poss[1]).distance(!poss[1]) lt !this.arcs[2].near(!poss[1]).distance(!poss[1]) then
+ Called from line 1715 of PML function markcivil.DIMONEMEM
+					!cheight = !this.drawOpeningDimLine(!xline,!ori,!profile,!cheight,!desc)
+ Called from line 1295 of PML function markcivil.DRAW
+				!cheightbili = !this.dimOneMem(!mem)
+ Called from line 1285 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:21:48 9 January 2024
+=17396/389 failed to draw
+(47,15)   CP: Syntax error
+ In line 1634 of PML function markcivil.DIMONEMEMXYDIS
+				!tempoffdis = !this.arcs[!x].radius - sqrt(!this.arcs[!x].radius.power(2) - power(^^tempdis,2))
+ Called from line 1296 of PML function markcivil.DRAW
+				!this.dimonememxydis(!owner,!mem,!cheightbili)
+ Called from line 1285 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+18:53:59 9 January 2024
+=17398/84990 未得到markcivil
+(2,752)   Array element 5 does not exist
+ In line 948 of PML function markcivil.GETORIGINPOINT
+			if abs(!xdiss[!x] - !xdiss[!x + 1]) gt 1 then
+ Called from line 880 of PML function markcivil.GETORIGINALPOINTORI
+		!this.getoriginpoint()
+ Called from line 855 of PML function markcivil.GETDATAOFCIVIL
+	!this.getoriginalpointori()
+ Called from line 232 of PML function markcivil.GETATTS
+		!this.getdataofcivil()
+ Called from line 172 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 1069 of PML function markcivilform.ADDCE
+			!markcivil = object markcivil(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+=17398/84996 未得到markcivil
+(2,752)   Array element 21 does not exist
+ In line 948 of PML function markcivil.GETORIGINPOINT
+			if abs(!xdiss[!x] - !xdiss[!x + 1]) gt 1 then
+ Called from line 880 of PML function markcivil.GETORIGINALPOINTORI
+		!this.getoriginpoint()
+ Called from line 855 of PML function markcivil.GETDATAOFCIVIL
+	!this.getoriginalpointori()
+ Called from line 232 of PML function markcivil.GETATTS
+		!this.getdataofcivil()
+ Called from line 172 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 1069 of PML function markcivilform.ADDCE
+			!markcivil = object markcivil(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+=17398/85019 未得到markcivil
+(2,752)   Array element 5 does not exist
+ In line 948 of PML function markcivil.GETORIGINPOINT
+			if abs(!xdiss[!x] - !xdiss[!x + 1]) gt 1 then
+ Called from line 880 of PML function markcivil.GETORIGINALPOINTORI
+		!this.getoriginpoint()
+ Called from line 855 of PML function markcivil.GETDATAOFCIVIL
+	!this.getoriginalpointori()
+ Called from line 232 of PML function markcivil.GETATTS
+		!this.getdataofcivil()
+ Called from line 172 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 1069 of PML function markcivilform.ADDCE
+			!markcivil = object markcivil(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+=17398/85025 未得到markcivil
+(2,752)   Array element 23 does not exist
+ In line 948 of PML function markcivil.GETORIGINPOINT
+			if abs(!xdiss[!x] - !xdiss[!x + 1]) gt 1 then
+ Called from line 880 of PML function markcivil.GETORIGINALPOINTORI
+		!this.getoriginpoint()
+ Called from line 855 of PML function markcivil.GETDATAOFCIVIL
+	!this.getoriginalpointori()
+ Called from line 232 of PML function markcivil.GETATTS
+		!this.getdataofcivil()
+ Called from line 172 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 1069 of PML function markcivilform.ADDCE
+			!markcivil = object markcivil(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+=17398/84906 未得到markcivil
+(2,752)   Array element 29 does not exist
+ In line 948 of PML function markcivil.GETORIGINPOINT
+			if abs(!xdiss[!x] - !xdiss[!x + 1]) gt 1 then
+ Called from line 880 of PML function markcivil.GETORIGINALPOINTORI
+		!this.getoriginpoint()
+ Called from line 855 of PML function markcivil.GETDATAOFCIVIL
+	!this.getoriginalpointori()
+ Called from line 232 of PML function markcivil.GETATTS
+		!this.getdataofcivil()
+ Called from line 172 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 1069 of PML function markcivilform.ADDCE
+			!markcivil = object markcivil(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+=17398/100449 未得到markcivil
+(2,759)   Object does not have a member ORIGINORI3
+ In line 917 of PML function markcivil.GETORIGINPOINT
+		!ori = !this.originori$!times
+ Called from line 880 of PML function markcivil.GETORIGINALPOINTORI
+		!this.getoriginpoint()
+ Called from line 855 of PML function markcivil.GETDATAOFCIVIL
+	!this.getoriginalpointori()
+ Called from line 232 of PML function markcivil.GETATTS
+		!this.getdataofcivil()
+ Called from line 172 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 1069 of PML function markcivilform.ADDCE
+			!markcivil = object markcivil(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+ARRAY
+
+18:54:39 9 January 2024
+=17398/84990 未得到markcivil
+(2,752)   Array element 5 does not exist
+ In line 948 of PML function markcivil.GETORIGINPOINT
+			if abs(!xdiss[!x] - !xdiss[!x + 1]) gt 1 then
+ Called from line 880 of PML function markcivil.GETORIGINALPOINTORI
+		!this.getoriginpoint()
+ Called from line 855 of PML function markcivil.GETDATAOFCIVIL
+	!this.getoriginalpointori()
+ Called from line 232 of PML function markcivil.GETATTS
+		!this.getdataofcivil()
+ Called from line 172 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 1069 of PML function markcivilform.ADDCE
+			!markcivil = object markcivil(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+=17398/84996 未得到markcivil
+(2,752)   Array element 21 does not exist
+ In line 948 of PML function markcivil.GETORIGINPOINT
+			if abs(!xdiss[!x] - !xdiss[!x + 1]) gt 1 then
+ Called from line 880 of PML function markcivil.GETORIGINALPOINTORI
+		!this.getoriginpoint()
+ Called from line 855 of PML function markcivil.GETDATAOFCIVIL
+	!this.getoriginalpointori()
+ Called from line 232 of PML function markcivil.GETATTS
+		!this.getdataofcivil()
+ Called from line 172 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 1069 of PML function markcivilform.ADDCE
+			!markcivil = object markcivil(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+=17398/85019 未得到markcivil
+(2,752)   Array element 5 does not exist
+ In line 948 of PML function markcivil.GETORIGINPOINT
+			if abs(!xdiss[!x] - !xdiss[!x + 1]) gt 1 then
+ Called from line 880 of PML function markcivil.GETORIGINALPOINTORI
+		!this.getoriginpoint()
+ Called from line 855 of PML function markcivil.GETDATAOFCIVIL
+	!this.getoriginalpointori()
+ Called from line 232 of PML function markcivil.GETATTS
+		!this.getdataofcivil()
+ Called from line 172 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 1069 of PML function markcivilform.ADDCE
+			!markcivil = object markcivil(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+=17398/85025 未得到markcivil
+(2,752)   Array element 23 does not exist
+ In line 948 of PML function markcivil.GETORIGINPOINT
+			if abs(!xdiss[!x] - !xdiss[!x + 1]) gt 1 then
+ Called from line 880 of PML function markcivil.GETORIGINALPOINTORI
+		!this.getoriginpoint()
+ Called from line 855 of PML function markcivil.GETDATAOFCIVIL
+	!this.getoriginalpointori()
+ Called from line 232 of PML function markcivil.GETATTS
+		!this.getdataofcivil()
+ Called from line 172 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 1069 of PML function markcivilform.ADDCE
+			!markcivil = object markcivil(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+=17398/84906 未得到markcivil
+(2,752)   Array element 29 does not exist
+ In line 948 of PML function markcivil.GETORIGINPOINT
+			if abs(!xdiss[!x] - !xdiss[!x + 1]) gt 1 then
+ Called from line 880 of PML function markcivil.GETORIGINALPOINTORI
+		!this.getoriginpoint()
+ Called from line 855 of PML function markcivil.GETDATAOFCIVIL
+	!this.getoriginalpointori()
+ Called from line 232 of PML function markcivil.GETATTS
+		!this.getdataofcivil()
+ Called from line 172 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 1069 of PML function markcivilform.ADDCE
+			!markcivil = object markcivil(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+=17398/100449 未得到markcivil
+(2,759)   Object does not have a member ORIGINORI3
+ In line 917 of PML function markcivil.GETORIGINPOINT
+		!ori = !this.originori$!times
+ Called from line 880 of PML function markcivil.GETORIGINALPOINTORI
+		!this.getoriginpoint()
+ Called from line 855 of PML function markcivil.GETDATAOFCIVIL
+	!this.getoriginalpointori()
+ Called from line 232 of PML function markcivil.GETATTS
+		!this.getdataofcivil()
+ Called from line 172 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 1069 of PML function markcivilform.ADDCE
+			!markcivil = object markcivil(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+
+18:56:15 9 January 2024
+=17398/84990 未得到markcivil
+(2,752)   Array element 5 does not exist
+ In line 948 of PML function markcivil.GETORIGINPOINT
+			if abs(!xdiss[!x] - !xdiss[!x + 1]) gt 1 then
+ Called from line 880 of PML function markcivil.GETORIGINALPOINTORI
+		!this.getoriginpoint()
+ Called from line 855 of PML function markcivil.GETDATAOFCIVIL
+	!this.getoriginalpointori()
+ Called from line 232 of PML function markcivil.GETATTS
+		!this.getdataofcivil()
+ Called from line 172 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 1069 of PML function markcivilform.ADDCE
+			!markcivil = object markcivil(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+=17398/84996 未得到markcivil
+(2,752)   Array element 21 does not exist
+ In line 948 of PML function markcivil.GETORIGINPOINT
+			if abs(!xdiss[!x] - !xdiss[!x + 1]) gt 1 then
+ Called from line 880 of PML function markcivil.GETORIGINALPOINTORI
+		!this.getoriginpoint()
+ Called from line 855 of PML function markcivil.GETDATAOFCIVIL
+	!this.getoriginalpointori()
+ Called from line 232 of PML function markcivil.GETATTS
+		!this.getdataofcivil()
+ Called from line 172 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 1069 of PML function markcivilform.ADDCE
+			!markcivil = object markcivil(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+=17398/85019 未得到markcivil
+(2,752)   Array element 5 does not exist
+ In line 948 of PML function markcivil.GETORIGINPOINT
+			if abs(!xdiss[!x] - !xdiss[!x + 1]) gt 1 then
+ Called from line 880 of PML function markcivil.GETORIGINALPOINTORI
+		!this.getoriginpoint()
+ Called from line 855 of PML function markcivil.GETDATAOFCIVIL
+	!this.getoriginalpointori()
+ Called from line 232 of PML function markcivil.GETATTS
+		!this.getdataofcivil()
+ Called from line 172 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 1069 of PML function markcivilform.ADDCE
+			!markcivil = object markcivil(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+=17398/85025 未得到markcivil
+(2,752)   Array element 23 does not exist
+ In line 948 of PML function markcivil.GETORIGINPOINT
+			if abs(!xdiss[!x] - !xdiss[!x + 1]) gt 1 then
+ Called from line 880 of PML function markcivil.GETORIGINALPOINTORI
+		!this.getoriginpoint()
+ Called from line 855 of PML function markcivil.GETDATAOFCIVIL
+	!this.getoriginalpointori()
+ Called from line 232 of PML function markcivil.GETATTS
+		!this.getdataofcivil()
+ Called from line 172 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 1069 of PML function markcivilform.ADDCE
+			!markcivil = object markcivil(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+=17398/84906 未得到markcivil
+(2,752)   Array element 29 does not exist
+ In line 948 of PML function markcivil.GETORIGINPOINT
+			if abs(!xdiss[!x] - !xdiss[!x + 1]) gt 1 then
+ Called from line 880 of PML function markcivil.GETORIGINALPOINTORI
+		!this.getoriginpoint()
+ Called from line 855 of PML function markcivil.GETDATAOFCIVIL
+	!this.getoriginalpointori()
+ Called from line 232 of PML function markcivil.GETATTS
+		!this.getdataofcivil()
+ Called from line 172 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 1069 of PML function markcivilform.ADDCE
+			!markcivil = object markcivil(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+=17398/100449 未得到markcivil
+(2,759)   Object does not have a member ORIGINORI3
+ In line 917 of PML function markcivil.GETORIGINPOINT
+		!ori = !this.originori$!times
+ Called from line 880 of PML function markcivil.GETORIGINALPOINTORI
+		!this.getoriginpoint()
+ Called from line 855 of PML function markcivil.GETDATAOFCIVIL
+	!this.getoriginalpointori()
+ Called from line 232 of PML function markcivil.GETATTS
+		!this.getdataofcivil()
+ Called from line 172 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 1069 of PML function markcivilform.ADDCE
+			!markcivil = object markcivil(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+
+18:58:20 9 January 2024
+=17398/84990 未得到markcivil
+(2,752)   Array element 5 does not exist
+ In line 948 of PML function markcivil.GETORIGINPOINT
+			if abs(!xdiss[!x] - !xdiss[!x + 1]) gt 1 then
+ Called from line 880 of PML function markcivil.GETORIGINALPOINTORI
+		!this.getoriginpoint()
+ Called from line 855 of PML function markcivil.GETDATAOFCIVIL
+	!this.getoriginalpointori()
+ Called from line 232 of PML function markcivil.GETATTS
+		!this.getdataofcivil()
+ Called from line 172 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 1069 of PML function markcivilform.ADDCE
+			!markcivil = object markcivil(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+
+18:58:33 9 January 2024
+=17398/84990 未得到markcivil
+(2,752)   Array element 5 does not exist
+ In line 948 of PML function markcivil.GETORIGINPOINT
+			if abs(!xdiss[!x] - !xdiss[!x + 1]) gt 1 then
+ Called from line 880 of PML function markcivil.GETORIGINALPOINTORI
+		!this.getoriginpoint()
+ Called from line 855 of PML function markcivil.GETDATAOFCIVIL
+	!this.getoriginalpointori()
+ Called from line 232 of PML function markcivil.GETATTS
+		!this.getdataofcivil()
+ Called from line 172 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 1069 of PML function markcivilform.ADDCE
+			!markcivil = object markcivil(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+
+19:06:13 9 January 2024
+=17398/100449 未得到markcivil
+(2,759)   Object does not have a member ORIGINORI3
+ In line 917 of PML function markcivil.GETORIGINPOINT
+		!ori = !this.originori$!times
+ Called from line 880 of PML function markcivil.GETORIGINALPOINTORI
+		!this.getoriginpoint()
+ Called from line 855 of PML function markcivil.GETDATAOFCIVIL
+	!this.getoriginalpointori()
+ Called from line 232 of PML function markcivil.GETATTS
+		!this.getdataofcivil()
+ Called from line 172 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 1069 of PML function markcivilform.ADDCE
+			!markcivil = object markcivil(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+
+19:07:33 9 January 2024
+=17398/100449 未得到markcivil
+(2,759)   Object does not have a member ORIGINORI3
+ In line 918 of PML function markcivil.GETORIGINPOINT
+		!ori = !this.originori$!times
+ Called from line 880 of PML function markcivil.GETORIGINALPOINTORI
+		!this.getoriginpoint()
+ Called from line 855 of PML function markcivil.GETDATAOFCIVIL
+	!this.getoriginalpointori()
+ Called from line 232 of PML function markcivil.GETATTS
+		!this.getdataofcivil()
+ Called from line 172 of PML function markcivil.MARKCIVIL
+		!this.getatts()
+ Called from line 1069 of PML function markcivilform.ADDCE
+			!markcivil = object markcivil(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+
+10:15:42 10 January 2024
+=17398/2979 failed to draw
+(2,779)   Method <MARKCIVIL>.DRAWONEORIGINARROW(<POSITION>,<ORIENTATION>) not found
+ In line 863 of PML function markcivil.DRAWORIGIN
+		!this.drawoneoriginarrow(!point,!ori)
+ Called from line 1334 of PML function markcivil.DRAW
+	!this.draworigin()
+ Called from line 1285 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+10:45:15 10 January 2024
+=17398/3043 failed to draw
+(2,430)   CALCULATOR ERROR: division by zero (element =0/0)
+ In line 34 of PML function getgoodcheight
+	!cheight = !dimlen * !bili / (!len * 0.75)
+ Called from line 440 of PML function lindim.CHANGECHEIGHTAUTO
+	!newcheight = !!getgoodcheight(!this.points,!this.ori.xdir(),0.7)
+ Called from line 184 of PML function lindim.CREATE
+	!this.changeCheightAuto()
+ Called from line 155 of PML function lindim.LINDIM
+	return !this.create()
+ Called from line 96 of PML function lindim.LINDIM
+	return !this.lindim(!owner, !lindimpos, !ori, !points, !cheight, !function, !desc)
+ Called from line 1887 of PML function markcivil.DRAWOPENINGDIMLINE
+	!lindim = object lindim(!owner,!dimpos,!dimori,!poss,!charheight,'孔洞尺寸',!desc,!temparr)
+ Called from line 1797 of PML function markcivil.DIMONEMEM
+					!cheight = !this.drawOpeningDimLine(!line,!ori,!profile,!cheight,!desc)
+ Called from line 1353 of PML function markcivil.DRAW
+				!cheightbili = !this.dimOneMem(!mem)
+ Called from line 1285 of PML function markcivilform.DRAWALL
+		!this.civildatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()

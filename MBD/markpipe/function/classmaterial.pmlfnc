@@ -1,0 +1,251 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= September 22nd 2023
+--[Function]:
+------------------------------------------
+
+define function !!classmaterial(!materials is array) is array
+	!types1 = split('TUBI FTUB ELBO REDU TEE CROS OLET COUP CAP FLAN FBLI GASK') $* normal elements
+	--!types1 = split('TUBI FTUB ELBO REDU TEE CROS ATTA OLET COUP CAP FLAN FBLI GASK') $* normal elements
+	!types2 = split('BOLT BOLT-NUT BOLT-WASH BOLT-CAP')	$* bolt elements
+	--!types3 = split('VALV VTWA FILT INST PCOM')	$*special element
+	!types3 = split('VALV VTWA FILT INST PCOM ATTA')	$*special element
+
+	!types4 = array()	$*unknown elements
+
+	do !times from 1 to 4
+		!com = '!allindices' & !times & ' = array()'
+		$!com
+		!com = '!allnss' & !times & ' = array()'
+		$!com
+
+		if !times ne 4 then
+			!com = '!size = !types' & !times & '.size()'
+			$!com
+			do !x from 1 to !size
+				!com = '!allindices' & !times & '[!x] = array()'
+				$!com
+				!com = '!allnss' & !times & '[!x] = array()'
+				$!com
+			enddo
+			--!allindices1[!x] = array()
+			--!allnss1[!x] = array()
+		endif
+	enddo
+	!allnamednums = array()	$* for types4
+
+	do !x indices !materials
+		!isomaterial = !materials[!x]
+		!ns = !isomaterial.ns
+		if !ns.match('x') ne 0 then
+			!ns1 = !isomaterial.ns.before('x')
+			if !ns1.match(|"|) eq 0 then
+				!ns1 = !ns1.real().value().string()
+				handle any
+				endhandle
+			endif
+			!ns2 = !isomaterial.ns.after('x')
+			if !ns2.match(|"|) eq 0 then
+				!ns2 = !ns2.real().value().string()
+				handle any
+				endhandle
+			endif
+		elseif !isomaterial.type eq 'BOLT' then								$*for different length of bolt
+			!ns1 = !isomaterial.desc.before(' ').upcase().before('MM')
+			!ns2 = !isomaterial.ns
+			if !ns2.match(|"|) eq 0 then
+				!ns2 = !ns2.real().value().string()
+				handle any
+				endhandle
+			endif
+		else
+			!ns1 = !isomaterial.ns
+			if !ns1.match(|"|) eq 0 then
+				!ns1 = !ns1.real().value().string()
+				handle any
+				endhandle
+			endif
+			!ns2 = '00000'
+		endif
+
+		--$p $!isomaterial.desc
+		--$p $!ns1
+		--$p $!ns2
+
+		do !xx from !ns1.length() + 1 to 5
+			!ns1 = '0' + !ns1
+		enddo
+
+		do !xx from !ns2.length() + 1 to 5
+			!ns2 = '0' + !ns2
+		enddo
+
+		!ns = !ns1 & 'x' & !ns2
+		!tempname = name of $!isomaterial.name
+
+
+
+		-----------------------------------------------------------------------------------
+		-----------------------------------------------------------------------------------Step x:put into types
+		!find = false
+		do !times from 1 to 4
+			!com = '!index = !types' & !times & '.findfirst(!isomaterial.type)'
+			$!com
+			if !index.set() then
+				!com = '!allindices' & !times & '[!index].append(!x)'
+				$!com
+				!com = '!allnss' & !times & '[!index].append(!ns)'
+				$!com
+				if !times eq 4 and !tempname.substring(1,1) ne '=' then	$*item has name
+					!allnamednums[!index] = !allnamednums[!index] + 1
+				endif
+				!find = true
+				break
+			endif
+		enddo
+
+		if !find then
+			skip
+		endif
+
+		-----------------------------------------------------------------------------------
+		-----------------------------------------------------------------------------------Step x:put into bolt types or unknown types
+		if !isomaterial.type.matchwild('BOLT*') then
+			!times = 2
+		else
+			!times = 4
+		endif
+		!com = '!types' & !times & '.append(!isomaterial.type)'
+		$!com
+		!emptyarr = array()
+		!com = '!allindices' & !times & '.append(!emptyarr)'
+		$!com
+		!com = '!allnss' & !times & '.append(!emptyarr)'
+		$!com
+		!com = '!index = !types' & !times & '.size()'
+		$!com
+
+		!com = '!allindices' & !times & '[!index].append(!x)'
+		$!com
+		!com = '!allnss' & !times & '[!index].append(!ns)'
+		$!com
+
+		if !times eq 4 then
+			!allnamednums[!index] = 0
+			if !tempname.substring(1,1) ne '=' then
+				!allnamednums[!index] = !allnamednums[!index] + 1
+			endif
+		endif
+	enddo
+
+
+
+
+	-----------------------------------------------------------------------------------
+	-----------------------------------------------------------------------------------Step x:put unknown types to type1 or type3
+	do !x indices !types4
+		if !allnamednums[!x] ge !allindices4.size() / 4 then
+			!allindices3.append(!allindices4[!x])
+			!allnss3.append(!allnss4[!x])
+		else
+			!allindices1.append(!allindices4[!x])
+			!allnss1.append(!allnss4[!x])
+		endif
+	enddo
+
+
+
+	!newindices = !allindices1
+	!newindices.appendarray(!allindices2)
+	!newindices.appendarray(!allindices3)
+
+	!newnss = !allnss1
+	!newnss.appendarray(!allnss2)
+	!newnss.appendarray(!allnss3)
+
+
+
+	!indices = array()
+	do !x indices !newindices
+		!newindices[!x].reindex(!newnss[!x].sortedindices().invert())
+		!indices.appendarray(!newindices[!x])
+	enddo
+
+
+	!newmaterials = !materials
+	!newmaterials.reindex(!indices)
+
+
+
+
+	return !newmaterials
+
+
+
+
+	$(
+	-----------------------------------------------------------------------------------
+	-----------------------------------------------------------------------------------Step x:
+	!types1 = split('TUBI')
+	--!types3 = split('VALV PCOM FILT INST VTWA GASK FLAN FBLI BOLT')
+	!types2 = split('ATTA')
+	!types3 = split('ELBO TEE OLET CROS REDU')
+	!types4 = split('GASK FLAN FBLI BOLT')
+	!types5 = split('VALV PCOM FILT INST VTWA')
+
+
+
+	!arr1 = array()
+	!arr2 = array()
+	!arr3 = array()
+	!arr4 = array()
+	!arr5 = array()
+
+	!desc1 = array()
+	!desc2 = array()
+	!desc3 = array()
+	!desc4 = array()
+	!desc5 = array()
+	do !isoMaterial values !materials
+		if !types1.findfirst(!isomaterial.type).set() then
+			!arr1.append(!isoMaterial)
+			--!desc1.append(!isoMaterial.desc)
+			!desc1.append(!isoMaterial.ns.before('x').real())
+		elseif !types2.findfirst(!isomaterial.type).set() then
+			!arr2.append(!isoMaterial)
+			--!desc2.append(!isoMaterial.desc)
+			!desc2.append(!isoMaterial.ns.before('x').real())
+		elseif !types4.findfirst(!isomaterial.type).set() or !isomaterial.type.matchwild('BOLT*') then
+			!arr4.append(!isoMaterial)
+			--!desc4.append(!isoMaterial.desc)
+			!desc4.append(!isoMaterial.ns.before('x').real())
+		elseif !types5.findfirst(!isomaterial.type).set() then
+			!arr5.append(!isoMaterial)
+			--!desc5.append(!isoMaterial.desc)
+			!desc5.append(!isoMaterial.ns.before('x').real())
+		else
+			!arr3.append(!isoMaterial)
+			--!desc3.append(!isoMaterial.desc)
+			!desc3.append(!isoMaterial.ns.before('x').real())
+		endif
+	enddo
+
+
+	!arr1.reindex(!desc1.sortedindices().invert())
+	!arr2.reindex(!desc2.sortedindices().invert())
+	!arr3.reindex(!desc3.sortedindices().invert())
+	!arr4.reindex(!desc4.sortedindices().invert())
+	!arr5.reindex(!desc5.sortedindices().invert())
+
+	!newarr = array()
+	!newarr.appendarray(!arr1)
+	!newarr.appendarray(!arr2)
+	!newarr.appendarray(!arr3)
+	!newarr.appendarray(!arr4)
+	return !newarr
+	$)
+endfunction

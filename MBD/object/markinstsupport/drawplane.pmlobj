@@ -1,0 +1,358 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= October 27th 2023
+--[Function]:
+------------------------------------------
+
+define object drawplane
+	member .pos is position
+	member .ori is orientation
+	member .plane is plane
+
+	member .lookdirs is array
+
+	member .planeShapes is array
+	member .shapeindices is array
+	--member .profiles is array
+
+	--member .dirxyeles is array
+	--member .xyeles is array
+	member .allorixyeles is array
+
+	member .cheight is real
+	--member .abandonEnd is boolean
+
+	member .assignNoConcrete is boolean
+endobject
+
+define method .drawplane(!shapes is array,!ori is orientation,!lookdirs is array,!pos is position)
+	!this.pos = !pos
+	!this.drawplane(!shapes,!ori,!lookdirs)
+endmethod
+define method .drawplane(!shapes is array,!ori is orientation,!lookdirs is array)
+	!this.lookdirs = !lookdirs
+	!this.ori = !ori
+	--!this.abandonEnd = true
+	!this.getdata(!shapes)
+	!this.projectedtoplane(!shapes)
+endmethod
+
+
+
+define method .drawplane(!shapes is array,!dir is direction,!lookdirs is array,!pos is position)
+	!ori = !this.getorifromdir(!dir,!lookdirs)
+	!this.drawplane(!shapes,!ori,!lookdirs,!pos)
+endmethod
+define method .drawplane(!shapes is array,!dir is direction,!lookdirs is array)
+	!ori = !this.getorifromdir(!dir,!lookdirs)
+	!this.drawplane(!shapes,!ori,!lookdirs)
+endmethod
+
+
+define method .getorifromdir(!dir is direction,!lookdirs is array) is orientation
+	!tempangle = !dir.angle(u)
+	if !tempangle lt 10 or !tempangle gt 170 then	$*horizontal
+		!angles = array()
+		!oris = array()
+		do !ydir values !lookdirs
+			!xdir = !ydir.orthogonal(!dir)
+			handle any
+				skip
+			endhandle
+			!ori = x is $!xdir and z is $!dir
+
+			!temparr = array()
+			!temparr.append(!xdir)
+			!temparr.append(!ydir)
+			!temparr.append(!dir)
+			!tempdir = !!GetAverageDir(!temparr)
+			!oneangle = 0
+			do !x indices !lookdirs
+				!oneangle = !oneangle + !tempdir.angle(!lookdirs[!x]) * (10 + !x)
+			enddo
+			!angles.append(!oneangle)
+			!oris.append(!ori)
+
+
+			--break
+		enddo
+		!indices = !angles.sortedindices()
+		!oris.reindex(!indices)
+		!ori = !oris[1]
+	else											$*vertical
+		!ydir = u
+		!xdir = !ydir.orthogonal(!dir)
+		!ori = x is $!xdir and z is $!dir
+	endif
+
+	return !ori
+endmethod
+define method .projectedtoplane(!shapes is array)
+	do !index indices !shapes
+		!shape = !shapes[!index]
+		!poss = !shape.poss
+		!zdiss = array()
+		do !x indices !poss
+			!zdiss.append(!!suidirdis(!this.pos,!this.ori.zdir(),!poss[!x]))
+			!poss[!x] = !this.plane.near(!poss[!x])
+		enddo
+
+		!zdiss.sort()
+		!shape.planeminzdis = !zdiss[1]
+		!shape.planemaxzdis = !zdiss.last()
+		--!poss.evaluate(object block('!poss[!evalindex] = !this.plane.near(!poss[!evalindex])'))
+
+		!poss = !!sortroundpoints(!poss)
+		!shape.poss = !poss
+		--!profile = object profile(!!getcenpoint(!poss),!this.ori,!poss)
+		--!this.profiles.append(!profile)
+		!this.planeShapes.append(!shape)
+		!this.shapeindices.append(!index)
+	enddo
+endmethod
+define method .getdata(!shapes is array)
+	!poss = array()
+	do !shape values !shapes
+		!tempdis = !shape.poss[1].distance(!shape.poss[5])
+		handle any
+		elsehandle none
+			if abs(!tempdis - 2000) lt 5 or abs(!tempdis - 10000) lt 5 then	$*remove pipe and concrete
+				skip
+			endif
+		endhandle
+		!poss.appendarray(!shape.poss)
+	enddo
+	--!shapes.evaluate(object block('!poss.appendarray(!shapes[!evalindex].poss)'))
+
+	if !this.pos.unset() then
+		!this.pos = !!getcenpoint(!poss)
+	endif
+	!this.plane = object plane(!this.pos,!this.ori)
+	--!this.getxyeles()
+endmethod
+
+$(
+define method .getxyeles()
+	!xdir = !this.ori.xdir()
+	!ydir = !this.ori.ydir()
+	do !index indices !this.planeShapes
+		!shape = !this.planeShapes[!index]
+		!poss = !shape.poss
+		--!poss.evaluate(object block('!poss[!evalindex] = !this.plane.near(!poss[!evalindex])'))
+		--!poss = !!sortroundpoints(!poss)
+		!xdiss = array()
+		!ydiss = array()
+		do !pos values !poss
+			!xdis = !!suidirdis(!this.pos,!xdir,!pos)
+			!ydis = !!suidirdis(!this.pos,!ydir,!pos)
+			!xdiss.append(!xdis)
+			!ydiss.append(!ydis)
+		enddo
+		!planeelement = object planeElement(!index,!xdiss,!ydiss)
+		!this.xyeles.append(!planeelement)
+	enddo
+endmethod
+$)
+
+define method .put(!dimline is dimline,!shapes is array, !maxlen is real) is partshape
+	--------------------------------------
+	--------------------------------------Step 1:update shapes to insure right place can be got
+	!this.updateshapes(!shapes)
+
+
+	--------------------------------------
+	--------------------------------------Step 2:project poss and dir of dimline to plane of drawplane
+	!poss = !dimline.poss
+	do !x indices !poss
+		!poss[!x] = !this.plane.near(!poss[!x])
+	enddo
+	--!poss.evaluate(object block('!poss[!evalindex] = !this.plane.near(!poss[!evalindex])'))
+	!dir = !dimline.dir.projected(!this.plane)
+
+
+	--------------------------------------
+	--------------------------------------Step 3:get index of orixyeles with same xdir
+	!tolerance = 0.01
+	!find = false
+	do !index indices !this.allorixyeles
+		!orixyeles = !this.allorixyeles[!index]
+		!xdir = !orixyeles.ori.xdir()
+		!angle = !dir.angle(!xdir)
+		if !angle lt !tolerance or !angle gt 180 - !tolerance then
+			!find = true
+			!goodindex = !index
+			break
+		endif
+	enddo
+
+	--------------------------------------
+	--------------------------------------Step 4:if cant find a good orixyeles, create a new one
+	if !find.not() then
+		!tempzdir = !this.ori.zdir()
+		!ydir = !tempzdir.orthogonal(!dir)
+		if !ydir.angle(d) lt 80 then
+			!ydir = !ydir.opposite()
+		endif
+		!tempori = y is $!ydir and z is $!tempzdir
+		--!tempori = x is $!dir and z is $!tempzdir
+		!orixyeles = object orixyeles(!this.pos,!tempori,!this.planeShapes)
+		!this.allorixyeles.append(!orixyeles)
+		!goodindex = !this.allorixyeles.maxindex()
+	endif
+
+	--------------------------------------
+	--------------------------------------Step 5:get offset distance to a good place in good orixyeles
+
+	--!offsetlen = !this.allorixyeles[!goodindex].findspace(!poss[1],!poss.last(),!this.cheight,!this.planeShapes)
+
+	!this.allorixyeles[!goodindex].assignnoconcrete = !this.assignnoconcrete
+	!offsetlen = !this.allorixyeles[!goodindex].findspace(!dimline.axis.startposition,!dimline.axis.endposition,!this.cheight,!this.planeShapes,!maxlen)
+	!this.allorixyeles[!goodindex].assignnoconcrete = false
+
+	if !dimline.dir.angle(!dir) gt !tolerance then
+		!tempzdir = !dimline.dir.orthogonal(!dir)
+		!tempzdir = !tempzdir.orthogonal(!dir)
+		if !tempzdir.angle(!this.ori.zdir()) gt 90 then
+			!tempzdir = !tempzdir.opposite()
+		endif
+		!tempori = z is $!tempzdir
+	else
+		!tempori = !this.ori
+	endif
+	!plane = object plane(!dimline.axis.startposition,!this.ori)
+	--!plane = object plane(!dimline.poss[1],!this.ori)
+
+	!cornerposs = array()
+	--!cornerposs[1] = !poss[1]
+	--!cornerposs[2] = !poss.last()
+	--!cornerposs[3] = !poss.last().offset(!this.allorixyeles[!goodindex].ori.ydir(),!offsetlen)
+	--!cornerposs[4] = !poss[1].offset(!this.allorixyeles[!goodindex].ori.ydir(),!offsetlen)
+
+	!cornerposs[1] = !dimline.axis.startposition
+	!cornerposs[2] = !dimline.axis.endposition
+	!cornerposs[3] = !dimline.axis.endposition.offset(!this.allorixyeles[!goodindex].ori.ydir(),!offsetlen)
+	!cornerposs[4] = !dimline.axis.startposition.offset(!this.allorixyeles[!goodindex].ori.ydir(),!offsetlen)
+
+	--if !dimline.objectindex eq 1 and !dimline.partnum eq 2 then
+
+
+	--endif
+
+	!shapeposs = array()
+	!linedir = !this.ori.zdir()
+	do !pos values !cornerposs
+		!line = !pos.line(!pos.offset(!linedir,1000))
+		!shapeposs.append(!line.intersection(!plane))
+	enddo
+	!realShape = object partshape(!shapeposs)
+	--!dimposs = !cornerposs
+	!dimposs = !shapeposs
+	!tempdir = !dimposs[4].direction(!dimposs[1])
+	!dimposs[1] = !dimposs[4].offset(!tempdir,!this.cheight * 1.5)
+	!dimposs[2] = !dimposs[3].offset(!tempdir,!this.cheight * 1.5)
+	!realshape.dimposs = !dimposs
+	!realshape.planeori = !this.allorixyeles[!goodindex].ori
+	!realshape.offsetlen = abs(!offsetlen)
+
+	return !realShape
+endmethod
+
+define method .updateshapes(!shapes is array)
+	!indices = !shapes.indices()
+	!dif = !indices.difference(!this.shapeindices)
+	if !dif.set() then
+		!newshapes = array()
+		do !index values !dif
+			!newshapes[!index] = !shapes[!index]
+		enddo
+		!this.projectedtoplane(!newshapes)
+	endif
+endmethod
+
+
+define method .puttext(!text is any ,!pos is position ,!shapes is array, !maxlen is real) is partshape
+	--------------------------------------
+	--------------------------------------Step 1:update shapes to insure right place can be got
+	!this.updateshapes(!shapes)
+
+	--$p 1
+	--------------------------------------
+	--------------------------------------Step 3:get index of orixyeles with same xdir
+	if !this.allorixyeles.set() then
+		do !index indices !this.allorixyeles
+			if !this.allorixyeles[!index].ori.xdir().angle(!this.ori.xdir()) lt 1 and !this.allorixyeles[!index].ori.ydir().angle(!this.ori.ydir()) lt 1 then
+				!goodindex = !index
+				break
+			endif
+		enddo
+	endif
+	if undefined(!goodindex)then
+		!orixyeles = object orixyeles(!this.pos,!this.ori,!this.planeShapes)
+		!this.allorixyeles.append(!orixyeles)
+		!goodindex = !this.allorixyeles.maxindex()
+	endif
+	--$p $!goodindex
+	--------------------------------------
+	--------------------------------------Step 5:get offset distance to a good place in good orixyeles
+	--!cornerpossandori = !this.allorixyeles[!goodindex].findtextspace(!text,!pos,!this.cheight,!this.planeShapes)
+	--!cornerposs = !cornerpossandori[1]
+	!cornerposs = !this.allorixyeles[!goodindex].findtextspace(!text,!pos,!this.cheight,!this.planeShapes,!maxlen)
+	--!ori = !this.allorixyeles[!goodindex].ori
+
+
+	!cenpoint = !!getcenpoint(!cornerposs)
+
+	--q var !this.ori
+	!xdir = !this.ori.xdir().opposite()
+	!ydir = !this.ori.ydir()
+
+	--!xdir = !ori.xdir().opposite()
+	--!ydir = !ori.ydir()
+
+	!newposs = array()
+	do !onepos values !cornerposs
+		!xdis = !!suidirdis(!cenpoint,!xdir,!onepos)
+		!ydis = !!suidirdis(!cenpoint,!ydir,!onepos)
+		if !xdis lt 0 and !ydis lt 0 then
+			!newposs[1] = !onepos
+		elseif !xdis gt 0 and !ydis lt 0 then
+			!newposs[2] = !onepos
+		elseif !xdis gt 0 and !ydis gt 0 then
+			!newposs[3] = !onepos
+		else
+			!newposs[4] = !onepos
+		endif
+	enddo
+
+	!cornerposs = !newposs
+
+
+
+	--!ori = !cornerpossandori[2]
+
+	!shapeposs = array()
+	!linedir = !this.ori.zdir()
+	!plane = object plane(!pos,!this.ori)
+    --handle any
+        --modify by jyg 20240905
+        --q var !pos !this.ori
+    --endhandle
+	do !onepos values !cornerposs
+		!line = !onepos.line(!onepos.offset(!linedir,1000))
+		!shapeposs.append(!line.intersection(!plane))
+	enddo
+	!realShape = object partshape(!shapeposs)
+	--!realshape.dimposs = !cornerposs
+	!ori = x is $!xdir and y is $!ydir
+	!realshape.planeori = !ori
+
+
+	--!realshape.planeori = !this.ori
+	return !realShape
+endmethod
+
+

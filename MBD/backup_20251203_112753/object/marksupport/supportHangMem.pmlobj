@@ -1,0 +1,234 @@
+define object supportHangMem
+	member .ref is string
+	member .type is string
+	member .zdir is direction
+	member .posstart is position
+	member .posend is position
+
+	member .axis is line
+
+	member .poss is array
+
+	member .maxDis is real
+endobject
+
+define method .supportHangMem(!mem is any)
+    --$p 123
+	var !ref ref of $!mem
+	!this.ref = !ref
+	!this.type = type of $!mem
+	!this.posstart = apos of $!mem wrt/*
+	!this.posend = lpos of $!mem wrt/*
+
+	--$p $!mem
+	!this.zdir = !this.posstart.direction(!this.posend)
+	handle any
+		!this.zdir = pa dir of $!mem wrt/*
+	elsehandle none
+		!this.axis = !this.posstart.line(!this.posend)
+        --q var !this.axis
+	endhandle
+
+	!this.getPoss()
+	!this.getMaxDis()
+
+endmethod
+
+define method .getposs()
+	!poss = array()
+    --modify by jyg 20241214 ´¦Àí×èÄáÆ÷±ê×¢µã¹ý¶àµÄÇé¿ö
+    !heleName = !this.ref.Dbref().spref.name
+    if  !heleName.matchwild('*DAMP/DA*') or !heleName.matchwild('*SPRI/SVV*') then
+        !pointNum = 2
+    elseif  !heleName.matchwild('*SPRI/SV*') or !heleName.matchwild('*HELE/TA*') then
+        !pointNum = 2
+    elseif !heleName.matchwild('*HELE/BF*') then
+        return
+    else
+        !pointNum = 4
+    endif
+
+    !poss.append(!this.posstart)
+	!poss.append(!this.posend)
+
+	do !x from 1 to !pointNum
+		if !x eq 3 then
+			!templine = !poss[1].line(!poss[2])
+			!pos3 = p3 pos of $!this.ref wrt/*
+			handle any
+				break
+			endhandle
+			if !templine.length() gt 1 and !templine.distance(!pos3) gt 1 then
+				break
+			endif
+		endif
+		!poss[$!x] = p$!x pos of $!this.ref wrt/*
+		handle any
+			break
+		endhandle
+		if !this.type ne 'HELE' and !x eq 2 then
+			break
+		elseif !this.type eq 'SLUG' then
+			!xx = !x + 3
+			!poss[$!x] = p$!xx pos of $!this.ref wrt/*
+		endif
+	enddo
+	if !this.type eq 'HELE' then
+		!poss.appendarray(!this.getheleposs())
+	endif
+    --Q VAR !poss
+	!poss.unique()
+	!this.poss = !poss
+    --Q VAR !this.poss
+endmethod
+
+define method .getheleposs() is array
+    --q var !this.ref
+	!poss = array()
+    --modify by jyg 20241214 ´¦Àí×èÄáÆ÷±ê×¢µã¹ý¶àµÄÇé¿ö
+    !heleName = !this.ref.Dbref().spref.name
+    !heleDesp = !this.ref.Dbref().desp[3]
+    if  !heleDesp eq 0 then
+        !heleDesp = !this.ref.Dbref().para[1]
+    endif
+    if  !heleName.matchwild('*DAMP/DA*') or !heleName.matchwild('*SPRI/SVV*') then
+        --jyg ´ý´¦Àí,ÀàÐÍÒªÏ¸·Ö¿ª£¬P\C\S\D  20250111
+        --!mems = !this.getvalidmems(!this.ref)
+        ----q var !mems
+        --!item = name of $!this.ref
+        --do  !mem values !mems
+        --    !memtype = type of $!mem
+        --    !memstring = !mem.string()
+        --    if !memtype eq 'SCYL' then
+        --        !memPdiaEx = pdia of $!mem
+        --        !memPdia = !this.ref.Dbref().evaluate(object block(!memPdiaEx) )
+        --        if  !memPdia eq !heleDesp then
+        --            !object = object supptube(!item,!memstring)
+        --            !ydir = !object.ori.ydir()
+        --            !pos1 = !object.pos.Offset(!ydir,!heleDesp / 2)
+        --            !pos2 = !object.pos.Offset(!ydir.opposite(),!heleDesp / 2)
+        --            !this.axis = !pos1.line(!pos2)
+        --            !poss.append(!pos1)
+        --            !poss.append(!pos2)
+        --            break
+        --        endif
+        --    endif
+        --enddo
+    elseif  !heleName.matchwild('*SPRI/SV*') or !heleName.matchwild('*HELE/TA*') or !heleName.matchwild('*HELE/BF*') then
+        --jyg ´ý´¦Àí
+    else
+        !mems = !this.getvalidmems(!this.ref)
+        !item = name of $!this.ref
+        do !mem values !mems
+            !memtype = type of $!mem
+            !memstring = !mem.string()
+            if !memtype eq 'SBOX' then
+                !object = object supppane(!item,!memstring)
+                if !object.thick.set() and !object.profile.set() then
+                    !pos1 = !object.profile.position.offset(!object.profile.orientation.zdir(),!object.thick / 2)
+                    !pos2 = !object.profile.position.offset(!object.profile.orientation.zdir(), - !object.thick / 2)
+                    !poss.append(!pos1)
+                    !poss.append(!pos2)
+
+                endif
+            elseif !memtype eq 'SCYL' or !memtype eq 'LCYL' then
+                !object = object supptube(!item,!memstring)
+                if !object.pos1.set() and !object.pos2.set() then
+                    !poss.append(!object.pos1)
+                    !poss.append(!object.pos2)
+                endif
+            else
+                skip
+            endif
+            !object.delete()
+        enddo
+    endif
+    --Q VAR !poss
+	return !poss
+endmethod
+
+define method .getvalidmems(!item is any) is array $*get good items from catref
+	!mems = mem of gmref of catref of $!item
+	handle any
+		!mems = mem of gstref of catref of $!item
+		handle any
+			!mems = array()
+			return !mems
+		endhandle
+	endhandle
+	do !x indices !mems
+		if !this.checkvalid(!mems[!x]).not()  then
+			!mems[!x].delete()
+		endif
+	enddo
+	!mems.compress()
+	return !mems
+endmethod
+
+define method .checkvalid(!mem is any) is boolean $*check if cata element is valid
+	!tuflag = tuflag of $!mem
+	handle any
+	elsehandle none
+		if !tuflag.not() then
+			return false
+		endif
+	endhandle
+
+	!level = level of $!mem
+	if !level[1] gt 6 or !level[2] lt 6 then
+		return false
+	endif
+
+	!obst = obstruction of $!mem
+	if !obst ne 2 and !obst ne 0 then
+		return false
+	endif
+	return true
+endmethod
+
+define method .getMaxDis()
+	!this.maxdis = !!getpipemaxdia(!this.ref) / 2		$*202305101133
+	$(
+	!this.maxdis = 0
+	!dbref = object dbref(!this.ref)
+	!gmss = gmref of catref of $!this.ref
+	!mems = mem of $!gmss
+
+
+	do !x indices !mems
+		!mem = !mems[!x]
+		!level = level of $!mem
+		if !level[1] gt 6 or !level[2] lt 6 then
+			skip
+		endif
+
+		!obst = obstruction of $!mem
+		if !obst ne 2 and !obst ne 0 then
+			skip
+		endif
+
+		!memtype = type of $!mem
+		if !memtype eq 'SCYL' or !memtype eq 'LCYL' then
+			!diaString = Pdia of $!mem					$*---------------------------------to confirm
+
+			--!dia = !dbref.evaluate(object block(!diaString))
+			!dia = !!evalCata(!dbref,!diaString)
+
+			--$p $!this.ref $!dia
+			!this.maxDis = max(!this.maxDis,!dia / 2)
+		endif
+	enddo
+	$)
+
+	if !this.maxdis eq 0 then
+	--$p $!this.ref
+		var !volume volume $!this.ref
+		!pos1 = !volume.before(' to ').position()
+		!pos2 = !volume.after(' to ').position()
+		!mindis = min(min(abs(!pos1.east - !pos2.east),abs(!pos1.north - !pos2.north)),abs(!pos1.up - !pos2.up))
+		!this.maxdis = !mindis / 2
+		--!this.maxdis = !pos1.distance(!pos2) / 2
+	endif
+	--$p max dis $!this.maxdis
+endmethod
+)ò

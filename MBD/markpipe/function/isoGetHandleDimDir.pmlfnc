@@ -1,0 +1,240 @@
+﻿------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= May 6th 2023
+--[Function]:	get best direction(or opposite direction of best direction, next step, direction would be checked) for dim or mlabel,
+--
+--[REV]
+--Revision		= 1.1
+--Date			= May 10th 2023
+--[Function]:	change input data: handledirs(array of direction) to inputUsedDirs(array of isoUsedDir)
+------------------------------------------
+
+define function !!isoGetHandleDimDir(!pipedir is direction, !inputusedDirs is array, !minGapAngle is real, !gooddimdirs is array) is direction
+	!useddirs = !inputuseddirs
+	!resultdir = object direction()
+	!usedDirs.unique()
+	if !usedDirs.size() eq 0 then
+		return !!isogetdimdir(!pipedir,!gooddimdirs)
+		$(
+		-- it is not good enough, e.g. if handlerdirs[1] is e 30 u, return result maybe is e 60 d or w 60 u. actually, e is good maybe    202305061125
+	elseif !handledirs.size() eq 1 then
+		!dimDir = !pipeDir.orthogonal(!HandleDirs[1])
+		handle any
+			return !!isogetdimdir(!pipedir,!gooddimdirs)
+		elsehandle none
+			return !!isoGetBestdir(!dimDir,!gooddimdirs)
+		endhandle
+		$)
+	endif
+
+	!temparr = array()
+	do !useddir values !usedDirs
+		!tempdir = !useddir.dir
+		!angle = !tempdir.angle(!pipedir)
+		if abs(abs(!angle - 90) - 90) gt 1 then						$* remove paralle isouseddir
+			!temparr.append(!useddir)
+			if undefined(!ydir) then
+				!ydir = !pipedir.orthogonal(!tempdir)
+			endif
+		endif
+	enddo
+	!usedDirs = !temparr
+
+	if undefined(!ydir) then
+		return !!isogetdimdir(!pipedir,!gooddimdirs)
+	endif
+	!arcori = y is $!ydir and z is $!pipedir
+
+	!pos = e 0 n 0 u 0
+	!arc = object arc(!pos,!arcori,0,360,1000,true)
+
+	!usedangles = array()
+
+
+	--!angles = array()
+
+	--$p start
+
+
+	do !useddir values !usedDirs													$* get array of used angle
+		!tempdir = !useddir.dir
+		!temppos = !pos.offset(!tempdir,1000)
+		!tempangle = !arc.near(!temppos)
+
+		!minangle = !tempangle - !usedDir.angle / 2
+		!maxangle = !tempangle + !usedDir.angle / 2
+		if !minangle lt 0 then
+			!minangle = !minangle + 360
+		endif
+		if !maxangle ge 360 then
+			!maxangle = !maxangle - 360
+		endif
+
+		--minangle maybe large than maxangle, it is normal
+		!temparr = array()
+		!temparr.append(!minangle)
+		!temparr.append(!maxangle)
+
+
+		!usedangles.append(!temparr)
+
+		$(
+		--202306151444
+		!size = !usedangles.size()
+		if !size eq 0 then
+			!usedangles.append(!temparr)
+		else
+		--$P $!SIZE
+			!successMerge = false
+			do !x from 1 to !size
+				!usedangle = !usedangles[!x]
+				!mergeresult = !!mergeangles(!temparr,!usedangle)
+				if !mergeresult.size() eq 1 then
+					!usedanlges[!x] = !mergeresult[1]
+					!successMerge = true
+					break
+				endif
+			enddo
+			if !successMerge.not() then
+				!usedangles.append(!temparr)
+			endif
+		endif
+		$)
+
+		--if !angles.findfirst(!tempangle).unset() then
+		--    !angles.append(!tempangle)
+		--endif
+	enddo
+	--$p end
+
+
+
+
+	--!startangles = !usedangles.evaluate(object block('!usedangles[!evalindex][1]'))
+	$(
+	!startangles = array()
+	do !usedangle values !usedangles
+		!startangles.append(!usedangle[1])
+	enddo
+	$)
+	--!usedangles.reindex(!startangles.sortedindices())
+
+	!usedangles = !!mergeangles(!usedangles)
+
+
+
+
+
+
+	--!angles.sort()
+
+	$(
+	-- it is not good enough, e.g. if handlerdirs[1] is e 30 u, return result maybe is e 60 d or w 60 u. actually, e is good maybe    202305061125
+	if !angle eq 1 then
+		!dimDir = !pipeDir.orthogonal(!arc.angledirection(!angles[1]))
+		handle any
+			return !!isogetdimdir(!pipedir,!gooddimdirs)
+		elsehandle none
+			return !!isoGetBestdir(!dimDir,!gooddimdirs)
+		endhandle
+	else
+	$)
+	do !trydir values !gooddimdirs													$* try to get good direction in 3 good directions
+		if abs(!trydir.angle(!pipedir) - 90) gt 10 then
+			skip
+		else
+			!good = true
+			!tryangle = !arc.near(!arc.position.offset(!trydir,1000))
+		--$p $!tryangle
+			do !usedangle values !usedangles
+				if !!angleinangles(!tryangle,!usedangle[1],!usedangle[2]) or (abs(!tryangle - !usedangle[1]) lt !minGapAngle) or (abs(!tryangle - !usedangle[2]) lt !minGapAngle) then
+					!good = false
+					break
+				endif
+			enddo
+			$(
+			do !angle values !angles
+				!angledir = !arc.angledirection(!angle)
+				if !trydir.angle(!angledir) lt !minangle then
+					!good = false
+					break
+				endif
+			enddo
+			$)
+			if !good then
+				!tempdir = !pipedir.orthogonal(!trydir)
+				!dimdir = !tempdir.orthogonal(!pipedir)        $*尽量选择优先考虑的方向
+				return !dimdir
+			endif
+		endif
+	enddo
+
+	!gooddirs = array()
+	!dimdirs = array()
+	!dimangles = array()
+	do !x indices !usedangles
+		!startangle = !usedangles[!x][2]
+		if !x eq !usedangles.size() then
+			!endangle = !usedangles[1][1]
+		else
+			!endangle = !usedangles[!x + 1][1]
+		endif
+		if !endangle lt !startangle then
+			!endangle = 360 + !endangle
+		endif
+		!gapangle = !endangle - !startangle
+		!middir = !arc.angledirection((!startangle + !endangle) / 2)
+		if !gapangle ge !mingapangle then
+			!gooddirs.append(!middir)
+		else
+			!dimdirs.append(!middir)
+			!dimangles.append(!gapangle)
+		endif
+	enddo
+
+	--q var !gooddimdirs !usedDirs
+
+	$(
+	-----------------------------------------------
+	!dimdirs = array()
+	!dimangles = array()
+	!gooddirs = array()
+	do !x from 1 to !angles.size()
+		if !x eq 1 then
+			!angle = 360 - !angles.last()
+			!dimdir = !arc.angledirection((!angles.last() + 360) / 2)
+		else
+			!angle = !angles[!x] - !angles[!x - 1]
+			!dimdir = !arc.angledirection((!angles[!x] + !angles[!x - 1]) / 2)
+		endif
+		if !angle ge !minGapAngle then
+			!gooddirs.append(!dimdir)
+		endif
+		!dimdirs.append(!dimdir)
+		!dimangles.append(!angle)
+	enddo
+	$)
+
+
+	if !gooddirs.set() then
+		!angles = array()
+		--q var !gooddimdirs
+		do !tempdir values !gooddirs
+			!angle = !tempdir.angle(!gooddimdirs[1]) + !tempdir.angle(!gooddimdirs[2]) + !tempdir.angle(!gooddimdirs[3])
+			!angles.append(!angle)
+		enddo
+		!indices = !angles.sortedindices()
+		!gooddirs.reindex(!indices)
+		return !gooddirs[1]
+	else
+		!indices = !dimangles.sortedindices()
+		--!dimangles.reindex(!indices)
+		!dimdirs.reindex(!indices)
+		return !dimdirs.last()
+	endif
+	--endif
+endfunction

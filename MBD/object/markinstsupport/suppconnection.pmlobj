@@ -1,0 +1,45 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= October 19th 2023
+--[Function]:
+------------------------------------------
+
+--Method:
+--Public method:
+--suppconnection()  														$*
+
+--Private method:
+
+define object suppconnection
+	--member .position is position
+	--member .dir is boolean
+
+	member .connpos1 is position	$*position of connection point on first object
+	member .connpos12 is position	$*maybe there are two or more points for connections, for example, bolt with beam/PANE
+
+	member .connpos2 is position	$*position of connection point on second object
+	member .connpos22 is position	$*maybe there are two or more points for connections, for example, bolt with beam/PANE
+
+	member .conndir1 is direction	$*direction of connection point on first object
+	member .conndir2 is direction	$*direction of connection point on second object
+
+	member .index1 is real			$*number of first object
+	member .partnum1 is real		$*connection part number if first object has more than 1 parts
+	member .upstream1 is boolean	$*if first object is upstream, true, or false
+
+	member .index2 is real			$*number of second object
+	member .partnum2 is real		$*connection part number if second object has more than 1 parts
+	member .upstream2 is boolean	$*if second object is upstream, true, or false
+
+
+endobject
+
+define method .suppconnection()
+
+endmethod
+
+

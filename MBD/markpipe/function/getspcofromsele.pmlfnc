@@ -1,0 +1,42 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= September 22nd 2023
+--[Function]:
+------------------------------------------
+
+define function !!getspcofromsele(!sele is dbref) is string
+	!goodone = !sele
+	do
+		!tdefault = tdefault of $!goodone
+		!mems = mem of $!goodone
+		if !mems.size() eq 1 then
+			!goodone = !mems[1]
+		else
+			!find = false
+			do !mem value !mems
+				!tanswer = tanswer of $!mem
+				if !tanswer eq !tdefault then
+					!goodone = !mem
+					!find = true
+					break
+				endif
+			enddo
+			if !find.not() then
+				!goodone = !mems[1]
+			endif
+		endif
+		if type of $!goodone eq 'SPCO' then
+			!spconame = name of $!goodone
+			break
+		endif
+	enddo
+	return !spconame
+	handle any
+		return ''
+	endhandle
+endfunction
+W×

@@ -1,0 +1,162 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= April 16th 2024
+--[Function]:
+------------------------------------------
+
+define object supppanepad
+	member .name is string
+
+	member .dir is direction
+	member .pos is position
+	member .len is real
+	member .bigarc is arc
+	member .smallarc is arc
+	member .thick is real
+	member .angle is real
+
+	member .area is real
+	member .arclen is real
+	--member .ns is string
+endobject
+
+define method .supppanepad(!item is any)
+	!name = name of $!item
+	!this.name = !name
+	!vertpoints = object vertPoints(!name,true)
+	!vertpoints.getTwoProfiles()
+
+
+	!dir = !vertpoints.cenpoint1.direction(!vertpoints.cenpoint2)
+	!len = !vertpoints.cenpoint1.distance(!vertpoints.cenpoint2)
+	!profile = !vertpoints.twoprofiles[1]
+
+	var !nboxs coll all nbox for $!name
+	do !nbox values !nboxs
+		!nboxprofile = !this.getboxprofile(!nbox,!dir,!vertpoints.cenpoint1)
+		!restprofiles = !profile.difference(!nboxprofile)
+		!profile = !restprofiles[1]
+	enddo
+
+	var !ncyls coll all ncyl for $!name
+	do !ncyl values !ncyls
+		!ncylori = ori of $!ncyl wrt/*
+		!ncyldir = !ncylori.zdir()
+		if abs(abs(!ncyldir.angle(!dir) - 90) - 90) lt 0.1 then
+			!radius = diameter of $!ncyl
+			!radius = !radius / 2
+			!arc = object arc(!vertpoints.cenpoint1,!ncylori,0,360,!radius,true)
+			!temparr = array()
+			!temparr.append(!arc)
+			!ncylprofile = object profile(!vertpoints.cenpoint1,!ncylori,!temparr)
+			!restprofiles = !profile.difference(!ncylprofile)
+			!profile = !restprofiles[1]
+		endif
+	enddo
+	!profile.mergearcs()
+
+
+	!edges = !profile.edges()
+	!maxradius = 0
+	do !edge values !edges	$*just two arcs
+		if !edge.objecttype() eq 'ARC' then
+			if !edge.radius gt !maxradius then
+				if !maxradius ne 0 then
+					!smallarc = !bigarc
+				endif
+				!maxradius = !edge.radius
+				!bigarc = !edge
+				if defined(!smallarc) then
+					break
+				endif
+			else
+				!smallarc = !edge
+				break
+			endif
+		endif
+	enddo
+
+	!thick = !bigarc.radius - !smallarc.radius
+
+	!angle = !bigarc.endangle - !bigarc.startangle
+	if !angle lt 0 then
+		!angle = !angle + 360
+	endif
+
+	!midpoint = !bigarc.angleposition((!bigarc.startangle + !bigarc.endangle) / 2)
+	!midpoint = !midpoint.offset(!dir,!len / 2)
+
+	!this.len = !len
+	!this.dir = !dir
+	!this.pos = !midpoint
+	!this.bigarc = !bigarc
+	!this.smallarc = !smallarc
+	!this.thick = !thick.string('D1').real()
+	!this.angle = !angle
+
+	!this.getarea()
+endmethod
+
+define method .getarea()
+	--!midradius = (!this.bigarc.radius + !this.smallarc.radius) / 2
+	--!this.arclen = !midradius * !this.angle.value() * pi / 180
+	!this.arclen = !this.bigarc.radius * !this.angle.value() * pi / 180
+	!this.area = !this.len * !this.arclen
+	--!this.area = !this.area.value()
+endmethod
+
+define method .getBoxprofile(!item is any,!dir is direction,!cenpos is position) is profile
+	!pos = pos of $!item wrt/*
+	!boxname = name of $!item
+	!ori = ori of $!item wrt/*
+
+	if abs(abs(!ori.zdir().angle(!dir) - 90) - 90) lt 0.1 then
+		!xlen = xlen of $!item
+		!ylen = ylen of $!item
+		!zlen = zlen of $!item
+
+		!xdir = !ori.xdir()
+		!ydir = !ori.ydir()
+		!zdir = !ori.zdir()
+	elseif abs(abs(!ori.xdir().angle(!dir) - 90) - 90) lt 0.1 then
+		!xlen = ylen of $!item
+		!ylen = zlen of $!item
+		!zlen = xlen of $!item
+
+		!xdir = !ori.ydir()
+		!ydir = !ori.zdir()
+		!zdir = !ori.xdir()
+	elseif abs(abs(!ori.ydir().angle(!dir) - 90) - 90) lt 0.1 then
+		!xlen = zlen of $!item
+		!ylen = xlen of $!item
+		!zlen = ylen of $!item
+
+		!xdir = !ori.zdir()
+		!ydir = !ori.xdir()
+		!zdir = !ori.ydir()
+	else
+		!profile = object profile()
+		return !profile
+	endif
+
+
+	--q var !ori
+
+
+	!poss[1] = !pos.offset(!xdir,!xlen / 2).offset(!ydir,!ylen / 2).offset(!zdir,!zlen / 2)
+	!poss[2] = !poss[1].offset(!xdir, - !xlen)
+	!poss[3] = !poss[2].offset(!ydir, - !ylen)
+	!poss[4] = !poss[3].offset(!xdir, !xlen)
+	!ori = x is $!xdir and z is $!zdir
+
+	!profile = object profile(!cenpos,!ori,!poss)
+	!profile.close()
+
+
+	return !profile
+endmethod
+

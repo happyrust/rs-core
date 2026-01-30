@@ -1,0 +1,34 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= February 6th 2024
+--[Function]:
+------------------------------------------
+
+define function !!setmbdfmt()
+	!dp  = !!distancefmt.dp
+	!label = !!distancefmt.label
+
+	if !dp eq 0 then
+		!dp = 2
+	endif
+	if !label eq '' then
+		!label = 'UNITS'
+	endif
+
+	!temparr = array()
+	!temparr.append('DP:' & !dp)
+	!temparr.append('label:' & !label)
+
+	!path = !!pml.getpathname('setmbdfmt.pmlfnc')
+	!filepath = !path.before('setmbdfmt.pmlfnc') & 'distancefmt.txt'
+	!file = object file(!filepath)
+	!file.writefile('overwrite',!temparr)
+
+	!!distancefmt.dp = 0
+	!!distancefmt.label = ''
+endfunction
+юб

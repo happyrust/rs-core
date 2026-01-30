@@ -1,0 +1,48 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= March 23rd 2024
+--[Function]:
+------------------------------------------
+kill !!mbdlist
+setup form !!mbdlist resize
+	title |MBD ап╠М|
+	text .type |Type: |  tagwidth 4 width 5 is string
+	path right
+	text .key |Key: |  tagwidth 4 anchor t + l + r width 10 scroll 100 is string
+	button .get |Get| call |!this.get()| tooltip |get item with key| anchor t + r width 4
+	list .list || call |!this.selectlist()| at x 0 ymax + 0.2 anchor t + b + l + r width 29 height 13
+exit
+define method .mbdlist()
+	!this.type.val = 'BRAN'
+	!this.key.val = ''
+endmethod
+define method .get()
+	!type = !this.type.val
+	!key = !this.key.val.trim().upcase()
+	if !key ne '' then
+		!word = '*' + !key + '*'
+		var !items coll all $!type with(matchwild(upcase(name),!word)) for ce
+	else
+		var !items coll all $!type for ce
+	endif
+	!names = array()
+	do !item values !items
+		!name = name of $!item
+		!names.append(!name)
+	enddo
+	!this.list.dtext = !names
+endmethod
+
+define method .selectlist()
+	!val = !this.list.val
+	!name = !this.list.dtext[!val]
+	handle any
+	elsehandle none
+		$!name
+	endhandle
+endmethod
+u

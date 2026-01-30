@@ -1,0 +1,66 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= April 7th 2024
+--[Function]:
+------------------------------------------
+
+define function !!getallfileandfolders(!input is any) is array
+	!result = array()
+	if !input.objecttype() eq 'FILE' then
+		!inputstring = !input.name()
+	else
+		!inputstring = !input
+	endif
+
+	!tempstring = !input.substring(-1,1)
+	if !tempstring eq '\' or !tempstring eq '/' then
+		!inputstring = !input.substring(1,!inputstring.length() - 1)
+	endif
+	!inputstring = !inputstring.lowcase()
+
+	!path = !inputstring
+	!file = object file(!path)
+	handle any
+		return !result
+	elsehandle none
+		if !file.exists().not() then
+			return !result
+		endif
+	endhandle
+	--q var !file !path
+
+
+	!allfiles = array()
+	!folderpaths[1] = !path
+	!files = !file.files()
+	!allfiles.appendarray(!files)
+	!files = !file.subdirs()
+--q var !file
+--q var !files
+	label /again
+	!remaindirfiles = array()
+	do !file values !files
+		!foldername = !file.name()
+		!folderpaths.append(!foldername)
+		!tempfiles = !file.files()
+		if !tempfiles.set() then
+			!allfiles.appendarray(!tempfiles)
+		endif
+		!tempdirs = !file.subdirs()
+		if !tempdirs.set() then
+			!remaindirfiles.appendarray(!tempdirs)
+		endif
+	enddo
+	if !remaindirfiles.set() then
+		!files = !remaindirfiles
+		golabel /again
+	endif
+
+	!result.append(!allfiles)
+	!result.append(!folderpaths)
+	return !result
+endfunction

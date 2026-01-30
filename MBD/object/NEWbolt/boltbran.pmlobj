@@ -1,0 +1,108 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= August 31st 2023
+--[Function]:
+------------------------------------------
+
+--Method:
+--Public method:
+--boltbran(!item is any)													$*
+
+--Private method:
+
+
+define object boltbran
+	member .branname is string
+	member .materials is array		$* array of isomaterial
+endobject
+
+define method .boltbran(!item is any)
+    --q var !item
+	!this.branname = name of bran of $!item
+	handle any
+		return
+	endhandle
+
+	var !mode mode
+	forwards
+	!allmems = member of $!this.branname
+    --Q VAR !allmems
+	!mems = !allmems.evaluate(object block('!allmems[!evalindex].name'))
+	--q var !mems
+	!boltmems = array()
+    --q var !mems
+	do !x indices !mems
+        --Q VAR !x !boltmems[!x]
+		if defined(!boltmems[!x]) then
+            --$p 123
+			!boltmem = !boltmems[!x]
+		else
+            --$p 456
+			!boltmem = object boltmem(!mems[!x])
+		endif
+        --$P $!x
+        --q var !boltmem
+        --q var !mems[!x]
+		do !times from 1 to 2
+
+			if !times eq 1 then
+				!boltdatas = !boltmem.getarrivebolt()
+                --$P arrive
+                --q var !boltdatas[1] !boltdatas[2]
+                --Q VAR !boltdatas[1][2][1]
+			else
+				!boltdatas = !boltmem.getleavebolt()
+                --$P leave
+                --Q VAR !boltdatas
+                --Q VAR !boltdatas[1][2][1]
+			endif
+            --Q VAR !boltdatas[1][2][1]
+            --q var !boltdatas[1] !boltdatas[2]
+            --q var !boltdatas[1][1] !boltdatas[1][2][1]
+            --$p ---------------
+            --$p $!times
+            --q var  !times !boltdatas[1][2][1]
+            --q var !boltdatas[1][1][1] !boltdatas[1][2][1]
+
+			do !onememdata values !boltdatas
+                --q var !onememdata
+				!onememboltmaterials = !onememdata[1]
+				!relativeMems = !onememdata[2]
+                --q var !onememboltmaterials[1]
+                --q var !onememboltmaterials[1][1]  !onememboltmaterials[1][2] !onememboltmaterials[1][3]
+                --q var !relativeMems
+                --q var !mems[!x]
+                --q var !onememboltmaterials[1]
+                --q var !onememboltmaterials
+				do !boltmaterial values !onememboltmaterials
+                    --$p 102
+                    --q var !boltmaterial
+                    --q var !boltmaterial[1] !boltmaterial[2] !boltmaterial[3] !this.branname !item
+                    --q var !boltmaterial
+                    --q var !boltmaterial !boltmaterial.set() !boltmaterial[1]
+					if !boltmaterial.set() and !boltmaterial[1].inbran then
+						!this.materials.appendarray(!boltmaterial)
+					endif
+				enddo
+
+				if !times eq 2 then			$* it is useless when times is 1
+					do !remem values !relativemems
+                        --q var !remem
+						!tempindex = !mems.findfirst(!remem.name)
+						if !tempindex.set() then
+							!boltmems[!tempindex] = !remem
+						endif
+					enddo
+				endif
+			enddo
+		enddo
+        --q var !this.materials
+	enddo
+    --q var !this.materials
+    --q var !this.materials[1] !this.materials[2] !this.materials[3]
+	$!mode
+endmethod

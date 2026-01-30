@@ -1,0 +1,51 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= October 12nd 2023
+--[Function]:
+------------------------------------------
+
+define object suppconnect
+	member .poss is array
+	member .lines is array
+	member .mems is array
+
+	member .upstream is array		$*instore suppconnection of upstream
+	member .downstream is array		$*instore suppconnection of downstream
+
+	member .connections is array	$*instore rest suppconnection which is hard to say upstream or downstream
+endobject
+
+define method .suppconnect(!item is any)
+	!poss = array()
+	!apos = apos of $!item wrt/*
+	!lpos = lpos of $!item wrt/*
+	!poss.append(!apos)
+	!poss.append(!lpos)
+	!this.poss = !poss
+	!this.lines = array()
+	do !x from 1 to !this.poss.size() - 1
+		!line = !this.poss[!x].line(!this.poss[!x + 1])
+		!this.lines.append(!line)
+	enddo
+	!name = name of $!item
+	!this.mems.append(!name)
+return
+	!ptref  = name of ptref of catref of $!item
+	!mems = mem of $!ptref
+	!poss = array()
+	do !mem values !mems
+		!num = number of $!mem
+		!nums.append(!num)
+		!numpos = p$!num pos of $!item wrt/*
+		!poss.append(!numpos)
+	enddo
+	!this.poss = !poss
+	!name = name of $!item
+	!this.mems.append(!name)
+endmethod
+
+À*

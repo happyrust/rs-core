@@ -1,0 +1,254 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= May 8th 2023
+--[Function]:
+--
+--[REV]
+--Revision		= 1.1
+--Date			= May 8th 2023
+--[Function]:	fix bug (sum param x xx)
+--
+--[REV]
+--Revision		= 1.2
+--Date			= June 1st 2023
+--[Function]:	fix bug (direction: x -x p2 -p1)
+--
+--[REV]
+--Revision		= 1.3
+--Date			= June 6th 2023
+--[Function]:	update direction part because Y45Z should be N 45 E but the result is N 45 U for /S104.007.BZ in project 1907
+------------------------------------------
+
+define function !!evalCata(!item is any, !string is string) is any
+    --q var !item  !string
+	if !item.objecttype() eq 'DBREF' then
+		!dbref = !item
+	else
+		!dbref = object dbref(!item)
+		handle any
+			return 0
+		endhandle
+	endif
+
+
+	if !!isdir(!string) then
+	--$p isdir $!string
+		if !string.split().size() eq 1 then
+			!inputdirstring = !string.replace('X',' X ').replace('Y',' Y ').replace('Z',' Z ').replace('P',' P').replace('- X','-X').replace('- Y','-Y').replace('- Z','-Z').replace('- P','-P')
+		endif
+		--$p asdf asdf $!newstring
+		!dirs = array()
+		!angles = array()
+		!points = array()
+
+		!parts = !inputdirstring.split()
+
+		!ori = ori of $!dbref wrt/*
+
+
+		-----------------------------------------------------------------------------------
+		-----------------------------------------------------------------------------------Step x:202310111705
+		!itemtype = !dbref.type
+		if !itemtype eq 'SCTN' or !itemtype eq 'GENSEC' then
+			var !plins coll all plin with(pkey eq 'NA') for pstref of catref of $!dbref
+			!nadirstring = plax of $!plins[1]
+			!nadirstring = !nadirstring.trim()
+			if !nadirstring eq 'Y' then
+				!xdir = !ori.xdir()
+				!ydir = !ori.ydir()
+				!zdir = !ori.zdir()
+			else
+				--nadirstring maybe like X,- X, Y , - Y, X 123 Y, -X 123 Y, X 123 - Y, - X 123 - Y
+				!nadirstring = !nadirstring.replace('X',' E ').replace('Y',' N ').replace('- X','W').replace('- Y','S').replace('-X','W').replace('-Y','S')
+				!temppos = e 0 n 0 u 0
+				!tempori = x is n and z is u
+				!temparc = object arc(!temppos,!tempori,0,360,1000,true)
+
+				!tempdir = object direction(!nadirstring)
+				!temppos = !temppos.offset(!tempdir,1000)
+				!angle = !temparc.near(!temppos)
+
+
+				!tempxdir = !ori.ydir()
+				!tempzdir = !ori.zdir().opposite()
+				!tempori = x is $!tempxdir and z is $!tempzdir
+
+				!temparc = object arc(!temppos,!tempori,0,360,1000,true)
+				!ydir = !temparc.angledirection(!angle)
+				!zdir = !ori.zdir()
+				!xdir = !zdir.orthogonal(!ydir)
+			endif
+		else
+			!xdir = !ori.xdir()
+			!ydir = !ori.ydir()
+			!zdir = !ori.zdir()
+		endif
+
+		--q var !parts
+		do !x indices !parts
+
+			!part = !parts[!x].upcase()
+			if !part eq 'X' then
+				!dirs.append(!xdir)
+			elseif !part eq '-X' then
+				!dirs.append(!xdir.opposite())
+			elseif !part eq 'Y' then
+				!dirs.append(!ydir)
+			elseif !part eq '-Y' then
+				!dirs.append(!ydir.opposite())
+			elseif !part eq 'Z' then
+				!dirs.append(!zdir)
+			elseif !part eq '-Z' then
+				!dirs.append(!zdir.opposite())
+			else
+
+				if !part.matchwild('P*') then
+					!num = !part.substring(2).real()
+					handle any
+					elsehandle none
+						!dir = p$!num dir of $!dbref wrt/*
+						!pos = p$!num pos of $!dbref wrt/*
+						!dirs.append(!dir)
+						!points.append(!pos)
+						--q var !dirs !points
+						skip
+					endhandle
+				elseif !part.matchwild('-P*') then
+					!num = !part.substring(3).real()
+					handle any
+					elsehandle none
+						!dir = p$!num dir of $!dbref wrt/*
+						!pos = p$!num pos of $!dbref wrt/*
+						!dir = !dir.opposite()
+						!dirs.append(!dir)
+						!points.append(!pos)
+						skip
+					endhandle
+				endif
+
+				!tempresult = !part.real()
+				handle any
+					!tempresult = !!evalcata(!dbref,!part)
+					handle any
+						$p
+						$p Cant evaluate $!string to valid data in function evalcata
+						$p did not consider this situation, check it
+						return !string
+						return 0
+					endhandle
+				endhandle
+				if !tempresult ne 0 then
+					!angles.append(!tempresult)
+				endif
+			endif
+		enddo
+		--q var !dirs !angles !points
+
+		if !dirs.set() then
+			!gooddir = !dirs[1]
+			if !angles.set() then
+				if !dirs.size() eq !angles.size() + 1 then
+					!tempdir = !dirs[1].orthogonal(!dirs[2])
+					!temppos = e 0 n 0 u 0
+					!tempori = x is $!dirs[1] and z is $!tempdir
+					!arc = object arc(!temppos,!tempori,0,360,1000,true)
+					!gooddir = !arc.angledirection(!angles[1])
+
+					if !dirs.size() eq 3 then
+						!tempdir = !gooddir.orthogonal(!dirs[2])
+						!tempori = x is $!gooddir and z is $!tempdir
+						!arc = object arc(!temppos,!tempori,0,360,1000,true)
+						!gooddir = !arc.angledirection(!angles[2])
+					endif
+				else
+					$p
+					$p Cant evaluate $!string to valid data in function evalcata
+					$p did not consider this situation, check it
+					return !string
+					return 0
+				endif
+			endif
+
+			if !points.set() then
+				!result = array()
+				!result.append(!gooddir)
+				!result.append(!points[1])
+			else
+				!result = !gooddir
+			endif
+
+			return !result
+		endif
+	endif
+
+
+
+	--!string = 'SUM PARAM [7] IPARAM [1]'
+	--!string = 'xx times SUM PARAM 1 15'	202305081030
+	!xdis = !dbref.evaluate(object block(!string))
+	handle any
+		--$p $!string  aa
+		--handle (2,779)	$*PARAM 7 to PARAM [7]
+		!parts = !string.split()
+		!realnums = array()
+		do !x from 2 to !parts.size()							$* e.g. change     para 15   to      para [15]
+			if !parts[!x - 1].length() gt 1 then
+				!len = !parts[!x].length()
+				!isreal = true
+				do !y from 1 to !len
+					!letter = !parts[!x].substring(!y,1)
+					if not(!letter inset ('1','2','3','4','5','6','7','8','9','0')) then
+						!isreal = false
+						break
+					endif
+				enddo
+				if !isreal then
+					if !parts[!x - 1].upcase().match('PARA') ne 0 then
+						!parts[!x] = '[' + !parts[!x] + ']'
+					endif
+					!realnums.append(!x)
+				endif
+			endif
+		enddo
+		-----------------------------
+
+		!sumstart = false													$* change  sum para [11]  para [5]   to (para [11] + para [5])
+		do !x indices !parts
+			if !parts[!x].upcase() eq 'SUM' then
+				!parts[!x] = '('
+				!sumstart = true
+			elseif !parts[!x].upcase() eq 'TIMES' then	$* 0.1 TIMES PARAM [5]
+				!parts[!x] = '*'
+			endif
+			if !x eq 1 then
+				!newstring = !parts[1]
+			else
+				!newstring = !newstring + ' ' + !parts[!x]
+				if !sumstart and !realnums.findfirst(!x).set() and !x ne !parts.size() then
+					!newstring = !newstring + ' +'
+				endif
+			endif
+		enddo
+		if !sumstart then
+			!newstring = !newstring + ')'
+		endif
+		--PARAM [7]
+		!xdis = !dbref.evaluate(object block(!newstring))
+		handle any
+			$p
+			$p Cant evaluate $!string to valid data in function evalcata
+			$p did not consider this situation, check it
+			return !string
+			return 0
+		endhandle
+	elsehandle none
+		if !xdis.objecttype() eq 'ARRAY' then
+			return !xdis[1]
+		endif
+	endhandle
+	return !xdis
+endfunction

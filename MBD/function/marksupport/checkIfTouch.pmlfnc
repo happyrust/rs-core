@@ -1,0 +1,38 @@
+define function !!checkIfTouch(!sp1 is supportPane,!sp2 is supportPane) is boolean
+	--return true
+
+	!touch = false
+	do !onepos values !sp2.midposs
+		!pos = !onepos.offset(!sp2.zdir,!sp2.height / 2)
+		if !!posinprofile(!pos,!sp1.profile) then
+		--if !sp1.profile.iswithout(!pos).not() then	$*did not consider the pos is outside but near the edge
+
+			!dis = !!suidirdis(!sp1.plane.near(!pos),!sp1.zdir,!pos)
+			if !dis gt - 0.1 * !sp1.height and !dis lt !sp1.height * 1.1 then
+				!touch = true
+				break
+			endif
+		endif
+	enddo
+
+
+
+	if !touch.not() then
+		do !onepos values !sp1.midposs
+			--!pos = !onepos
+			!pos = !onepos.offset(!sp1.zdir,!sp1.height / 2)
+			if !!posinprofile(!pos,!sp2.profile) then
+			--if !sp2.profile.iswithout(!pos).not() then		$*did not consider the pos is outside but near the edge
+
+				!dis = !!suidirdis(!sp2.plane.near(!pos),!sp2.zdir,!pos)
+				if !dis gt - 0.1 * !sp2.height and !dis lt !sp2.height * 1.1 then
+					!touch = true
+					break
+				endif
+			endif
+		enddo
+	endif
+
+	return !touch
+endfunction
+£

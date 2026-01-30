@@ -1,0 +1,43 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= July 21st 2023
+--[Function]:	it is not so good, only to calculate area which mark of lines from points
+------------------------------------------
+
+define function !!getArea(!points is array) is real
+	if !points.size() le 2 then
+		return 0
+	endif
+
+	!ori = !!getZdirWithPoints(!points)
+	if !ori.unset() then
+		return 0
+	endif
+
+
+	!arc = object arc(!points[1],!ori,0,360,1000,true)
+
+
+
+	!area = 0
+	!currentAngle = 0
+	do !x from 3 to !points.size()
+		!line = !points[1].line(!points[!x - 1])
+		!dis = !line.distance(!points[!x])
+		!angle = !arc.near(!points[!x])
+		--if !angle lt !currentangle then
+		if (!angle lt !currentangle and !angle gt !currentangle - 180) or !angle gt !currentangle + 180 then
+			!area = !area - !line.length() * !dis / 2
+		else
+			!area = !area + !line.length() * !dis / 2
+		endif
+		!currentAngle = !angle
+	enddo
+	!area = abs(!area)
+	return !area
+endfunction
+†

@@ -1,0 +1,1881 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= October 27th 2023
+--[Function]:
+------------------------------------------
+
+--
+--<<Method>>:
+--<<Public method>>:
+--planesystem(!objects is array,!connections is array,!cheight is real) 	$*
+--
+--<<Private method>>:
+--sortdimlines()															$*
+--getconsidershapes(!dir is direction) is array 							$*
+--assignDimlines()  														$*
+-----Step 1:new way sort order of dimlines for each drawplane in order to get better view
+--------Step 1:old way
+--mergedimlines()   														$* merge dimline with same direction and distance between them is 0
+--deleterepeateddimlines()  												$* delete similar dimline which they are same at dim direction
+--------------Step 1:compare
+--checksupppoint(!poss is array)											$*
+--findlineforpoint(!pos is position)										$*
+--getDimLines(!index is real)   											$*
+--addcyli(!index is real,!pos1 is position,!pos2 is position,!outdia is real,!ori is orientation,!partnum is real)  	$*
+--addcyli(!index is real,!pos1 is position,!pos2 is position,!outdia is real,!ori is orientation)   	$*
+--getcyliposs(!pos1 is position,!pos2 is position,!outdia is real,!ori is orientation) is array 	$*
+--addvolume(!index is real) 												$*
+--getoutdia(!index is real) is real 										$*
+--addconcreteshape(!poss is array,!index is real,!dir is direction) 		$*
+--addshape(!poss is array,!index is real)   								$*
+--addshape(!poss is array,!index is real,!partnum is real)  				$*
+--getShapes(!index is real) 												$*
+--addconnectionpos(!dir is direction,!poss is array,!index is real,!class is real)  	$*
+--addconnectionpos(!dir is direction,!poss is array,!index is real,!x is real,!class is real)   	$*
+--addDirconnectionpos(!dir is direction,!poss is array,!index is real,!x is real,!class is real) is boolean 	$*
+-------------------------------------
+
+
+define object planesystem
+	member .objects is array
+	member .connections is array
+	member .textindexs is array
+	--member .mlabels is array
+	member .dimlines is array
+	member .realShapes is array		$*real shapes, it is different from shape on drawplen which is projected shape, normally they are same
+
+	member .concreteShapes is array
+	member .concretedirs is array
+
+	member .dirobject is suiLookDirections
+	member .restdirs is array
+	member .drawplanes is array	$*array of drawplane
+
+	member .todrawthings is array	$*these affect other things to draw,e.g. maybe new thing is unnecesary to draw since there is one in this array
+	--$* or the orientation of new thing is affected because it has been to keep at one side with other things in array
+
+	member .cheight is real
+
+	member .uniquedimpoints is boolean
+
+	member .inputlookdir is direction	$*if set, the value would be consider when the dirobject getted
+
+	member .startprogress is real
+	member .endprogress is real
+	--member .cpx is real			$* current progress
+endobject
+
+define method .planesystem(!objects is array,!connections is array,!textindexs is array,!cheight is real,!dimlines is array,!inputlookdir is direction, !startprogress is real, !endprogress is real)
+	!this.startprogress = !startprogress
+	!this.endprogress = !endprogress
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+endmethod
+define method .planesystem(!objects is array,!connections is array,!textindexs is array,!cheight is real,!dimlines is array,!inputlookdir is direction)
+	!this.dimlines = !dimlines
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+endmethod
+
+
+define method .planesystem(!objects is array,!connections is array,!textindexs is array,!cheight is real,!inputlookdir is direction)
+	--q var !objects !connections
+	--q var !this
+    --q var !objects !connections !textindexs !cheight !inputlookdir
+	!this.objects = !objects
+	!this.connections = !connections
+	!this.textindexs = !textindexs
+	!this.inputlookdir = !inputlookdir
+	--!this.getdrawplanes()
+	!this.uniquedimpoints = true
+	--!this.uniquedimpoints = false		$* a lot of dim of which lenth is 0
+	--q var !this.dimlines
+    --$p 123
+	if !this.dimlines.unset() then
+        --q var !this.objects
+		!this.objects.evaluate(object block('!this.getDimLines(!evalindex)'))
+		!this.setprogress(10)
+		!this.mergedimlines()
+		!this.setprogress(12)
+
+
+		!poss = array()
+		!this.dimlines.evaluate(object block('!poss.appendarray(!this.dimlines[!evalindex].poss)'))
+		!this.setprogress(13)
+
+
+		!this.checksupppoint(!poss)	$*dimline in suisupport use point projected to line, so more useless dim would be generated here if use this method
+		!this.setprogress(15)
+		!generatedims = true
+	else
+        --q var !this.dimlines
+		!poss = array()
+		!this.dimlines.evaluate(object block('!poss.appendarray(!this.dimlines[!evalindex].poss)'))
+		!this.setprogress(2)
+		!generatedims = false
+	endif
+
+
+	!this.deleterepeateddimlines()	$* for inst pipe supp/ inst supp, not for em4 support
+	if !generatedims then
+		!this.setprogress(17)
+	else
+		!this.setprogress(5)
+	endif
+
+	if !this.dimlines.unset() and !this.textindexs.unset() then
+		return
+	endif
+
+	!this.dirobject = object suilookdirections(!this.objects,!this.inputlookdir,!this.dimlines)
+	--!this.dirobject = object suilookdirections(!this.objects,!this.inputlookdir)
+
+	if !generatedims then
+		!this.setprogress(30)
+	else
+		!this.setprogress(20)
+	endif
+
+	!this.objects.evaluate(object block('!this.getShapes(!evalindex)'))
+	--!this.dirobject = object suilookdirections(!this.objects,!this.inputlookdir)
+
+
+	if !generatedims then
+		!currentprogress = 40
+	else
+		!currentprogress = 30
+	endif
+	!this.setprogress(!currentprogress)
+	--$p $!currentprogress
+
+	!this.cheight = !cheight
+	if !this.cheight eq 0 then
+		!this.cheight = !this.dirobject.maxlen / 20
+	endif
+	--if !this.cheight eq 0 then
+	--	!this.cheight = 30
+	--endif
+
+	!newdimway = true
+	--!newdimway = false
+	if !newdimway then	$* compare dim in different drawplane,choose best one
+		!this.assignDimAndMlabel(!currentprogress,100)
+	else	$* no compare
+		--!this.createdrawplanes()	$*complex support has too many drawplane, thus waste a lot of time
+		--!this.deleterepeatedpointsindim()
+		!this.assignDimlines()
+
+		--!this.assignMlabels()
+
+		if !generatedims then
+			!this.setprogress(80)
+		else
+			!this.setprogress(75)
+		endif
+
+		--!this.assignDimlines()
+		!this.assignMlabels()
+	endif
+
+
+	--!this.setprogress(100)
+
+
+	--!lines = array()
+	--do !dimline values !this.dimlines
+	--	!lines.append(!dimline.axis)
+	--enddo
+
+	--!this.correctydirfordims()
+	--!this.correctydirformlabels()
+endmethod
+
+define method .createdrawplanes()	$*create 3 drawplane for assign dimlines and texts
+	--do !dir values !this.dirobject.lookdirs
+	!size = min(!this.dirobject.lookdirs.size(),3)
+	do !times from 1 to !size
+		!dir = !this.dirobject.lookdirs[!times]
+		!this.createonedrawplane(!dir)
+	enddo
+endmethod
+
+define method .createonedrawplane(!dir is direction) is drawplane
+	--!drawplane = object drawplane(!this.getconsidershapes(!dir),!dir,!this.dirobject.lookdirs)
+	----------------------
+	----------------------Step 1:create a drawplane in one look direction to put dimline
+	!drawplane = object drawplane(!this.realshapes,!dir,!this.dirobject.lookdirs,!this.dirobject.cenpoint)
+	--!drawplane = object drawplane(!this.realshapes,!dir,!this.dirobject.lookdirs)
+	!drawplane.cheight = !this.cheight
+	!this.drawplanes.append(!drawplane)
+	return !drawplane
+endmethod
+
+define method .setprogress(!bili is real)
+	if !this.startprogress.set() and !this.endprogress.set() and !this.startprogress lt !this.endprogress then
+		!!fmsys.setProgress(nint(!bili * (!this.endprogress - !this.startprogress) / 100) + !this.startprogress)
+	endif
+	return
+	if !this.cpx.unset() and !this.startprogress.set() and !this.endprogress.set() and !this.startprogress lt !this.endprogress then
+		!spx = !this.startprogress
+		!epx = !this.endprogress
+		!this.cpx = !this.startprogress
+	endif
+
+	if !this.cpx.set() then
+		!this.cpx = nint(!bili / 100 * (!this.endprogress - !this.startprogress)) + !this.cpx
+		!!fmsys.setProgress(!this.cpx)
+	endif
+endmethod
+
+
+--define method .deleterepeatedpointsindim()
+--	do !x indices !this.dimlines
+
+--	enddo
+--endmethod
+define method .sortdimlines()
+	!this.dimlines = !this.sortdimlineaccordinginterpoints(!this.dimlines)
+
+	return
+	!classes = array()
+	do !dimline values !this.dimlines
+		if undefined(!classes[!dimline.class]) then
+			!classes[!dimline.class] = array()
+		endif
+		!classes[!dimline.class].append(!dimline)
+	enddo
+	!dimlines = array()
+	!classes.evaluate(object block('!dimlines.appendarray(!classes[!evalindex])'))
+
+	!this.dimlines = !dimlines
+endmethod
+
+define method .sortdimlineaccordinginterpoints(!dimlines is array) is array
+	!dirs = array()
+	!alldimlinearrs = array()
+	do !dimline values !dimlines
+		!dir = !dimline.dir
+		!find = false
+		do !x indices !dirs
+			!angle = !dir.angle(!dirs[!x])
+			if !angle lt 10 or !angle gt 170 then
+				!alldimlinearrs[!x].append(!dimline)
+				!find = true
+				break
+			endif
+		enddo
+		if !find.not() then
+			!dirs.append(!dir)
+			!temparr = array()
+			!temparr.append(!dimline)
+			!alldimlinearrs.append(!temparr)
+		endif
+	enddo
+
+	!this.sortdimlineaccordingdirection(!alldimlinearrs)
+
+	!newdimlines = array()
+	do !linearr values !alldimlinearrs
+		!newlinearr = !this.sortdimlinearr(!linearr)
+		!newdimlines.appendarray(!newlinearr)
+	enddo
+	--q var !newdimlines
+	return !newdimlines
+endmethod
+
+define method .sortdimlineaccordingdirection(!alldimlinearrs is array)
+	!indices = array()
+	!lookdirs = !this.dirobject.lookdirs
+	do !linearr values !alldimlinearrs
+		!dimline = !linearr[1]
+		!goodindex = 0
+		do !index indices !lookdirs
+			if !this.dimlinefitdir(!dimline,!lookdirs[!index]) then
+				!goodindex = !index
+				break
+			endif
+		enddo
+		if !goodindex ne 0 then
+			!indices.append(!goodindex)
+		else
+			!indices.append(10000)
+		endif
+	enddo
+	!tempindices = !indices.sortedindices()
+	!alldimlinearrs.reindex(!tempindices)
+endmethod
+
+define method .dimlinefitdir(!dimline is dimline, !lookdir is direction) is boolean
+	!tolerance = 5
+	if !dimline.planedir.set() then
+		!tempangle = !dimline.planedir.angle(!lookdir)
+		if !tempangle gt !tolerance and !tempangle lt 180 - !tolerance then
+			return false
+		endif
+	endif
+	if abs(!lookdir.angle(!dimline.dir) - 90) lt !tolerance then
+		return true
+	endif
+	return false
+endmethod
+
+define method .sortdimlinearr(!dimlines is array) is array
+	!allindices = !dimlines.indices()
+	!allarrs = array()
+	!size = !dimlines.size()
+	do !x from 1 to !size - 1
+		do !y from !x + 1 to !size
+			!tempresult = !this.comparetwodimlines(!dimlines[!x],!dimlines[!y])
+			if !tempresult eq 1 then	$* x is big dim y is small dim, x should put behind
+				!arr[1] = !y
+				!arr[2] = !x
+				!allarrs.append(!arr)	$* y is big dim x is small dim, y should put behind
+			elseif !tempresult eq 2 then
+				!arr[1] = !x
+				!arr[2] = !y
+				!allarrs.append(!arr)
+			endif
+		enddo
+	enddo
+	!indices = !!manysort(!allarrs)
+	if !indices.size() ne !allindices.size() then
+		!indices.appendarray(!allindices)
+		!indices.unique()
+	endif
+	!dimlines.reindex(!indices)
+	return !dimlines
+
+	$(
+	------------------------------------------------------old way, there is a bad possible to get a close sorting way
+	!size = !dimlines.size()
+	do !x from 1 to !size - 1
+		do !y from !x + 1 to !size
+			if !this.comparetwodimlines(!dimlines[!x],!dimlines[!y]).not() then
+				!dimline = !dimlines[!x]
+				!dimlines[!x] = !dimlines[!y]
+				!dimlines[!y] = !dimline
+			endif
+		enddo
+	enddo
+	return !dimlines
+	$)
+endmethod
+
+define method .comparetwodimlines(!dimline1 is dimline,!dimline2 is dimline) is real
+	--define method .comparetwodimlines(!dimline1 is dimline,!dimline2 is dimline) is boolean
+	do !times from 1 to 2
+		if !times eq 1 then
+			!pos1 = !dimline1.poss[1]
+			!dir = !dimline1.dir
+			!pos2 = !dimline1.poss.last()
+
+			!poss = !dimline2.poss
+		else
+			!pos1 = !dimline2.poss[1]
+			!dir = !dimline2.dir
+			!pos2 = !dimline2.poss.last()
+
+			!poss = !dimline1.poss
+		endif
+
+		!internum = 0
+		!linelen = !!suidirdis(!pos1,!dir,!pos2)
+		do !pos values !poss
+			!len = !!suidirdis(!pos1,!dir,!pos)
+			if !len gt 0 and !len lt !linelen then
+				!internum = !internum + 1
+			endif
+		enddo
+
+		if !times eq 1 then
+			!internum1 = !internum
+			!linelen1 = !linelen
+		else
+			!internum2 = !internum
+			!linelen2 = !linelen
+		endif
+	enddo
+
+
+
+	--if (abs(!linelen1 - 1809) lt 1 and abs(!linelen2 - 4701) lt 1) or (abs(!linelen2 - 1809) lt 1 and abs(!linelen1 - 4701) lt 1) then
+
+	--endif
+
+	if !internum1 gt !internum2 then
+		return 1
+	elseif !internum1 lt !internum2 then
+		return 2
+	else
+		if !linelen1 gt !linelen2 then
+			return 1
+		else
+			return 2
+		endif
+		return 0
+	endif
+
+	$(
+	if !internum1 gt !internum2 then
+		return false
+	elseif !internum1 eq !internum2 then	$*compare the length of dimline when number of interpoints are same
+		if !linelen1 gt !linelen2 then
+			return false
+		else
+			return true
+		endif
+	else
+		return true
+	endif
+	$)
+endmethod
+
+$(
+define method .getconsidershapes(!dir is direction) is array
+	!shapes = !this.realShapes
+	do !tempx indices !this.concretedirs
+		!angle = !dir.angle(!this.concretedirs[!tempx])
+		if !angle gt 1 and !angle lt 179 then
+			!shapes.append(!this.concreteshapes[!tempx])
+		endif
+	enddo
+	return !shapes
+endmethod
+$)
+
+define method .assignDimAndMlabel(!startp is real, !endp is real)
+	!this.createdrawplanes()	$*create 3 drawplane, there would be a compare for dimline
+	!this.restdirs = !this.dirobject.lookdirs
+
+	!smalltexts = array()
+	!bigtexts = array()
+
+	$(
+	if !this.dimlines.size() gt 10 then	$*number of dimline is too large, assign dimline first
+		!biglength = 1
+	else
+		!biglength = 7
+	endif
+
+
+	do !textindex values !this.textindexs
+		if !textindex[1].objecttype() eq 'STRING' and !textindex[1].trim().length() lt !biglength then
+			!smalltexts.append(!textindex)
+		else
+			!bigtexts.append(!textindex)
+		endif
+	enddo
+	$)
+	!bigtexts = !this.textindexs
+
+
+	!size = !this.textindexs.size() + !this.dimlines.size()
+
+	!this.assigntexts(0,!smalltexts)
+	if !this.startprogress.set() and !this.endprogress.set() and !this.startprogress lt !this.endprogress then
+		!bili = !smalltexts.size() / !size * (!endp - !startp) + !startp
+		!!fmsys.setProgress(nint(!bili * (!this.endprogress - !this.startprogress) / 100) + !this.startprogress)
+	endif
+	!this.assignDimlinesnew()
+	if !this.startprogress.set() and !this.endprogress.set() and !this.startprogress lt !this.endprogress then
+		!bili = (!smalltexts.size() + !this.dimlines.size()) / !size * (!endp - !startp) + !startp
+		!!fmsys.setProgress(nint(!bili * (!this.endprogress - !this.startprogress) / 100) + !this.startprogress)
+	endif
+	!this.assigntexts(!smalltexts.size(),!bigtexts)
+
+	!bili = !endp
+	if !this.startprogress.set() and !this.endprogress.set() and !this.startprogress lt !this.endprogress then
+		!!fmsys.setProgress(nint(!bili * (!this.endprogress - !this.startprogress) / 100) + !this.startprogress)
+	endif
+endmethod
+
+define method .createdrawplaneandcontinue(!dimlineindex is real)
+	!dimline = !this.dimlines[!dimlineindex]
+	!dir1 = !dimline.dir
+	!find = false
+	do !index indices !this.restdirs
+		if !this.dimlinefitdir(!dimline,!this.restdirs[!index]) then
+			!gooddir = !this.restdirs[!index]
+			!this.restdirs[!index].delete()
+			!this.restdirs.compress()
+			!find = true
+			break
+		endif
+	enddo
+	if !find.not() then
+		if !this.restdirs.unset() then
+			--$p Something wrong
+			--skip
+			$p Failed to put dimline $!dimlineindex 		planesystem
+			return
+		endif
+		!angles = array()
+		do !dirindex indices !this.restdirs
+			!dir = !this.restdirs[!dirindex]
+			!tempangle = !dir.angle(!dir1)
+			!tempangle = min(!tempangle,180 - !tempangle)
+			!angles.append(!tempangle)
+		enddo
+		!gooddir = !this.restdirs[!angles.sortedindices()[1]]
+		!tempdir = !dir1.orthogonal(!gooddir)
+		!gooddir = !tempdir.orthogonal(!dir1)
+	endif
+	!drawplane = !this.createonedrawplane(!gooddir)
+
+	--!tempshape = !drawplane.put(!dimline,!this.realShapes,!this.dirobject.maxlen / 3)
+	!tempshape = !drawplane.put(!dimline,!this.realShapes,!this.dirobject.maxlen * 100) $* no layers
+	if !tempshape.poss.set() then
+		!tempshape.dimlineindex = !dimlineindex
+		if !tempshape.offsetlen lt !this.dirobject.maxlen * 2 then
+            --$p 1920
+			!this.realShapes.append(!tempshape)
+		else
+			!this.forceshortassigndimline(!dimlineindex)
+		endif
+	else
+		$p Failed to put dimline $!dimlineindex 		planesystem
+	endif
+endmethod
+
+define method .assignDimlinesnew()
+	!this.sortdimlines()	$*sort dimline according to number of inter points (and class)
+	do !dimlineindex indices !this.dimlines
+		!dimline = !this.dimlines[!dimlineindex]
+		!chas = array()
+		!realshapes = array()
+		do !drawplane values !this.drawplanes
+			if !this.dimlinefitdir(!dimline,!drawplane.ori.zdir()) then
+				--!tempshape = !drawplane.put(!dimline,!this.realShapes,!this.dirobject.maxlen / 3)
+				!tempshape = !drawplane.put(!dimline,!this.realShapes,!this.dirobject.maxlen * 100) $* no layers
+				if !tempshape.poss.set() then
+					!tempshape.dimlineindex = !dimlineindex
+					!chas.append(!tempshape.offsetlen)
+                    --$p 1718
+					!realshapes.append(!tempshape)
+					if !tempshape.offsetlen lt !this.dirobject.maxlen * 1.2 then	$* unnecessary to try more
+						break
+					endif
+				endif
+			endif
+		enddo
+
+		if !chas.set() then
+			--!!2l(!chas,!realshapes,!dimlineindex)
+			!indices = !chas.sortedindices()
+
+			if !chas[!indices[1]] lt 9000 then
+				--if !chas[!indices[1]] lt !this.dirobject.maxlen then
+                --$p 1516
+				!this.realShapes.append(!realshapes[!indices[1]])
+			else
+				!this.forceshortassigndimline(!dimlineindex)
+			endif
+			--!!1l(!realshapes[!indices[1]],!dimlineindex)
+		else
+			!this.createdrawplaneandcontinue(!dimlineindex)
+		endif
+	enddo
+endmethod
+
+define method .forceshortassigndimline(!dimlineindex is real)
+	!dimline = !this.dimlines[!dimlineindex]
+	do !drawplane values !this.drawplanes
+		if !this.dimlinefitdir(!dimline,!drawplane.ori.zdir()) then
+			!drawplane.assignnoconcrete = true
+			!tempshape = !drawplane.put(!dimline,!this.realShapes,!this.dirobject.maxlen * 100) $* no layers
+			!drawplane.assignnoconcrete = false
+			if !tempshape.poss.set() then
+				!tempshape.dimlineindex = !dimlineindex
+                --$p 1314
+				!this.realShapes.append(!tempshape)
+				break
+			endif
+		endif
+	enddo
+endmethod
+
+define method .assignDimlines()
+	!usenew = true
+	!usenew = false
+	--q var !this.dirobject.lookdirs
+	--------------------------------------
+	--------------------------------------Step 1:new way sort order of dimlines for each drawplane in order to get better view
+	if !usenew then
+		!this.sortdimlines()	$*sort dimline according to number of inter points (and class)
+		!restdimlines = !this.dimlines
+
+		$(
+		do !dir values !this.dirobject.lookdirs
+			--!drawplane = object drawplane(!this.getconsidershapes(!dir),!dir,!this.dirobject.lookdirs)
+			----------------------
+			----------------------Step x:create a drawplane in one look direction to put dimline
+			!drawplane = object drawplane(!this.realshapes,!dir,!this.dirobject.lookdirs)
+			!drawplane.cheight = !this.cheight
+			!this.drawplanes.append(!drawplane)
+		$)
+		do !dirx indices !this.dirobject.lookdirs
+			!drawplane = !this.drawplanes[!dirx]
+			!dir = !this.dirobject.lookdirs[!dirx]
+
+			----------------------
+			----------------------Step 1:try to get all available dimline for this drawplane
+			!dirdimlineindices = array()
+			do !dimlineindex indices !restdimlines
+				!dimline = !restdimlines[!dimlineindex]
+				if !this.dimlinefitdir(!dimline,!drawplane.ori.zdir()) then
+					!dirdimlineindices.append(!dimlineindex)
+				endif
+			enddo
+
+			----------------------
+			----------------------Step 2:sort dimline(according to distance from position of drawplane to dimline.axis and class of dimline).It is not so good
+			!drawplanepos = !drawplane.pos
+			!drawplanedir = !drawplane.ori.zdir()
+			!diss = array()
+			do !dimlineindex values !dirdimlineindices
+				!dimline = !restdimlines[!dimlineindex]
+				--!onedis = !!suidirdis(!drawplanepos,!drawplanedir,!dimline.pos)
+				!onedis = !!suidirdis(!drawplanepos,!drawplanedir,!dimline.axis.startposition) + (!dimline.class - 1) *  10000	$*put low class infront
+				!diss.append(!onedis)
+			enddo
+			!dirdimlineindices.reindex(!diss.sortedindices())
+
+			----------------------
+			----------------------Step 3:get good space to put dimline
+			do !dimlineindex values !dirdimlineindices
+				!dimline = !restdimlines[!dimlineindex]
+
+				--!tempshape = !drawplane.put(!dimline,!this.realShapes,!this.dirobject.maxlen / 3)
+				!tempshape = !drawplane.put(!dimline,!this.realShapes,!this.dirobject.maxlen * 100)	$*no layers
+				if !tempshape.poss.set() then
+					if !tempshape.offsetlen lt 9000 then
+						!tempshape.dimlineindex = !dimlineindex
+                        --$p 1112
+						!this.realShapes.append(!tempshape)
+						!restdimlines[!dimlineindex].delete()
+					endif
+				endif
+			enddo
+
+			if !restdimlines.unset() then
+				break
+			endif
+		enddo
+
+	else
+
+		--------------------------------------
+		--------------------------------------Step 1:old way
+		!this.sortdimlines()	$*sort dimline according to number of inter points (and class)
+		!this.restdirs = !this.dirobject.lookdirs
+
+		do !dimlineindex indices !this.dimlines
+			!dimline = !this.dimlines[!dimlineindex]
+			!done = false
+			do !drawplane values !this.drawplanes
+				if !this.dimlinefitdir(!dimline,!drawplane.ori.zdir()) then
+					--!tempshape = !drawplane.put(!dimline,!this.realShapes,!this.dirobject.maxlen / 3)
+					!tempshape = !drawplane.put(!dimline,!this.realShapes,!this.dirobject.maxlen * 100) $* no layers
+					if !tempshape.poss.set() then
+						if !tempshape.offsetlen lt 9000 then
+							!tempshape.dimlineindex = !dimlineindex
+							--$p 90
+							!this.realShapes.append(!tempshape)
+							!done =true
+
+							break
+						endif
+					endif
+				endif
+			enddo
+			if !done.not() then
+				!dir1 = !dimline.dir
+				!find = false
+				do !index indices !this.restdirs
+					if !this.dimlinefitdir(!dimline,!this.restdirs[!index]) then
+						!gooddir = !this.restdirs[!index]
+						!this.restdirs[!index].delete()
+						!find = true
+						break
+					endif
+				enddo
+				if !find then
+					!this.restdirs.compress()
+				else
+					if !this.restdirs.unset() then
+						$p Something wrong
+						skip
+					endif
+					!angles = array()
+					do !dirindex indices !this.restdirs
+						!dir = !this.restdirs[!dirindex]
+						!tempangle = !dir.angle(!dir1)
+						!tempangle = min(!tempangle,180 - !tempangle)
+						!angles.append(!tempangle)
+					enddo
+					!gooddir = !this.restdirs[!angles.sortedindices()[1]]
+					!tempdir = !dir1.orthogonal(!gooddir)
+					!gooddir = !tempdir.orthogonal(!dir1)
+				endif
+				--!drawplane = object drawplane(!this.getconsidershapes(!gooddir),!gooddir,!this.dirobject.lookdirs)
+				!drawplane = object drawplane(!this.realshapes,!gooddir,!this.dirobject.lookdirs)
+				!drawplane.cheight = !this.cheight
+				!this.drawplanes.append(!drawplane)
+
+
+				--!tempshape = !drawplane.put(!dimline,!this.realShapes,!this.dirobject.maxlen / 3)
+				!tempshape = !drawplane.put(!dimline,!this.realShapes,!this.dirobject.maxlen * 100) $* no layers
+
+				--if !dimline.objectindex eq 1 and !dimline.partnum eq 2 then
+				--if !dimlineindex eq 3 then
+
+				--endif
+				if !tempshape.poss.set() then
+                    --$p 78
+					!tempshape.dimlineindex = !dimlineindex
+					!this.realShapes.append(!tempshape)
+				else
+					$p Failed to put dimline 		planesystem
+				endif
+			endif
+		enddo
+	endif
+endmethod
+
+
+define method .assignMlabels()
+	!textindexs = !this.textindexs
+	!this.assigntexts(0,!textindexs)
+endmethod
+define method .assigntexts(!inputtextx is real, !textindexs is array)
+
+	!textx = !inputtextx
+
+    --modify by jyg 20241218
+    if !textindexs.empty() then
+        return
+    endif
+
+	do !textindex values !textindexs
+        --q var !textindex
+		!textx = !textx + 1
+		!text = !textindex[1]
+
+		--if !text ne '2(3)' then
+		--	skip
+		--endif
+		if !textindex[2].objecttype() eq 'REAL' then
+			!index = !textindex[2]
+			!object = !this.objects[!index]
+			!ot = !object.objecttype()
+			!baddir = object direction()
+			!gooddir = object direction()
+			if !ot eq 'SUPPBEAM' then
+				!pos = !object.pos1.midpoint(!object.pos2)
+				!nearpos = !object.profile.plane().near(!pos)
+				!offdis = !nearpos.distance(!object.profile.position)
+				if !offdis gt 1 then
+					!offdir = !nearpos.direction(!object.profile.position)
+					!pos = !pos.offset(!offdir,!offdis)
+				endif
+				--!baddir = !object.pos1.direction(!object.pos2)
+			elseif !ot eq 'SUPPAPDP' then
+				!pos = !object.pos
+				--!gooddir = !object.orientation.zdir()
+			elseif !ot eq 'SUPPBOLT' then
+				!pos = !object.pos
+				--!baddir = !object.dir
+			elseif !ot eq 'SUPPCLAMP' then
+				!pos = !object.apos
+				----!baddir = !object.adir
+			elseif !ot eq 'SUPPCONCRETE' then
+				skip
+				--	!pos = !object.apos
+				--	!baddir = !object.adir
+			elseif !ot eq 'SUPPCONNECT' then
+				!line = !object.lines[1]
+				!pos = !line.startposition.midpoint(!line.endposition)
+				--!baddir = !line.direction()
+			elseif !ot eq 'SUPPPANE' then
+				!pos = !object.profile.position
+				--!gooddir = !object.profile.orientation.zdir()
+			elseif !ot eq 'SUPPPANES' then
+				!pos = !object.profiles[1].position
+				----!baddir = !object.profiles[1].orientation.zdir()
+			elseif !ot eq 'SUPPPOINT' then
+				!pos = !object.pos
+				----!baddir = !object.dir
+			elseif !ot eq 'SUPPTUBE' then
+				!pos = !object.pos
+				--!baddir = !object.ori.zdir()
+			else
+				!mem = !object.mems[1]
+				!pos = pos of $!mem wrt/*
+				!tempori = ori of $!mem wrt/*
+				----!baddir = !tempori.zdir()
+			endif
+			!object.delete()
+		else
+			!pos = !textindex[2]
+		endif
+
+		$(
+		if !this.drawplanes.unset() then
+			do !dir values !this.dirobject.lookdirs
+				--!drawplane = object drawplane(!this.getconsidershapes(!dir),!dir,!this.dirobject.lookdirs)
+				----------------------
+				----------------------Step x:create a drawplane in one look direction to put dimline
+				!drawplane = object drawplane(!this.realshapes,!dir,!this.dirobject.lookdirs)
+				!drawplane.cheight = !this.cheight
+				!this.drawplanes.append(!drawplane)
+			enddo
+		endif
+		$)
+
+		!find = false
+		if defined(!gooddir) and !gooddir.set() then
+			do !drawplane values !this.drawplanes
+				!angle = !gooddir.angle(!drawplane.ori.zdir())
+
+				if !angle lt 5 or !angle gt 175 then
+					!gooddrawplane = !drawplane
+					!find = true
+					break
+				endif
+			enddo
+		endif
+
+		if !find.not() then
+			do !drawplane values !this.drawplanes
+				if defined(!baddir) and !baddir.set() then
+					!angle = !baddir.angle(!drawplane.ori.zdir())
+					if !angle lt 45 or !angle gt 135 then
+						skip
+					endif
+				endif
+				!gooddrawplane = !drawplane
+				!find = true
+				break
+			enddo
+		endif
+
+		if !find.not() then
+			do !index indices !this.restdirs
+				if defined(!baddir) and !baddir.set() then
+					!angle = !baddir.angle(!this.restdirs[!index])
+					if !angle lt 45 or !angle gt 135 then
+						skip
+					endif
+				endif
+				!gooddrawplane = !this.createonedrawplane(!this.restdirs[!index])
+				!this.restdirs[!index].delete()
+				!this.restdirs.compress()
+				!find = true
+				break
+			enddo
+		endif
+		if !find then
+			--!tempshape = !gooddrawplane.puttext(!text,!pos,!this.realShapes,!this.dirobject.maxlen / 3)
+			--q var !pos
+            --$p 123
+			!tempshape = !gooddrawplane.puttext(!text,!pos,!this.realShapes,!this.dirobject.maxlen * 100)	$*no layers
+			handle any
+                --modify by jyg 20240905
+                return
+            endhandle
+			if !tempshape.poss.set() then
+				!tempshape.mlabelindex = !textx
+				!tempshape.mlabellinepos = !pos
+				--$p 56
+				!this.realShapes.append(!tempshape)
+			else
+				$p Failed to put textindex 		planesystem
+			endif
+		else
+			$p Failed to put textindex 		planesystem
+		endif
+		!text.delete()
+	enddo
+endmethod
+
+
+define method .mergedimlines()	$*merge dimline with same direction and distance between them is 0
+	!angletolerance = 0.01
+	!distolerance = 2
+	!considerindices = array()
+
+
+	!tempsize = !this.dimlines.size()
+	do !x from 1 to !tempsize - 1
+		if !considerindices.findfirst(!x).set() then
+			skip
+		endif
+		!axis1 = !this.dimlines[!x].axis
+		do !y from !x + 1 to !tempsize
+			if !considerindices.findfirst(!y).set() then
+				skip
+			endif
+			--$p $!x $!y
+			!axis2 = !this.dimlines[!y].axis
+
+			!tempangle = !axis1.direction().angle(!axis2.direction())
+			--handle any
+
+			--	skip
+			--endhandle
+			if !tempangle lt !angletolerance or !tempangle gt 180 - !angletolerance then
+				if !axis1.startposition.distance(!axis2.endposition) lt !distolerance or !axis1.startposition.distance(!axis2.startposition) lt !distolerance $
+					or !axis1.endposition.distance(!axis2.endposition) lt !distolerance or !axis1.endposition.distance(!axis2.startposition) lt !distolerance then
+					!this.dimlines[!x].add(!this.dimlines[!y].poss)
+
+					!this.dimlines[!y].delete()
+					!considerindices.append(!y)
+				endif
+			endif
+		enddo
+	enddo
+	!this.dimlines.compress()
+endmethod
+
+define method .deleterepeatdimline(!x is real, !y is real) is real
+	if undefined(!this.dimlines[!x]) or undefined(!this.dimlines[!y]) then
+		return 0	$* X ªÚ Y ÷¡…Ÿ“—æ≠±ª…æ≥˝¡À“ª∏ˆ
+	endif
+	--if (!this.dimlines[!x].poss.size() eq 2 and !this.dimlines[!y].poss.size() ne 2) or (!this.dimlines[!x].poss.size() ne 2 and !this.dimlines[!y].poss.size() eq 2) then
+	--	return 0	$*¥Û±Í◊¢≤ª∫Õ–°±Í◊¢±»Ωœ
+	--endif
+
+	!dimline1 = !this.dimlines[!x]
+	!dimline2 = !this.dimlines[!y]
+	!angle = !dimline1.dir.angle(!dimline2.dir)
+
+	!toleranceangle = 1
+	!tolerance = 2
+
+	if !angle gt !toleranceangle and !angle lt 180 - !toleranceangle then
+		return 0
+	endif
+
+
+
+	if !dimline1.planedir.set() and !dimline2.planedir.set() then
+		!angle = !dimline1.planedir.angle(!dimline2.planedir)
+		if !angle gt !toleranceangle and !angle lt 180 - !toleranceangle then
+			return 0
+		endif
+	elseif !dimline1.planedir.set() or !dimline2.planedir.set() then
+		return 0
+	endif
+
+
+	!poss1 = !dimline1.poss
+	!poss2 = !dimline2.poss
+	if !dimline1.poss.size() ge !dimline2.poss.size() then
+		!poss1 = !dimline1.poss
+		!poss2 = !dimline2.poss
+		!delnum = !y
+	else
+		!poss2 = !dimline1.poss
+		!poss1 = !dimline2.poss
+		!delnum = !x
+	endif
+
+	!pos1 = !poss1[1]
+	!dir = !dimline1.dir
+	!line = !pos1.line(!pos1.offset(!dir,100000))
+
+	!diss1 = array()
+	do !pos values !poss1
+		!nearpos = !line.near(!pos)
+		!dis = !pos1.distance(!nearpos)
+		!tempdir = !pos1.direction(!nearpos)
+		handle any
+		elsehandle none
+			if !tempdir.angle(!dir) gt 90 then
+				!dis = - !dis
+			endif
+		endhandle
+		!diss1.append(!dis)
+	enddo
+
+	!diss2 = array()
+	do !pos values !poss2
+		!nearpos = !line.near(!pos)
+		!dis = !pos1.distance(!nearpos)
+		!tempdir = !pos1.direction(!nearpos)
+		handle any
+		elsehandle none
+			if !tempdir.angle(!dir) gt 90 then
+				!dis = - !dis
+			endif
+		endhandle
+		!diss2.append(!dis)
+	enddo
+
+
+
+	!matchindices = array()
+	do !dis values !diss2
+		!match = false
+		do !index indices !diss1
+			if abs(!dis - !diss1[!index]) lt !tolerance then
+				!match = true
+				!matchindices.append(!index)
+				break
+			endif
+		enddo
+		if !match.not() then
+			return 0
+		endif
+	enddo
+
+	if !diss1.size() ne !diss2.size() then
+		if !matchindices.size() eq 2 and !matchindices[1] eq 1 and !matchindices.last() eq !diss1.size() then
+		----------------------
+		----------------------Step x: invoid to delete big dimline
+			return 0
+		endif
+	endif
+
+
+	return !delnum
+endmethod
+
+define method .deleterepeateddimlines()	$*delete similar dimline which they are same at dim direction
+
+	!tolerance = 0.1
+
+	!skipindices = array()
+	do !x indices !this.dimlines
+		!item = !this.objects[!this.dimlines[!x].objectindex].mems[1]
+		handle any
+
+			skip
+		endhandle
+		!itemtype = type of $!item
+		if !itemtype inset ('PCLA','ATTA') then
+			!skipindices.append(!x)
+		endif
+	enddo
+
+	!newway = true
+	--!newway = false
+	if !newway then
+		do !x indices !this.dimlines
+			if !skipindices.findfirst(!x).set() then	$*dont delete atta or clamp
+				skip
+			endif
+			!xskip = false
+			do !y indices !this.dimlines
+				if !y gt !x then
+					!delnum = !this.deleterepeatdimline(!x,!y)
+
+					if !delnum eq 0 then
+						skip
+					else
+						!this.dimlines[!delnum].delete()
+						if !delnum eq !x then
+							!xskip = true
+							break
+						endif
+					endif
+				endif
+			enddo
+			if !xskip then
+				skip
+			endif
+		enddo
+		!this.dimlines.compress()
+	else
+		do !x indices !this.dimlines
+			if !skipindices.findfirst(!x).set() then	$*dont delete atta or clamp
+				skip
+			endif
+			!dimline1 = !this.dimlines[!x]
+			!dir1 = !dimline1.dir
+			!planedir1 = !dimline1.planedir
+			!diss1 = !dimline1.diss
+			do !y indices !this.dimlines
+				if !x lt !y then
+					if !skipindices.findfirst(!y).set() then	$*dont delete atta or clamp
+						skip
+					endif
+					!dimline2 = !this.dimlines[!y]
+					!dir2 = !dimline2.dir
+					!planedir2 = !dimline2.planedir
+					if !dimline1.diss.size() ne !dimline2.diss.size() then
+						skip
+					endif
+
+					!angle = !dir1.angle(!dir2)
+					--$p $!x $!y $!angle
+
+					if !angle gt 0.1 and !angle lt 180 - !tolerance then
+						skip
+					elseif !angle gt 90 then
+						!reverse = true
+					else
+						!reverse = false
+					endif
+
+					if !planedir1.set() and !planedir2.set() then
+						!angle = !planedir1.angle(!planedir2)
+						if !angle gt 0.1 and !angle lt 180 - !tolerance then
+							skip
+						endif
+					elseif !planedir1.set() or !planedir2.set() then
+						skip
+					endif
+
+
+					--------------------------------------
+					--------------------------------------Step 1:compare
+					!diss2 = !dimline2.diss
+					if !reverse then
+						!len = !diss2.last() - !diss2[1]
+						!diss2 = !diss2.invert()
+						do !disindex indices !diss2
+							!diss2[!disindex] = !len - !diss2[!disindex]
+						enddo
+					endif
+
+					!gap = 0
+					!match = true
+					do !index indices !diss1
+						if !index eq 1 then
+							!gap = !diss1[!index] - !diss2[!index]
+						else
+							!onegap = !diss1[!index] - !diss2[!index]
+							if abs(!onegap - !gap) gt !tolerance then
+								!match = false
+								break
+							endif
+						endif
+					enddo
+					if !match.not() then
+						skip
+					else
+						--!this.dimlines[!x].add(!this.dimlines[!y].poss)	$* this way is not so good
+						!this.dimlines[!y].delete()
+					endif
+				endif
+			enddo
+		enddo
+
+		!this.dimlines.compress()
+	endif
+endmethod
+
+
+define method .checksupppoint(!poss is array)
+	!objectx = 0
+	do !object values !this.objects
+		!objectx = !objectx + 1
+		--$p $!objectx
+		if !object.objecttype() inset('SUPPCLAMP','SUPPPOINT') and !object.upstream.unset() $
+			and !object.downstream.unset() and !object.connections.unset() then
+
+			if !object.objecttype() inset('SUPPCLAMP') then
+				!objectpos = !object.apos
+			else
+				!objectpos = !object.pos
+			endif
+			!consider = false
+			do !pos values !poss
+				if !pos.distance(!objectpos) lt 1 then
+					!consider = true
+					break
+				endif
+			enddo
+
+			--skip
+			if !consider.not() then
+				!this.findlineforpoint(!objectpos,!objectx)
+				!poss.append(!objectpos)
+			endif
+		endif
+	enddo
+endmethod
+
+define method .findlineforpoint(!pos is position, !objectx is real)
+	!tolerance = 0.1
+	!diss = array()
+
+	!indices = array()
+	do !x indices !this.dimlines
+		!dimline = !this.dimlines[!x]
+		--q var !dimline.axis.distance(!pos)
+		if !dimline.axis.distance(!pos) lt !tolerance then
+			if !dimline.axis.onprojected(!pos) then
+
+				!this.dimlines[!x].add(!pos)
+				return
+			endif
+		else
+			!dis = min(!pos.distance(!dimline.axis.startposition),!pos.distance(!dimline.axis.endposition))
+			!diss.append(!dis)
+			!indices.append(!x)
+		endif
+	enddo
+
+	if !diss.set() then
+		!tempindices = !diss.sortedindices()
+		!indices.reindex(!tempindices)
+		!goodindex = !indices[1]
+
+		!this.dimlines[!goodindex].add(!pos)
+
+		!gooddir = !this.dimlines[!goodindex].dir
+		!find = false
+
+		$(
+		--add pos to another line is possible
+		if !goodindex ne !indices.size() then
+			!size = !indices.size()
+			do !x from 2 to !size
+				!index = !indices[!x]
+				!dimline = !this.dimlines[!index]
+				!angle = !dimline.dir.angle(!gooddir)
+				if !angle gt 80 and !angle lt 100 then
+					!this.dimlines[!index].add(!pos)
+					!find = true
+					break
+				endif
+			enddo
+		endif
+		$)
+		if !find.not() then
+			!this.generateLinewithNearItem(!pos,!objectx,!goodindex)
+		endif
+	endif
+endmethod
+
+define method .generateLinewithNearItem(!pos is position, !objectx is real, !goodindex is real)
+
+	--!nearpos = !this.getclampnearpoint(!pos,!goodindex)
+	!nearpos = !this.getclampnearpoint(!pos,!objectx)
+	if !nearpos.unset() then
+		return
+	endif
+	!dir = !pos.direction(!nearpos)
+
+	!inputposs = array()
+	!inputposs.append(!pos)
+	!inputposs.append(!nearpos)
+	!dimline = object dimline(!dir,!inputposs,!objectx,1,true)
+	!this.dimlines.append(!dimline)
+endmethod
+
+define method .getclampnearpoint(!pos is position,!goodindex is real) is position
+	!result = object position()
+	!object = !this.objects[!goodindex]
+	!instsupport = object instsupport()
+	do !x indices !this.objects
+		!temparr = !!getsuppname(!this.objects[!x].mems[1])
+		if !temparr.set() then
+			!instsupport.suppname = !temparr[1]
+			!instsupport.struname = !temparr[2]
+			!instsupport.restname = !temparr[3]
+			break
+		endif
+	enddo
+
+	!profiles = !instsupport.getprofilesfromobject(!object)
+
+	do !profile values !profiles
+		!nearpos = !profile.plane().near(!pos)
+		handle any
+			skip
+		endhandle
+
+		!dir = !pos.direction(!nearpos)
+		handle any
+			return !result	$* no need to add line
+		endhandle
+
+		if !!posinprofile(!nearpos,!profile).not() then
+			skip
+		endif
+
+		!zdir = !profile.orientation.zdir()
+
+
+		if !dir.angle(!zdir) gt 170 then
+			return !nearpos
+		endif
+	enddo
+	return !result
+endmethod
+
+define method .getDimLines(!index is real)
+    --q var !index
+	!object = !this.objects[!index]
+	!ot = !object.objecttype()
+	--q var !ot
+    --$p 8965
+	if !ot eq 'SUPPAPDP' then
+	elseif !ot inset ('SUPPBEAM','SUPPTUBE') then
+		if abs(!object.pos1.distance(!object.pos2) - 2000) gt 0.1 then	$* it is pipe
+			!poss = array()
+			!poss.append(!object.pos1)
+			!poss.append(!object.pos2)
+			!this.addconnectionpos(!object.axis.direction(),!poss,!index,1)
+		endif
+	elseif !ot eq 'SUPPBOLT' then
+		!poss = array()
+		!poss.append(!object.apos)
+		!poss.append(!object.lpos)
+		!this.addconnectionpos(!object.dir,!poss,!index,1)
+	elseif !ot eq 'SUPPCLAMP' then
+		if !object.lpos.set() and !object.apos.distance(!object.lpos) gt 1 then
+			!poss = array()
+			!poss.append(!object.apos)
+			!poss.append(!object.lpos)
+			if !object.ldir.set() then
+				!dimdir = !object.ldir
+			else
+				!dimdir = !object.adir
+			endif
+
+			!this.addconnectionpos(!dimdir,!poss,!index,1)
+		endif
+	elseif !ot eq 'SUPPCONCRETE' then
+	elseif !ot eq 'SUPPCONNECT' then
+		do !x from 1 to !object.poss.size() - 1
+			!poss = array()
+			!poss.append(!object.poss[!x])
+			!poss.append(!object.poss[!x + 1])
+			!this.addconnectionpos(!object.lines[!x].direction(),!poss,!index,1)
+		enddo
+	elseif !ot eq 'SUPPOTHER' then
+	elseif !ot eq 'SUPPPANE' then
+		!connposs = array()
+        --q var !object !object.connections
+        --$p 123456
+		do !num values !object.connections
+			if !this.connections[!num].index1 eq !index then
+				!connposs.append(!this.connections[!num].connpos1)
+			else
+				!connposs.append(!this.connections[!num].connpos2)
+			endif
+		enddo
+		$(
+		do !num values !object.upstream
+			if !this.connections[!num].index1 eq !index then
+				!connposs.append(!this.connections[!num].connpos1)
+			else
+				!connposs.append(!this.connections[!num].connpos2)
+			endif
+		enddo
+		do !num values !object.downstream
+			if !this.connections[!num].index1 eq !index then
+				!connposs.append(!this.connections[!num].connpos1)
+			else
+				!connposs.append(!this.connections[!num].connpos2)
+			endif
+		enddo
+		$)
+        --$p 32
+		if !connposs.unset() then
+			return
+		endif
+		!mindis1 = !connposs[1].distance(!object.profile.position)
+
+		!edges = !object.profile.edges()
+		!mindis = 10000000
+		do !edge values !edges
+			!mindis = min(!mindis,!edge.distance(!connposs[1]))
+		enddo
+		if !mindis1 lt !mindis then
+			!temparr = !connposs
+			!temparr.append(!object.profile.position.offset(!object.profile.orientation.zdir(),!object.thick / 2))
+			!temparr.append(!object.profile.position.offset(!object.profile.orientation.zdir(), - !object.thick / 2))
+			!dimline = object dimline(!object.profile.orientation.zdir(),!temparr,!index,1,!this.uniquedimpoints)
+			!this.dimlines.append(!dimline)
+			!class = 2
+			--!class = 1
+		else
+			!class = 1
+		endif
+
+		!poss = array()
+		!poss.append(!edges[1].startposition.midpoint(!edges[1].endposition))
+		!poss.append(!edges[3].startposition.midpoint(!edges[3].endposition))
+		!poss.appendarray(!connposs)
+		!dimline = object dimline(!edges[2].direction(),!poss,!index,!class,!this.uniquedimpoints)
+		!dimline.planedir = !object.profile.orientation.zdir()
+		!this.dimlines.append(!dimline)
+		--!this.addconnectionpos(!edges[2].direction(),!poss,!index,!class)
+		--$p 12
+		!poss = array()
+		!poss.append(!edges[2].startposition.midpoint(!edges[2].endposition))
+		!poss.append(!edges[4].startposition.midpoint(!edges[4].endposition))
+		!poss.appendarray(!connposs)
+		!dimline = object dimline(!edges[1].direction(),!poss,!index,!class,!this.uniquedimpoints)
+		!dimline.planedir = !object.profile.orientation.zdir()
+		!this.dimlines.append(!dimline)
+		--!this.addconnectionpos(!edges[1].direction(),!poss,!index,!class)
+		--$p 22
+	elseif !ot eq 'SUPPPANES' then
+
+
+		!dir = !object.dir
+		!adddir = false
+		do !x indices !object.profiles
+			!profile = !object.profiles[!x]
+			!edges = !profile.edges()
+
+			!poss = array()
+			!poss.append(!edges[1].startposition.midpoint(!edges[1].endposition))
+			!poss.append(!edges[3].startposition.midpoint(!edges[3].endposition))
+			!tempangle = !edges[2].direction().angle(!dir)
+			if !tempangle lt 1 or !tempangle gt 179 then
+				if !this.addDirconnectionpos(!edges[2].direction(),!poss,!index,!x,1) then	$*is no connection position, dont add dimline
+					!adddir = true
+				endif
+			else
+				!this.addconnectionpos(!edges[2].direction(),!poss,!index,!x,1)
+			endif
+
+			!poss = array()
+			!poss.append(!edges[2].startposition.midpoint(!edges[2].endposition))
+			!poss.append(!edges[4].startposition.midpoint(!edges[4].endposition))
+			!tempangle = !edges[1].direction().angle(!dir)
+			if !tempangle lt 1 or !tempangle gt 179 then
+				if !this.addDirconnectionpos(!edges[1].direction(),!poss,!index,!x,1) then	$*is no connection position, dont add dimline
+					!adddir = true
+				endif
+			else
+				!this.addconnectionpos(!edges[1].direction(),!poss,!index,!x,1)
+			endif
+		enddo
+		--q var !adddir
+		if !adddir.not() then	$* if no connection position at zdir
+			!poss = array()
+			!tempangle = !edges[2].direction().angle(!dir)
+			if !tempangle lt 1 or !tempangle gt 179 then
+				!poss.append(!edges[1].startposition.midpoint(!edges[1].endposition))
+				!poss.append(!edges[3].startposition.midpoint(!edges[3].endposition))
+				!dimdir = !edges[2].direction()
+			else
+				!poss.append(!edges[2].startposition.midpoint(!edges[2].endposition))
+				!poss.append(!edges[4].startposition.midpoint(!edges[4].endposition))
+				!dimdir = !edges[1].direction()
+			endif
+			!dimline = object dimline(!dimdir,!poss,!index,1,!this.uniquedimpoints)
+			!this.dimlines.append(!dimline)
+		endif
+	elseif !ot eq 'SUPPPOINT' then
+	else
+	endif
+
+endmethod
+define method .addcyli(!index is real,!pos1 is position,!pos2 is position,!outdia is real,!ori is orientation,!partnum is real)
+	!poss = !this.getcyliposs(!pos1,!pos2,!outdia,!ori)
+	!this.addshape(!poss,!index,!partnum)
+endmethod
+define method .addcyli(!index is real,!pos1 is position,!pos2 is position,!outdia is real,!ori is orientation)
+	!poss = !this.getcyliposs(!pos1,!pos2,!outdia,!ori)
+	!this.addshape(!poss,!index)
+endmethod
+
+define method .getcyliposs(!pos1 is position,!pos2 is position,!outdia is real,!ori is orientation) is array
+	!xdir = !ori.xdir()
+	!ydir = !ori.ydir()
+	!poss = array()
+	!poss.append(!pos1.offset(!xdir,!outdia / 2).offset(!ydir,!outdia / 2))
+	!poss.append(!pos1.offset(!xdir, - !outdia / 2).offset(!ydir,!outdia / 2))
+	!poss.append(!pos1.offset(!xdir, - !outdia / 2).offset(!ydir, - !outdia / 2))
+	!poss.append(!pos1.offset(!xdir,!outdia / 2).offset(!ydir, - !outdia / 2))
+	!poss.append(!pos2.offset(!xdir,!outdia / 2).offset(!ydir,!outdia / 2))
+	!poss.append(!pos2.offset(!xdir, - !outdia / 2).offset(!ydir,!outdia / 2))
+	!poss.append(!pos2.offset(!xdir, - !outdia / 2).offset(!ydir, - !outdia / 2))
+	!poss.append(!pos2.offset(!xdir,!outdia / 2).offset(!ydir, - !outdia / 2))
+	return !poss
+endmethod
+
+define method .addvolume(!index is real)
+	!object = !this.objects[!index]
+	do !mem values !object.mems
+		!volume = object volume(!mem.dbref())
+		if undefined(!mine) then
+			!s = !volume.from.north
+			!w = !volume.from.east
+			!d = !volume.from.up
+			!e = !volume.to.east
+			!n = !volume.to.north
+			!u = !volume.to.up
+		else
+			!s = min(!s,!volume.from.north)
+			!w = min(!w,!volume.from.east)
+			!d = min(!d,!volume.from.up)
+			!e = max(!e,!volume.to.east)
+			!n = max(!n,!volume.to.north)
+			!u = max(!u,!volume.to.up)
+		endif
+	enddo
+
+	!poss = array()
+	!poss[1] = e $!w n $!s u $!d
+	!poss[2] = e $!w n $!s u $!u
+	!poss[3] = e $!w n $!n u $!d
+	!poss[4] = e $!w n $!n u $!u
+	!poss[5] = e $!e n $!s u $!d
+	!poss[6] = e $!e n $!s u $!u
+	!poss[7] = e $!e n $!n u $!d
+	!poss[8] = e $!e n $!n u $!u
+	--$p 02
+	!this.addshape(!poss,!index)
+endmethod
+
+define method .getoutdia(!index is real) is real
+	!object = !this.objects[!index]
+	!outdia = 0
+	!mems = !this.objects[!index].mems
+	do !mem values !mems
+		!outdia = max(!outdia,!!getPipeMaxdia(!object.mems[1]))
+	enddo
+	return !outdia
+endmethod
+$(
+define method .addconcreteshape(!poss is array,!index is real,!dir is direction)
+	!shape = object partshape(!poss,!index)
+	!this.concreteShapes.append(!shape)
+	!this.concreteDirs.append(!dir)
+endmethod
+$)
+define method .addshape(!poss is array,!index is real)
+--$p 12
+	!shape = object partshape(!poss,!index)
+	!this.realShapes.append(!shape)
+endmethod
+define method .addshape(!poss is array,!index is real,!partnum is real)
+--$p 34
+	!shape = object partshape(!poss,!index,!partnum)
+	!this.realShapes.append(!shape)
+endmethod
+
+define method .getconcretedirandpos(!object is any) is array
+	!cenpoint = !this.dirobject.cenpoint
+	if !cenpoint.unset() then
+		!result = array()
+		return !result
+	endif
+	!markcivil = !object.markcivil
+	!mindis = 1000000
+	if !markcivil.profiles.set() then
+		--do !profile values !markcivil.profiles
+		do !tempindex indices !markcivil.profiles
+			if !tempindex gt 2 then
+				break
+			endif
+			!profile = !markcivil.profiles[!tempindex]
+			!plane = !profile.plane()
+
+			!nearpos = !plane.near(!cenpoint)
+			!onedis = !cenpoint.distance(!nearpos)
+			if !onedis lt !mindis then
+
+				!mindis = !onedis
+				!tempzdir = !cenpoint.direction(!nearpos)
+				handle any
+					!tempzdir = !profile.plane().orientation.zdir()
+				endhandle
+				!temppos = !nearpos
+			endif
+		enddo
+	else
+		--do !arc values !markcivil.arcs
+		do !tempindex indices !markcivil.arcs
+			if !tempindex gt 2 then
+				break
+			endif
+			!arc = !markcivil.arcs[!tempindex]
+			!arcnearpos = !arc.angleposition(!arc.near(!cenpoint))
+			!nearpos = !arcnearpos.offset(!arc.orientation.zdir(),!!suidirdis(!arc.position,!arc.orientation.zdir(),!cenpoint))
+			!onedis = !cenpoint.distance(!nearpos)
+			if !onedis lt !mindis then
+				!mindis = !onedis
+				!tempzdir = !cenpoint.direction(!nearpos)
+				handle any
+					if !arcnearpos.distance(!arc.position) lt !arc.radius then
+						!tempzdir = !arc.position.direction(!arcnearpos)
+					else
+						!tempzdir = !arcnearpos.direction(!arc.position)
+					endif
+				endhandle
+
+				!temppos = !nearpos
+			endif
+		enddo
+	endif
+	!result = array()
+	!result.append(!tempzdir)
+	!result.append(!temppos)
+	return !result
+endmethod
+
+define method .getShapes(!index is real)
+	!object = !this.objects[!index]
+	!ot = !object.objecttype()
+	--q var !ot
+	if !ot eq 'SUPPAPDP' or !ot eq 'SUPPCONCRETE' then
+		if !ot eq 'SUPPAPDP' then
+			!ori = !object.ori
+			!pos = !object.pos
+		else
+			!tempconnection = !this.connections[!object.upstream[1]]
+			handle any
+				!tempconnection = !this.connections[!object.connections[1]]
+				handle any
+					!temparr = !this.getconcretedirandpos(!object)
+					!tempzdir = !temparr[1]
+					!temppos = !temparr[2]
+				endhandle
+			endhandle
+
+			if defined(!tempconnection) then
+				!tempzdir = !tempconnection.conndir1
+				!ori = z is $!tempzdir
+				!pos = !tempconnection.connpos1
+			else
+				!ori = z is $!tempzdir
+				!pos = !temppos
+			endif
+		endif
+		!zdir = !ori.zdir()
+		!xdir = !ori.xdir()
+		!ydir = !ori.ydir()
+		!poss = array()
+		!poss.append(!pos.offset(!xdir,10000).offset(!ydir,10000).offset(!zdir,0))
+		!poss.append(!pos.offset(!xdir,-10000).offset(!ydir,10000).offset(!zdir,0))
+		!poss.append(!pos.offset(!xdir,-10000).offset(!ydir,-10000).offset(!zdir,0))
+		!poss.append(!pos.offset(!xdir,10000).offset(!ydir,-10000).offset(!zdir,0))
+		!poss.append(!pos.offset(!xdir,10000).offset(!ydir,10000).offset(!zdir,10000))
+		!poss.append(!pos.offset(!xdir,-10000).offset(!ydir,10000).offset(!zdir,10000))
+		!poss.append(!pos.offset(!xdir,-10000).offset(!ydir,-10000).offset(!zdir,10000))
+		!poss.append(!pos.offset(!xdir,10000).offset(!ydir,-10000).offset(!zdir,10000))
+		--!this.addconcreteshape(!poss,!index,!zdir)
+
+
+
+		!this.addshape(!poss,!index)
+	elseif !ot eq 'SUPPBEAM' then
+		!poss = array()
+		!poss.appendarray(!object.poss)
+		!poss.appendarray(!object.endposs)
+		!this.addshape(!poss,!index)
+	elseif !ot eq 'SUPPTUBE' then
+		!this.addcyli(!index,!object.pos1,!object.pos2,!object.outdia,!object.ori)
+        --$p pp2
+	elseif !ot eq 'SUPPBOLT' then
+		!ori = z is $!object.dir
+		!outdia = !this.getoutdia(!index)
+		!this.addcyli(!index,!object.apos,!object.lpos,!outdia,!ori)
+	elseif !ot eq 'SUPPCLAMP' then
+		!this.addvolume(!index)
+        --$p pp3
+	elseif !ot eq 'SUPPCONNECT' then
+		!outdia = !this.getoutdia(!index)
+		do !x indices !object.lines
+			!line = !object.lines[!x]
+			!zdir = !line.direction()
+			!ori = z is $!zdir
+			!this.addcyli(!index,!line.startposition,!line.endposition,!outdia,!ori,!x)
+		enddo
+	elseif !ot eq 'SUPPOTHER' then
+		!this.addvolume(!index)
+	elseif !ot eq 'SUPPPANE' then
+		!profile = !object.profile
+        --q var !profile
+        --q var !object.mems
+		!thick = !object.thick
+		!ori = !profile.orientation
+        if !ori.Unset() then
+            --modify by jyg 20240905
+            return
+        endif
+		!zdir = !ori.zdir()
+        --q var !zdir
+		!poss1 = array()
+		!poss2 = array()
+		!edges = !profile.edges()
+        --q var !edges
+		do !edge values !edges
+            --!edge.draw(1,1,22)
+
+            if  !edge.objecttype() eq 'ARC' then
+                --!pos = !edge.position.offset(!ori.xdir().opposite(),!edge.radius)
+                --modify by jyg 20250120 ¥¶¿Ìµıº‹U–Õµı∞ÂŒﬁ∑®»°µΩstartpositionµƒŒ Ã‚°£
+                !pos = !edge.position
+            else
+                !pos = !edge.startposition
+            endif
+            --q var !pos
+            --$p 456987
+            --q var !zdir !thick
+			!poss1.append(!pos.offset(!zdir, - !thick / 2))
+			!poss2.append(!pos.offset(!zdir, !thick / 2))
+		enddo
+		!poss = !poss1
+		!poss.appendarray(!poss2)
+		!this.addshape(!poss,!index)
+        --$p pp1
+	elseif !ot eq 'SUPPPANES' then
+		!thick = !object.thick
+		do !x indices !object.profiles
+			!profile = !object.profiles[!x]
+
+			!ori = !profile.orientation
+			!zdir = !ori.zdir()
+			!poss1 = array()
+			!poss2 = array()
+			!edges = !profile.edges()
+			do !edge values !edges
+				!pos = !edge.startposition
+				!poss1.append(!pos.offset(!zdir, - !thick / 2))
+				!poss2.append(!pos.offset(!zdir, !thick / 2))
+			enddo
+			!poss = !poss1
+			!poss.appendarray(!poss2)
+			!this.addshape(!poss,!index,!x)
+		enddo
+	elseif !ot eq 'SUPPPOINT' then
+	else
+	endif
+endmethod
+
+define method .addconnectionpos(!dir is direction,!poss is array,!index is real,!class is real)
+	!object = !this.objects[!index]
+
+	do !num values !object.connections
+
+		if !this.connections[!num].index1 eq !index then
+			!poss.append(!this.connections[!num].connpos1)
+			if !this.connections[!num].connpos12.set() then
+				!poss.append(!this.connections[!num].connpos12)
+			endif
+		else
+			!poss.append(!this.connections[!num].connpos2)
+			if !this.connections[!num].connpos22.set() then
+				!poss.append(!this.connections[!num].connpos22)
+			endif
+		endif
+	enddo
+
+	$(
+	do !num values !object.upstream
+		if !this.connections[!num].index1 eq !index then
+			!poss.append(!this.connections[!num].connpos1)
+		else
+			!poss.append(!this.connections[!num].connpos2)
+		endif
+	enddo
+	do !num values !object.downstream
+		if !this.connections[!num].index1 eq !index then
+			!poss.append(!this.connections[!num].connpos1)
+		else
+			!poss.append(!this.connections[!num].connpos2)
+		endif
+	enddo
+	$)
+
+	if !poss.size() ge 2 then
+		!dimline = object dimline(!dir,!poss,!index,!class,!this.uniquedimpoints)
+		!this.dimlines.append(!dimline)
+	endif
+endmethod
+
+define method .addconnectionpos(!dir is direction,!poss is array,!index is real,!x is real,!class is real)
+	!object = !this.objects[!index]
+	do !num values !object.connections
+		if !this.connections[!num].index1 eq !index and !this.connections[!num].partnum1 eq !x then
+			!poss.append(!this.connections[!num].connpos1)
+			if !this.connections[!num].connpos12.set() then
+				!poss.append(!this.connections[!num].connpos12)
+			endif
+		elseif !this.connections[!num].index2 eq !index and !this.connections[!num].partnum2 eq !x then
+			!poss.append(!this.connections[!num].connpos2)
+			if !this.connections[!num].connpos22.set() then
+				!poss.append(!this.connections[!num].connpos22)
+			endif
+		endif
+	enddo
+	$(
+	do !num values !object.upstream
+		if !this.connections[!num].index1 eq !index and !this.connections[!num].partnum1 eq !x then
+			!poss.append(!this.connections[!num].connpos1)
+		elseif !this.connections[!num].index2 eq !index and !this.connections[!num].partnum2 eq !x then
+			!poss.append(!this.connections[!num].connpos2)
+		endif
+	enddo
+	do !num values !object.downstream
+		if !this.connections[!num].index1 eq !index and !this.connections[!num].partnum1 eq !x then
+			!poss.append(!this.connections[!num].connpos1)
+		elseif !this.connections[!num].index2 eq !index and !this.connections[!num].partnum2 eq !x then
+			!poss.append(!this.connections[!num].connpos2)
+		endif
+	enddo
+	$)
+
+	!dimline = object dimline(!dir,!poss,!index,!x,!class,!this.uniquedimpoints)
+	if !object.objecttype() eq 'SUPPPANES' then
+		!dimline.planedir = !object.profiles[!x].orientation.zdir()
+	endif
+	!this.dimlines.append(!dimline)
+endmethod
+
+define method .addDirconnectionpos(!dir is direction,!poss is array,!index is real,!x is real,!class is real) is boolean
+	!object = !this.objects[!index]
+	!size = !poss.size()
+	--$p $!index $!x
+	--q var !object.connections
+	do !num values !object.connections
+		--q var !this.connections[!num].index1 !this.connections[!num].partnum1
+		--q var !this.connections[!num].index2 !this.connections[!num].partnum2
+		if !this.connections[!num].index1 eq !index and !this.connections[!num].partnum1 eq !x then
+			!poss.append(!this.connections[!num].connpos1)
+			if !this.connections[!num].connpos12.set() then
+				!poss.append(!this.connections[!num].connpos12)
+			endif
+		elseif !this.connections[!num].index2 eq !index and !this.connections[!num].partnum2 eq !x then
+			!poss.append(!this.connections[!num].connpos2)
+			if !this.connections[!num].connpos22.set() then
+				!poss.append(!this.connections[!num].connpos22)
+			endif
+		endif
+	enddo
+	$(
+	do !num values !object.upstream
+		if !this.connections[!num].index1 eq !index and !this.connections[!num].partnum1 eq !x then
+			!poss.append(!this.connections[!num].connpos1)
+		elseif !this.connections[!num].index2 eq !index and !this.connections[!num].partnum2 eq !x then
+			!poss.append(!this.connections[!num].connpos2)
+		endif
+	enddo
+	do !num values !object.downstream
+		if !this.connections[!num].index1 eq !index and !this.connections[!num].partnum1 eq !x then
+			!poss.append(!this.connections[!num].connpos1)
+		elseif !this.connections[!num].index2 eq !index and !this.connections[!num].partnum2 eq !x then
+			!poss.append(!this.connections[!num].connpos2)
+		endif
+	enddo
+	$)
+	!size1 = !poss.size()
+	--q var !size !size1
+
+	if !size1 ne !size then
+		!dimline = object dimline(!dir,!poss,!index,!x,!class,!this.uniquedimpoints)
+		if !object.objecttype() eq 'SUPPPANES' then
+			!dimline.planedir = !object.profiles[!x].orientation.zdir()
+		endif
+		!this.dimlines.append(!dimline)
+		return true
+	else
+		return false
+	endif
+endmethod
+
+†

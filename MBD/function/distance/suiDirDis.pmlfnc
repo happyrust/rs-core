@@ -1,0 +1,33 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= January 19th 2023
+--[Function]:
+------------------------------------------
+
+define function !!suiDirDis(!pos1 is position,!dir is direction,!pos2 is position) is real
+
+    --q var !pos1 !dir !pos2
+	!line = !pos1.line(!pos1.offset(!dir,100000))
+    --!line.draw(1,1,10)
+	!nearpos = !line.near(!pos2)
+    handle any
+      --modify by jyg 20240905
+      --q var !pos1 !dir
+      -- q var !pos1 !pos2
+      return 0
+    endhandle
+	!dis = !pos1.distance(!nearpos)
+	!tempdir = !pos1.direction(!nearpos)
+	handle any
+	elsehandle none
+		if !tempdir.angle(!dir) gt 90 then
+			!dis = - !dis
+		endif
+	endhandle
+	return !dis
+endfunction
+

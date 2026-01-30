@@ -1,0 +1,21 @@
+!this.wjbm.val = !object.wjbm
+!this.nbbm.val = !object.nbbm
+!this.rev.val = !object.rev
+!this.status.val = !object.status
+
+!this.compliation.val = !object.compliation
+!this.compliationtime.val = !object.compliationtime
+!this.proofreading.val = !object.proofreading
+!this.proofreadingtime.val = !object.proofreadingtime
+!this.review1.val = !object.review1
+!this.review1time.val = !object.review1time
+!this.review2.val = !object.review2
+!this.review2time.val = !object.review2time
+!this.approval1.val = !object.approval1
+!this.approval1time.val = !object.approval1time
+!this.approval2.val = !object.approval2
+!this.approval2time.val = !object.approval2time
+!this.countersignature.val = !object.countersignature
+!this.countersignaturetime.val = !object.countersignaturetime
+!this.ratify.val = !object.ratify
+!this.ratifytime.val = !object.ratifytime

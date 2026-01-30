@@ -1,0 +1,215 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= April 19th 2023
+--[Function]:	get data of vert points in ploo or loop
+------------------------------------------
+
+--Method:
+--Public method:
+--vertPoints(!item is any)  												$*init method
+--vertPoints(!item is any, !merge is boolean)   							$*init method , and defined merge points or not
+--getOtherProfiles()														$*
+--getTwoProfiles()  														$*
+
+--Private method:
+
+
+define object vertPoints
+	member .name is string
+	member .type is string
+	member .pos is position
+	member .ori is orientation
+	member .zdir is direction
+	member .height is real
+	member .points1 is array
+	member .points2 is array
+	member .radiuss is array
+	member .cenpoint1 is position
+	member .cenpoint2 is position
+	member .linearcs is array
+	member .twoProfiles is array
+
+	member .OtherProfiles is array
+
+	member .merge is boolean
+endobject
+define method .vertPoints(!item is any, !merge is boolean)
+	!this.merge = !merge
+	!this.vertPoints(!item)
+endmethod
+define method .vertPoints(!item is any)
+	if !this.merge.unset() then
+		!this.merge = true
+	endif
+	!this.name = name of $!item
+	!this.type = type of $!this.name
+
+
+	!ori = ori of $!item wrt/*
+	!zdir = !ori.zdir()
+	!pos = pos of $!item wrt/*
+	!plane = object plane(!pos,!ori)
+
+	var !ploos coll all ploo for $!item
+	if !ploos.set() then
+		!plooname = name of $!ploos[1]
+		!height = height of $!plooname
+		!sjust = sjust of $!plooname
+		if !sjust.matchwild('*TO*') then
+			!zdir = !zdir.opposite()
+		elseif !sjust.matchwild('*CEN*') then
+			!pos = !pos.offset(!zdir, - !height / 2)
+			!plane = object plane(!pos,!ori)
+		endif
+	else
+		var !ploos coll all loop for $!item
+		!plooname = name of $!ploos[1]
+		!height = height of $!item
+	endif
+
+	$(
+	--when the ploo at the same level with nxtr maybe got when the loop was intended to get
+	!plooname = name of first ploo of $!item
+	handle any
+		!height = height of $!item
+		!plooname = name of first loop of $!item
+	elsehandle none
+	--q var !plooname
+		!height = height of $!plooname
+		!sjust = sjust of $!plooname
+		if !sjust.matchwild('*TO*') then
+			!zdir = !zdir.opposite()
+		elseif !sjust.matchwild('*CEN*') then
+			!pos = !pos.offset(!zdir, - !height / 2)
+			!plane = object plane(!pos,!ori)
+		endif
+	endhandle
+	$)
+
+	var !paves coll all (pave vert) for $!plooname
+	!points1 = array()
+	!radiuss = array()
+--q var !paves
+	do !x indices !paves
+		!pave = !paves[!x]
+		!onepos = pos of $!pave wrt/*
+		!temppos = !plane.near(!onepos)
+		!points1.append(!temppos)
+		!radius = fradius of $!pave
+		!radiuss.append(!radius)
+	enddo
+
+	!points2 = array()
+	if !this.merge then
+	--$p $!this.name
+		!temparr = !!mergePointsRadiuss(!points1,!radiuss)
+		!points1 = !temparr[1]
+		!radiuss = !temparr[2]
+	endif
+
+		--q var !temparr
+
+	do !onepos values !points1
+		!points2.append(!onepos.offset(!zdir,!height))
+	enddo
+
+--q var !points1 !points2
+	!this.pos = !pos
+	!this.ori = !ori
+	!this.zdir = !zdir
+	!this.height = !height
+	!this.points1 = !points1
+	!this.radiuss = !radiuss
+	!this.points2 = !points2
+	!this.cenpoint1 = !!getcenpoint(!points1)
+	!this.cenpoint2 = !!getcenpoint(!points2)
+endmethod
+
+define method .getTwoProfiles()
+	do !x from 1 to 2
+		!points = !this.points$!x
+		!cenpoint = !this.cenpoint$!x
+
+--q var !this.name
+--q var !points[10].distance(!points[11])
+--q var !points[12].distance(!points[11])
+
+
+
+
+
+		!linearcs = !!getlinesandarcsfortwoarrays(!points,!this.radiuss)
+		!this.linearcs = !linearcs
+
+		!profile = object profile(!cenpoint,!this.ori,!linearcs)
+		--!profile = object profile(!cenpoint,!this.ori,!points)
+		!profile.close()
+		--!profile = !profile.mergepoints(0.1)
+		--!profile = !profile.mergelines(1)
+
+
+
+
+
+--=17418/5667
+
+		--q var !profile.isValidClosed()
+		if !profile.isValidClosed().not() then
+			!profile = !profile.mergepoints(0.1)
+			!profile = !profile.mergelines()
+			--!profile = !profile.mergelines(1)
+		endif
+
+
+		!result = !!posinprofile(!cenpoint,!profile).not()
+		--!result = !profile.iswithin(!cenpoint).not()
+		handle any	$* whole circle
+			!result = true
+		endhandle
+		if !result then
+		--if !profile.iswithout(!cenpoint) then		$*ERROR
+			!nearpos = !profile.near(!cenpoint)
+			!tempdir = !cenpoint.direction(!nearpos)
+			!cenpoint = !nearpos.offset(!tempdir,500)
+			--!profile = object profile(!cenpoint,!this.ori,!points)
+			!profile = object profile(!cenpoint,!this.ori,!linearcs)
+			!profile.close()
+			!profile = !profile.mergepoints(0.1)
+		endif
+		!this.twoProfiles.append(!profile)
+	enddo
+endmethod
+
+define method .getOtherProfiles()
+	if !this.height ne 0 then
+		!size = !this.points1.size()
+		do !x indices !this.points1
+			!poss = array()
+			!poss[1] = !this.points1[!x]
+			if !x eq !size then
+				!poss[2] = !this.points1[1]
+				!poss[3] = !this.points2[1]
+			else
+				!poss[2] = !this.points1[!x + 1]
+				!poss[3] = !this.points2[!x + 1]
+			endif
+			!poss[4] = !this.points2[!x]
+
+
+			!profile = object profile(!poss[1],!!getOriwithpoints(!poss),!poss)
+			handle any
+				skip
+			endhandle
+			!profile.close()
+			if !profile.isValidClosed().not() then
+				!profile = !profile.mergepoints(0.1)
+				!profile = !profile.mergelines(1)
+			endif
+			!this.otherProfiles.append(!profile)
+		enddo
+	endif
+endmethod

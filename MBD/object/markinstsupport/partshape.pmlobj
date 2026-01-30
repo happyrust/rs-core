@@ -1,0 +1,59 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= October 31st 2023
+--[Function]:
+------------------------------------------
+--
+--<<Method>>:
+--<<Public method>>:
+--partshape(!poss is array,!objectindex is real,!partnum is real)   		$*
+--partshape(!poss is array,!objectindex is real)							$*
+--partshape(!poss is array) 												$*
+--
+--<<Private method>>:
+-------------------------------------
+
+
+define object partshape
+--it could be 3d(for planesystem) or 2d(for drawplane)
+	member .poss is array
+	member .objectindex is real
+	member .partnum is real
+
+	--for 2d
+	member .dimlineindex is real
+	member .dimposs is array			$*only consider area of text of dim
+
+	member .mlabelindex is real
+	member .mlabellinepos is position
+
+	member .planeori is orientation
+	member .planeminzdis is real
+	member .planemaxzdis is real
+
+	member .offsetlen is real			$*for dimline and mlabel
+endobject
+
+define method .partshape(!poss is array,!objectindex is real,!partnum is real) $*
+	!this.partnum = !partnum
+	!this.partshape(!poss,!objectindex)
+endmethod
+
+define method .partshape(!poss is array,!objectindex is real) $*
+	!this.poss = !poss
+	!this.objectindex = !objectindex
+endmethod
+
+define method .partshape(!poss is array) $*
+	!this.poss = !poss
+endmethod
+
+
+
+
+
+L

@@ -1,0 +1,38 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= April 10th 2024
+--[Function]:
+------------------------------------------
+
+define function !!checkmbdpath() is string
+	!path = !!pml.getpathname('checkmbdpath.pmlfnc').lowcase().before('checkmbdpath.pmlfnc') & 'inputfolderpath.txt'
+	!txtfile = object file(!path)
+	!lines = !txtfile.readfile()
+	handle any
+		return ''
+	endhandle
+	!inputfrompath = !lines[1]
+	handle any
+		return ''
+	endhandle
+
+	!frompath = !inputfrompath.trim().lowcase()
+	if !frompath.match('myproj') eq 0 then
+		$p Çë¹ÜÀíÔ±ÔÚ inputfolderpath.txtÎÄ¼şÖĞ ÉèÖÃºÃ³ÌĞòÔ´ÎÄ¼ş¼ĞµÄÕıÈ·µØÖ·
+		--$p Input the right path
+		return ''
+	else
+		!frompath = !frompath.before('myproj')
+		!tempstring = !frompath.substring(-1,1)
+		if !tempstring ne '\' and !tempstring ne '/' then
+			!frompath = !frompath + '\'
+		endif
+		!frompath = !frompath & 'myprojects'
+	endif
+	return !frompath
+endfunction
+Ä

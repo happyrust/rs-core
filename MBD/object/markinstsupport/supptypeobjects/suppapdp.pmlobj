@@ -1,0 +1,30 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= October 12nd 2023
+--[Function]:
+------------------------------------------
+
+define object suppapdp
+	member .name is string
+	member .pos is position
+	member .orientation  is orientation
+	member .profile is profile
+
+	member .mems is array
+
+	member .upstream is array		$*instore indices of suppconnection of upstream
+	member .downstream is array		$*instore indices of suppconnection of downstream
+
+	member .connections is array	$*instore rest suppconnection which is hard to say upstream or downstream
+endobject
+
+define method .suppapdp()
+
+
+endmethod
+
+(

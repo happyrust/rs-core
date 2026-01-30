@@ -1,0 +1,1537 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= April 10th 2023
+--[Function]:
+------------------------------------------
+
+--Method:
+--addmem(!mem is string) is boolean 										$*add mem into dim
+--addmem(!mem is string,!pos is position) is boolean						$*add mem into dim
+--addmem(!mem is string,!pos is position,!od is real) is boolean			$*add mem into dim
+--CalculateDimChardirs()													$*
+--copy(!index is real,!attaname is string) is isoDim						$*
+--dimOneMem(!offdis is real)												$*
+--dimOneMemSlope()  														$*
+--dimslope(!pos1 is position, !pos2 is position) is array   				$*
+--draw(!dimdir is direction, !dimgro is string, !dimslopelineGro is string, !dimslopeTextGro is string, !cheight is real,!dimtimes is real, !isousedDirs is array)  	$*
+--draw(!dimdir is direction, !gooddimdirs is array, !goodchardirs is array, !dimgro is string, !dimslopelineGro is string, !dimslopeTextGro is string, !cheight is real, !dimtimes is real, !isousedDirs is array)  	$*
+--draw(!handledirs is array, !dimgro is string, !dimslopelineGro is string, !dimslopeTextGro is string, !cheight is real,!dimtimes is real, !isousedDirs is array)  	$*
+--draw(!handledirs is array, !gooddimdirs is array, !goodchardirs is array, !dimgro is string, !dimslopelineGro is string, !dimslopeTextGro is string, !cheight is real, !dimtimes is real, !isousedDirs is array)  	$*
+--drawDim(!dimtimes is real)												$*
+--drawSub(!dimdir is direction, !gooddimdirs is array, !goodchardirs is array, !dimgro is string, !dimslopelineGro is string, !dimslopeTextGro is string, !cheight is real, !dimtimes is real)  	$*
+--isoDim(!branname is string,!mems is array,!pipedir is direction, !minslope is real, !maxslope is real)	$*
+
+
+define object isoDim
+	member .valid is boolean
+	member .mainDim is boolean				$* if main dim in isoline
+	member .branname is string
+
+	member .diss is array		$* to the start point
+	member .mems is array
+	member .poss is array
+
+
+	member .od is real
+
+	--member .handledirs is array
+	--member .handleangles is array
+	member .usedDirs is array
+
+	member .line is line
+
+	--member .handleTypes is array
+
+
+	member .exceptTypes is array
+	member .em4twoendtypes is array	$* type of element needs two ends
+	member .em9twoendtypes is array	$* type of element needs two ends
+
+	member .isoori is isoori
+	member .pipedir is direction
+	member .dimdir is direction
+	member .chardir is direction
+	member .ori is orientation
+
+	member .mbdstru is mbdstru
+
+	$(
+	member .dimgro is string
+	member .dimslopelineGro is string
+	member .dimslopetextGro is string
+	$)
+
+	member .cheight is real
+	member .changeCheightAuto is boolean
+	member .sepSmallDim is boolean
+
+	member .dimdirs is array
+	member .chardirs is array
+
+	member .maxslope is real
+	member .minslope is real
+
+	member .isoUsedDirExists is boolean         $*判断isoUsedDir是否已经加入过了
+
+	member .isinstpipe is boolean
+	--member .usepolarsystem is boolean
+	--member .polarsystem is polarsystem
+	--member .drawitems is array
+	member .wronglines is array
+
+
+	member .isrjdim is boolean
+
+	member .elboisolegadlongth is real
+endobject
+define method .isodim(!isoleg is isoleg)	$*only for elbo isoleg
+	!branname = name of bran of $!isoleg.elboname
+	!sitename = name of site of $!branname
+	if !sitename.upcase().match('INST') eq 0 then
+		!this.isinstpipe = false
+	else
+		!this.isinstpipe = true
+	endif
+	!this.valid = false
+	!this.branname = !branname
+	!adir = adir of $!isoleg.elboname
+	!legdir = !isoleg.pos.direction(!isoleg.attapos)
+	!tempangle = !legdir.angle(!adir)
+	if !tempangle lt 1 or !tempangle gt 179 then
+		!legdir = !legdir.opposite()
+	endif
+	!this.pipedir = !legdir
+	!this.od = !isoleg.outdia
+	!this.isrjdim = false
+	!this.maindim = false
+	----------------------
+	----------------------Step x:
+	!pos = !isoleg.pos.offset(!this.pipedir, - !isoleg.height / 2)
+	!this.line = !pos.line(!pos.offset(!this.pipedir,10000))
+
+	!this.mems.append(!isoleg.name)
+
+
+	!this.elboisolegadlongth = !isoleg.adlongth
+
+	!this.addpos(!pos)
+	!this.addpos(!isoleg.attapos)
+	!this.addpos(!isoleg.pos.offset(!this.pipedir,!isoleg.height / 2))
+
+	----------------------
+	----------------------Step x:
+	!this.possunique(!this)
+endmethod
+define method .isoDim(!branname is string,!mems is array,!pipedir is direction, !minslope is real, !maxslope is real, !od is real)
+	--!this.handleTypes = split('VALV PCOM INST VTWA TEE OLET')
+	--!this.exceptTypes = split('ATTA FLAN GASK')
+	--!this.exceptTypes = split('ATTA FLAN')
+	!this.exceptTypes = split('ATTA TUBI GASK')
+	!sitename = name of site of $!branname
+	--!this.em4twoendtypes = split('VALV PCOM INST VTWA FILT GASK FLAN FBLI REDU')
+	!this.em4twoendtypes = split('GASK FLAN FBLI REDU')		$*EM4 asked for this
+	!this.em9twoendtypes = split('GASK FLAN FBLI REDU')
+	if !sitename.upcase().match('INST') eq 0 then
+		!this.isinstpipe = false
+	else
+		!this.isinstpipe = true
+	endif
+	!this.valid = false
+	!this.branname = !branname
+	!this.pipedir = !pipedir
+	!this.minslope = !minslope
+	!this.maxslope = !maxslope
+	!this.od = !od
+
+	!this.isrjdim = false
+
+	if !mems.unset() then
+		return
+	else
+
+		if !!isrjpcom(!mems[1]) then
+			!this.isrjdim = true
+		endif
+
+        --q var !this.poss
+
+		--q var !mems
+        --return
+		do !mem values !mems
+			--$p $!mem
+			if !mem ne 'Head' and !mem ne 'Tail' then
+
+
+				!memtype = type of $!mem
+				--q var !memtype
+				--if !memtype eq 'TUBI' or !memtype eq 'FALN' or !memtype eq 'GASK' then
+
+				if !this.exceptTypes.findfirst(!memtype).set() then
+                    --q var !mem !memtype
+					skip
+					--if !memtype eq 'TUBI' or !memtype eq 'FLAN'  or !memtype eq 'FBLI' then	$*202304101148
+					--skip
+					$(
+				elseif !memtype eq 'GASK' then
+
+					--$p safdsadf
+					!premem = !this.getpremem(!mem)
+					!nextmem = !this.getnextmem(!mem)
+					!pretype = type of $!premem
+					handle any
+						skip
+					elsehandle none
+						!nexttype = type of $!nextmem
+						handle any
+							skip
+						elsehandle none
+							--$p $!pretype $!nexttype
+							if !pretype ne 'FLAN' or !nextType ne 'FLAN' or !memtype eq 'FBLI' then
+								skip
+							endif
+						endhandle
+					endhandle
+					$)
+				elseif !memtype eq 'WELD' then
+					if !this.mems.set() then        $*在别的元件的进出口的焊点不需要考虑
+						!lastmem = !this.mems.last()
+						!templpos = lpos of $!lastmem wrt/*
+						handle any
+							!templpos = !this.poss.last()
+						endhandle
+						!weldpos = pos of $!mem wrt/*
+						if !weldpos.distance(!templpos) lt 1 then
+							skip
+						else
+							!tempapos = apos of $!lastmem wrt/*
+							handle any
+							elsehandle none
+								if !weldpos.distance(!tempapos) lt 1 then
+									skip
+								endif
+							endhandle
+						endif
+					else                    $*在开始点的焊点不用考虑
+						skip
+					endif
+				endif
+			endif
+			--$p $!mem
+			--if !this.exceptTypes.findfirst(!memtype).unset() then   $*include 'Head' 'Tail'
+			--$p mem $!mem
+            --q var !mem
+			if !this.addmem(!mem).not() then
+				!this.valid = false
+				return
+				--break
+			endif
+			--endif
+
+		enddo
+
+		--q var !this.poss
+
+		!this.considerTee(!mems)
+		--!this.poss.unique()
+		!this.possunique(!this)
+		$(
+		if !this.isinstpipe and !this.poss.size() gt 2 then
+			!lastmem = !mems.last()
+			!lastmemtype = type of $!lastmem
+			if !lastmemtype eq 'INST' then
+				!branlastmem = name of last mem of bran of $!mems[1]
+				!lastmemname = name of $!lastmem
+				if !branlastmem eq !lastmemname then
+					--!this.poss[!this.poss.size()].delete()
+
+				endif
+			endif
+		endif
+		$)
+	endif
+endmethod
+
+define method .considerTee(!mems is array)
+	-------------------------------
+	---for first TEE
+    --Q VAR !mems
+	!fmem = !mems[1]
+	handle any
+	elsehandle none
+		!type1 = type of $!fmem
+		if !type1 eq 'TEE' then
+			!leave = leave of $!fmem
+			if !leave ne 3 then
+				if !leave eq 1 then
+					!p3 = 2
+				else
+					!p3 = 1
+				endif
+				!p3pos = p$!p3 pos of $!fmem wrt/*
+				!this.addpos(!p3pos)
+				--!this.poss.insert(1,!p3pos)
+				----!this.mems.insert(1,!fmem)
+			endif
+		endif
+	endhandle
+
+	---for last TEE
+	!lmem = !mems.last()
+	handle any
+	elsehandle none
+		!type2 = type of $!lmem
+		if !type2 eq 'TEE' then
+			--q var !lmem
+			!arrive = arrive of $!lmem
+			if !arrive ne 3 then
+				if !arrive eq 1 then
+					!p3 = 2
+				else
+					!p3 = 1
+				endif
+				!p3pos = p$!p3 pos of $!lmem wrt/*
+				--!this.poss.append(!p3pos)
+				!this.addpos(!p3pos)
+				----!this.mems.append(!lmem)
+			endif
+		endif
+	endhandle
+	---------------------
+
+
+	------------------------------------------------------tee and olet dim should be on the big pipe accordding to EM4
+	$(
+	if !mems[1] eq 'Head' then
+		!href = name of href of $!this.branname
+		handle any
+		elsehandle none
+			!hreftype = type of $!href
+			if !hreftype eq 'TEE' or !hreftype eq 'OLET' then
+				!tee = !href
+				!arrive = arrive of $!tee
+				!leave = leave of $!tee
+				if !arrive ne 3 and !leave ne 3 then
+					!teepos = pos of $!tee wrt/*
+					--!this.poss.insert(1,!teepos)
+					!this.addpos(!teepos)
+				endif
+			endif
+		endhandle
+	endif
+
+	if !mems.last() eq 'Tref' then
+		!tref = name of tref of $!this.branname
+		handle any
+		elsehandle none
+			!treftype = type of $!tref
+			if !treftype eq 'TEE' or !treftype eq 'OLET' then
+				!tee = !tref
+				!arrive = arrive of $!tee
+				!leave = leave of $!tee
+				if !arrive ne 3 and !leave ne 3 then
+					!teepos = pos of $!tee wrt/*
+					--!this.poss.append(!teepos)
+					!this.addpos(!teepos)
+				endif
+			endif
+		endhandle
+	endif
+	$)
+endmethod
+
+define method .getnextmem(!cename is any) is string
+	return !!getnextmem(!cename)
+endmethod
+
+define method .getpremem(!cename is any) is string
+	return !!getpremem(!cename)
+endmethod
+
+
+define method .copy(!index is real,!attaname is string) is isoDim
+	!attadim = !this
+	!attadim.mems = array()
+	!attadim.poss = array()
+	!attadim.diss = array()
+
+	--q var !this.poss.size()
+	--$p $!index $!attaname
+	!attadim.poss.append(!this.poss[!index])
+	!attadim.diss.append(!!suidirdis(!this.line.startposition,!this.pipedir,!this.poss[!index]))
+
+	!attadim.addmem(!attaname)
+	--!attadim.poss.unique()
+
+	!this.possunique(!attadim)
+
+	!attadim.mainDim = false
+	return !attadim
+
+
+	return
+	!attadim = !this
+	!attadim.mems = array()
+	!attadim.poss = array()
+
+
+	!mem = !this.mems[!index]
+	!memtype = type of $!mem
+
+	if !this.em4twoendtypes.findfirst(!memtype).set() then
+		!addpos = lpos of $!mem wrt/*
+	else
+		if !mem eq 'Head' then
+			!addpos = !this.poss[1]
+		elseif !mem eq 'Tail' then
+			!addpos = !this.poss.last()
+		else
+			!addpos = pos of $!mem wrt/*
+		endif
+
+		$(
+		!addpos = pos of $!mem wrt/*	$* when the CE is zone, no error happened here, and the addpos is e 0 n 0 u 0
+		handle any
+			if !mem eq 'Head' then
+				!addpos = !this.poss[1]
+			elseif !mem eq 'Tail' then
+				!addpos = !this.poss.last()
+			endif
+		elsehandle none
+			!temppos = e 0 n 0 u 0
+			if !addpos.distance(!temppos) lt 1 then
+
+			endif
+		endhandle
+		$)
+	endif
+
+
+
+	!attadim.mems.append(!mem)
+	!attadim.poss.append(!addpos)
+
+	--!attadim.mems.append(!this.mems[!index])
+	--!attadim.poss.append(!this.poss[!index])
+
+
+
+	!attadim.addmem(!attaname)
+
+	!this.possunique(!attadim)
+
+	--!attadim.poss.unique()
+	!attadim.mainDim = false
+	return !attadim
+endmethod
+
+define method .possunique(!dim is isodim)
+
+	!dels = array()
+    --Q VAR !dim
+	do !x from 2 to !dim.poss.size()
+		if !dim.poss[!x].distance(!dim.poss[!x - 1]) lt 0.01 then
+			!dels.append(!x)
+		endif
+	enddo
+
+	do !x values !dels
+		!dim.poss[!x].delete()
+		!dim.diss[!x].delete()
+	enddo
+	!dim.poss.compress()
+	!dim.diss.compress()
+
+	if !dim.diss.last() - !dim.diss[1] lt 1 then
+		!string = ''
+		do !x from 1 to !dim.mems.size()
+			!string = !string + ' ' + !dim.mems[!x]
+			if !x eq 5 and !x ne !dim.mems.size() then
+				!string = !string + '...'
+			endif
+		enddo
+		--!dim.wronglines.append('check order or position of following mems:' + !string)
+	endif
+endmethod
+
+
+
+
+-------------------------------------------------------------------------------------
+define method .addmem(!mem is string) is boolean
+    --q var !mem
+    --$P 99999999999999999999
+	if !mem eq 'Head' then
+		!pos = hpos of $!this.branname wrt/*
+	elseif !mem eq 'Tail' then
+		if !this.isrjdim then
+			return true
+		endif
+		!pos = tpos of $!this.branname wrt/*
+	else
+	--q var !!isrjpcom(!mem)
+		!memtype = type of $!mem
+		if !memtype eq 'PCOM' and !this.isrjdim then
+			!adir = adir of $!mem wrt/*
+			if abs(!adir.angle(u) - 90) lt 10 then
+				!p1pos = p1 pos of $!mem wrt/*
+				!p9pos = p9 pos of $!mem wrt/*
+				--!adir = adir of $!mem wrt/*
+				!templine = !p1pos.line(!p1pos.offset(!adir,-10000))
+				!pos = !templine.near(!p9pos)
+			else
+				if !this.pipedir.angle(u) gt 10 then
+					!pos = p1 pos of $!mem wrt/*
+				else
+					!p1pos = p1 pos of $!mem wrt/*
+					!p9pos = p9 pos of $!mem wrt/*
+
+					!p0pos = p0 pos of $!mem wrt/*
+					!p3pos = p3 pos of $!mem wrt/*
+					!tempdir = !p0pos.direction(!p3pos)
+					!templine = !p1pos.line(!p1pos.offset(!tempdir,10000))
+					!pos = !templine.near(!p9pos)
+				endif
+			endif
+		elseif !memtype eq 'PCOM' and !!ispipespecialelement(!mem) then
+			!pos = pos of $!mem wrt/*
+			if !this.mems.size() eq 1 then
+				!apos = apos of $!mem wrt/*
+				!adir = adir of $!mem wrt/*
+				!line = !apos.line(!apos.offset(!adir,1000))
+				!pos = !line.near(!pos)
+			else
+				!lpos = lpos of $!mem wrt/*
+				!ldir = ldir of $!mem wrt/*
+				!line = !lpos.line(!lpos.offset(!ldir,1000))
+				!pos = !line.near(!pos)
+			endif
+		else
+			if !memtype eq 'PCOM' and !!isrjpcom(!mem) then	$* not in rjdim
+				!pos = p1 pos of $!mem wrt/*
+			else
+				!pcomname = name of $!mem
+				if !pcomname.matchwild('*DI') then
+					!pos = pa pos of $!mem wrt/*
+				else
+                    --modify by jyg 20240812
+                    if !memtype eq 'INST' then
+                        !pos = pos of $!mem wrt/*
+                        !apos = apos of $!mem wrt/*
+                        !adir = adir of $!mem wrt/*
+                        !lpos = lpos of $!mem wrt/*
+                        !ldir = ldir of $!mem wrt/*
+                        if  !adir.opposite() neq !ldir then
+                            !line = !lpos.line(!lpos.offset(!ldir,1000))
+                            !pos = !line.near(!pos)
+                        endif
+                    else
+                        --q var !mem
+                        !pos = pos of $!mem wrt/*
+                    endif
+				endif
+			endif
+		endif
+
+
+		if !this.isinstpipe then
+			--!memtype = type of $!mem
+            --modify by jyg 20240827 启动该判断条件，支吊架则无法标出
+            --if !memtype eq 'ATTA' then
+                --return true
+            --endif
+
+			if !memtype eq 'INST' then
+				var !mode mode
+                !memname = name of $!mem
+				if !mode eq 'Forwards' then
+					!lastinst = name of last inst of $!this.branname
+					handle any
+						golabel /noinst
+                    elsehandle none
+                        --modify by jyg 20240827
+                        !nextType = type of pre of $!memname
+                        handle any
+                            --modify by jyg 20250218处理branch只有一个管件的情况
+                            return true
+                        endhandle
+                        if  !nextType eq 'ATTA' then
+                            !nextType = type of pre of pre of $!memname
+                            if  !nextType eq 'COUP' then  $*如果存在变径管接头，标注到管接头即可
+                                 return true
+                            endif
+                        else
+                            if  !nextType eq 'COUP' then
+                                 return true
+                            endif
+                        endif
+					endhandle
+				else
+					!lastinst = name of first inst of $!this.branname
+					handle any
+						golabel /noinst
+                    elsehandle none
+                        --modify by jyg 20240827
+                        !nextType = type of nex of $!memname
+                        if  !nextType eq 'ATTA' then
+                            !nextType = type of nex of nex of $!memname
+                            if  !nextType eq 'COUP' then  $*如果存在变径管接头，标注到管接头即可
+                                 return true
+                            endif
+                        else
+                            if  !nextType eq 'COUP' then
+                                 return true
+                            endif
+                        endif
+					endhandle
+				endif
+
+				--if !memname eq !lastinst then
+                --
+				--	return true
+				--endif
+			endif
+			label /noinst
+		endif
+	endif
+
+	$(
+	if !this.isinstpipe then
+		!memtype = type of $!mem
+		do !onetype values !this.em4twoendtypes
+			if !memtype eq !onetype then
+				return true
+			endif
+		enddo
+	endif
+	$)
+
+
+	if !this.pipedir.unset() then
+		!this.pipedir = ldir of $!mem wrt/*
+		handle any
+			if !this.mems.unset() then
+				!ldir = hdir of $!this.branname wrt/*
+			else
+				!ldir = tdir of $!this.branname wrt/*
+				!ldir = !ldir.opposite()
+			endif
+			!this.pipedir = !ldir
+		endhandle
+	endif
+	if !this.line.unset() then
+        --$p 333
+		!this.line = !pos.line(!pos.offset(!this.pipedir,10000))
+	endif
+	--if type of $!mem eq 'ATTA' then
+
+	--endif
+    --$p 1111111111111
+	--q var !this.line
+	--$(
+	if !mem ne 'Head' and !mem ne 'Tail' and !this.isrjdim.not() then
+        --!this.line.draw(1,1,1)
+		if !this.line.distance(!pos) gt !this.od * 2 / 3 then
+			!apos = apos of $!mem wrt/*
+			handle any
+				if type of $!mem eq 'ATTA' then	$*There are some ATTA without apos adir lpos, and ldir is not good to use
+					return true
+				endif
+			endhandle
+			!lpos = lpos of $!mem wrt/*
+            --q var !this.line
+
+            --Q VAR !mem !memtype
+            --modify by jyg 20241202 解决坡管无法过长，导致计算半径和判断条件有冲突
+            !flowDirtoUangle = !this.line.direction().angle(U)
+
+            if  !flowDirtoUangle eq 90 then
+                if !this.line.distance(!apos) gt !this.od * 2 / 3 and !this.line.distance(!lpos) gt !this.od * 2 / 3 then
+                    if !this.isinstpipe.not() then
+                        $(
+                        $p 请检查该元件 $!mem 在Bran中的顺序或坐标是否在相应管段上 2 / Please check order(in bran) or position of $!mem 2
+                        if type of $!mem ne 'ATTA' then
+                            !this.wronglines.append('请检查该元件 $!mem 在Bran中的顺序或坐标是否在相应管段上 2 / Please check order(in bran) or position of $!mem 2')
+                            --!this.wronglines.append('请检查该元件 $!mem 在Bran中的顺序或坐标是否在相应管段上')
+                            return false
+                        else	$*阀门支架可能不在轴线上
+                            return true
+                        endif
+                        $)
+                            --q var !apos !this.od !lpos
+                            --202407031113 张秋宁说原来可以不在轴线上是不对的
+                            $p 请检查该元件 $!mem 在Bran中的顺序或坐标是否在相应管段上 2 / Please check order(in bran) or position of $!mem 2
+                            --!this.wronglines.append('请检查该元件 $!mem 在Bran中的顺序或坐标是否在相应管段上 2 / Please check order(in bran) or position of $!mem 2')
+                            --return false
+                            return true
+                    else
+                        $p 请检查该元件 $!mem 在Bran中的顺序或坐标是否在相应管段上 3
+                        return true
+                    endif
+                endif
+            endif
+		endif
+	endif
+	--$)
+    --q var !mem
+	return !this.addmem(!mem,!pos)
+endmethod
+define method .addmem(!mem is string,!pos is position) is boolean
+	$(
+	!addresult = false
+	var !mode mode
+	!od = aod of $!mem wrt/*
+	handle any
+		if !this.mems.set() then
+			!od = aod of first tubi of $!this.branname
+			handle any
+				!od = aod of first mem of $!this.branname
+				handle any
+					golabel /end
+				endhandle
+			endhandle
+		else
+			!od = aod of last tubi of $!this.branname
+			handle any
+				!od = lod of last mem of $!this.branname
+				handle any
+					golabel /end
+				endhandle
+			endhandle
+		endif
+	endhandle
+
+
+	$  (
+	if !this.od.unset() then
+		!this.od = !od
+	else
+		!this.od = max(!this.od,!od)
+	endif
+	$  )
+	--$p $!this.od $!mem
+
+
+	!addresult = !this.addmem(!mem,!pos,!od)
+	handle any
+		--q var !error
+		!addresult = false
+	endhandle
+
+	label /end
+	$!mode
+	return !addresult
+endmethod
+define method .addmem(!mem is string,!pos is position,!od is real) is boolean
+	if !this.od.unset() then
+		!this.od = !od
+	else
+		!this.od = max(!this.od,!od)
+	endif
+	$)
+	--q var !mem
+	----------try to delete weld align to mem
+    --q var !this.mems
+	if !this.mems.set() then
+		!lastmem = !this.mems.last()
+		if type of $!lastmem eq 'WELD' then
+			!weldpos = !this.poss.last()
+			!tempapos = apos of $!mem wrt/*
+			handle any
+				!tempapos = !pos
+			endhandle
+			if !weldpos.distance(!tempapos) lt 1 then
+				!this.mems[!this.mems.size()].delete()
+				!this.poss[!this.poss.size()].delete()
+				!this.diss[!this.diss.size()].delete()
+				!this.mems.compress()
+				!this.poss.compress()
+				!this.diss.compress()
+			else
+				!templpos = lpos of $!mem wrt/*
+				handle any
+				elsehandle none
+					if !weldpos.distance(!templpos) lt 1 then
+						!this.mems[!this.mems.size()].delete()
+						!this.poss[!this.poss.size()].delete()
+						!this.diss[!this.diss.size()].delete()
+						!this.mems.compress()
+						!this.poss.compress()
+						!this.diss.compress()
+					endif
+				endhandle
+			endif
+		endif
+	endif
+	--$p asfdsa
+	!this.mems.append(!mem)
+    --q var !mem
+	!memtype = type of $!mem
+	--Q VAR !THIS.isinstpipe
+    --q var !this.em9twoendtypes
+    --q var !mem
+	if !this.isinstpipe.not() and !this.em4twoendtypes.findfirst(!memtype).set() then
+		!apos = apos of $!mem wrt/*
+		!lpos = lpos of $!mem wrt/*
+		!this.addpos(!apos)
+		!this.addpos(!lpos)
+        --$p a
+	elseif !this.isinstpipe and !this.em9twoendtypes.findfirst(!memtype).set() then
+		!apos = apos of $!mem wrt/*
+		!lpos = lpos of $!mem wrt/*
+		!this.addpos(!apos)
+		!this.addpos(!lpos)
+        --$p b
+	else
+        --q var !mem
+		--!this.poss.append(!pos)
+		!memname = name of $!mem
+        --Q VAR  !memname
+		if !memtype eq 'PCOM' and !memname.match('KD') ne 0 then
+        --$p 1
+        --q var !memname
+            --modify by jyg 20240813
+            !cateType = name of cate of catref of $!mem
+            !apos = apos of $!mem wrt/*
+			!lpos = lpos of $!mem wrt/*
+			!this.addpos(!apos)
+            if not !cateType.matchwild('*MT*') then
+                --modifyg by jyg 20241106
+                if not (!cateType.matchwild('/QDMQADD') OR !cateType.matchwild('/QDMQADU')) then
+                    !kd = object isokd(!mem)
+                    !this.addpos(!kd.weldpos)
+                endif
+            endif
+			!this.addpos(!lpos)
+            --$p c
+		elseif !memtype eq 'PCOM' and !this.mems.size() eq 1 and !!ispipespecialelement(!mem) and not !memname.Matchwild('*FL') then
+        --$p 2
+            !pos = pos of $!mem wrt/*
+
+            !apos = apos of $!mem wrt/*
+            !adir = adir of $!mem wrt/*
+            !line = !apos.line(!apos.offset(!adir,1000))
+            !pos = !line.near(!pos)
+            !this.addpos(!pos)
+
+            !lpos = lpos of $!mem wrt/*
+            !ldir = ldir of $!mem wrt/*
+            !line = !lpos.line(!lpos.offset(!ldir,1000))
+            !pos = !line.near(!pos)
+            !this.addpos(!pos)
+            --$p d
+        --$p 2-
+		elseif !memtype eq 'PCOM' and !!isrjpcom(!mem) then
+        --$p 3
+            --q var !mem
+			if !this.isrjdim then
+				!this.addpos(!pos)
+
+				!p1pos = p1 pos of $!mem wrt/*
+				!p9pos = p9 pos of $!mem wrt/*
+
+				!adir = adir of $!mem wrt/*
+				if abs(!adir.angle(u) - 90) lt 10 then
+					!tempdir = !adir
+				else
+					!p0pos = p0 pos of $!mem wrt/*
+					!p3pos = p3 pos of $!mem wrt/*
+					!tempdir = !p0pos.direction(!p3pos)
+				endif
+
+				!templine = !p1pos.line(!p1pos.offset(!tempdir,-10000))
+				!pos = !templine.near(!p9pos)
+				if !this.pipedir.angle(u) gt 10 then
+					!this.addpos(!pos)
+				else
+					!templine = !pos.line(!pos.offset(!this.pipedir,1000))
+					!pos = !templine.near(!p9pos)
+					!this.addpos(!pos)
+				endif
+                --$p e
+			else
+				!this.addpos(!pos)
+
+				if abs(!this.pipedir.angle(u) - 90) lt 10 then
+					!p1pos = p1 pos of $!mem wrt/*
+					!p9pos = p9 pos of $!mem wrt/*
+					!adir = adir of $!mem wrt/*
+					!ldir = ldir of $!mem wrt/*
+					!templine = !p1pos.line(!p1pos.offset(!adir,-10000))
+					!pos = !templine.near(!p9pos)
+					!this.addpos(!pos)
+				endif
+                --$p f
+			endif
+		elseif !memtype eq 'INST' and !memname.matchwild('*UA') then
+            !pos = pa pos of $!mem wrt/*
+			!this.addpos(!pos)
+            !pos = pl pos of $!mem wrt/*
+            !this.addpos(!pos)
+        elseif !memtype eq 'FILT' and !memname.matchwild('*FI') then
+            !pos = pa pos of $!mem wrt/*
+			!this.addpos(!pos)
+            !pos = pl pos of $!mem wrt/*
+            !this.addpos(!pos)
+		else
+        --$p 4
+            --q var !mem
+            --q var !pos
+            !pcomname = name of $!mem
+            --modify by jyg 20241017
+            if !pcomname.matchwild('*FL') then
+            --$p 5
+                !pos = pa pos of $!mem wrt/*
+				!this.addpos(!pos)
+                !pos = pl pos of $!mem wrt/*
+				!this.addpos(!pos)
+            elseif !pcomname.matchwild('*JH') then
+                !pos = pl pos of $!mem wrt/*
+				!this.addpos(!pos)
+            else
+                --modify by jyg 20241211 用来调整挡块标注位置
+                if  !memtype eq 'ATTA' then
+                    --q var !mem
+                    !scomname = name of gmref of catref of $!mem
+                    !spconame = name of spref of $!mem
+                    if  !spconame.Matchwild('*STE*') then
+                        !this.addpos(!pos)
+                    elseif !spconame.Matchwild('*TC*') OR !spconame.Matchwild('*TD*') OR !spconame.Matchwild('*TE*') OR !spconame.Matchwild('*TF*')  then
+                        !p101dir =  p101dir of $!mem
+                        !p101dirop = !p101dir.opposite()
+                        !scomLength = ( para[9] of $!mem ) / 2
+                        !pos1 = !pos.Offset(!p101dir,!scomLength)
+                        !pos2 = !pos.Offset(!p101dirop,!scomLength)
+                        !this.addpos(!pos1)
+                        !this.addpos(!pos2)
+                    elseif !spconame.Matchwild('*Tuser*') then
+                        !p1dir =  p1dir of $!mem
+                        !p2dir =  p2dir of $!mem
+                        !scomLength = ( desp[3] of $!mem ) / 2
+                        !pos1 = !pos.Offset(!p1dir,!scomLength)
+                        !pos2 = !pos.Offset(!p2dir,!scomLength)
+                        !this.addpos(!pos1)
+                        !this.addpos(!pos2)
+                    else
+                        !this.addpos(!pos)
+                    endif
+                else
+                    !this.addpos(!pos)
+                endif
+
+            endif
+
+			if !pcomname.matchwild('*DI') then
+				!pos = pl pos of $!mem wrt/*
+				!this.addpos(!pos)
+			endif
+
+            --$p g
+		endif
+	endif
+    --q var !this.poss
+	$(
+	if !handledir.set() then
+		!this.addHandler(!mem,!handledir)
+	endif
+	$)
+	return true
+endmethod
+
+define method .addpos(!pos is position)
+    --q var !pos
+    --!this.line.Draw(1,2,3)
+    --q var !this.line.startposition
+	!dis = !!suidirdis(!this.line.startposition,!this.pipedir,!pos)
+    --q var !dis
+	!goodindex = 0
+	do !index indices !this.diss
+		if !this.diss[!index] gt !dis then
+			!goodindex = !index
+			break
+		endif
+	enddo
+	if !goodindex ne 0 then
+        --$p 11
+		!this.poss.insert(!goodindex,!pos)
+		!this.diss.insert(!goodindex,!dis)
+	else
+        --$p 22
+		!this.poss.append(!pos)
+		!this.diss.append(!dis)
+	endif
+    --q var !this.poss
+    --$p 564
+endmethod
+
+
+$(
+define method .addHandler(!mem is string,!handledir is direction)
+	!this.handledirs.append(!handledir)
+	!this.handledirs.unique()
+
+	--q var !this.handledirs
+
+	var !volume vol $!mem
+	--q var !volume
+	!poss = !this.getpoints(!volume)
+	--q var !poss
+	!mindis = 100000000
+	!maxdis = -100000000
+	--$p kkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+	--q var !poss !this.line
+	do !pos values !poss
+		!nearpos = !this.line.near(!pos)
+		!dis = !this.poss[1].distance(!nearpos)
+		!dir = !this.poss[1].direction(!nearpos)
+		handle any
+		elsehandle none
+			if !dir.angle(!this.line.direction()) gt 90 then
+				!dis = - !dis
+			endif
+		endhandle
+		if !dis lt !mindis then
+			!mindis = !dis
+		endif
+		if !dis gt !maxdis then
+			!maxdis = !dis
+		endif
+	enddo
+	--$p isouseddir start
+	!isousedDir = object isoUsedDir(!mem,!handledir,!mindis,!maxdis,'Handle')
+	--q var !isouseddir
+	!this.useddirs.append(!isousedDir)
+endmethod
+
+define method .getpoints(!volume is string) is array
+	!pos1 = !volume.before(' to ').position().wrt(world)
+	!pos2 = !volume.after(' to ').position().wrt(world)
+
+	!poss = array()
+	!poss.append(!pos1)
+	!poss.append(!pos2)
+	!temppos = !pos1
+	!temppos.east = !pos2.east
+	!poss.append(!temppos)
+
+	!temppos = !pos1
+	!temppos.north = !pos2.north
+	!poss.append(!temppos)
+
+	!temppos = !pos1
+	!temppos.up = !pos2.up
+	!poss.append(!temppos)
+
+	!temppos = !pos2
+	!temppos.east = !pos1.east
+	!poss.append(!temppos)
+
+	!temppos = !pos2
+	!temppos.north = !pos1.north
+	!poss.append(!temppos)
+
+	!temppos = !pos2
+	!temppos.up = !pos1.up
+	!poss.append(!temppos)
+
+	return !poss
+endmethod
+$)
+
+$(
+--------------------------------------------------------------------------------------------------------new 202305221501 s
+define method .draw(!mbdstru is mbdstru, !cheight is real, !dimtimes is real)
+	!this.mbdstru = !mbdstru
+	!this.cheight = !cheight
+
+	!disarr = array
+	!disarr[1] = !!suidirdis(!this.polarsystem.pos,!this.polarsystem.ori.zdir(),!this.poss[1]) + 0.1
+	!disarr[2] = !!suidirdis(!this.polarsystem.pos,!this.polarsystem.ori.zdir(),!this.poss.last()) - 0.1
+	!disranges = array()
+	!disranges.append(!disarr)
+
+	!angleranges = array()
+
+	!radiusarr = array()
+	!radiusarr[1] = !this.od + !this.cheight * 1.2 * (!dimtimes - 1)
+	!radiusarr[2] = !radiusarr[1] + !this.cheight
+	!radiusranges = array()
+	!radiusranges.append(!radiusarr)
+
+	!needs = array()
+	!needs.append(!disarr[2] - !disarr[1])
+	!needs.append(30)
+	!needs.append(!this.cheight)
+
+	!bestdiss = array()
+	!bestdirs = array()
+	!bestradiuss = array()
+
+	!this.dimOneMemSlope()
+
+	!result = !this.polarsystem.getBestPosAndOri(!disranges, !angleranges, !radiusranges, !needs, !bestdiss, !bestdirs, !bestradiuss, true, true)
+	!dimpos = !result[1]
+	!textori = !result[2]
+
+	!lindim = object lindim(!this.mbdstru.dimgro,!dimpos, !textori, !this.poss, !this.cheight,'Dimension','node:' + !this.branname,!this.changeCheightAuto,!this.sepSmallDim)
+	!this.drawitems.append(!lindim.name)
+	if !this.changeCheightAuto then
+		!this.cheight = !lindim.cheight
+	endif
+endmethod
+
+define method .drawSub(!dimdir is direction, !mbdstru is mbdstru, !cheight is real, !dimtimes is real)
+	!this.mbdstru = !mbdstru
+	!this.cheight = !cheight
+
+	!disarr = array
+	!disarr[1] = !!suidirdis(!this.polarsystem.pos,!this.polarsystem.ori.zdir(),!this.poss[1]) + 0.1
+	!disarr[2] = !!suidirdis(!this.polarsystem.pos,!this.polarsystem.ori.zdir(),!this.poss.last()) - 0.1
+	!disranges = array()
+	!disranges.append(!disarr)
+
+	!angleranges = array()
+
+	!radiusarr = array()
+	!radiusarr[1] = !this.od + !this.cheight * 1.2 * (!dimtimes - 1)
+	!radiusarr[2] = !radiusarr[1] + !this.cheight
+	!radiusranges = array()
+	!radiusranges.append(!radiusarr)
+
+	!needs = array()
+	!needs.append(!disarr[2] - !disarr[1])
+	!needs.append(30)
+	!needs.append(!this.cheight)
+
+	!bestdiss = array()
+	!bestdirs = array()
+	!bestdirs.append(!dimdir)
+	!bestradiuss = array()
+
+
+
+	!result = !this.polarsystem.getBestPosAndOri(!disranges, !angleranges, !radiusranges, !needs, !bestdiss, !bestdirs, !bestradiuss, true, true)
+	!dimpos = !result[1]
+	!textori = !result[2]
+
+	!lindim = object lindim(!this.mbdstru.dimgro,!dimpos, !textori, !this.poss, !this.cheight,'Dimension','node:' + !this.branname,!this.changeCheightAuto,!this.sepSmallDim)
+	!this.drawitems.append(!lindim.name)
+	if !this.changeCheightAuto then
+		!this.cheight = !lindim.cheight
+	endif
+endmethod
+---------------------------------------------------------------------------------------------------------new 202305221501 e
+$)
+
+
+------------------------------------------------------------------------------------------old 202305221501 s
+define method .CalculateDimChardirs()
+	var !volume volume $!this.branname
+	!pos1 = !volume.before(' to ').position().wrt(world)
+	!pos2 = !volume.after(' to ').position().wrt(world)
+	!pos = !pos1.midpoint(!pos2)
+
+	!linemidpos = !this.poss[1].midpoint(!this.poss.last())
+	!dir = !linemidpos.direction(!pos)
+
+	!dirs[1] = e
+	!dirs[2] = n
+	!dirs[3] = w
+	!dirs[4] = s
+	!angles = array()
+	do !onedir values !dirs
+		!angle = !onedir.angle(!dir)
+		!angles.append(!angle)
+	enddo
+
+	!indices = !angles.sortedindices()
+
+	---from inside look outside s
+	!goodDimdirs[1] = !dirs[!indices[1]]
+	!goodDimdirs[2] = !dirs[!indices[2]]
+	!goodDimdirs[1] = !dirs[!indices[1]].opposite()
+	!goodDimdirs[2] = !dirs[!indices[2]].opposite()
+	!goodDimdirs[3] = u
+
+	!goodchardirs[1] = u
+	!goodchardirs[2] = !dirs[!indices[1]]
+	--.opposite()
+	!goodchardirs[3] = !dirs[!indices[2]]
+	--.opposite()
+	---from inside look outside e
+
+
+	!this.dimdirs = !gooddimdirs
+	!this.chardirs = !goodchardirs
+
+endmethod
+
+
+define method .draw(!usedDirs is array, !mbdstru is mbdstru, !cheight is real,!dimtimes is real, !isousedDirs is array)
+	!this.CalculateDimChardirs()
+	!this.draw(!usedDirs,!this.dimdirs,!this.chardirs,!mbdstru,!cheight,!dimtimes,!isousedDirs)
+endmethod
+
+define method .draw(!usedDirs is array, !gooddimdirs is array, !goodchardirs is array, !mbdstru is mbdstru, !cheight is real, !dimtimes is real, !isousedDirs is array)
+	!this.mbdstru = !mbdstru
+	!this.dimdirs = !gooddimdirs
+	!this.chardirs = !goodchardirs
+
+	!this.cheight = !cheight
+	!this.usedDirs = !isoUsedDirs
+
+	!this.isoUsedDirExists = false
+
+	!dimUsedDirs = !usedDirs
+
+	!oldsize = !this.usedDirs.size()
+	!this.dimOneMemSlope()                          $*需要先画斜管的直线，这是改变不了的
+	!newsize = !this.usedDirs.size()
+
+	if !newsize ne !oldsize then
+		do !x from !oldsize + 1 to !newsize
+			!dimUsedDirs.append(!this.useddirs[!x])
+		enddo
+	endif
+	!dimUsedDirs.unique()
+
+
+	!this.isoori = object isoori(!this.pipedir,!gooddimdirs,!goodchardirs,!dimUsedDirs,60)	$*-------------------------to change202304101412
+
+
+	!this.pipedir = !this.isoori.pipedir
+	!this.dimdir = !this.isoori.dimdir
+	!this.chardir = !this.isoori.chardir
+	!this.ori = !this.isoori.ori
+	!this.drawdim(!dimtimes)
+
+	!isoUsedDir = object isoUsedDir('ISODIM',!this.dimdir,0,!this.poss[1].distance(!this.poss.last()),'MainDim')
+	!this.usedDirs.append(!isousedDir)
+endmethod
+
+
+define method .draw(!dimdir is direction, !mbdstru is mbdstru, !cheight is real,!dimtimes is real, !isousedDirs is array)
+	!this.CalculateDimChardirs()
+	--!this.draw(!dimdir,!this.dimdirs,!this.chardirs,!dimgro,!dimslopelineGro,!dimslopeTextGro,!cheight,!dimtimes,!isousedDirs)
+	!this.draw(!dimdir,!this.dimdirs,!this.chardirs,!mbdstru,!cheight,!dimtimes,!isousedDirs)
+endmethod
+
+define method .draw(!dimdir is direction, !gooddimdirs is array, !goodchardirs is array, !mbdstru is mbdstru, !cheight is real, !dimtimes is real, !isousedDirs is array)
+	!this.mbdstru = !mbdstru
+	!this.dimdirs = !gooddimdirs
+	!this.chardirs = !goodchardirs
+	!this.cheight = !cheight
+	!this.usedDirs = !isoUsedDirs
+
+	!this.dimdir = !dimdir
+
+	!this.isoUsedDirExists = true
+
+	!this.dimOneMemSlope()                          $*需要先画斜管的直线，这是改变不了的
+	!this.usedDirs.unique()
+
+	!this.isoori = object isoori(!gooddimdirs,!goodchardirs)
+	!this.isoori.pipedir = !this.pipedir
+	!this.isoori.dimdir = !this.dimdir
+	!this.isoori.minangle = 30
+	!this.isoori.getori()
+
+
+	!this.pipedir = !this.isoori.pipedir
+	!this.dimdir = !this.isoori.dimdir
+	!this.chardir = !this.isoori.chardir
+	!this.ori = !this.isoori.ori
+	!this.drawdim(!dimtimes)
+endmethod
+---------------------------------------------------------------------------------------------------------old 202305221501 e
+
+define method .dimOneMemSlope()
+	!alldirs[1] = e
+	!alldirs[2] = w
+	!alldirs[3] = s
+	!alldirs[4] = n
+	!alldirs[5] = u
+	!alldirs[6] = d
+	!minangle = 100
+	do !onedir values !alldirs
+		!angle = !onedir.angle(!this.pipedir)
+		if !angle lt !minangle then
+			!gooddir = !onedir
+			!minangle = !angle
+		endif
+	enddo
+
+	if !minangle.tangent() gt !this.maxslope then
+		!this.dimslope(!this.poss[1],!this.poss.last())			$*if large than max slope , should consider it as a inclined pipe, intead of slope pipe
+	endif
+endmethod
+
+---------------------------------------------------------------------------------------------------------old 202305221501 s
+define method .drawSub(!dimdir is direction, !gooddimdirs is array, !goodchardirs is array, !mbdstru is mbdstru, !cheight is real, !dimtimes is real)
+	!this.mbdstru = !mbdstru
+	!this.dimdirs = !gooddimdirs
+	!this.chardirs = !goodchardirs
+	--!this.dimgro = !dimgro
+	--!this.dimslopelinegro = !dimslopelinegro
+	--!this.dimslopetextgro = !dimslopetextgro
+	!this.cheight = !cheight
+
+	!this.dimdir = !dimdir
+	!this.isoori = object isoori(!gooddimdirs,!goodchardirs)
+	!this.isoori.pipedir = !this.pipedir
+	!this.isoori.dimdir = !this.dimdir
+	!this.isoori.minangle = 60
+	!this.isoori.getori()
+
+	!this.pipedir = !this.isoori.pipedir
+	!this.dimdir = !this.isoori.dimdir
+	!this.chardir = !this.isoori.chardir
+	!this.ori = !this.isoori.ori
+	!this.drawdim(!dimtimes)
+endmethod
+---------------------------------------------------------------------------------------------------------old 202305221501 e
+
+
+define method .drawDim(!dimtimes is real)
+	!endpos = !this.poss[1].offset(!this.dimdir,10000)
+	!line = !this.poss[1].line(!endpos)
+
+	--return
+	!mindis = 100000
+	do !pos values !this.poss
+		!nearpos = !line.near(!pos)
+		if !nearpos.distance(!endpos) lt !mindis then
+			!goodpos = !nearpos
+		endif
+	enddo
+	!goodpos = !goodpos.offset(!this.dimdir,!this.od / 2 + !this.od / 2 + !this.cheight * 1.2 * (!dimtimes - 1))	$* to change202304101424
+	!tempdis = !this.poss[1].distance(!goodpos)
+	--$p $!tempdis $!dimtimes
+	--return
+	!this.dimOneMem(!tempdis)
+	--!this.dimOneMem(!this.poss[1].distance(!goodpos))
+endmethod
+
+define method .dimOneMem(!offdis is real)
+	!poss = !this.poss
+	!poss.unique()
+	!line = !poss[1].line(!poss[1].offset(!this.pipedir,1000))
+	if !line.near(!poss[1]).distance(!poss.last()) lt 0.5 then
+		--两点距离过近属于设计错误
+		return
+	endif
+
+	!dimlinepos = !poss[1].offset(!this.dimdir,!offdis)
+	!ori = x is $!this.pipedir and y is $!this.dimdir
+
+	--!linedim = object lindim(!this.mbdstru.dimgro,!dimlinepos, !ori, !poss, !this.cheight,'Dimension','node:' + !this.branname)
+	!lindim = object lindim(!this.mbdstru.dimgro,!dimlinepos, !ori, !poss, !this.cheight,'尺寸','node:' + !this.branname,!this.changeCheightAuto,!this.sepSmallDim)
+	--!lindim = object lindim(!this.mbdstru.dimgro,!dimlinepos, !ori, !poss, !this.cheight,'Dimension','node:' + !this.branname,!this.changeCheightAuto,!this.sepSmallDim)
+	--!this.drawitems.append(!lindim.name)
+	if !this.changeCheightAuto then
+		!this.cheight = !lindim.cheight
+	endif
+endmethod
+
+
+
+
+define method .dimslope(!pos1 is position, !pos2 is position) is array
+	!returnresult = array()
+	if abs(!pos1.up - !pos2.up) gt 0.5 then
+		if !pos1.up ge !pos2.up then
+			!highPoint = !pos1
+			!lowPoint = !pos2
+		else
+			!highPoint = !pos2
+			!lowPoint = !pos1
+		endif
+		!projectedPoint = !highPoint
+		!projectedPoint.up = !lowPoint.up
+
+		!dirlen = !this.dimslope(!projectedPoint,!lowPoint)
+
+		!aidline = object mbdaidline(!this.mbdstru.aidgro,!projectedPoint,!highPoint,'尺寸','node:' + !this.branname)
+		--!aidline = object mbdaidline(!this.mbdstru.aidgro,!projectedPoint,!highPoint,'SkewDim','node:' + !this.branname)
+		--!!isocreateAidLine(!this.dimslopelineGro,!projectedPoint,!highPoint)
+		--function 'SkewDim'
+		--!this.drawitems.append(!aidline.name)
+		!mindis = !this.cheight * 0.5
+		!maxdis = !this.cheight * 0.5
+
+		if !this.isoUsedDirExists.not() then
+			!isoUsedDir = object isoUsedDir('ISODIM-2',!highPoint.direction(!projectedPoint),!mindis,!maxdis,'SlopeDim-2')                          $*add isoUsedDir 2
+			!this.usedDirs.append(!isousedDir)
+		endif
+
+
+		--!!isoposAidTEXT(!this.dimslopetextGro,!projectedPoint,!highPoint,!this.cheight,!this.dimdirs,!this.chardirs)
+		--function 'SkewDim'
+		!this.isoposAidTEXT(!projectedPoint,!highPoint,'SkewDim')
+		--q var !dirlen
+		if !dirlen.set() then           $*画直角标
+			!vertlen = !projectedPoint.distance(!highPoint)
+			!vertdir = !projectedPoint.direction(!highPoint)
+			!horidir = !dirlen[1]
+			--.opposite()
+			!horilen = !dirlen[2]
+			!rightanglelen = min(min(!horilen,!vertlen) / 4,!this.cheight)
+			!rightpoint = !projectedPoint.offset(!horidir,!rightanglelen).offset(!vertdir,!rightanglelen)
+
+			--$p asfdasdf
+			!aidline = object mbdaidline(!this.mbdstru.aidgro,!rightpoint,!rightpoint.offset(!horidir.opposite(),!rightanglelen),'尺寸','node:' + !this.branname)
+			--!aidline = object mbdaidline(!this.mbdstru.aidgro,!rightpoint,!rightpoint.offset(!horidir.opposite(),!rightanglelen),'SkewDim','node:' + !this.branname)
+			--!!isocreateAidLine(!this.dimslopelineGro,!rightpoint,!rightpoint.offset(!horidir.opposite(),!rightanglelen))
+			--function 'SkewDim'
+			--!this.drawitems.append(!aidline.name)
+
+			!aidline = object mbdaidline(!this.mbdstru.aidgro,!rightpoint,!rightpoint.offset(!vertdir.opposite(),!rightanglelen),'尺寸','node:' + !this.branname)
+			--!aidline = object mbdaidline(!this.mbdstru.aidgro,!rightpoint,!rightpoint.offset(!vertdir.opposite(),!rightanglelen),'SkewDim','node:' + !this.branname)
+			--!!isocreateAidLine(!this.dimslopelineGro,!rightpoint,!rightpoint.offset(!vertdir.opposite(),!rightanglelen))
+			--function 'SkewDim'
+			--!this.drawitems.append(!aidline.name)
+		endif
+	else
+		!pos1.up = !pos2.up $*有些可能存在0.5以内的误差
+		!line1 = !pos1.line(!pos1.offset(e,1000))
+		!line2 = !pos2.line(!pos2.offset(n,1000))
+		!point1 = !line1.intersection(!line2)
+
+		!rightangledir = array()
+		!tempdirs1 = array()
+		!tempdirs1.append(!point1.direction(!pos1))
+		handle any
+		endhandle
+		!tempdirs1.append(!point1.direction(!pos2))
+		handle any
+		endhandle
+
+
+		!line3 = !pos1.line(!pos1.offset(n,1000))
+		!line4 = !pos2.line(!pos2.offset(e,1000))
+		!point2 = !line3.intersection(!line4)
+
+		!tempdirs2 = array()
+		!tempdirs2.append(!point2.direction(!pos1))
+		handle any
+		endhandle
+		!tempdirs2.append(!point2.direction(!pos2))
+		handle any
+		endhandle
+
+		!num1 = 0
+		do !onedir values !tempdirs1
+			if !this.dimdirs.findfirst(!onedir).set() then
+				!num1 = !num1 + 1
+			endif
+		enddo
+
+		!num2 = 0
+		do !onedir values !tempdirs2
+			if !this.dimdirs.findfirst(!onedir).set() then
+				!num2 = !num2 + 1
+			endif
+		enddo
+
+		if !num1 ge !num2 then
+			!goodpoint = !point1
+		else
+			!goodpoint = !point2
+		endif
+
+
+
+		if !goodpoint.distance(!pos1) ge 1 then                      $*画水平方向1
+			!aidline = object mbdaidline(!this.mbdstru.aidgro,!goodpoint,!pos1,'尺寸','node:' + !this.branname)
+			--!aidline = object mbdaidline(!this.mbdstru.aidgro,!goodpoint,!pos1,'SkewDim','node:' + !this.branname)
+			--!this.drawitems.append(!aidline.name)
+
+			!this.isoposAidTEXT(!goodpoint,!pos1,'尺寸')
+			--!this.isoposAidTEXT(!goodpoint,!pos1,'SkewDim')
+
+			!horidir1 = !goodpoint.direction(!pos1)
+			!horilen1 = !goodpoint.distance(!pos1)
+
+
+			!returnresult.append(!horidir1.opposite())
+			!returnresult.append(!horilen1)
+		endif
+
+		if !goodpoint.distance(!pos2) ge 1 then                      $*画水平方向2
+			!aidline = object mbdaidline(!this.mbdstru.aidgro,!goodpoint,!pos2,'尺寸','node:' + !this.branname)
+			--!aidline = object mbdaidline(!this.mbdstru.aidgro,!goodpoint,!pos2,'SkewDim','node:' + !this.branname)
+			--!this.drawitems.append(!aidline.name)
+
+			!len = !this.line.startposition.distance(!pos2)
+			!mindis = !len - !this.cheight * 0.5
+			!maxdis = !len + !this.cheight * 0.5
+
+			if !this.isoUsedDirExists.not() then
+				!isoUsedDir = object isoUsedDir('ISODIM-1',!pos2.direction(!goodpoint),!mindis,!maxdis,'SlopeDim-1')                          $*add isoUsedDir 1
+				!this.usedDirs.append(!isousedDir)
+			endif
+
+			!this.isoposAidTEXT(!goodpoint,!pos2,'尺寸')
+			--!this.isoposAidTEXT(!goodpoint,!pos2,'SkewDim')
+			--!!isoposAidTEXT(!this.dimslopetextGro,!goodpoint,!pos2,!this.cheight,!this.dimdirs,!this.chardirs)
+			--function 'SkewDim'
+
+			!horidir2 = !goodpoint.direction(!pos2)
+			!horilen2 = !goodpoint.distance(!pos2)
+			if !returnresult.unset() then
+				!returnresult.append(!horidir2)
+				!returnresult.append(!horilen2)
+			endif
+		endif
+
+		if defined(!horidir1) and defined(!horidir2) then           $*画直角标
+			!rightanglelen = min(min(!horilen1,!horilen2) / 4,!this.cheight)
+			!rightpoint = !goodpoint.offset(!horidir1,!rightanglelen).offset(!horidir2,!rightanglelen)
+
+			!aidline = object mbdaidline(!this.mbdstru.aidgro,!rightpoint,!rightpoint.offset(!horidir1.opposite(),!rightanglelen),'尺寸','node:' + !this.branname)
+			!aidline = object mbdaidline(!this.mbdstru.aidgro,!rightpoint,!rightpoint.offset(!horidir2.opposite(),!rightanglelen),'尺寸','node:' + !this.branname)
+
+
+			--!aidline = object mbdaidline(!this.mbdstru.aidgro,!rightpoint,!rightpoint.offset(!horidir1.opposite(),!rightanglelen),'SkewDim','node:' + !this.branname)
+			----!this.drawitems.append(!aidline.name)
+			--!aidline = object mbdaidline(!this.mbdstru.aidgro,!rightpoint,!rightpoint.offset(!horidir2.opposite(),!rightanglelen),'SkewDim','node:' + !this.branname)
+			----!this.drawitems.append(!aidline.name)
+		endif
+	endif
+
+	return !returnresult
+endmethod
+
+define method .isoposAidtext(!pos1 is position, !pos2 is position, !function is string)
+	if !this.cheight.unset() then
+		$p cheight unset
+		return
+	endif
+	!midpoint = !pos1.midpoint(!pos2)
+	!len = !pos1.distance(!pos2)
+	if !len lt 0.5 then                     $*no need to mark
+		return
+	endif
+	--!text = !len.string('d1').upcase().before('MM').before('IN').before('.0')
+	!text = !len.string('d0').upcase().before('MM').before('IN').before('.0')
+	!dir = !pos1.direction(!pos2)
+	handle any
+		return
+	endhandle
+
+
+	!isoori = object isoori(!dir,!this.dimdirs,!this.chardirs)
+	!ori = !isoori.ori
+
+
+	!textlen = !text.length() * !this.cheight * 2 / 3
+	!midpoint = !midpoint.offset(!ori.xdir().opposite(),!textlen / 2)
+
+	!aidtext = object aidtext(!this.mbdstru.aidgro,!midpoint,!ori,!text,!this.cheight,!function,'node:' + !this.branname)
+	--!this.drawitems.append(!aidtext.name)
+endmethod
+
+

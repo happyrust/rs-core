@@ -1,0 +1,280 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= April 19th 2023
+--[Function]:	input poss and radiuss, to get array of line and arc
+------------------------------------------
+
+define function !!getlinesandarcsfortwoarrays(!inputposs is array, !inputradiuss is array) is array
+	!poss = !inputposs
+	!radiuss = !inputradiuss
+
+	--label /again
+
+	!linesarcs = array()
+	do !n indices !poss
+
+		!pos = !poss[!n]
+		!radius = !radiuss[!n]
+		if !n eq !poss.size() then
+			!afterpos = !poss[1]
+		else
+			!afterpos = !poss[ !n + 1 ]
+		endif
+		!line2 = !pos.line(!afterpos)
+		if !radius ne 0 then
+			if !n ne 1 then
+				!line1 = !linesarcs.last()
+			else
+				!line1 = !poss.last().line(!pos)
+			endif
+
+			!direction1 = !line1.direction().opposite()
+			!direction2 = !line2.direction()
+
+			----put it out if ,  202306061417 s
+			!direction = !direction1.bisect(!direction2)
+			!angle = !direction.angle(!direction1)
+			if !radius gt 0 then	$*202401111117
+				!edgedis = abs(!radius) / !angle.tangent()
+			else
+				!edgedis = abs(!radius)
+			endif
+
+			$(
+			--cant change radius--202401051602
+			if !edgedis gt !line1.length() + 0.1 or !edgedis gt !line2.length() + 0.1 then	$* point is bad
+				!edgedis = min(!line1.length(),!line2.length())
+				!tempradius = !edgedis * !angle.tangent()
+				if !radius gt 0 then
+					!radius = !tempradius
+				else
+					!radius = - !tempradius
+					--!radius = - !radius
+				endif
+			endif
+			$)
+			----put it out if ,  202306061417 e
+
+			if !radius gt 0 then
+
+				--!angle = !direction.angle(!direction1)
+				--!edgedis = !radius / !angle.tangent()
+				--if !edgedis gt !line1.length() + 0.1 or !edgedis gt !line2.length() + 0.1 then	$* point is bad
+				--!edgedis = min(!line1.length(),!line2.length())
+				--!radius = !edgedis * !angle.tangent()
+
+
+				--!poss[!n].delete()
+				--!radiuss[!n].delete()
+				--!poss.compress()
+				--!radiuss.compress()
+				--golabel /again
+				--skip
+
+				$(
+				------keep radius, but in gensec, radius would change to a new one to mark edgedis equal min(line1.length(),!line2.length())
+				!movelen = min(!line1.length(),!line2.length())
+				!pos1 = !line1.endposition.offset(!direction1,!movelen)
+				!pos2 = !line1.endposition.offset(!direction2,!movelen)
+
+				!templen = !pos1.distance(!pos2)
+				!midpoint = !pos1.midpoint(!pos2)
+				!tempdis = sqrt(!radius.power(2) - !templen.power(2) / 4)
+				!cenpos = !midpoint.offset(!pos.direction(!midpoint),!tempdis)
+				!xdir = !cenpos.direction(!pos1)
+				!tempdir = !cenpos.direction(!pos2)
+				!zdir = !xdir.orthogonal(!tempdir)
+				!ori = x is $!xdir and z is $!zdir
+				!angle = !xdir.angle(!tempdir)
+				--pin1 at $!cenpos
+
+
+				!arc = object arc(!cenpos,!ori,0,!angle,!radius,true)
+				$)
+
+				--endif
+				!middis = !radius / !angle.sine()
+				!pos1 = !line1.endposition.offset(!direction1,!edgedis)
+				!pos2 = !line2.startposition.offset(!direction2,!edgedis)
+				!centrepoint = !line1.endposition.offset(!direction,!middis)
+				!direction1 = !centrepoint.direction(!pos1)
+				!direction2 = !centrepoint.direction(!pos2)
+				!angle = !direction1.angle(!direction2)
+				!ori = object orientation('X is $!direction1 and Y is $!direction2')
+				!arc = object arc(!centrepoint,!ori,0,!angle,!radius,true)		$* case: two arc intersection not considered
+
+
+			else
+				!radius = - !radius
+				!pos1 = !line1.endposition.offset(!direction1,  !radius)
+				!pos2 = !line2.startposition.offset(!direction2,  !radius)
+				!angle = !direction1.angle(!direction2)
+				!ori = object orientation('X is $!direction1 and Y is $!direction2')
+				!arc = object arc(!line1.endposition,!ori,0,!angle,!radius,true)
+			endif
+
+			$(
+			---old way
+			if !radius gt 0 then
+				!direction = !direction1.bisect(!direction2)
+				!angle = !direction.angle(!direction1)
+				!edgedis = !radius / !angle.tangent()
+				if !edgedis gt !line1.length() or !edgedis gt !line2.length() then	$* point is bad
+					--!poss[!n].delete()
+					--!radiuss[!n].delete()
+					--!poss.compress()
+					--!radiuss.compress()
+					--golabel /again
+					skip
+				endif
+				!middis = !radius / !angle.sine()
+				!pos1 = !line1.endposition.offset(!direction1,!edgedis)
+				!pos2 = !line2.startposition.offset(!direction2,!edgedis)
+				!centrepoint = !line1.endposition.offset(!direction,!middis)
+				!direction1 = !centrepoint.direction(!pos1)
+				!direction2 = !centrepoint.direction(!pos2)
+				!angle = !direction1.angle(!direction2)
+				!ori = object orientation('X is $!direction1 and Y is $!direction2')
+				!arc = object arc(!centrepoint,!ori,0,!angle,!radius,true)		$* case: two arc intersection not considered
+			else
+				!pos1 = !line1.endposition.offset(!direction1,!radius)
+				!pos2 = !line2.startposition.offset(!direction2,!radius)
+				!angle = !direction1.angle(!direction2)
+				!ori = object orientation('X is $!direction1 and Y is $!direction2')
+				!arc = object orientation(!line1.endposition,!ori,0,!angle,!radius,true)
+			endif
+			$)
+
+			--ensure the end points of line is same with end points of arc	202303241105 s
+			!pos1 = !arc.angleposition(!arc.startangle)
+			!pos2 = !arc.angleposition(!arc.endangle)
+			--ensure the end points of line is same with end points of arc	202303241105 e
+
+			if !n ne 1 then
+				!templine = !linesarcs.last()
+				!templine.endposition = !pos1
+				!linesarcs[!linesarcs.size()].delete()
+				!linesarcs.append(!templine)
+			else
+				!lastpos = !pos1
+			endif
+
+
+
+
+
+			!linesarcs.append(!arc)
+			!line2.startposition = !pos2
+		endif
+		if !n eq !poss.size() and !linesarcs.first().objecttype() eq 'ARC' then
+			!line2.endposition = !lastpos
+		endif
+		!linesarcs.append(!line2)
+	enddo
+
+
+	!returnarray = array()
+	do !lineorarc values !linesarcs
+		if !lineorarc.length() ge 1 then
+			!returnarray.append(!lineorarc)
+		endif
+	enddo
+
+
+	--$(
+	----------------------------------------------202303231550 s somethimes edgedis is more the length of line at point with fradius, it is not good to run iswithout of profile
+
+
+
+	!minlen = 10000
+	do !linearc values !returnarray
+		!minlen = min(!minlen,!linearc.length())
+		--q var !minlen
+	enddo
+	!tolerancedis = min(50,max(5,!minlen / 20))
+	--q var !tolerancedis
+
+	!size = !returnarray.size()
+	do !x from 1 to !size
+		--$p $!x
+		if undefined(!returnarray[!x]) or !returnarray[!x].objecttype() ne 'ARC' then
+			skip
+		endif
+		!bindex = !x - 2
+		if !bindex lt 1 then
+			!bindex = !size + !bindex
+		endif
+
+		if defined(!returnarray[!bindex]) and !returnarray[!bindex].objecttype() eq 'LINE' then
+			!line = !returnarray[!bindex]
+			!arc = !returnarray[!x]
+			!interpoints = !line.intersections(!arc)
+			!inter = false
+			do !temppoint values !interpoints
+				!tempangle = !arc.near(!temppoint)
+				if abs(!tempangle - !arc.endangle) gt abs(!tempangle - !arc.startangle) then
+					if (!line.onprojected(!temppoint) or !line.endposition.distance(!temppoint) lt !tolerancedis) and !arc.onprojected(!temppoint) then
+						!interpos = !temppoint
+						!inter = true
+						break
+					endif
+				endif
+			enddo
+			if !inter then
+				!delx = !x - 1
+				if !delx lt 1 then
+					!delx = !size + !delx
+				endif
+				!returnarray[!delx].delete()
+				!returnarray[!bindex].endposition = !interpos
+				!returnarray[!x].startangle = !returnarray[!x].near(!interpos)
+			endif
+		endif
+
+		!aindex = !x + 2
+		if !aindex gt !size then
+			!aindex = !aindex - !size
+		endif
+
+		--$p afterindex $!aindex
+
+		if defined(!returnarray[!aindex]) and !returnarray[!aindex].objecttype() eq 'LINE' then
+			!line = !returnarray[!aindex]
+			!arc = !returnarray[!x]
+			!interpoints = !line.intersections(!arc)
+			!inter = false
+			do !temppoint values !interpoints
+				!tempangle = !arc.near(!temppoint)
+				if abs(!tempangle - !arc.endangle) lt abs(!tempangle - !arc.startangle) then
+					if (!line.onprojected(!temppoint) or !line.startposition.distance(!temppoint) lt !tolerancedis) and !arc.onprojected(!temppoint) then
+						!interpos = !temppoint
+						!inter = true
+						break
+					endif
+				endif
+			enddo
+			if !inter then
+				!delx = !x + 1
+				if !delx gt !size then
+					!delx = !delx - !size
+				endif
+				!returnarray[!delx].delete()
+				!returnarray[!aindex].startposition = !interpos
+				!returnarray[!x].endangle = !returnarray[!x].near(!interpos)
+			endif
+		endif
+	enddo
+
+
+	!returnarray.compress()
+	----------------------------------------------202303231550 e
+	--$)
+
+
+
+	return !returnarray
+endfunction

@@ -1,0 +1,713 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= April 13rd 2023
+--[Function]:
+--
+--[REV]
+--Revision		= 1.1
+--Date			= August 31st 2023
+--[Function]:	add some attributes for bolt
+------------------------------------------
+
+--Method:
+--Public method:
+--isoMaterial(!mem is string )  											$*normal method
+
+--bolt method for stud
+--isoMaterial(!len is real, !boltweight  is real, !bdia is real, !boltitem is string, !showitem is string, !spcomem is suispco, !relativemems is array, !inbran is boolean) 	$*
+--isoMaterial(!btsedata is btsedata,!dis is real, !boltitem is string)  	$*old method for bolt
+
+--bolt method for element rather than stud
+--isoMaterial(!bdia is real, !boltitem is string, !showitem is string, !spcomem is suispco, !relativemems is array, !inbran is boolean) 	$*
+
+--Private method:
+--getweight(!weight is string) is real  									$*
+
+
+
+define object isoMaterial
+	member .name is string
+	member .order is real   $*ÐòºÅ
+	member .desc is string   $*²ÄÁÏÃèÊö
+	member .ns is string   $*INS
+	member .quantity is real   $*ÊýÁ¿
+	member .itemCode is string   $*ITEM CODE
+
+	member .perweight is real	$*µ¥ÖØ
+	member .weight is real   $*ÖØÁ¿
+	member .rev is string   $*Rev.
+
+	member .unit is string
+	member .mtxx is string
+	member .abore is string
+	member .lbore is string
+
+	member .spref is string
+
+	member .uniquecode is string	$* use it when sum material
+
+	member .type is string
+
+	member .specialnum is string
+
+	member .tubinum is real
+
+	member .remark is string
+
+	member .isotext is string
+
+	member .boltshowpos is position	$* for bolt
+
+	member .showitem is string		$* for bolt
+	member .relativemems is array	$* for bolt
+	member .inbran is boolean		$* for bolt , to know if the material bolt belongs to this bran
+
+	member .toshow is boolean		$* for bolt
+
+	--member .boltarr is array $* array of isomaterial
+
+	member .angle is real			$* for pad lug
+	member .materialangle is real	$* angle plus the angle for cutting
+
+	member .isinstpipe is boolean
+
+	member .cutnum is real			$* it is for cut pipe
+
+	member .nodenames is string
+
+	member .elenumtext is string
+
+	member .changetype is string
+endobject
+
+define method .isoMaterial(!mem is string )
+	!this.name = !mem
+	!this.type = type of $!mem
+	!pspec = name of spec of spref of $!mem
+	!this.spref = name of spref of $!mem
+	!this.itemcode = !this.spref.after(!pspec).substring(2).before(':')
+
+	!tempname = name of $!mem
+	if !tempname.substring(1,1) ne '=' and !tempname.match(' ') eq 0 then
+		-----------------------
+		-----------------------if name is set, use name (for beijing 202308150946)
+		!this.desc = !tempname
+		!this.itemcode = ''		$*on need for valv
+	else
+		!this.desc = dtxr of $!mem
+		handle any
+			!this.desc = ''
+		endhandle
+	endif
+
+	if !tempname.substring(1,1) ne '=' and !tempname.match(' ') eq 0 then
+		!this.uniquecode = !this.desc
+	else
+		if type of $!tempname eq 'BEND' then
+			!this.uniquecode = name of lstube of $!tempname
+		else
+			!this.uniquecode = !this.spref
+		endif
+	endif
+
+
+	$(
+	--!this.rev = :ZD_Rev of bran of $!mem
+	--handle any
+		--!this.rev = ''
+		!this.rev = 'a'	$*ÔÝÊ±ÓÃÕâ¸ö
+	--endhandle
+	$)
+
+    -- modify by jyg 20240730
+	!rev = :ZD_Rev of bran of $!mem
+    --q var !rev
+    if !rev.empty() or !rev eq 'A' then
+        !this.rev = 'a'
+    elseif !rev eq 'A+' or !rev eq 'B' then
+        !this.rev = 'b'
+    endif
+
+	!this.remark = ''
+
+	!type = type of $!mem
+
+	if (!type eq 'TUBI' or !type eq 'BEND') then
+		!this.Unit = 'm'
+	else
+		!this.Unit = '¸ö'
+	endif
+
+	if (!type eq 'TUBI' ) then
+		!this.quantity =real(STRING(LTLENG OF $!Mem , 'D0'))
+	elseif (!type eq 'BEND'  ) then
+		!this.quantity = real(STRING(FITLEN OF $!Mem , 'D0'))
+		!this.type = 'TUBI'
+	else
+		!this.quantity = 1
+	endif
+
+
+
+	!this.mtxx = mtxx of spref of $!mem
+	handle any
+		!this.mtxx = 'NA'
+	endhandle
+
+    !this.lbore = !mem.dbref().lbore.real().string().upcase().before('MM').before('IN')
+	!this.abore = !mem.dbref().abore.real().string().upcase().before('MM').before('IN')
+    handle any
+        !this.abore = !this.lbore
+    endhandle
+
+	!this.setisinstpipe(!this.name)
+	if !this.isinstpipe then
+		!arr = !this.desc.split()
+		if !arr.size() le 2 then
+			!arr = !this.desc.split(',')
+		endif
+		if !this.desc.match(|"|) ne 0 then
+
+		do !onestring values !arr
+			if !onestring.match(|"|) ne 0 then
+				!this.ns = !onestring
+				break
+			endif
+		enddo
+		else
+			!this.ns = !arr[1]
+		endif
+	else
+		if !this.abore ne !this.lbore then
+			if !this.abore eq '0' or !this.abore eq '' then
+				--!this.ns = !this.lbore
+				!this.ns = !!changemmtoin(!this.lbore)
+			elseif !this.lbore eq '0' or !this.lbore eq '' then
+				--!this.ns = !this.abore
+				!this.ns = !!changemmtoin(!this.abore)
+			else
+				!ain = !!changemmtoin(!this.abore)
+				!lin = !!changemmtoin(!this.lbore)
+				if !this.abore.real() ge !this.lbore.real() then	$*lbore of Cap maybe 4mm or other unstartand bore
+					--!this.ns = !this.abore + ' x ' + !this.lbore
+					if !lin ne |0"| then
+						!this.ns = !ain + ' x ' + !lin
+					else
+						!this.ns = !ain
+					endif
+				else
+					--!this.ns = !this.lbore + ' x ' + !this.abore
+					if !ain ne |0"| then
+						!this.ns = !lin + ' x ' + !ain
+					else
+						!this.ns = !lin
+					endif
+				endif
+			endif
+		else
+			!p3bore = p3 bore of $!mem
+			handle any
+				--!this.ns = !this.abore
+				!this.ns = !!changemmtoin(!this.abore)
+			elsehandle none
+				if !p3bore.unset() then
+					--!this.ns = !this.abore
+					!this.ns = !!changemmtoin(!this.abore)
+				else
+					!p1bore = p1 bore of $!mem
+					--!this.ns = !p1bore.string().upcase().before('MM').before('IN') + ' x ' + !p3bore.string().upcase().before('MM').before('IN')
+					!this.ns = !!changemmtoin(!p1bore.real().value()) + ' x ' + !!changemmtoin(!p3bore.real().value())
+					--handle any
+					--	$p $!mem
+					--endhandle
+				endif
+			endhandle
+		endif
+	endif
+
+
+	if (!type eq 'TUBI' ) then
+		!perweight = uwei of cmpref of spref of  $!mem
+		handle any
+			!this.perweight =  0
+		elsehandle none
+			!this.perweight = !this.getweight(!perweight)
+		endhandle
+	elseif ( !type eq 'BEND' ) then
+		var !tubiprev prev tubi of $!mem
+		handle any
+			var !tubiprev next tubi of $!mem
+			handle any
+				!this.perweight =  0
+			elsehandle none
+				!perweight = uwei of cmpref of spref of  $!tubiprev
+				handle any
+					!this.perweight =  0
+				elsehandle none
+					!this.perweight = !this.getweight(!perweight)
+				endhandle
+			endhandle
+		elsehandle none
+			!perweight = uwei of cmpref of spref of  $!tubiprev
+			handle any
+				!this.perweight =  0
+			elsehandle none
+				!this.perweight = !this.getweight(!perweight)
+			endhandle
+		endhandle
+	else
+		!perweight = cwei of cmpref of spref of  $!mem
+		handle any
+			!this.perweight =  0
+		elsehandle none
+			!this.perweight = !this.getweight(!perweight)
+		endhandle
+	endif
+
+	if !this.perweight.unset() then
+		!this.perweight = 0
+		!this.weight = 0
+	else
+		--$p asfddasf
+		!this.weight = !this.perweight * !this.quantity.string().upcase().before('MM').before('IN').real()
+	endif
+
+	!this.toshow = true
+	--!this.setweightwithunit()
+
+	!this.getnodenames()
+endmethod
+
+define method .getnodenames()
+	if !this.name.set() and !this.name ne '' then
+		!this.nodenames = !!getnodenamesforele(!this.name)
+	else
+		!this.nodenames = ''
+	endif
+endmethod
+
+define method .setisinstpipe(!mem is string)
+	!sitename = name of site of $!mem
+	if !sitename.match('INST') ne 0 then
+		!this.isinstpipe = true
+	else
+		!this.isinstpipe = false
+	endif
+endmethod
+
+
+
+define method .isomaterial(!input is any)
+	if !input.objecttype() eq 'STRING' then
+		!this.isomaterial(!input)
+		!this.getnodenames()
+		return
+	else
+		!object = !input
+	endif
+
+
+	!mem = !object.name
+	!this.name = !mem
+	!this.type = type of $!mem
+
+	if !object.objecttype() inset ('ISOPAD','ISOLUG') then
+		!this.angle = !object.angle
+		!cutangle = min(max(5 * 180 / (!object.rinside * pi),5),45)
+		!cutangle = !cutangle.value()
+		!this.materialangle = !this.angle + !cutangle
+	endif
+
+	!nsAndSpref = !object.nsAndSpref
+
+	!this.abore = !nsAndSpref[1]
+	!this.lbore = !nsAndSpref[1]
+
+	!this.setisinstpipe(!this.name)
+	if !this.isinstpipe then
+		!this.ns = !nsAndSpref[1]
+	else
+		!this.ns = !!changemmtoin(!nsAndSpref[1])
+	endif
+	if !object.objecttype() inset ('ISOPAD','ISOLUG') then
+		!anglestring = !this.angle.string('D2').replace('.00','') & '¡ã'
+		if !anglestring.match('.') ne 0 then
+			!anglestring = !anglestring.replace('0¡ã','¡ã')
+		endif
+
+        --modify by jyg 20241211 È¥³ý½Ç¶ÈÐÅÏ¢£¬µ²¿éºÍ»¤°åÓÃºÏ³ÉÒ»¸öÖ±¹Ü¶Î¡£
+		--!this.ns = !this.ns & ' x ' & !anglestring
+        !this.ns = !this.ns
+	endif
+	!matchspref = !nsAndSpref[2]
+	!pspec = name of spec of $!matchspref
+	!this.spref = !matchspref
+	!this.itemcode = !this.spref.after(!pspec).substring(2).before(':')
+
+	!tempname = name of $!mem
+
+
+	--!this.rev = :ZD_Rev of bran of $!mem
+	--handle any
+	--	!this.rev = ''
+	--endhandle
+
+	!this.rev = 'a'	$*ÔÝÊ±ÓÃÕâ¸ö
+
+	!this.remark = ''
+
+    --modify by jyg 20250109 µ¥¶À´¦Àí¹ÜµÀ²¹Ç¿°å
+    !attasprefname = !object.name.dbref().spref.name
+
+
+
+	if !object.objecttype() eq 'ISOELBOPAD' then
+		!this.Unit = '¸ö'
+	else
+        --modify by jyg 20250109 µ¥¶À´¦Àí¹ÜµÀ²¹Ç¿°å
+        if  !AttaSprefName.Matchwild('*ATTA/JQ*') then
+            !this.Unit = '¸ö'
+        else
+            !this.Unit = 'm'
+        endif
+	endif
+
+	--q var !object.objecttype()
+	if !object.objecttype() eq 'ISOELBOPAD' then
+		!this.quantity = 1
+	elseif !object.objecttype() ne 'ISOLEG' then
+		!this.quantity = real(STRING(!object.height.value(), 'D0') + 'mm')
+	else
+        --modify by jyg 20250109 µ¥¶À´¦Àí¹ÜµÀ²¹Ç¿°å
+        if  !AttaSprefName.Matchwild('*ATTA/JQ*') then
+            !this.quantity = 1
+        else
+            if !object.adlongth.set() then
+                !this.quantity = real(STRING(!object.height.value() + !object.adlongth.value(), 'D0') + 'mm')
+            else
+                !this.quantity = real(STRING(!object.height.value(), 'D0') + 'mm')
+            endif
+        endif
+	endif
+
+
+	!this.desc = dtxr of $!matchspref
+	handle any
+		!this.desc = ''
+	endhandle
+    --modify by jyg 20250109 µ¥¶À´¦Àí¹ÜµÀ²¹Ç¿°å
+    if  !AttaSprefName.Matchwild('*ATTA/JQ*') then
+        !attacatapara6 = !AttaSprefName.dbref().para[6]
+        !tubeinfo = '²¹Ç¿°å L=' & !attacatapara6 * 2 & ' '
+        !this.desc = !this.desc.replace('ÎÞ·ì¸Ö¹Ü',!tubeinfo)
+    endif
+
+	--!this.uniquecode = !this.desc & '-' & !object.objecttype()	$* µ²¿éºÍlegÓÃÍ¬ÖÖ²ÄÁÏÒ²ÊÇ¿ÉÒÔµÄ£¬ËùÒÔ²»ÄÜÓÃÕâ¸ö·½Ê½
+	--!this.uniquecode = !matchspref & '-' & !this.type
+	if !object.objecttype() ne 'ISOLEG' then
+		!this.uniquecode = !matchspref & '-' & !this.type
+	else
+		--!this.uniquecode = !this.desc & '-' & !object.objecttype()
+		!this.uniquecode = !matchspref & '-' & !object.objecttype()
+	endif
+	-----------------------------------------------------------------------------------
+	-----------------------------------------------------------------------------------temperate way
+
+	!this.mtxx = mtxx of $!matchspref
+	handle any
+		!this.mtxx = 'NA'
+	endhandle
+
+	--q var !tempname !matchspref
+	!perweight = uwei of cmpref of $!matchspref
+	handle any
+		!perweight = cwei of cmpref of $!matchspref
+		handle any
+			!this.perweight =  0
+		elsehandle none
+			!this.perweight = !this.getweight(!perweight)
+		endhandle
+	elsehandle none
+		!this.perweight = !this.getweight(!perweight)
+	endhandle
+    --q var !this.perweight
+    --modify by jyg 20250109 µ¥¶À´¦Àí¹ÜµÀ²¹Ç¿°å
+    if  !AttaSprefName.Matchwild('*ATTA/JQ*') then
+        !this.perweight = !this.perweight * 1000
+    endif
+
+
+	if !this.perweight.unset() then
+		!this.perweight = 0
+		!this.weight = 0
+	else
+        --modify by jyg 20250109 µ¥¶À´¦Àí¹ÜµÀ²¹Ç¿°å
+        if  !AttaSprefName.Matchwild('*ATTA/JQ*') then
+            !attacatapara6 = !AttaSprefName.dbref().para[6]
+            !this.weight = !this.perweight * !attacatapara6 / 1000 * 2
+        else
+            !this.weight = !this.perweight * !this.quantity.string().upcase().before('MM').before('IN').real()
+        endif
+		--if !object.objecttype() ne 'ISOLEG' then
+		--	!this.weight = !this.weight * !object.angle / 360
+		-----------------------
+		-----------------------unnecessary to do this step, since one piece of pad with 60¡ã should calculate weight of tube with angle 360
+		--endif
+	endif
+	!this.toshow = true
+
+	--!this.setweightwithunit()
+	!this.getnodenames()
+endmethod
+
+define method .getweight(!weight is string) is real
+	if !weight.match('(') ne 0 then
+		!weightreal = !weight.after('(').before(')').trim().real()
+	else
+		!weightreal = !weight.real()
+	endif
+	return !weightreal
+endmethod
+
+define method .setweightwithunit()
+	if !this.unit.upcase() eq 'M' then
+		!this.weight = !this.weight / 1000
+	endif
+endmethod
+
+$(
+define method .isoMaterial(!btsedata is btsedata,!dis is real, !boltitem is string)
+	if !btsedata.Blength.unset() then
+		golabel /end
+	endif
+	!btsedata.setRealLenWei(!dis)
+
+	--!this.name = 'bolt of ' + !btsedata.btse
+	!this.name = !boltitem
+	--!this.order is real   $*ÐòºÅ
+	!this.desc = !btsedata.realboltlength.string() + ' ' + !btsedata.Rtext			$* add length into desc
+	--!this.desc = !btsedata.Rtext
+
+	!this.setisinstpipe(!this.name)
+	if !this.isinstpipe then
+		!this.ns = !btsedata.Bdiameter.string()
+	else
+		!this.ns = !!changemmtoin(!btsedata.Bdiameter.string())
+	endif
+
+
+	!this.quantity = !btsedata.bltpsize
+	--!this.itemCode = !btsedata.spco.after(!btsedata.boltspec + '/') + '-' + !btsedata.realboltlength.string().upcase().before('MM').before('IN')
+	--!this.itemCode = !btsedata.spco + '-' + !btsedata.realboltlength.string().upcase().before('MM').before('IN')
+
+	--!this.itemcode = !btsedata.spco.after(!btsedata.boltspec + '/').substring(2).before(':')	$*use it till 202308261107
+	!this.itemcode = !btsedata.spco.after(!btsedata.boltspec + '/').before(':')					$* 202308261107
+
+	--.before(':')
+	!this.weight = !btsedata.realboltweight * !this.quantity
+	--!this.rev is string   $*Rev.
+
+	!this.unit = 'mm'
+	if !btsedata.Maxtext eq '' then
+		!this.mtxx = 'NA'
+	endif
+	--!this.abore is string
+	--!this.lbore is string
+	!this.rev = :ZD_Rev of bran of $!boltitem
+	handle any
+		!this.rev = ''
+	endhandle
+
+	!this.spref = !btsedata.spco
+
+	!this.type = 'BOLT'
+
+	!this.uniquecode = !this.spref & !this.desc
+
+	--!this.specialnum is string
+
+	--!this.tubinum is real
+
+	!this.remark = ''
+	!this.toshow = true
+endmethod
+$)
+
+define method .isoMaterial(!len is real, !boltweight  is real, !bdia is real, !boltitem is string, !showitem is string, !spcomem is suispco, !relativemems is array, !inbran is boolean)
+
+    !this.name = !boltitem
+	--!this.desc = !len.string() + ' ' + !spcomem.rtext			$* add length into desc
+	!this.desc = !spcomem.rtext			$* add length into desc
+
+	!this.setisinstpipe(!this.name)
+	--if !this.isinstpipe then
+	--	!this.ns = !bdia.string()
+	--else
+
+		!this.ns = 'M' + !bdia.string() + 'x' + !len.value().string()   $*ÂÝË¨²»ÐèÒª¸Ä³ÉÓ¢´ç£¬¸ÄÓ¢´çÊ±Ò²ÈÝÒ×ÓÐÎÊÌâ£¬ÒòÎªÂÝË¨³ß´ç²»Í¬ÓÚ¹Ü×Ó
+
+		--!this.ns = !!changemmtoin(!bdia.string())
+		--handle any
+		--	!this.ns = !bdia.string()
+		--endhandle
+	--endif
+
+	!this.unit = 'm'
+	!this.quantity = 1 * !len
+	!spconame = !spcomem.spco
+	!boltspec = name of spec of $!spconame
+	!this.itemcode = !spconame.after(!boltspec + '/').before(':')					$* 202308261107
+	!this.perweight = !boltweight
+	!this.weight = !boltweight * !this.quantity.value()
+
+	if !spcomem.maxtext eq '' then
+		!this.mtxx = 'NA'
+	else
+		!this.mtxx = !spcomem.maxtext
+	endif
+
+    $(
+
+	--!this.rev = :ZD_Rev of bran of $!boltitem
+	--handle any
+	--	!this.rev = ''
+	--endhandle
+
+	!this.rev = 'a'	$*before rev change
+    $)
+
+    -- modify by jyg 20240730
+	!rev = :ZD_Rev of bran of $!boltitem
+    --q var !rev
+    if !rev.empty() or !rev eq 'A' then
+        !this.rev = 'a'
+    elseif !rev eq 'A+' or !rev eq 'B' then
+        !this.rev = 'b'
+    endif
+
+
+
+	!this.spref = !spconame
+	!this.type = 'BOLT'
+	!this.showitem = !showitem
+	!this.relativemems = !relativemems
+	!this.uniquecode = !this.spref & !this.desc & !this.ns
+	!this.remark = ''
+	!this.inbran = !inbran
+	!this.toshow = true
+	--!this.setweightwithunit()
+
+	!this.getnodenames()
+endmethod
+
+define method .isoMaterial(!bdia is real, !boltitem is string, !showitem is string, !spcomem is suispco, !relativemems is array, !inbran is boolean)
+
+    !this.name = !boltitem
+	!this.desc = !spcomem.rtext			$* add length into desc
+
+	!this.setisinstpipe(!this.name)
+	--if !this.isinstpipe then
+	--	!this.ns = !bdia.string()
+	--else
+
+		!this.ns = 'M' + !bdia.string()	$*ÂÝË¨²»ÐèÒª¸Ä³ÉÓ¢´ç£¬¸ÄÓ¢´çÊ±Ò²ÈÝÒ×ÓÐÎÊÌâ£¬ÒòÎªÂÝË¨³ß´ç²»Í¬ÓÚ¹Ü×Ó
+
+		--!this.ns = !!changemmtoin(!bdia.string())
+		--handle any
+		--	!this.ns = !bdia.string()
+		--endhandle
+	--endif
+
+	!this.quantity = 1
+	!spconame = !spcomem.spco
+	!boltspec = name of spec of $!spconame
+	!this.itemcode = !spconame.after(!boltspec + '/').before(':')					$* 202308261107
+	!this.perweight = !spcomem.weight
+	!this.weight = !spcomem.weight * !this.quantity
+	!this.unit = '¸ö'
+	if !spcomem.maxtext eq '' then
+		!this.mtxx = 'NA'
+	else
+		!this.mtxx = !spcomem.maxtext
+	endif
+
+	$(
+	--!this.rev = :ZD_Rev of bran of $!boltitem
+	--handle any
+	--	!this.rev = ''
+	--endhandle
+
+	!this.rev = 'a'	$*before rev change
+    $)
+
+    -- modify by jyg 20240730
+	!rev = :ZD_Rev of bran of $!boltitem
+    --q var !rev
+    if !rev.empty() or !rev eq 'A' then
+        !this.rev = 'a'
+    elseif !rev eq 'A+' or !rev eq 'B' then
+        !this.rev = 'b'
+    endif
+
+	!this.spref = !spconame
+	!btype = tanswer of owner of $!spconame
+	!this.type = 'BOLT-' + !btype
+	!this.showitem = !showitem
+	!this.relativemems = !relativemems
+	!this.uniquecode = !this.spref
+	--	& !this.desc
+	!this.remark = ''
+	!this.inbran = !inbran
+	!this.toshow = true
+	--!this.setweightwithunit()
+
+	!this.getnodenames()
+endmethod
+
+
+$(
+--202305081843
+define method .isoMaterial(!btsedata is btsedata,!dis is real, !boltitem is string)
+	if !btsedata.studBlength.unset() then
+		golabel /end
+	endif
+	!btsedata.setRealLenWei(!dis)
+
+	--!this.name = 'bolt of ' + !btsedata.btse
+	!this.name = !boltitem
+	--!this.order is real   $*ÐòºÅ
+	!this.desc = !btsedata.realstudlength.string() + ' ' + !btsedata.studRtext			$* add length into desc
+	--!this.desc = !btsedata.studRtext
+	!this.ns = !btsedata.Bdiameter.string()
+	!this.quantity = !btsedata.bltpsize
+	--!this.itemCode = !btsedata.studspco.after(!btsedata.boltspec + '/') + '-' + !btsedata.realstudlength.string().upcase().before('MM').before('IN')
+	!this.itemCode = !btsedata.studspco + '-' + !btsedata.realstudlength.string().upcase().before('MM').before('IN')
+	--.before(':')
+	!this.weight = !btsedata.realstudweight * !this.quantity
+	--!this.rev is string   $*Rev.
+
+	!this.unit = 'mm'
+	if !btsedata.studMaxtext eq '' then
+		!this.mtxx = 'NA'
+	endif
+	--!this.abore is string
+	--!this.lbore is string
+
+	!this.spref = !btsedata.studspco
+
+	!this.type = 'BOLT'
+
+	--!this.specialnum is string
+
+	--!this.tubinum is real
+
+	!this.remark = ''
+endmethod
+$)
+
+
+‡

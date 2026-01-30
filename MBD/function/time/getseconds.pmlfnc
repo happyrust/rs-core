@@ -1,0 +1,6 @@
+define function !!getseconds() is real
+    !dt = object datetime()
+    !seconds = ((!dt.date() * 24 + !dt.hour()) * 60 + !dt.minute()) * 60 + !dt.second()
+    return !seconds
+endmethod
+—

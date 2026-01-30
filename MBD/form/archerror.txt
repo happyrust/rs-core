@@ -1,0 +1,86 @@
+﻿
+14:07:51 24 January 2024
+=17415/4052 未得到markcivil
+(2,759)   Object does not have a member DOORCHEIGHT
+ In line 241 of PML function markcivil.MARKCIVIL
+	!this.doorCheight = 150
+ Called from line 228 of PML function markcivil.MARKCIVIL
+	!this.markcivil(!item)
+ Called from line 1004 of PML function markarchform.ADDCE
+			!markcivil = object markcivil(!name,!this)
+ Called from line 1 of Command/Form Callback Command
+!this.addCe()
+
+09:05:34 23 January 2024
+=17415/4052 failed to draw
+(2,751)   Variable !DIMGRO does not exist
+ In line 1621 of PML function markcivil.DRAWARCHDOOR
+		!this.drawonearchdoor(!dimgro,!mem)
+ Called from line 1744 of PML function markcivil.DRAWARCHWALLS
+		!this.form.civildatas[!index].drawarchdoor()
+ Called from line 1565 of PML function markcivil.DRAWARCH
+		!this.drawarchwalls()
+ Called from line 1190 of PML function markarchform.DRAWALL
+		!this.civildatas[!x].drawarch()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+16:45:01 18 January 2024
+=17415/4052 failed to draw
+(2,751)   Variable !DESC does not exist
+ In line 1657 of PML function markcivil.DRAWONEARCHDOOR
+	!malbel = object mlabel(!dimgro,!pos,!ori,!mem.markString,!this.openingcheight,false,'门',!cenpos,!desc)
+ Called from line 1621 of PML function markcivil.DRAWARCHDOOR
+		!this.drawonearchdoor(!dimgro,!mem)
+ Called from line 1738 of PML function markcivil.DRAWARCHWALLS
+		!this.form.civildatas[!index].drawarchdoor()
+ Called from line 1565 of PML function markcivil.DRAWARCH
+		!this.drawarchwalls()
+ Called from line 1190 of PML function markarchform.DRAWALL
+		!this.civildatas[!x].drawarch()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+16:44:22 18 January 2024
+=17415/4052 failed to draw
+(2,751)   Variable !XDIR does not exist
+ In line 1654 of PML function markcivil.DRAWONEARCHDOOR
+	!pos = !pos.offset(!ydir,!this.openingcheight * 1.5).offset(!xdir,!this.openingcheight * 1)
+ Called from line 1621 of PML function markcivil.DRAWARCHDOOR
+		!this.drawonearchdoor(!dimgro,!mem)
+ Called from line 1738 of PML function markcivil.DRAWARCHWALLS
+		!this.form.civildatas[!index].drawarchdoor()
+ Called from line 1565 of PML function markcivil.DRAWARCH
+		!this.drawarchwalls()
+ Called from line 1190 of PML function markarchform.DRAWALL
+		!this.civildatas[!x].drawarch()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+16:43:41 18 January 2024
+=17415/4052 failed to draw
+(2,754)   Argument 2 to + or & is unset
+ In line 1845 of PML function markcivil.DRAWARCHNAME
+		!desc = 'node:' + !this.currentfloorname
+ Called from line 1737 of PML function markcivil.DRAWARCHWALLS
+		!aaa.drawarchname(!this.mbdstru.dimgro)
+ Called from line 1565 of PML function markcivil.DRAWARCH
+		!this.drawarchwalls()
+ Called from line 1190 of PML function markarchform.DRAWALL
+		!this.civildatas[!x].drawarch()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+16:42:19 18 January 2024
+=17415/4052 failed to draw
+(2,754)   Argument 2 to + or & is unset
+ In line 1844 of PML function markcivil.DRAWARCHNAME
+		!desc = 'node:' + !this.currentfloorname
+ Called from line 1721 of PML function markcivil.DRAWARCHWALLS
+					!aaa.drawarchname(!this.mbdstru.dimgro)
+ Called from line 1565 of PML function markcivil.DRAWARCH
+		!this.drawarchwalls()
+ Called from line 1190 of PML function markarchform.DRAWALL
+		!this.civildatas[!x].drawarch()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()

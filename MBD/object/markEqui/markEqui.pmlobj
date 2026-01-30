@@ -1,0 +1,1413 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= April 12nd 2023
+--[Function]:
+--
+--[REV]
+--Revision		= 1.1
+--Date			= December 13rd 2023
+--[Function]:	fix some bugs
+------------------------------------------
+
+--
+--<<Method>>:
+--<<Public method>>:
+--markEqui(!item is any)													$* set trydiss mbdstru
+--
+--<<Private method>>:
+--getspecialnum()   														$*
+--getData() 																$* nothing
+--getdimdata()  															$* get wall floor
+--getconindir(!dir is direction, !contype is string,!extenddis is real,!preextenddis is real ,!maxdis is real, !usedcons is array) is boolean   	$* get wall floor in one direction
+--pickCon() 																$* pick concrete 1
+--pickcon(!item is any) 													$* pick concrete 2
+--addcivil(!nearpoint is position, !profiledir is direction, !mindis is real, !civil is markcivil,!force is boolean)	$* add one concrete
+--checkreplace(!nearpoint is position, !neardis is real, !dir is direction, !civil is markcivil, !minangle is real, !mindis is real, !newdir is direction) is boolean   	$* check if replace civil in one direction
+--getJsonData() is array													$* get json
+--getProofreadingJson() is array											$* get proofreading for json
+--getDrawingInfoJson() is array 											$* get drawing info for json
+--draw()																	$* draw all
+--drawdimandmlabel()														$*
+--red() 																	$*
+--drawdim() 																$* draw dim
+--addConInfo(!con is markcivil) 											$* add mlabel of concrete
+--drawMlabel()  															$* draw mlabel
+--deleteDimAndMlabel() is boolean   										$* delete dim and mlabel
+--deleteDim() is boolean													$* delete dim
+--deleteMlabel() is boolean 												$* delete mlabel
+-------------------------------------
+
+define object markEqui
+	member .textOffSetDis is real
+	member .dimcheight is real
+	member .equiCheight is real
+
+	member .equiname is string
+	member .mbdstru is mbdstru
+
+	member .markName is string
+	member .pos is position
+	$(
+	------------------------------------------------------
+	member .autoGetCon is boolean
+	member .inDrawlist is boolean
+	$)
+	------------------------------------------------------
+	member .mbdlocation is mbdlocation
+
+	--member .specialnum is string
+	member .azbz is string
+	member .purpose is string
+	member .protectgroup is string
+	member .safegroup is string
+
+	member .wronglines is array
+
+	member .generatejson is boolean
+	member .filepath is string
+
+	member .major is string
+
+	--for modelatt drawing and proofreading
+	!tempstrings = split('membermodelatt memberdrawinginfo memberproofreading')
+	do !string values !tempstrings
+		!tempfile = object file(!!commonpath() + !string + '.txt')
+		!lines = !tempfile.readfile()
+		do !line values !lines
+			if !line.trim().trim('	') ne '' then
+				$!line
+			endif
+		enddo
+	enddo
+endobject
+
+define method .markEqui(!item is any,!major is string)
+	!this.major = !major.trim().upcase()
+	!this.markEqui(!item)
+endmethod
+define method .markEqui(!item is any)	$*set trydiss mbdstru
+	if !this.major.unset() then
+		!this.major = 'EM4'
+	endif
+
+	!this.textoffsetdis = 5
+	!this.equicheight = 350
+
+	!equiname = name of equi of $!item
+	handle any
+		return
+	elsehandle none
+		!this.equiname = !equiname
+
+        --modify by jyg 20240822 add
+        var !AllElconn coll all elconn for $!<this.equiname>
+        if  !AllElconn.size() gt 0 then
+            !this.pos = pos of $!AllElconn[1] wrt/*
+        else
+            !this.pos = pos of $!this.equiname wrt/*
+        endif
+
+		!this.markname = !equiname
+		!this.getatts()
+		--clock init
+		!this.mbdstru = object mbdstru(!this.equiname)
+		--clock read elapsed
+		--$p asdf
+		!this.mbdlocation = object mbdlocation(!this.equiname)
+		--clock read elapsed
+		--q var !this.mbdstru
+	endhandle
+endmethod
+
+define method .clearcontent()
+
+endmethod
+
+define method .getatts()
+	!name = !this.equiname
+	!!setattvalue(!this,!name,split('azbz/:zd_AZBZ,purpose/purpose,protectgroup/protectgroup,safegroup/safegroup,drawnum/:zd_nbbm',','))
+	!!setattvalue(!this,!name,split('room/:room_no,tssm/:zd_tssm,wjbm/:zd_wjbm,nbbm/:zd_nbbm,status/:zd_status,rev/:zd_rev',','))
+	!this.rev = 'A' $*4月30日前
+	!this.getdrawinfo()
+	!!setproofreadinginfo(!this,!name)
+endmethod
+
+define method .getdrawinfo()
+	if !this.drawgroup.unset() then
+		if !this.major eq 'EM8' then
+			!this.drawmajor = '仪控设备'
+		elseif !this.major eq 'EM9' then
+			!this.drawmajor = '仪表设备'
+		elseif !this.major eq 'EM5' then
+			!this.drawmajor = '暖通设备'
+		elseif !this.major eq 'EM4' then
+			!this.drawmajor = '工艺设备'
+		else
+			!this.drawmajor = '设备'
+		endif
+		!this.drawname = '设备三维定位图'
+
+		!!getdrawinginfo(!this)
+	endif
+endmethod
+
+
+define method .getequiAttArr(!equiAtts is array) is array
+	if !this.room.unset() then
+		!this.getatts()
+	endif
+
+	!row = array()
+	do !x indices !equiatts
+		!att = !equiAtts[!x]
+		!com = |!row[!x] = !this.| + !att
+		$!com
+		handle any
+			!rows[!x] = ''
+			$p No equiatt: $!att for equi $!this.equiname
+		endhandle
+	enddo
+	--q var !row
+	return !row
+endmethod
+
+define method .getdimdata()	$*get wall floor
+	if !this.autogetCon then
+		!dirs = array()
+		!dirs.append(e)
+		!dirs.append(n)
+		!dirs.append(w)
+		!dirs.append(s)
+		!dirs.append(d)
+
+		!maxdis = 1000000
+		!preextenddis = 0
+		!usedcons = array()
+		do !extenddis values !this.trydiss
+			do !x indices !dirs
+				!dir = !dirs[!x]
+
+				if !dir.angle(d) lt 0.1 then
+					!contype = 'floor'
+				else
+					!contype = 'stwall gwall'
+				endif
+				if !contype ne 'floor' and !preextenddis gt !maxdis then
+					!dirs[!x].delete()
+					skip
+				endif
+				if !this.getconindir(!dir,!contype,!extenddis,!preextenddis,!maxdis,!usedcons) then 		$* already find con in this direction
+					!dirs[!x].delete()
+				endif
+
+
+				if !this.nsdis.set() and !this.ewdis.set() then
+					!maxdis = max(!this.nsdis,!this.ewdis)
+				endif
+			enddo
+			!preextenddis = !extenddis
+		enddo
+	endif
+
+	!this.getnozzdim()
+endmethod
+
+define method .getnozzdim()
+	var !nozzs coll all nozz for $!this.equiname
+
+	!goodnozzs = array()
+	!zdirs = array()
+	!bores = array()
+	!poss = array()
+	do !nozz values !nozzs
+		!zdir = p1 dir of $!nozz wrt/*
+		!pos = p1 pos of $!nozz wrt/*
+		!bore = p1 bore of $!nozz
+		!angle = !zdir.angle(u)
+		!angle = abs(!angle - 90)
+		if !angle lt 60 then
+			!goodnozzs.append(!nozz)
+			--!angles.append(!angle)
+			!zdirs.append(!zdir)
+			!bores.append(!bore)
+			!poss.append(!pos)
+		endif
+	enddo
+
+	if !goodnozzs.set() then
+		!indices = !bores.sortedindices().invert()
+		!pos = !poss[!indices[1]]
+		!dir = !zdirs[!indices[1]]
+	else
+		!pos = !this.pos
+		!ori = ori of $!this.equiname wrt/*
+		--q var !ori
+		do !x from 1 to 3
+			if !x eq 1 then
+				!dir = !ori.ydir()
+			elseif !x eq 2 then
+				!dir = !ori.xdir()
+			else
+				!dir = !ori.zdir()
+			endif
+			!angle = !dir.angle(u)
+			if !angle lt 1 or !angle gt 179 then
+				skip
+			endif
+			break
+		enddo
+	endif
+
+	!this.anglepos = !pos
+	!this.angledir = !dir
+endmethod
+
+define method .getconindir(!dir is direction, !contype is string,!extenddis is real,!preextenddis is real ,!maxdis is real, !usedcons is array) is boolean $*get wall floor in one direction
+	if !dir.angle(n) lt 0.1 then
+		!startpos = !this.pos.offset(n,!preextenddis).offset(d,1).offset(w,1)
+		!endpos = !this.pos.offset(n,!extenddis).offset(u,1).offset(e,1)
+	elseif !dir.angle(s) lt 0.1 then
+		!startpos = !this.pos.offset(s,!extenddis).offset(d,1).offset(w,1)
+		!endpos = !this.pos.offset(s,!preExtendDis).offset(u,1).offset(e,1)
+	elseif !dir.angle(e) lt 0.1 then
+		!startpos = !this.pos.offset(e,!preextenddis).offset(d,1).offset(s,1)
+		!endpos = !this.pos.offset(e,!extenddis).offset(u,1).offset(n,1)
+	elseif !dir.angle(w) lt 0.1 then
+		!startpos = !this.pos.offset(w,!extenddis).offset(d,1).offset(s,1)
+		!endpos = !this.pos.offset(w,!preExtendDis).offset(u,1).offset(n,1)
+	elseif !dir.angle(d) lt 0.1 then
+		!startpos = !this.pos.offset(w,1).offset(s,1).offset(d,!extenddis)
+		!endpos = !this.pos.offset(e,1).offset(n,1).offset(d,!preextenddis)
+	endif
+
+	!volume = !startpos.string() + ' to ' + !endpos.string()
+
+	if !this.indrawlist then
+
+		--var !cons coll stwall from drawlist			$* not availabel
+		--var !cons append coll gwall from drawlist	$* not availabel
+
+		var !cons coll all from drawlist
+
+		!tempcons = array()
+		!contype = !contype.upcase()
+		do !con values !cons
+			!temptype = type of $!con
+			if !contype.match(!temptype) eq 0 then
+				skip
+			endif
+
+			var !volume volume $!con
+			!pos1 = !volume.before(' to ').position()
+			!pos2 = !volume.after(' to ').position()
+			if not(!pos1.east gt !endpos.east or !pos1.north gt !endpos.north or !pos1.up gt !endpos.up or !pos2.east lt !startpos.east or !pos2.north lt !startpos.north or !pos2.up lt !startpos.up) then
+				!tempcons.append(!con)
+			endif
+		enddo
+		!cons = !tempcons
+	else
+		if !contype eq 'floor' then
+			--var !cons coll all ( $!contype ) with(matchwild(name of owner,'*ARCH*')) within $!volume
+			var !cons coll all ( $!contype ) within $!volume
+		else
+			var !cons coll all ( $!contype ) within $!volume		$*better, take less time
+		endif
+	endif
+
+	if !cons.set() then
+		!cons = !cons.difference(!usedcons)
+		!usedcons.appendarray(!cons)
+	endif
+	--!tolerance = 45			$* if it is more than 45, maybe one civil would be used in two directions
+	if !cons.set() then
+		!civils = array()
+		!diss = array()
+		!nearpoints = array()
+		do !con values !cons
+			!civil = object markcivil(!con,true)
+			!civil.getdataofcivil()
+			if !civil.profiles.set() then
+				!mindis = 1000000
+				do !px indices !civil.profiles
+					!profile = !civil.profiles[!px]
+					--!angle = !profile.orientation.zdir().angle(!dir)
+					--if !angle ge !tolerance and !angle le 180 - !tolerance then
+					--if !angle gt 0.01 and !angle lt 179.99 then
+					--	skip
+					--endif
+					!nearpos = !profile.plane().near(!this.pos)
+					--if !profile.iswithout(!nearpos) then
+					if !!posinprofile(!nearpos,!profile).not() then
+					--if !profile.iswithin(!nearpos).not() then
+						skip
+					endif
+					!tempdir = !this.pos.direction(!nearpos)
+					handle any
+						!dis = 0
+					elsehandle none
+						if !tempdir.angle(!dir) gt 90 then
+							skip
+						endif
+						!dis = !this.pos.distance(!nearpos)
+					endhandle
+					if !dis lt !mindis then
+						!mindis = !dis
+						!nearpoint = !nearpos
+					endif
+				enddo
+				if !mindis ne 1000000 then
+					!diss.append(!mindis)
+					!nearpoints.append(!nearpoint)
+					!civils.append(!civil)
+				endif
+			endif
+		enddo
+
+		if !civils.set() then
+			!indices = !diss.sortedindices()
+			!val = !indices[1]
+
+			!this.addcivil(!nearpoints[!val],!dir,!diss[!val],!civils[!val],false)
+			return true
+		endif
+	endif
+	return false
+endmethod
+
+$(
+define method .getdimdata()
+	if !this.autogetCon then
+		if !this.nswall.unset() then
+			!this.getdircon('NS')
+		endif
+		if !this.ewwall.unset() then
+			!this.getdircon('EW')
+		endif
+		if !this.floor.unset() then
+			!this.getdircon('UP')
+		endif
+	endif
+endmethod
+
+define method .getdircon(!dirstring is string)
+	!usedcons = array()
+	do !dis values !this.trydiss
+		if !dirstring eq 'NS' then
+			!startpos = !this.pos.offset(s,!dis).offset(d,1).offset(w,1)
+			!endpos = !this.pos.offset(n,!dis).offset(u,1).offset(e,1)
+			!contype = 'stwall gwall'
+			!dir = n
+		elseif !dirstring eq 'EW' then
+			!startpos = !this.pos.offset(w,!dis).offset(d,1).offset(s,1)
+			!endpos = !this.pos.offset(e,!dis).offset(u,1).offset(n,1)
+			!contype = 'stwall gwall'
+			!dir = e
+		elseif !dirstring eq 'UP' then
+			!startpos = !this.pos.offset(w,1).offset(s,1).offset(d,!dis)
+			!endpos = !this.pos.offset(e,1).offset(n,1)
+			!contype = 'floor'
+			!dir = u
+		endif
+		--clock init
+		!volume = !startpos.string() + ' to ' + !endpos.string()
+		if !this.indrawlist then
+			--q var !contype
+			--var !cons coll ( $!contype )  from drawlist
+			var !cons coll stwall from drawlist
+			--all
+			--( $!contype )
+			--within $!volume
+			--q var !cons
+			--q var !contype
+			--clock read elapsed
+			!tempcons = array()
+			!contype = !contype.upcase()
+			do !con values !cons
+				!temptype = type of $!con
+				if !contype.match(!temptype) eq 0 then
+					skip
+				endif
+				--$p $!temptype $!con
+				--$ (
+				var !volume volume $!con
+				!pos1 = !volume.before(' to ').position()
+				!pos2 = !volume.after(' to ').position()
+				if !pos1.east gt !endpos.east or !pos1.north gt !endpos.north or !pos1.up gt !endpos.up or !pos2.east lt !startpos.east or !pos2.north lt !startpos.north or !pos2.up lt !startpos.up then
+				else
+					!tempcons.append(!con)
+				endif
+				--$ )
+				--var !tempcons append coll all ( $!contype ) within $!volume for $!con		$*this way take 4 times time than upon way
+			enddo
+			!cons = !tempcons
+			--q var !cons
+		else
+			var !cons coll all ( $!contype ) within $!volume		$*better, take less time
+		endif
+
+		if !cons.set() then
+			!cons = !cons.difference(!usedcons)
+			!usedcons.appendarray(!cons)
+		endif
+
+		--q var !cons.size()
+		--clock read elapsed
+		!tolerance = 45			$* if it is more than 45, maybe one civil would be used in two directions
+		if !cons.set() then
+			!civils = array()
+			!diss = array()
+			!nearpoints = array()
+			do !con values !cons
+				!civil = object markcivil(!con)
+				--if !con eq '=17394/1987' then
+
+				--endif
+				if !civil.profiles.set() then
+					!mindis = 1000000
+					--$p $!con
+					do !px indices !civil.profiles
+						!profile = !civil.profiles[!px]
+						!angle = !profile.orientation.zdir().angle(!dir)
+						if !angle ge !tolerance and !angle le 180 - !tolerance then
+							--if !angle gt 0.01 and !angle lt 179.99 then
+							skip
+						endif
+						!nearpos = !profile.plane().near(!this.pos)
+						if !profile.iswithout(!nearpos) then
+							skip
+						endif
+						!dis = !this.pos.distance(!nearpos)
+
+						if !dis lt !mindis then
+							!mindis = !dis
+							!nearpoint = !nearpos
+						endif
+					enddo
+					if !mindis ne 1000000 then
+						!diss.append(!mindis)
+						!nearpoints.append(!nearpoint)
+						!civils.append(!civil)
+					endif
+				endif
+			enddo
+			if !civils.set() then
+				break
+			endif
+		endif
+	enddo
+	if defined(!civils) and !civils.set() then
+		!indices = !diss.sortedindices()
+		!val = !indices[1]
+		if !dirstring eq 'NS' then
+			!this.nswall = !civils[!val]
+			!this.nsnearpoint = !nearpoints[!val]
+			!this.nsdis = !diss[!val]
+		elseif !dirstring eq 'EW' then
+			!this.ewwall = !civils[!val]
+			!this.ewnearpoint = !nearpoints[!val]
+			!this.ewdis = !diss[!val]
+		elseif !dirstring eq 'UP' then
+			!this.floor = !civils[!val]
+			!this.upnearpoint = !nearpoints[!val]
+			!this.updis = !diss[!val]
+		endif
+	endif
+endmethod
+$)
+
+$(
+define method .movemlabel(!mlabel is string,!newpos is position,!offsetdis is real)
+--q var !mlabel
+	$!mlabel
+	pos $!newpos
+	!ori = ori of $!mlabel
+	!ans = !!alert.confirm('是否向外移动' + !offsetdis.string() + 'mm')
+	if !ans eq 'YES' then
+		!newpos = !newpos.offset(!ori.zdir(),!offsetdis)
+		pos $!newpos
+	endif
+	--$p asdfasd
+	!this.generatejsonattrvm()
+endmethod
+$)
+
+define method .pickCon()	$* pick concrete 1
+--$p asdfasf
+	!this.mbdlocation.pickcon()
+	return
+	------------------------------------------------------
+
+	!name = name of id@
+	--q var !name
+	!this.pickcon(!name)
+endmethod
+
+define method .pickcon(!item is any) $* pick concrete 2
+	!this.mbdlocation.dimcheight = !this.dimcheight
+	!this.mbdlocation.textoffsetdis = !this.textoffsetdis
+	!this.mbdlocation.mlabelcheight = !this.equiCheight
+
+	!this.mbdlocation.pickcon(!item)
+	return
+	!name = name of $!item
+	--q var !name
+	!civil = object markcivil(!name,true)
+	handle any
+		!!alert.warning('Pick STWALL GWALL FLOOR')
+		return
+	elsehandle none
+		if !civil.profiles.unset() then
+			!!alert.warning('Pick STWALL GWALL FLOOR')
+			return
+		else
+
+
+			$(
+			do !px from 1 to 2
+				!profile = !civil.profiles[!px]
+				!nearpos = !profile.plane().near(!this.pos)
+				--if !profile.iswithout(!nearpos) then
+				--	skip
+				--endif
+				--$p asdfdsaf
+				!dis = !this.pos.distance(!nearpos)
+				if !px eq 1 then
+					!mindis = !dis
+					!nearpoint = !nearpos
+					!profiledir = !profile.orientation.zdir()
+				else
+					if !dis lt !mindis then
+						!mindis = !dis
+						!nearpoint = !nearpos
+						!profiledir = !profile.orientation.zdir()
+					endif
+				endif
+			enddo
+			if defined(!mindis) then
+			$)
+
+
+			!mindis = 1000000
+			do !px indices !civil.profiles
+				!profile = !civil.profiles[!px]
+
+				!nearpos = !profile.plane().near(!this.pos)
+
+				if !!posinprofile(!nearpos,!profile).not() then
+				--if !profile.iswithout(!nearpos) then
+					skip
+				endif
+				!dis = !this.pos.distance(!nearpos)
+
+				if !dis lt !mindis then
+					!mindis = !dis
+					!nearpoint = !nearpos
+					!profiledir = !profile.orientation.zdir()
+				endif
+			enddo
+			--Q VAR !mindis
+			if !mindis ne 1000000 then
+				$(
+				!dir = !this.pos.direction(!nearpoint)
+				handle any
+					!dir = !profiledir
+				endhandle
+				!angles = array()
+
+				!nsangle = !dir.angle(n)
+				!angles.append(min(!nsangle,180 - !nsangle))
+				!ewangle = !dir.angle(e)
+				!angles.append(min(!ewangle,180 - !ewangle))
+				!upangle = !dir.angle(u)
+				!angles.append(min(!upangle,180 - !upangle))
+
+				!indices = !angles.sortedindices()
+				!val = !indices[1]
+				if !val eq 3 then
+					!this.floor = !civil
+					!this.upnearpoint = !nearpoint
+					!this.updis = !mindis
+				else
+					!nsReplace = !this.checkreplace(!this.nsnearpoint,!this.nsdis,n,!this.nswall,!nsangle,!mindis)
+					!ewReplace = !this.checkreplace(!this.ewnearpoint,!this.ewdis,e,!this.ewwall,!ewangle,!mindis)
+
+
+
+					if !nsreplace.not() and !ewreplace then
+						!val = 2
+					elseif !nsreplace and !ewreplace.not() then
+						!val = 1
+					endif
+
+					if !val eq 1 then
+						!this.nswall = !civil
+						!this.nsnearpoint = !nearpoint
+						!this.nsdis = !mindis
+					elseif !val eq 2 then
+						!this.ewwall = !civil
+						!this.ewnearpoint = !nearpoint
+						!this.ewdis = !mindis
+					endif
+				endif
+				$)
+				--q var !civil.civilname
+				!this.addcivil(!nearpoint,!profiledir,!mindis,!civil,true)
+				--q var !this.nswall !this.ewwall
+				!this.drawdimandmlabel()
+			else
+				!!alert.warning('Pick STWLL GWALL FLOOR at good position')
+				return
+			endif
+		endif
+	endhandle
+endmethod
+
+define method .addcivil(!nearpoint is position, !profiledir is direction, !mindis is real, !civil is markcivil,!force is boolean) $* add one concrete
+	!dir = !this.pos.direction(!nearpoint)
+	handle any
+		!dir = !profiledir
+	endhandle
+	!angles = array()
+
+	!nsangle = !dir.angle(n)
+	!nsangle = min(!nsangle,180 - !nsangle)
+	!angles.append(!nsangle)
+	!ewangle = !dir.angle(e)
+	!ewangle = min(!ewangle,180 - !ewangle)
+	!angles.append(!ewangle)
+	!upangle = !dir.angle(u)
+	!upangle = min(!upangle,180 - !upangle)
+	!angles.append(!upangle)
+
+	!indices = !angles.sortedindices()
+	!val = !indices[1]
+	--q var !val
+	if !val eq 3 then
+		!this.floor = !civil
+		!this.upnearpoint = !nearpoint
+		!this.updis = !mindis
+	else
+		!nsReplace = !this.checkreplace(!this.nsnearpoint,!this.nsdis,n,!this.nswall,!nsangle,!mindis,!dir)
+		!ewReplace = !this.checkreplace(!this.ewnearpoint,!this.ewdis,e,!this.ewwall,!ewangle,!mindis,!dir)
+
+
+
+		if !nsreplace.not() and !ewreplace then
+			!val = 2
+		elseif !nsreplace and !ewreplace.not() then
+			!val = 1
+		elseif !nsreplace.not() and !ewreplace.not() and !force.not() then
+			!val = 0
+		endif
+
+		if !val eq 1 then
+			!this.nswall = !civil
+			!this.nsnearpoint = !nearpoint
+			!this.nsdis = !mindis
+		elseif !val eq 2 then
+			!this.ewwall = !civil
+			!this.ewnearpoint = !nearpoint
+			!this.ewdis = !mindis
+		endif
+	endif
+endmethod
+
+define method .checkreplace(!nearpoint is position, !neardis is real, !dir is direction, !civil is markcivil, !minangle is real, !mindis is real, !newdir is direction) is boolean $* check if replace civil in one direction
+	if !civil.set() then
+		!currentdir = !nearpoint.direction(!this.pos)
+		!currentangle = !currentdir.angle(!dir)
+		!currentangle = min(!currentangle,180 - !currentangle)
+
+
+		if abs(!currentangle - !minangle) lt 0.01 then
+			if !neardis lt !mindis then
+				return false
+			else
+				return true
+			endif
+		elseif !currentangle lt !minangle then
+			return false
+		else
+			return false
+		endif
+
+	else
+		if !this.nswall.unset() and !this.ewwall.unset() then
+			--$p $!mindis
+			if !minangle lt 45 then	$*nswall unset and ewwall unset, only choose one direction N or E
+				return true
+			else
+				return false
+			endif
+		else
+			if !this.nswall.unset() then
+				!cdir = !this.ewnearpoint.direction(!this.pos)
+			elseif !this.ewwall.unset() then
+				!cdir = !this.nsnearpoint.direction(!this.pos)
+			endif
+			!angle = !newdir.angle(!cdir)
+			!angle = min(!angle,180 - !angle)
+			if !angle gt 60 then
+				$*if nswall unset but ewall set, make sure the angle between ewdir and newdir is gt 60, then return true, or return false
+				$*if ewwall unset but nsall set, make sure the angle between nsdir and newdir is gt 60, then return true, or return false
+				return true
+			else
+				return false
+			endif
+		endif
+	endif
+
+
+endmethod
+
+define method .equiAttJson(!equiAtts is array, !equiAttShow is array) is array
+	!rowarr = !this.getequiAttArr(!equiAtts)
+	!row = array()
+	!row.append(|{|)
+	do !x indices !rowarr
+		!row.append(|"| + !equiAttShow[!x] + |": "| + !rowarr[!x].string().replace(|\|,|\\|).replace(|"|,|\"|) + |",|)
+		handle any
+			!row.append(|"| + !equiAttShow[!x] + |": "| + '' + |",|)
+		endhandle
+		if !x eq !rowarr.size() then
+			!row[!row.size()] = !row[!row.size()].substring(1,!row[!row.size()].length() - 1)
+		endif
+	enddo
+	--!row.append(|}|)
+	!row.append(|},|)
+
+	!row.insert(2,|"type":"equiAttribution",|)
+	!row.insert(2,|"nodeNames":["| + !this.equiname + |"],|)
+	return !row
+endmethod
+
+define method .getJsonData(!equiAtts is array, !equiAttShow is array) is array	$* get json
+    --$p nihaofff
+	!jsonmem = object jsonmem()
+    --q var !this
+	!jsonmem.node = !this.equiname
+
+    --modify by jyg 20240923
+    !jsonmem.refno = !this.equiname.Dbref().ref.string()
+
+	!jsonmem.code = !this.NBBM
+	!jsonmem.rev = !this.rev
+
+    --modify by jyg 20250321
+    var !E3DProject  pro num
+    !jsonmem.E3DProject = !E3DProject
+
+
+	!jsonmem.type = !this.major + 'EQUI'
+    --q var !this.mbdstru.mbdstru
+	!json = object json(!this.mbdstru.mbdstru)
+	!jsonmem.content = !json.getJson()
+
+	!jsonmem.equiatt = !this.equiAttJson(!equiAtts, !equiAttShow)
+	!jsonmem.drawingInfo = !this.getDrawingInfoJson()
+	!jsonmem.proofreading = !this.getproofreadingjson()
+	return !jsonmem.getjsontext()
+endmethod
+
+define method .getJsonData() is array	$* get json
+    --$p 111
+	!jsonmem = object jsonmem()
+	!jsonmem.node = !this.equiname
+	!jsonmem.code = !this.equiname
+	!jsonmem.rev = !this.rev
+
+	!jsonmem.type = !this.major + 'EQUI'
+	!json = object json(!this.mbdstru.mbdstru)
+	!jsonmem.content = !json.getJson()
+
+	--!jsonmem.equiatt = !this.equiAttJson(!equiAtts, !equiAttShow)
+	!jsonmem.drawingInfo = !this.getDrawingInfoJson()
+	!jsonmem.proofreading = !this.getproofreadingjson()
+	return !jsonmem.getjsontext()
+endmethod
+
+define method .getProofreadingJson() is array $* get proofreading for json
+	!row = !!getProofreadingJson(!this,!this.equiname)
+	return !row
+endmethod
+
+
+define method .getDrawingInfoJson() is array	$* get drawing info for json
+	--clock init
+	!row = !!getdrawinginfojson(!this,!this.equiname)
+	--clock read elapsed
+	return !row
+endmethod
+
+
+define method .draw()	$* draw all
+	if !this.equiname.unset() then
+		return
+	endif
+
+	------------------------------------------------------new way
+	!this.deleteDimAndMlabel()
+
+	!this.mbdlocation = object mbdlocation(!this.pos,!this.equiname)
+
+	!this.mbdlocation.textOffSetDis = !this.textOffSetDis
+
+	!this.mbdlocation.draw(!this.dimcheight,!this.equiCheight,true,true,true,true)
+
+
+    if !this.generatejson then
+		!this.generatejsonattrvm()
+	endif
+	return
+
+	------------------------------------------------------old way
+	!this.getdimdata()
+
+	!this.drawdimandmlabel()
+endmethod
+
+define method .drawdimandmlabel()
+
+	!this.deleteDimAndMlabel()
+	!this.drawmlabel()
+	!this.drawdim()
+
+	--!this.red()
+	!this.generatejsonattrvm()
+endmethod
+
+define method .getjsonarray() is array
+--q var !!markequiform.equiAtts !!markequiform.equiAttShow
+    if  !this.major eq  'EM9' then
+        !result = !this.getjsondata(!!markinstequiform.equiAtts ,!!markinstequiform.equiAttShow )
+    else
+        !result = !this.getjsondata(!!markequiform.equiAtts ,!!markequiform.equiAttShow )
+    endif
+    --!result = !this.getjsondata()
+    --q var !result
+	return !result
+endmethod
+
+
+define method .generatejsonattrvm() is array
+	!filepaths = array()
+	!filepath = !this.filepath
+	!folder = object file(!filepath)
+    --q var !folder
+	if !folder.exists().not() then
+		$p 存储路径不对 $!filepath
+		return !filepaths
+	endif
+	!filename = !!getmbdfilename(!this.equiName)
+	--!filename = !this.equiName.replace('=','_').replace('/','_').replace('\','_')
+
+	--!result = !this.getjsondata(!!markequiform.equiAtts ,!!markequiform.equiAttShow )
+	--q var !result.size()
+	!result = !this.getjsonarray()
+    if  !this.major eq  'EM9' then
+        !!markinstequiform.instore(!result,!filename,!filepath)
+    else
+        !!markequiform.instore(!result,!filename,!filepath)
+    endif
+	!newitems = array()
+	!remitems = array()
+	!newitems.append(!this.equiName)
+
+	!!getrvm(!newitems,!remitems,!filepath & !filename & '.rvm')
+	!!getatt(!newitems,!remitems,!filepath & !filename & '.att')
+	!!gettxt(!newitems,!filepath & !filename & '.txt')
+
+
+	!filepaths.append(!filepath & !filename & '.json')
+	!filepaths.append(!filepath & !filename & '.rvm')
+	!filepaths.append(!filepath & !filename & '.att')
+	!filepaths.append(!filepath & !filename & '.txt')
+	return !filepaths
+endmethod
+
+define method .totplant()
+	!filepaths = !this.generatejsonattrvm()
+	!up = object updatefiles(!filepaths,'MBD-' & !this.major & 'EQUI')
+endmethod
+
+$(
+define method .red()
+	!this.mbdstru.tostru()
+	enhance ce col blue
+	$!this.equiname
+endmethod
+$)
+
+
+
+define method .drawdim()	$*draw dim
+	!this.deleteDim()
+	if !this.mbdstru.todim().not() then
+		return
+	else
+		--q var !this
+
+		!owner = name
+		--q var !owner
+		!mintolerance = 0.01
+		!maxtolerance = 5
+
+
+		if !this.nswall.set() then
+			!nsdir = !this.pos.direction(!this.nsnearpoint)
+		else
+			!nsdir = n
+		endif
+
+		if !this.ewwall.set() then
+			!ewdir = !this.pos.direction(!this.ewnearpoint)
+		else
+			!ewdir = e
+		endif
+
+		--Q VAR !this.ewwall
+
+
+		if !this.nswall.set() then
+			!this.addconinfo(!this.nswall)
+			$(
+			!this.nswall.mbdstru.addfunction('LINDIM','Civil Dimension')
+			!this.nswall.mbdstru.addfunction('MLABEL','Civil')
+			$)
+			!poss = array()
+			!poss.append(!this.pos)
+			!poss.append(!this.nsnearpoint)
+			!dimpos = !poss[1].midpoint(!poss[2])
+			--!tempdir = !this.pos.direction(!this.nsnearpoint)
+			!tempdir = !nsdir
+			--!ori = x is $!tempdir and z is u
+			!zdir = u
+			!ydir = !zdir.orthogonal(!tempdir)
+			if !ydir.angle(!ewdir) gt 90 then
+				!ydir = !ydir.opposite()
+			endif
+			!ori = y is $!ydir and z is u
+
+			!desc = 'node:' + !this.equiname
+			!nangle = !tempdir.angle(n)
+			!nangle = min(!nangle,180 - !nangle)
+			if !nangle le !maxtolerance and !nangle gt !mintolerance then
+				!tempdirstring = !tempdir.string().before(' WRT')
+				--!zdir = u
+				--!ydir = !zdir.orthogonal(!tempdir)
+				!midpos = !dimpos.offset(!tempdir,- !tempdirstring.length() * !this.dimcheight / 4).offset(!ydir, - !this.dimcheight)
+				if !this.mbdstru.toaid().not() then
+					return false
+				endif
+				!aidtext = object aidtext(!this.mbdstru.aidgro, !midpos, !ori, !tempdirstring, !this.dimcheight, '标注方向', !desc)
+			endif
+
+
+			--!ori = y is e and z is u
+
+			!lindim = object lindim(!owner,!dimpos,!ori,!poss,!this.dimcheight,'定位尺寸',!desc)
+		endif
+		if !this.ewwall.set() then
+			!this.addconinfo(!this.ewwall)
+			$(
+			!this.ewwall.mbdstru.addfunction('LINDIM','Civil Dimension')
+			!this.ewwall.mbdstru.addfunction('MLABEL','Civil')
+			$)
+			!poss = array()
+			!poss.append(!this.pos)
+			!poss.append(!this.ewnearpoint)
+			!dimpos = !poss[1].midpoint(!poss[2])
+			!tempdir = !this.pos.direction(!this.ewnearpoint)
+
+			!zdir = u
+			!ydir = !zdir.orthogonal(!tempdir)
+			if !ydir.angle(!nsdir) gt 90 then
+				!ydir = !ydir.opposite()
+			endif
+			!ori = y is $!ydir and z is u
+
+			--!ori = x is $!tempdir and z is u
+			!desc = 'node:' + !this.equiname
+			!eangle = !tempdir.angle(e)
+			!eangle = min(!eangle,180 - !eangle)
+			if !eangle le !maxtolerance and !eangle gt !mintolerance then
+				!tempdirstring = !tempdir.string().before(' WRT')
+				!zdir = u
+				!ydir = !zdir.orthogonal(!tempdir)
+				!midpos = !dimpos.offset(!tempdir, - !tempdirstring.length() * !this.dimcheight / 4).offset(!ydir, - !this.dimcheight)
+				if !this.mbdstru.toaid().not() then
+					return false
+				endif
+				!aidtext = object aidtext(!this.mbdstru.aidgro, !midpos, !ori, !tempdirstring, !this.dimcheight, '标注方向', !desc)
+			endif
+
+			!lindim = object lindim(!owner,!dimpos,!ori,!poss,!this.dimcheight,'定位尺寸',!desc)
+		endif
+		if !this.floor.set() then
+			!this.addconinfo(!this.floor)
+			$(
+			if !this.floor.mbdstru.todim() then
+				!this.floor.mbdstru.addfunction('LINDIM','Civil Dimension')
+				!this.floor.mbdstru.addfunction('MLABEL','Civil')
+			else
+				!this.floor.markmem = false
+				!this.floor.draw()
+			endif
+			$)
+			!poss = array()
+			!poss.append(!this.upnearpoint)
+			!poss.append(!this.pos)
+			!dimpos = !poss[1].midpoint(!poss[2])
+
+
+			!tempdir = !nsdir.bisect(!ewdir)
+			!ydir = !tempdir.opposite().orthogonal(u)
+			!ori = y is $!ydir and x is u
+			handle any
+				!ori = y is $!nsdir and x is u
+				handle any
+					!ori = y is $!ewdir and x is u
+					handle any
+						!ori = y is n and z is w
+					endhandle
+				endhandle
+			endhandle
+
+			!desc = 'node:' + !this.equiname
+			!lindim = object lindim(!owner,!dimpos,!ori,!poss,!this.dimcheight,'定位尺寸',!desc)
+		endif
+		!this.drawangle()
+	endif
+endmethod
+
+define method .getlookdir() is direction
+	if !this.nswall.set() then
+		!nsdir = !this.pos.direction(!this.nsnearpoint)
+	else
+		!nsdir = n
+	endif
+
+	if !this.ewwall.set() then
+		!ewdir = !this.pos.direction(!this.ewnearpoint)
+	else
+		!ewdir = e
+	endif
+	!tempdir = !nsdir.bisect(!ewdir)
+	return !tempdir
+endmethod
+
+define method .drawangle()
+	if !this.mbdstru.toaid().not() then
+		$p Cant go to aidgro
+		return
+	else
+		!owner = name
+	endif
+	!functiontext = '偏转角度'
+
+	!dir = !this.angledir
+	!anglepos = !this.anglepos
+
+	!ori =  x is e and z is u
+	!plane = object plane(!anglepos,!ori)
+	!dir1 = !dir.projected(!plane)
+
+	!dirs = array()
+	!dirs.append(e)
+	!dirs.append(n)
+	!dirs.append(s)
+	!dirs.append(w)
+
+	!angles = array()
+	do !onedir values !dirs
+		!angles.append(!dir.angle(!onedir))
+	enddo
+	!indices = !angles.sortedindices()
+	!angles.reindex(!indices)
+	!dirs.reindex(!indices)
+
+
+
+	if !angles[1] lt 0.01 then
+		!dir2 = !dirs[1]
+		!dir3 = !dirs[2]
+	elseif !angles[1] lt 30 then
+		!dir2 = !dirs[2]
+		!dir3 = !dirs[1]
+	else
+		!dir2 = !dirs[1]
+		!dir3 = !dirs[2]
+	endif
+
+	!radius = !this.dimcheight * 4
+	!angle = !dir1.angle(!dir2)
+	if !angle lt 0.01 then
+		!endpos = !anglepos.offset(!dir1,!radius + !this.dimcheight / 2)
+		!line1 = !anglepos.line(!endpos)
+		!aidline1 = object mbdaidline(!owner,!line1,!functiontext,'node:' + !this.equiname)
+		!ori = y is $!dir1 and z is u
+		!text = !this.gettext(!dir2)
+		--!textlen = !!mbdtextlen(!text) * !this.dimcheight * 0.6
+		!textlen = !!mbdtextlen(!text) * !this.dimcheight
+		!textpos = !endpos.offset(!dir1, !this.dimcheight / 4).offset(!ori.xdir(), - !textlen / 4)
+		!aidtext = object aidtext(!owner,!textpos,!ori,!text,!this.dimcheight,!functiontext,'node:' + !this.equiname)
+	else
+		!angletext = !angle.string('d1').real().string() + '°'
+		!dir2text = !this.gettext(!dir2)
+		!dir3text = !this.gettext(!dir3)
+		!linetext1 = !dir2text + !angletext + !dir3text
+		!linetext2 = !dir2text
+		------------------------------------------------------got dir1 dir2
+
+
+
+		!line1 = !anglepos.line(!anglepos.offset(!dir1,!radius + !this.dimcheight))
+		!line2 = !anglepos.line(!anglepos.offset(!dir2,!radius + !this.dimcheight))
+		!zdir = !dir1.orthogonal(!dir2)
+		handle any
+			return
+		endhandle
+		if !zdir.angle(u) gt 90 then
+			!zdir = u
+			!xdir = !dir2
+		else
+			!xdir = !dir1
+		endif
+		!ori = x is $!xdir and z is $!zdir
+
+		!angle = !dir1.angle(!dir2)
+		!arc = object arc(!anglepos,!ori,0,!angle,!radius,true)
+
+
+		!aidline1 = object mbdaidline(!owner,!line1,!functiontext,'node:' + !this.equiname)
+		!aidline2 = object mbdaidline(!owner,!line2,!functiontext,'node:' + !this.equiname)
+		!aidarc = object aidarc(!owner,!arc,!functiontext,'node:' + !this.equiname)
+
+		!radiusdir = !dir1.bisect(!dir2)
+		!offdir = !radiusdir.orthogonal(!zdir).opposite()
+
+
+		--!textlen = !!mbdtextlen(!angletext) * !this.dimcheight * 0.6
+		!textlen = !!mbdtextlen(!angletext) * !this.dimcheight
+		!textpos = !anglepos.offset(!radiusdir,!radius + !this.dimcheight / 10).offset(!offdir,!textlen / 2)
+		!orixdir = !offdir.opposite()
+		!ori = x is $!orixdir and z is $!zdir
+
+
+		!aidtext = object aidtext(!owner,!textpos,!ori,!angletext,!this.dimcheight,!functiontext,'node:' + !this.equiname)
+
+		!cheight = !this.dimcheight / 2
+		do !times from 1 to 2
+			if !times eq 1 then
+				!ydir = !dir1
+				!dirtext = !linetext1
+			else
+				!ydir = !dir2
+				!dirtext = !linetext2
+			endif
+			!textlen = !dirtext.length() * 0.6 * !cheight
+
+			!tempori = y is $!ydir and z is $!zdir
+			!xdir = !tempori.xdir()
+			!dirtextpos = !anglepos.offset(!ydir,!radius + !cheight * 2).offset(!xdir, - !textlen / 2)
+			!aidtext = object aidtext(!owner,!dirtextpos,!tempori,!dirtext,!cheight,!functiontext,'node:' + !this.equiname)
+		enddo
+	endif
+endmethod
+
+define method .gettext(!dir is direction) is string
+	if !dir.angle(E) lt 1 then
+		!text = 'X'
+	elseif !dir.angle(W) lt 1 then
+		!text = '-X'
+	elseif !dir.angle(N) lt 1 then
+		!text = 'Y'
+	elseif !dir.angle(S) lt 1 then
+		!text = '-Y'
+	elseif !dir.angle(U) lt 1 then
+		!text = 'Z'
+	elseif !dir.angle(D) lt 1 then
+		!text = '-Z'
+	endif
+	return !text
+endmethod
+
+
+define method .addConInfo(!con is markcivil)	$*add mlabel of concrete
+	--!con.addConInfo()
+
+	-----202304121439
+	$(
+	add $!con.civilname
+	!dbref = object dberf(!con.mbdstru.dimgro)
+	handle any
+		!con.markmem = false
+		!con.draw()
+	elsehandle none
+		!con.mbdstru.addfunction('LINDIM','Civil Dimension')
+		!con.mbdstru.addfunction('MLABEL','Civil')
+	endhandle
+	$)
+	add $!con.civilname
+	!ownername = name of owner of $!con.civilname
+	!markString = !ownerName.part(-2,'-')
+
+	if !con.markThickAfterName then
+		!textLen = (!markstring.length() + !con.thick.string().length()) * !con.civilcheight
+	else
+		!textLen = !markstring.length() * !con.civilcheight
+	endif
+
+	!mindis = 1000000
+	do !x from 1 to 2
+		!nearpos = !con.profiles[!x].plane().near(!this.pos)
+		!dis = !nearpos.distance(!this.pos)
+		if !dis lt !mindis then
+			!mindis = !dis
+			!goodx = !x
+			!goodnearpos = !nearpos
+			!goodprofile = !con.profiles[!x]
+		endif
+	enddo
+
+	!x = !goodx
+
+
+
+	if !con.type eq 'FLOOR' then
+		!functiontext = '定位楼板'
+		if !this.nswall.set() then
+			!nsdir = !this.pos.direction(!this.nsnearpoint)
+		else
+			!nsdir = n
+		endif
+
+		if !this.ewwall.set() then
+			!ewdir = !this.pos.direction(!this.ewnearpoint)
+		else
+			!ewdir = e
+		endif
+		!tempdir = !nsdir.bisect(!ewdir)
+		!ori = y is $!tempdir and z is u
+	else
+		!ori = !goodprofile.orientation
+		!functiontext = '定位墙体'
+	endif
+	!mlabelpoint = !goodnearpos.offset(!goodprofile.orientation.zdir(),!con.textOffsetDis).offset(!ori.xdir(), - !textLen / 3)
+	!mlabel = object mlabel(!this.mbdstru.dimgro,!mlabelpoint,!ori,!markString,!con.civilcheight,false,!functiontext,'','node:' + !this.equiname)
+	if !con.type eq 'FLOOR' then
+		if !goodprofile.orientation.zdir().angle(u) lt 20 then
+			!ele = !goodprofile.position.up / 1000
+			!elestring = 'EL. ' + !ele.string('d3').upcase().before('MM') + 'm'
+			!mlabelpoint = !mlabelpoint.offset(!ori.ydir(), - !con.ElthickCheight * 1.5)
+
+			!mlabelpoint = !mlabelpoint.offset(!ori.zdir(),!con.textOffsetDis)
+			!mlabel = object mlabel(!this.mbdstru.dimgro,!mlabelpoint,!ori,!eleString,!con.elthickcheight,false,'楼板标高','','node:' + !this.equiname)
+
+			!mlabelpoint = !mlabelpoint.offset(!ori.ydir(), - !con.elThickCheight * 1.5)
+			!thickString = 'h ' + !con.thick.string()
+			!mlabelpoint = !mlabelpoint.offset(!ori.zdir(),!con.textOffsetDis)
+			!mlabel = object mlabel(!this.mbdstru.dimgro,!mlabelpoint,!ori,!thickString,!con.elthickcheight,false,'楼板厚度','','node:' + !this.equiname)
+		endif
+	endif
+endmethod
+
+
+define method .drawMlabel()	$* draw mlabel
+
+	!this.deleteMlabel()
+	!cenpos = !this.pos
+	var !volume volume $!this.equiname
+	!up = !volume.after(' to ').position().up + !this.textOffSetDis
+	!cenpos.up = !up
+
+	if !this.nswall.set() then
+		!nsdir = !this.pos.direction(!this.nsnearpoint)
+	else
+		!nsdir = n
+	endif
+
+	if !this.ewwall.set() then
+		!ewdir = !this.pos.direction(!this.ewnearpoint)
+	else
+		!ewdir = e
+	endif
+	!tempdir = !nsdir.bisect(!ewdir)
+	--!movedir = !tempdir.orthogonal(u)
+	!movedir = !tempdir.opposite()
+	!volume1 = !volume.before(' to ').position()
+	!volume2 = !volume.after(' to ').position()
+	!volume1.up = !volume2.up
+	--!movedis = !volume1.distance(!volume2) / 2 + !this.equicheight
+	!movedis =  3 * !this.equicheight
+
+	--!mlabelpos = !this.pos.offset(!movedir,500).offset(u,200)
+	!ori = y is $!tempdir and z is u
+
+	--!ori = y is n and z is u
+
+	!length = !this.markname.length() * !this.equicheight
+	!cenpos = !cenpos.offset(!ori.xdir(), - !length / 4)
+
+	!cenpos = !cenpos.offset(!movedir,!movedis)
+	--!cenpos = !mlabelpos
+
+	!this.mbdstru.todim()
+	--$p asfddsaf
+	!owner = name
+	!desc = 'node:' + !this.equiname
+	--!mlabel = object mlabel(!owner,!cenpos,!ori,!this.markname,!this.equicheight,false,'设备信息','',!desc)
+	!equiname = !this.markname
+	if !equiname.substring(1,1) eq '/' then
+		!equiname = !equiname.after('/')
+	endif
+	!mlabel = object mlabel(!owner,!cenpos,!ori,!equiname,!this.equicheight,false,'设备信息',!this.pos,!desc)
+
+	!xpos = !this.pos.east
+	!ypos = !this.pos.north
+	!zpos = !this.pos.up
+	if !xpos gt 0 then
+		!xstring = 'X +' + !xpos.string('D1').before('mm').before('.0')
+	else
+		!xstring = 'X ' + !xpos.string('D1').before('mm').before('.0')
+	endif
+	if !ypos gt 0 then
+		!ystring = 'Y +' + !ypos.string('D1').before('mm').before('.0')
+	else
+		!ystring = 'Y ' + !ypos.string('D1').before('mm').before('.0')
+	endif
+
+	if !zpos gt 0 then
+		!zstring = 'PE +' + !zpos.string('D1').before('mm').before('.0')
+	else
+		!zstring = 'PE ' + !zpos.string('D1').before('mm').before('.0')
+	endif
+	!mlabelpos = !cenpos.offset(!movedir, 1.2 * !this.equicheight)
+	!mlabel = object mlabel(!owner,!mlabelpos,!ori,!xstring,!this.equicheight,false,'设备坐标','',!desc)
+	!mlabelpos = !mlabelpos.offset(!movedir, 1.2 * !this.equicheight)
+	!mlabel = object mlabel(!owner,!mlabelpos,!ori,!Ystring,!this.equicheight,false,'设备坐标','',!desc)
+	!mlabelpos = !mlabelpos.offset(!movedir, 1.2 * !this.equicheight)
+	!mlabel = object mlabel(!owner,!mlabelpos,!ori,!Zstring,!this.equicheight,false,'设备坐标','',!desc)
+endmethod
+
+
+define method .deleteDimAndMlabel() is boolean	$*delete dim and mlabel
+	return !this.mbdstru.deletestru()
+endmethod
+
+define method .deleteDim() is boolean	$* delete dim
+	return !this.mbdstru.deletefunction('LINDIM','定位尺寸')
+endmethod
+
+define method .deleteMlabel() is boolean	$*delete mlabel
+	return !this.mbdstru.deletefunction('Mlabel','')
+endmethod
+
+
+
+
+裆
