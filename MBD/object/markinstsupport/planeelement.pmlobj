@@ -1,0 +1,105 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= October 31st 2023
+--[Function]:
+------------------------------------------
+
+
+--Method:
+--Public method:
+--planeelement(!shapeindex is real,!xmin is real,!xmax is real,!ymin is real,!ymax is real) 	$*
+--planeelement(!shapeindex is real,!xdiss is array,!ydiss is array) 		$*
+--planeelement(!xdiss is array,!ydiss is array) 							$*
+
+--Private method:
+-------------------------------------
+
+define object planeelement
+	member .shapeindex is real
+
+	member .xmin is real
+	member .xmax is real
+	member .ymin is real
+	member .ymax is real
+
+	member .pos is position
+	member .ori is orientation
+
+	member .zmin is real
+	member .zmax is real
+
+	member .incline is boolean
+endobject
+
+define method .planeelement(!shapeindex is real,!xmin is real,!xmax is real,!ymin is real,!ymax is real,!pos is position,!ori is orientation,!zmin is real,!zmax is real)
+	!this.zmin = !zmin
+	!this.zmax = !zmax
+	!this.planeelement(!shapeindex,!xmin,!xmax,!ymin,!ymax,!pos,!ori)
+endmethod
+
+define method .planeelement(!shapeindex is real,!xdiss is array,!ydiss is array,!pos is position,!ori is orientation,!zmin is real,!zmax is real)
+	!this.zmin = !zmin
+	!this.zmax = !zmax
+	!this.planeelement(!shapeindex,!xdiss,!ydiss,!pos,!ori)
+endmethod
+
+define method .planeelement(!xdiss is array,!ydiss is array,!pos is position,!ori is orientation,!zmin is real,!zmax is real)
+	!this.zmin = !zmin
+	!this.zmax = !zmax
+	!this.planeelement(!xdiss,!ydiss,!pos,!ori)
+endmethod
+
+define method .planeelement(!shapeindex is real,!xmin is real,!xmax is real,!ymin is real,!ymax is real,!pos is position,!ori is orientation)
+	!this.shapeindex = !shapeindex
+	!this.xmin = !xmin
+	!this.xmax = !xmax
+	!this.ymin = !ymin
+	!this.ymax = !ymax
+
+	!this.pos = !pos
+	!this.ori = !ori
+
+	!this.incline = false
+endmethod
+
+
+define method .planeelement(!shapeindex is real,!xdiss is array,!ydiss is array,!pos is position,!ori is orientation)
+	!this.shapeindex = !shapeindex
+	!this.planeelement(!xdiss,!ydiss,!pos,!ori)
+endmethod
+
+define method .getincline(!xdiss is array,!ydiss is array)
+	!this.incline = false
+	!tolerance = 1
+	!size = !xdiss.size()
+	do !x indices !xdiss
+		if !x eq !size then
+			!y = 1
+		else
+			!y = !x + 1
+		endif
+		if abs(!xdiss[!x] - !xdiss[!y]) gt !tolerance and abs(!ydiss[!x] - !ydiss[!y]) gt !tolerance then
+			!this.incline = true
+			break
+		endif
+	enddo
+endmethod
+
+define method .planeelement(!xdiss is array,!ydiss is array,!pos is position,!ori is orientation)
+	!this.getincline(!xdiss,!ydiss)
+	!xdiss.sort()
+	!ydiss.sort()
+
+	!this.xmin = !xdiss[1]
+	!this.xmax = !xdiss.last()
+	!this.ymin = !ydiss[1]
+	!this.ymax = !ydiss.last()
+
+	!this.pos = !pos
+	!this.ori = !ori
+endmethod
+<

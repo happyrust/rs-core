@@ -85,9 +85,9 @@ fn test_expression_regex() {
 //  MAX  00 00 03 F0
 //  MIN  00 00 03 F1
 
-pub const INTERNAL_PDMS_EXPRESS: [&'static str; 22] = [
-    "MAX", "MIN", "COS", "SIN", "LOG", "ABS", "POW", "SQR", "NOT", "AND", "OR", "ATAN", "ACOS",
-    "ATAN2", "ASIN", "INT", "OF", "MOD", "NEGATE", "SUM", "TANF", "TAN",
+pub const INTERNAL_PDMS_EXPRESS: [&'static str; 23] = [
+    "MAX", "MIN", "COS", "SIN", "LOG", "ABS", "POW", "SQR", "SQRT", "NOT", "AND", "OR", "ATAN",
+    "ACOS", "ATAN2", "ASIN", "INT", "OF", "MOD", "NEGATE", "SUM", "TANF", "TAN",
 ];
 
 /// 解析成不同的几何体参数

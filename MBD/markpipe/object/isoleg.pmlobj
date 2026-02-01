@@ -1,0 +1,58 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= September 15th 2023
+--[Function]:
+------------------------------------------
+
+define object isoleg
+	member .elboname is string		$* for elbo leg
+	member .weldpos is position		$* for elbo leg
+
+	member .name is string
+	member .attapos is position
+
+	member .pos is position
+	member .ori is orientation
+	member .height is real
+	member .india is real
+	member .outdia is real
+	member .onpad is boolean
+
+	member .nsAndSpref is array	$*instore ns and spref
+
+	member .itemcode is string
+
+	member .adlongth is real
+
+	member .touchitemradius is real
+endobject
+
+define method .isoleg(!name is string,!pos is position,!ori is orientation,!height is real,!india is real,!outdia is real)
+	!this.name = !name
+	!this.attapos = pos of $!this.name wrt/*
+	!this.adlongth = :ATTA-ADLONGTH of $!this.name
+	handle any
+		!this.adlongth = 0
+	endhandle
+	--!this.adlongth = 40
+	if !this.adlongth.unset() then
+		!this.adlongth = 0
+	endif
+	--!this.adlongth = 101
+	!this.pos = !pos
+	!this.ori = !ori
+	!this.height = !height
+	!this.india = !india
+	!this.outdia = !outdia
+
+	!this.itemcode = :itemcode of $!name
+	handle any
+	endhandle
+endmethod
+
+
+

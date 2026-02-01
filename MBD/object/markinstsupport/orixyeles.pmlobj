@@ -1,0 +1,1440 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= October 31st 2023
+--[Function]:
+--
+--[REV]
+--Revision		= 1.1
+--Date			= February 2nd 2024
+--[Function]:	added function to get good space for text
+------------------------------------------
+
+--
+--<<Method>>:
+--<<Public method>>:
+--orixyeles(!pos is position,!ori is orientation,!shapes is array)  		$* initial method
+--
+--<<Private method>>:
+--getxyeles(!shapes is array)   											$* get xyele in plane, and get indices of input shapes
+--addxyele(!poss is array)  												$* add one xyele with positions
+--findspace(!pos1 is position, !pos2 is position, !inputcheight is real, !shapes is array) is real  	$* find good place to put a element
+--findrange(!xmin is real,!xmax is real) is array   						$* get range of element in this orixyeles in ydir
+--updateshapes(!shapes is array)											$* insure all shapes are considered
+--
+--Step 1: for mlabel
+--findtextspace(!text is string, !pos is position, !inputcheight is real, !shapes is array) is array	$*
+--getspace(!width is real,!height is real,!inputxdis is real,!inputydis is real) is array   	$*
+--indicestoxyeles(!xyeleindices is array) is array  						$*
+--gapstolines(!eyegaps is array, !eyeydis is real, !eyegap is array,!height is real,!upordown is boolean) is array  	$*
+--getxyelesbetweenygap(!ymin is real, !ymax is real) is array   			$*
+--getgapsfromxyeles(!indices is array, !width is real) is array 			$*
+--checkifneedconsider(!xyele is planeelement, !firstxdis is real, !width is real, !movedis is real, !gooddis is real) is boolean	$*
+--getgoodspace(!goodgap is array, !firstxdis is real, !width is real, !goodydis is real, !height is real, !upordown is boolean) is array	$*
+--extendgap(!gaps is array,!xyele is planeelement) is array 				$*
+--reducegap(!gaps is array,!xyele is planeelement) is array 				$*
+--getorderarray(!ydis is real,!height is real) is array 					$* get ymin ymax of xyeles and order them
+--findgoodspaceingaps(!gaps is array,!width is real,!xdis is real) is array 	$*
+--getxgaps(!ymin is real, !ymax is real , !width is real) is array  		$*
+--mergetwoarrtogaps(!diss1 is array, !diss2 is array, !width is real) is array  	$*
+-----Step 1:merge element
+--
+--Step 2:old way
+--getyspace(!width is real,!height is real,!inputxdis is real,!inputydis is real)   	$*
+-----Step 1: got ordered ydiss	from pos
+--getgaps(!inputdis is real, !dirlen is real ,!dirstring is string , !mindisintheotherdir is real, !maxdisintheotherdir is real) is array   	$*
+--getonedirdiss(!inputdis is real, !dirlen is real ,!dirstring is string , !mindisintheotherdir is real, !maxdisintheotherdir is real) is array 	$*
+-------------------------------------
+
+
+define object orixyeles
+	member .pos is position
+	member .ori is orientation
+	member .xyeles is array
+	member .shapeindices is array
+
+	member .assignNoConcrete is boolean
+endobject
+
+define method .orixyeles(!pos is position,!ori is orientation,!shapes is array) $*initial method
+
+	!this.pos = !pos
+	!this.ori = !ori
+	!this.getxyeles(!shapes)
+endmethod
+
+define method .getxyeles(!shapes is array) $*get xyele in plane, and get indices of input shapes
+	!xdir = !this.ori.xdir()
+	!ydir = !this.ori.ydir()
+	do !index indices !shapes
+		!shape = !shapes[!index]
+
+		if !shape.dimlineindex.set() then	$* dimline only consider text part
+			!poss = !shape.dimposs
+			--elseif !shape.mlabelindex.set() then
+			--	!poss = !shape.dimposs $*useless,dimposs is only for text of dimline
+		else
+			!poss = !shape.poss
+		endif
+		!xdiss = array()
+		!ydiss = array()
+		do !pos values !poss
+			!xdis = !!suidirdis(!this.pos,!xdir,!pos)
+			!ydis = !!suidirdis(!this.pos,!ydir,!pos)
+			!xdiss.append(!xdis)
+			!ydiss.append(!ydis)
+		enddo
+		!planeelement = object planeElement(!index,!xdiss,!ydiss,!this.pos,!this.ori,!shape.planeminzdis,!shape.planemaxzdis)
+		!this.shapeindices.append(!index)
+		!this.xyeles.append(!planeelement)
+	enddo
+endmethod
+
+define method .addxyele(!poss is array) $*add one xyele with positions
+	!xdir = !this.ori.xdir()
+	!ydir = !this.ori.ydir()
+	!xdiss = array()
+	!ydiss = array()
+	do !pos values !poss
+		!xdis = !!suidirdis(!this.pos,!xdir,!pos)
+		!ydis = !!suidirdis(!this.pos,!ydir,!pos)
+		!xdiss.append(!xdis)
+		!ydiss.append(!ydis)
+	enddo
+	!planeelement = object planeElement(!xdiss,!ydiss,!this.pos,!this.ori)
+	!this.xyeles.append(!planeelement)
+endmethod
+
+define method .findspace(!pos1 is position, !pos2 is position, !inputcheight is real, !shapes is array ,!maxlen is real) is real $*find good place to put a element
+	!this.updateshapes(!shapes)
+	!cheight = 1.5 * !inputcheight	$*because not only text but also the arrow
+
+	!xdis1 = !!suidirdis(!this.pos,!this.ori.xdir(),!pos1)
+	!xdis2 = !!suidirdis(!this.pos,!this.ori.xdir(),!pos2)
+	!xmin = min(!xdis1,!xdis2) + 1
+	!xmax = max(!xdis1,!xdis2) - 1
+
+	!dimlineycor = !!suidirdis(!this.pos,!this.ori.ydir(),!pos1)
+
+	--!result = array()
+	!zdis1 = !!suidirdis(!this.pos,!this.ori.zdir(),!pos1)
+	!zdis2 = !!suidirdis(!this.pos,!this.ori.zdir(),!pos2)
+	if !zdis1 le !zdis2 then
+		!zmindis = !zdis1
+		!zmaxdis = !zdis2
+	else
+		!zmindis = !zdis2
+		!zmaxdis = !zdis1
+	endif
+	!ranges = !this.findrange(!xmin,!xmax,!zmindis,!zmaxdis,!maxlen)
+	!gaptimes = 1.5
+
+	!gap = !gaptimes * !cheight
+	!offsettimes = (!gaptimes - 1) / 2
+	if !ranges.unset() then
+		--!result[1] = !dimlineycor + 0.1 * !cheight
+		--!result[2] = !dimlineycor + 1.1 * !cheight
+		--return !result
+		!offsetlen = (1 + !offsettimes) * !cheight
+		return !offsetlen
+	else
+		!goodgaps = array()
+		!size = !ranges.size()
+		do !x indices !ranges
+			if !x eq 1 then
+				!onegap[1] = !ranges[!x][1] - !gap
+				!onegap[2] = !ranges[!x][1]
+			elseif !ranges[!x][1] - !ranges[!x - 1][2] ge !gap then
+				if !ranges[!x - 1][2] gt !dimlineycor then
+					!onegap[1] = !ranges[!x - 1][2]
+					!onegap[2] = !onegap[1] + !gap
+				else
+					!onegap[2] = !ranges[!x][1]
+					!onegap[1] = !onegap[2] - !gap
+				endif
+			endif
+			!goodgaps.append(!onegap)
+			if !x eq !size then
+				if !ranges[!x][2] gt !dimlineycor then
+					!onegap[1] = !ranges[!x][2]
+					!onegap[2] = !onegap[1] + !gap
+				else
+					!onegap[2] = !dimlineycor
+					!onegap[1] = !onegap[2] - !gap
+				endif
+				!goodgaps.append(!onegap)
+			endif
+		enddo
+
+		!starts = array()
+		do !onegap values !goodgaps
+			--if (!onegap[1] + !onegap[2]) / 2 - !dimlineycor lt 0 then
+			--	skip
+			--endif
+			!starts.append(abs((!onegap[1] + !onegap[2]) / 2 - !dimlineycor))
+		enddo
+		!goodindex = !starts.sortedindices()[1]
+
+		!gapYcor1 = !goodgaps[!goodindex][1]
+		!gapYcor2 = !goodgaps[!goodindex][2]
+		if !gapYcor1 gt !dimlineYcor then
+			!offsetlen = !gapYcor2 - !dimlineycor - !offsettimes * !cheight
+		else
+			!offsetlen = !gapYcor1 - !dimlineycor + !offsettimes * !cheight
+		endif
+
+		return !offsetlen
+	endif
+endmethod
+
+define method .findrange(!xmin is real,!xmax is real, !zmindis is real, !zmaxdis is real, !maxlen is real) is array $*get range of element in this orixyeles in ydir
+	!ydata = array()
+	!tempeles = array()
+	do !x indices !this.xyeles
+		!ele = !this.xyeles[!x]
+		if !ele.zmin.set() and !ele.zmax.set() then
+			if !ele.zmin gt !zmaxdis + !maxlen or !ele.zmax lt !zmindis - !maxlen then
+				skip
+			elseif !ele.zmin gt !zmaxdis or !ele.zmax lt !zmindis then
+				if abs(!ele.xmax - !ele.xmin - 2000) lt 10 or  abs(!ele.ymax - !ele.ymin - 2000) lt 10 then	$*do not consider pipe in same dir with dim
+					skip
+				endif
+			endif
+		endif
+
+
+
+		if not(!xmin gt !ele.xmax or !xmax lt !ele.xmin) then
+			!tempdis = !ele.xmax - !ele.xmin
+			--q var !this.assignnoconcrete
+			if !this.assignnoconcrete.set() and !this.assignnoconcrete then
+				if abs(!ele.xmax - !ele.xmin) gt 9000 or abs(!ele.ymax - !ele.ymin) gt 9000 or abs(!ele.zmax - !ele.zmin) gt 9000 then
+					skip
+				endif
+			endif
+
+			if !this.ifskipconcrete(!ele) then
+				skip
+			endif
+			$(
+			if !tempdis gt 9000 then
+				if abs(!ele.ymax - !ele.ymin - 10000) gt 500 then	$* for concreate shape
+					skip
+				endif
+			endif
+			$)
+			!temparr = array()
+			!temparr[1] = !ele.ymin
+			!temparr[2] = !ele.ymax
+			!ydata.append(!temparr)
+
+			!tempeles.append(!ele)
+		endif
+	enddo
+
+
+	!xdir = !this.ori.xdir()
+	!ydir = !this.ori.ydir()
+	!allposs = array()
+	do !ele values !tempeles
+		!poss = array()
+		!poss[1] = !this.pos.offset(!xdir,!ele.xmin).offset(!ydir,!ele.ymin)
+		!poss[2] = !this.pos.offset(!xdir,!ele.xmin).offset(!ydir,!ele.ymax)
+		!poss[3] = !this.pos.offset(!xdir,!ele.xmax).offset(!ydir,!ele.ymax)
+		!poss[4] = !this.pos.offset(!xdir,!ele.xmax).offset(!ydir,!ele.ymin)
+		!allposs.append(!poss)
+	enddo
+
+
+
+	!ranges = !!mergerange(!ydata)
+
+	return !ranges
+endmethod
+
+define method .updateshapes(!shapes is array) $*insure all shapes are considered
+	!indices = !shapes.indices()
+	!dif = !indices.difference(!this.shapeindices)
+	if !dif.set() then
+		!newshapes = array()
+		do !index values !dif
+			!newshapes[!index] = !shapes[!index]
+		enddo
+		!this.getxyeles(!newshapes)
+	endif
+endmethod
+
+
+
+----------------------
+----------------------Step 1: for mlabel
+define method .findtextspace(!text is any, !pos is position, !inputcheight is real, !shapes is array, !maxlen is real) is array
+
+	!this.updateshapes(!shapes)
+	!cheight = !inputcheight
+
+	--!bili = 0.7
+	!bili = 1
+	if !text.objecttype() eq 'ARRAY' then
+		!rows = !text.size()
+		!len = 0
+		do !x indices !text
+			!len = max(!len,!!mbdtextlen(!text[!x]) * !cheight * !bili)
+		enddo
+		!height = !cheight + !cheight * 1.2 * !rows
+	else
+		!len = !!mbdtextlen(!text) * !cheight * !bili
+		!height = !cheight * 3
+	endif
+
+
+
+	!width = !len + 1 * !cheight
+
+
+	!xdis = !!suidirdis(!this.pos,!this.ori.xdir(),!pos)
+	!ydis = !!suidirdis(!this.pos,!this.ori.ydir(),!pos)
+
+	!angle = !this.ori.zdir().angle(u)
+	if !angle lt 10 or !angle gt 170 then
+		!tryone = true
+	else
+		!angle1 = !this.ori.ydir().angle(U)
+		!angle2 = !this.ori.xdir().angle(U)
+		!angle1 = min(!angle1,180 - !angle1)
+		!angle2 = min(!angle2,180 - !angle2)
+
+		if !angle1 lt !angle2 then
+			!tryone = true
+		else
+			!tryone = false
+		endif
+	endif
+	--!tryone = true
+	--q var !tryone
+
+	if !tryone then
+		!oneresult1 = !this.getspace(!width,!height,!xdis,!ydis,!pos,!maxlen)	$*text is horizontal
+		--!!eeeeye2l(!pos,!oneresult1[1],!text & ' ' & !width.string('d0') & ' ' & !height.string('d0') & ' 1')
+	else
+		!oneresult1 = !this.getspace(!height,!width,!xdis,!ydis,!pos,!maxlen)	$*text is vertical
+		--!!eeeeye2l(!pos,!oneresult1[1],!text & ' ' & !height.string('d0') & ' ' & !width.string('d0') & ' 2')
+	endif
+	!poss = !oneresult1[1]
+
+	return !poss
+
+
+	$(
+	if !oneresult1[2] lt 1 then
+		!poss = !oneresult1[1]
+	else
+		if !tryone then
+			!oneresult2 = !this.getspace(!height,!width,!xdis,!ydis)	$*text is vertical
+		else
+			!oneresult2 = !this.getspace(!width,!height,!xdis,!ydis)	$*text is horizontal
+		endif
+		if !oneresult2[2] lt !oneresult1[2] then
+			!poss = !oneresult2[1]
+			!poss.insert(1,!poss[4])
+			!poss[5].delete()
+			!poss.compress()
+			--return !poss
+		else
+			!poss = !oneresult1[1]
+		endif
+	endif
+	$)
+	!xdir = !poss[1].direction(!poss[2])
+	!zdir = !this.ori.zdir().opposite()
+	!ydir = !zdir.orthogonal(!xdir)
+	if !ydir.angle(u) gt 95 then
+		!ydir = !ydir.opposite()
+		!xdir = !xdir.opposite()
+	endif
+	!ori = x is $!xdir and z is $!zdir
+
+
+	!cenpoint = !!getcenpoint(!poss)
+
+	!newposs = array()
+	do !onepos values !poss
+		!xdis = !!suidirdis(!cenpoint,!xdir,!onepos)
+		!ydis = !!suidirdis(!cenpoint,!ydir,!onepos)
+		if !xdis lt 0 and !ydis lt 0 then
+			!newposs[1] = !onepos
+		elseif !xdis gt 0 and !ydis lt 0 then
+			!newposs[2] = !onepos
+		elseif !xdis gt 0 and !ydis gt 0 then
+			!newposs[3] = !onepos
+		else
+			!newposs[4] = !onepos
+		endif
+	enddo
+
+
+
+	!result = array()
+	!result.append(!newposs)
+	!result.append(!ori)
+	return !result
+endmethod
+
+define method .getspace(!width is real,!height is real,!inputxdis is real,!inputydis is real, !pos is position, !maxlen is real) is array
+	!tolerance = 0.01
+	!firstydis = !inputydis - !height / 2
+	!firstxdis = !inputxdis - !width / 2
+
+	!zdis = !!suidirdis(!this.pos,!this.ori.zdir(),!pos)
+	!firstxyeleindices = !this.getxyelesbetweenygap(!firstydis,!firstydis + !height, !zdis, !maxlen)
+	if !width gt 400 then
+
+	endif
+	!firstgaps = !this.getgapsfromxyeles(!firstxyeleindices,!width)
+
+	!temparr = !this.findgoodspaceingaps(!firstgaps,!width,!firstxdis)
+
+	!goodgap = !temparr[1]
+	!gooddis = !temparr[2]
+	!upordown = true
+	!goodupordown = true
+	!goodydis = !firstydis
+
+	!showcheck = false
+
+	--if abs(!inputxdis - 52) lt 1 and abs(!inputydis - 0) lt 1 then
+	--	!showcheck = true
+	--endif
+
+
+	$(
+	if !showcheck then
+		--!eyexyeles = !this.indicestoxyeles(!firstxyeleindices)
+
+		!eyegaps = !firstgaps
+		!eyegap = !goodgap
+		!eyeydis = !firstydis
+		!eyedis = !gooddis
+		!allgaplines = !this.gapstolines(!eyegaps,!eyeydis,!eyegap,!height,!upordown)
+		--!!3l(!allgaplines,!eyexyeles,!eyedis,'0')
+		--!!5l(!eyegaps,!eyegap,!temparr,!eyeydis,!eyedis,'0')
+		--!!4l(!firstgaps,!goodgap,!temparr,!firstydis,!inputxdis & ' ' & !inputydis & ' ' & !width & ' ' & !height)
+	endif
+	$)
+
+	if !gooddis lt 1 then
+		return !this.getgoodspace(!goodgap,!firstxdis,!width,!firstydis,!height,!upordown)
+	endif
+	--$p asdfasff
+	!temparr = !this.getorderarray(!firstydis,!height, !zdis, !maxlen)
+	--!temparr = !this.getorderarray()
+
+	!ydiss = !temparr[1]
+	!types = !temparr[2]
+	!eleindices = !temparr[3]
+	!movediss = !temparr[4]
+
+	!upxyeleindices = !firstxyeleindices
+	!downxyeleindices = !firstxyeleindices
+
+	--$(
+	if !showcheck then
+		!eyexyeles = !this.indicestoxyeles(!eleindices)
+
+		--6l(!this.xyeles,!ydiss,!types,!eleindices,!movediss,!eyexyeles,'orderarray')
+
+		!upeyes = !this.indicestoxyeles(!upxyeleindices)
+		!downeyes = !upeyes
+		!tempxyele = object planeelement(1000,!firstxdis,!firstxdis + !width,!firstydis,!firstydis + !height,!this.pos,!this.ori)
+		!downeyes[1].append(!tempxyele)
+
+		--2l(!downxyeleindices,!downeyes,'first  ydis: ' & !firstydis.string('d0') & ' movedis: ' & !gooddis.string('d0'))
+	endif
+	--$)
+
+	do !x indices !ydiss
+		!ydis = !ydiss[!x]
+
+		!movedis = !movediss[!x]
+		if !movedis ge !gooddis then
+			--if abs(!ydis - !firstydis) gt !gooddis then
+			break
+		endif
+		!type = !types[!x]
+		!eleindex = !eleindices[!x]
+
+		--!!2l(!downxyeleindices,!ydis,!x)
+		if !type eq 'end' then
+			if !ydis ge !this.xyeles[!eleindex].ymax then
+				!delindex = !upxyeleindices.findfirst(!eleindex)
+				if !delindex.set() then
+					!upxyeleindices[!delindex].delete()
+					!upxyeleindices.compress()
+				endif
+				!xyeleindices = !upxyeleindices
+				!upordown = true
+
+				--$(
+				if !showcheck then
+					!upeyes = !this.indicestoxyeles(!upxyeleindices)
+					!tempxyele = object planeelement(1000,!firstxdis,!firstxdis + !width,!ydis,!ydis + !height,!this.pos,!this.ori)
+					!upeyes[1].append(!tempxyele)
+
+					--3l(!upxyeleindices,!upeyes,!eleindex,!x & ' rem up  ydis: ' & !ydis.string('d0') & ' movedis: ' & !movedis.string('d0'))
+				endif
+				--$)
+
+			else
+				!delindex = !downxyeleindices.findfirst(!eleindex)
+				if !delindex.unset() then
+					if !showcheck then
+						!downeyes = !this.indicestoxyeles(!downxyeleindices)
+						!tempxyele = object planeelement(1000,!firstxdis,!firstxdis + !width,!ydis - !height,!ydis,!this.pos,!this.ori)
+						!downeyes[1].append(!tempxyele)
+
+						--4l(!downxyeleindices,!downeyes,!eleindex,!this.xyeles[!eleindex],!x)
+					endif
+				else
+					!downxyeleindices[!delindex].delete()
+					!downxyeleindices.compress()
+				endif
+
+				!xyeleindices = !downxyeleindices
+				!upordown = false
+				--$(
+				if !showcheck then
+					!downeyes = !this.indicestoxyeles(!downxyeleindices)
+					!tempxyele = object planeelement(1000,!firstxdis,!firstxdis + !width,!ydis - !height,!ydis,!this.pos,!this.ori)
+					!downeyes[1].append(!tempxyele)
+
+					--3l(!downxyeleindices,!downeyes,!eleindex,!x & ' rem down   ydis: ' & !ydis.string('d0') & ' movedis: ' & !movedis.string('d0'))
+				endif
+				--$)
+			endif
+			--!oneydis = !movedis
+
+			$(
+			if !ydis lt !firstydis + !tolerance then	$* because the first eles only consider from firstdis + tolerance to firstdis + height - tolerance
+				!delindex = !downxyeleindices.findfirst(!eleindex)
+				!downxyeleindices[!delindex].delete()
+				!downxyeleindices.compress()
+				!xyeleindices = !downxyeleindices
+				!oneydis = !firstydis - !ydis + !height
+
+				!downeyes = !this.indicestoxyeles(!downxyeleindices)
+				!!3l(!eleindex,!downxyeleindices,!downeyes,!x & ' rem down ' & !ydis)
+			else
+				--elseif !ydis gt !firstydis + !tolerance then
+				!delindex = !upxyeleindices.findfirst(!eleindex)
+				!upxyeleindices[!delindex].delete()
+				!upxyeleindices.compress()
+				!xyeleindices = !upxyeleindices
+				!oneydis = !ydis - !firstydis
+
+				!upeyes = !this.indicestoxyeles(!upxyeleindices)
+				!!3l(!eleindex,!upxyeleindices,!upeyes,!x & ' rem up ' & !ydis)
+			endif
+			--!consider = !this.checkifneedconsider(!this.xyeles[!eleindex],!firstxdis,!width,!oneydis,!gooddis)
+			--!!1l(!consider,!x)
+			$)
+
+			if !this.checkifneedconsider(!this.xyeles[!eleindex],!firstxdis,!width,!movedis,!gooddis) then
+				!gaps = !this.getgapsfromxyeles(!xyeleindices,!width)
+				!temparr = !this.findgoodspaceingaps(!gaps,!width,!firstxdis)
+				!onegap = !temparr[1]
+				!onexdis = !temparr[2]
+				!onedis = sqrt(power(!onexdis,2) + power(!movedis,2))
+
+				--$p $!ydis   $!onedis $!gooddis
+
+				if !onedis lt !gooddis then
+
+					--$(
+					if !showcheck then
+						!eyexyeles = !this.indicestoxyeles(!xyeleindices)
+
+						!eyegaps = !gaps
+						!eyegap = !onegap
+						!eyeydis = !ydis
+						!eyedis = !onedis
+						!allgaplines = !this.gapstolines(!eyegaps,!eyeydis,!eyegap,!height,!upordown)
+
+						--3l(!allgaplines,!eyexyeles,!eyedis,!x & ' ' & !eyedis.string('d0'))
+					endif
+					--$)
+
+					!goodgap = !onegap
+					!gooddis = !onedis
+					!goodydis = !ydis
+					!goodupordown = !upordown
+				endif
+			endif
+		else
+			if !ydis ge !this.xyeles[!eleindex].ymax then
+				!downxyeleindices.append(!eleindex)
+				!downxyeleindices.unique()
+
+				--$(
+				if !showcheck then
+					!downeyes = !this.indicestoxyeles(!downxyeleindices)
+					!tempxyele = object planeelement(1000,!firstxdis,!firstxdis + !width,!ydis,!ydis + !height,!this.pos,!this.ori)
+					!downeyes[1].append(!tempxyele)
+
+					--3l(!downxyeleindices,!downeyes,!eleindex,!x & ' add down  ydis: ' & !ydis.string('d0') & ' movedis: ' & !movedis.string('d0'))
+				endif
+				--$)
+
+			else
+				!upxyeleindices.append(!eleindex)
+				!upxyeleindices.unique()
+
+				!upeyes = !this.indicestoxyeles(!upxyeleindices)
+
+				--$(
+				if !showcheck then
+					!tempxyele = object planeelement(1000,!firstxdis,!firstxdis + !width,!ydis - !height,!ydis,!this.pos,!this.ori)
+					!upeyes[1].append(!tempxyele)
+
+					--3l(!upxyeleindices,!upeyes,!eleindex,!x & ' add up  ydis: ' & !ydis.string('d0') & ' movedis: ' & !movedis.string('d0'))
+				endif
+				--$)
+			endif
+		endif
+	enddo
+
+	--!!2l(!this.indicestoxyeles(!upxyeleindices),!this.indicestoxyeles(!downxyeleindices),!x & ' ' & !ydis.string('d0'))
+
+	--if undefined(!xyeleindices) then
+	--	!xyeleindices = !firstxyeleindices
+	--endif
+
+	!fourposs = !this.getgoodspace(!goodgap,!firstxdis,!width,!goodydis,!height,!goodupordown)
+	!result = array()
+	!result.append(!fourposs)
+	!result.append(!gooddis)
+	return !result
+
+	$(
+	----------------------
+	----------------------Step x:old, wrong, can extend or reduce one xyele like this, because there maybe are some overlapped xyeles
+	--!tolerance = 0.01
+	!firstydis = !inputydis - !height / 2
+	!firstxdis = !inputxdis - !width / 2
+	!firstgaps = !this.getxgaps(!firstydis,!firstydis + !height,!width)
+
+
+	!temparr = !this.findgoodspaceingaps(!firstgaps,!width,!firstxdis)
+	!goodgap = !temparr[1]
+	!gooddis = !temparr[2]
+
+	!goodymin = !firstydis
+	if !gooddis lt 1 then
+		return !this.getgoodspace(!goodgap,!firstxdis,!width,!firstydis,!height)
+	endif
+
+	!temparr = !this.getorderarray(!firstydis,!height)
+	!ydiss = !temparr[1]
+	!types = !temparr[2]
+	!eleindices = !temparr[3]
+
+	!upgaps = !firstgaps
+	!downgaps = !firstgaps
+
+
+
+	do !x indices !ydiss
+		!ydis = !ydiss[!x]
+		if abs(!ydis - !firstydis) gt !gooddis then
+			break
+		endif
+		!type = !types[!x]
+		!eleindex = !eleindices[!x]
+
+		if !type eq 'end' then
+			if !ydis gt !firstydis then
+				!upgaps = !this.extendgap(!upgaps,!this.xyeles[!eleindex])
+				!gaps = !upgaps
+				!oneydis = !ydis - !firstydis
+			else
+				!downgaps = !this.extendgap(!downgaps,!this.xyeles[!eleindex])
+				!gaps = !downgaps
+				!oneydis = !firstydis - !ydis + !height
+			endif
+
+			if !this.checkifneedconsider(!this.xyeles[!eleindex],!firstxdis,!width,!oneydis,!gooddis) then
+				!temparr = !this.findgoodspaceingaps(!gaps,!width,!firstxdis)
+				!onegap = !temparr[1]
+				!onexdis = !temparr[2]
+				!onedis = sqrt(power(!onexdis,2) + power(!oneydis,2))
+				if !onedis lt !gooddis then
+					!goodgap = !onegap
+					!gooddis = !onedis
+					!goodymin = !oneydis
+				endif
+			endif
+		else
+			if !ydis gt !firstydis then
+				!upgaps = !this.reducegap(!upgaps,!this.xyeles[!eleindex])
+			else
+				!downgaps = !this.reducegap(!downgaps,!this.xyeles[!eleindex])
+			endif
+		endif
+	enddo
+
+	!fourposs = !this.getgoodspace(!goodgap,!firstxdis,!width,!goodymin,!height)
+	!result = array()
+	!result.append(!fourposs)
+	!result.append(!gooddis)
+	return !result
+	$)
+endmethod
+
+define method .indicestoxyeles(!xyeleindices is array) is array
+	!eyexyeles = array()
+	!eyexyeles[1] = array()
+	do !index values !xyeleindices
+		!eyexyeles[1].append(!this.xyeles[!index])
+	enddo
+	return !eyexyeles
+endmethod
+
+define method .gapstolines(!eyegaps is array, !eyeydis is real, !eyegap is array,!height is real,!upordown is boolean) is array
+	!allgaplines = array()
+
+	do !gap values !eyegaps
+		if !upordown then
+			!pos1 = !this.pos.offset(!this.ori.xdir(),!gap[1]).offset(!this.ori.ydir(),!eyeydis)
+			!pos2 = !this.pos.offset(!this.ori.xdir(),!gap[2]).offset(!this.ori.ydir(),!eyeydis)
+
+
+			!pos3 = !this.pos.offset(!this.ori.xdir(),!gap[2]).offset(!this.ori.ydir(),!eyeydis + !height)
+			!pos4 = !this.pos.offset(!this.ori.xdir(),!gap[1]).offset(!this.ori.ydir(),!eyeydis + !height)
+
+
+		else
+			!pos1 = !this.pos.offset(!this.ori.xdir(),!gap[1]).offset(!this.ori.ydir(),!eyeydis - !height)
+			!pos2 = !this.pos.offset(!this.ori.xdir(),!gap[2]).offset(!this.ori.ydir(),!eyeydis - !height)
+
+
+			!pos3 = !this.pos.offset(!this.ori.xdir(),!gap[2]).offset(!this.ori.ydir(),!eyeydis)
+			!pos4 = !this.pos.offset(!this.ori.xdir(),!gap[1]).offset(!this.ori.ydir(),!eyeydis)
+
+
+		endif
+		!allgaplines.append(!pos1.line(!pos2))
+		!allgaplines.append(!pos2.line(!pos3))
+		!allgaplines.append(!pos3.line(!pos4))
+		!allgaplines.append(!pos4.line(!pos1))
+
+		if !gap[1] eq !eyegap[1] and !gap[2] eq !eyegap[2] then
+			!allgaplines.append(!pos1.line(!pos3))
+			!allgaplines.append(!pos2.line(!pos4))
+
+		endif
+	enddo
+	return !allgaplines
+endmethod
+
+define method .getxyelesbetweenygap(!ymin is real, !ymax is real, !zdis is real, !maxlen is real) is array
+	!tolerance = 0.01
+	!indices = array()
+	do !x indices !this.xyeles
+		!ele = !this.xyeles[!x]
+
+		if !ele.zmin.set() and !ele.zmax.set() then
+			if !ele.zmin gt !zdis + !maxlen or !ele.zmax lt !zdis - !maxlen then
+				skip
+			endif
+		endif
+
+		$(
+		!tempdis = !ele.xmax - !ele.xmin
+		if !tempdis gt 9000 then
+			if abs(!ele.ymax - !ele.ymin - 10000) gt 500 then	$* for concreate shape
+				skip
+			endif
+		endif
+		$)
+		--if abs(!ele.xmax - !ele.xmin) gt 15000 and abs(!ele.ymax - !ele.ymin) gt 15000 then
+		--	skip $*在垂直墙的面上。不考虑墙的影响
+		--endif
+
+		if !this.ifskipconcrete(!ele) then
+			skip
+		endif
+
+		$(
+		!tempdis = !ele.xmax - !ele.xmin
+		if !tempdis gt 9000 then
+
+			--text no need, all space would be use
+			--if !this.assignnoconcrete.set() and !this.assignnoconcrete then
+			--	skip
+			--endif
+			if abs(!ele.ymax - !ele.ymin - 10000) gt 500 then	$* for concrete shape
+				skip
+			endif
+		endif
+		$)
+
+
+		--if abs(!ele.xmax - !ele.xmin) gt 19000 and abs(!ele.ymax - !ele.ymin) gt 19000 then
+
+		--endif
+		if !ele.ymin gt !ymax - !tolerance or !ele.ymax lt !ymin + !tolerance then
+			skip
+		endif
+		!indices.append(!x)
+	enddo
+	return !indices
+endmethod
+
+define method .ifskipconcrete(!ele is planeelement) is boolean
+	!xlen = !ele.xmax - !ele.xmin
+	!ylen = !ele.ymax - !ele.ymin
+	!zlen = !ele.zmax - !ele.zmin
+	!maxvolume = 20000 * 20000 * 10000 / 10
+	if !xlen * !ylen * !zlen gt !maxvolume then
+		!minlen = min(min(!xlen,!ylen),!zlen)
+		if !minlen eq !zlen then
+			return true
+		elseif !minlen gt 10642 then	$*偏转超过了20度
+			--倾斜墙体
+			return true
+		endif
+	endif
+	return false
+endmethod
+
+define method .getgapsfromxyeles(!indices is array, !width is real) is array
+	!tolerance = 0.01
+	!xdiss = array()
+	!parts = array()
+	!onepart = array()
+	do !index values !indices
+		!xdiss.append(!this.xyeles[!index].xmin)
+		!onepart[1] = !this.xyeles[!index].xmin
+		!onepart[2] = !this.xyeles[!index].xmax
+		!parts.append(!onepart)
+	enddo
+	!tempindices = !xdiss.sortedindices()
+	!parts.reindex(!tempindices)
+
+	!size = !parts.size()
+	do !x from 1 to !size - 1
+		!y = !x + 1
+		if !parts[!y][1] lt !parts[!x][2] + !tolerance then
+			!parts[!y][1] = !parts[!x][1]
+			!parts[!y][2] = max(!parts[!x][2],!parts[!y][2])
+			!parts[!x].delete()
+		endif
+	enddo
+	!parts.compress()
+
+
+
+	!gaps = array()
+	!onegap = array()
+	do !x indices !parts
+		if !x eq 1 then
+			!onegap[1] = !parts[1][1] - !width - 100000
+			!onegap[2] = !parts[1][1]
+		else
+			!onegap[1] = !parts[!x - 1][2]
+			!onegap[2] = !parts[!x][1]
+		endif
+		!gaps.append(!onegap)
+	enddo
+	if !parts.set() then
+		!onegap[1] = !parts.last()[2]
+		!onegap[2] = !parts.last()[2] + !width + 100000
+		!gaps.append(!onegap)
+	else
+		!onegap[1] = -100000
+		!onegap[2] = 100000
+		!gaps.append(!onegap)
+	endif
+	return !gaps
+endmethod
+
+------------------------------------------------------check if too far to use
+define method .checkifneedconsider(!xyele is planeelement, !firstxdis is real, !width is real, !movedis is real, !gooddis is real) is boolean
+	!xmin = !firstxdis
+	!xmax = !firstxdis + !width
+	if !xyele.xmax gt !xmax then
+		!xdis1 = max(!xyele.xmin - !xmin - !width,0)
+	else
+		!xdis1 = 0
+	endif
+	if !xyele.xmin lt !xmin then
+		!xdis2 = max(!xmin - !xyele.xmax - !width,0)
+	else
+		!xdis2 = 0
+	endif
+	!xdis = max(!xdis1,!xdis2)
+	!onedis = sqrt(power(!xdis,2) + power(!movedis,2))
+
+	if !onedis gt !gooddis then
+		return false
+	else
+		return true
+	endif
+endmethod
+
+define method .getgoodspace(!goodgap is array, !firstxdis is real, !width is real, !goodydis is real, !height is real, !upordown is boolean) is array
+	if !upordown then
+		!ymin = !goodydis
+		!ymax = !goodydis + !height
+	else
+		!ymin = !goodydis - !height
+		!ymax = !goodydis
+	endif
+	if !firstxdis lt !goodgap[1] then
+		!xmin = !goodgap[1]
+		!xmax = !goodgap[1] + !width
+	elseif !firstxdis + !width gt !goodgap[2] then
+		!xmax = !goodgap[2]
+		!xmin = !goodgap[2] - !width
+	else
+		!xmin = !firstxdis
+		!xmax = !firstxdis + !width
+	endif
+
+	--!tempxyele = object planeelement(1000,!xmin,!xmax,!ymin,!ymax,!this.pos,!this.ori)
+	--!!2(!tempxyele,!upordown)
+
+	!poss = array()
+	!poss[1] = !this.pos.offset(!this.ori.xdir(),!xmin).offset(!this.ori.ydir(),!ymin)
+	!poss[2] = !this.pos.offset(!this.ori.xdir(),!xmax).offset(!this.ori.ydir(),!ymin)
+	!poss[3] = !this.pos.offset(!this.ori.xdir(),!xmax).offset(!this.ori.ydir(),!ymax)
+	!poss[4] = !this.pos.offset(!this.ori.xdir(),!xmin).offset(!this.ori.ydir(),!ymax)
+	return !poss
+endmethod
+
+
+define method .extendgap(!gaps is array,!xyele is planeelement) is array
+	!tolerance = 0.01
+
+	!xmin = !xyele.xmin
+	!xmax = !xyele.xmax
+	if !gaps.unset() then
+		!onegap = array()
+		!onegap[1] = !xmin
+		!onegap[2] = !xmax
+		!gaps.append(!onegap)
+	elseif !gaps.unset() or !xmax lt !gaps[1][1] + !tolerance then
+
+		!onegap = array()
+		!onegap[1] = !xmin
+		!onegap[2] = !xmax
+		!gaps.insert(1,!onegap)
+	elseif !xmin gt !gaps.last()[2] - !tolerance then
+
+		!onegap = array()
+		!onegap[1] = !xmin
+		!onegap[2] = !xmax
+		!gaps.append(!onegap)
+	else
+		!size = !gaps.size()
+		do !x indices !gaps
+			if !xmin gt !gaps[!x][2] + !tolerance then
+				skip
+			else
+				if !xmin lt !gaps[!x][1] + !tolerance then
+
+					if !xmax lt !gaps[!x][1] + !tolerance then
+						!onegap = array()
+						!onegap[1] = !xmin
+						!onegap[2] = !xmax
+						!gaps.insert(!x,!onegap)
+						break
+					else
+						!onegap = array()
+						!onegap[1] = !xmin
+						!onegap[2] = !xmax
+
+						do !y from !x to !size
+							if !xmax gt !gaps[!y][1] - !tolerance then
+								if !xmax gt !gaps[!y][2] then
+									!gaps[!y].delete()
+								else
+									!onegap[2] = !gaps[!y][2]
+									!gaps[!y].delete()
+									break
+								endif
+							endif
+						enddo
+						!gaps[!x] = !onegap
+						!gaps.compress()
+						break
+					endif
+				elseif !xmax gt !gaps[!x][2] - !tolerance then
+
+					!onegap = array()
+					!onegap[1] = !gaps[!x][1]
+					!onegap[2] = !xmax
+
+					do !y from !x to !size
+						if !xmax gt !gaps[!y][1] - !tolerance then
+							if !xmax gt !gaps[!y][2] then
+								!gaps[!y].delete()
+							else
+								!onegap[2] = !gaps[!y][2]
+								!gaps[!y].delete()
+								break
+							endif
+						endif
+					enddo
+					!gaps[!x] = !onegap
+					!gaps.compress()
+
+					break
+					$(
+					if !xmax lt !gaps[!x][2] - !tolerance then
+						break
+					else
+						!gaps[!x][2] = max(!gaps[!x][2],!xmax)
+						do !y from !x to !size - 1
+							!z = !y + 1
+							if !gaps[!z][1] le !gaps[!y][2] then
+								!gaps[!z][1] = !gaps[!y][1]
+								!gaps[!z][2] = max(!gaps[!y][2],!gaps[!z][2])
+								!gaps[!y].delete()
+							else
+								break
+							endif
+						enddo
+						!gaps.compress()
+						break
+					endif
+					$)
+				endif
+			endif
+		enddo
+	endif
+	return !gaps
+endmethod
+
+define method .reducegap(!gaps is array,!xyele is planeelement) is array
+	!tolerance = 0.01
+
+	!xmin = !xyele.xmin
+	!xmax = !xyele.xmax
+
+	if !gaps.unset() then
+		golabel /end
+	endif
+	if !xmin lt !gaps.last()[2] - !tolerance and !xmax gt !gaps[1][1] + !tolerance then
+		!size = !gaps.size()
+		do !x indices !gaps
+			if !xmin gt !gaps[!x][2] - !tolerance then
+				skip
+			else
+				if !xmin lt !gaps[!x][1] + !tolerance then
+					if !xmax lt !gaps[!x][1] - !tolerance then
+						break
+					else
+						do !y from !x to !size
+							if !xmax gt !gaps[!y][2] - !tolerance  then
+								!gaps[!y].delete()
+							else
+								!gaps[!y][1] = !xmax
+							endif
+						enddo
+
+						!gaps.compress()
+						break
+					endif
+				else
+					if !xmin - !gaps[!x][1] gt !tolerance then
+						!onegap = array()
+						!onegap[1] = !gaps[!x][1]
+						!onegap[2] = !xmin
+						!gaps.insert(!x,!onegap)
+					endif
+
+					!y = !x + 1
+					do !y from !x + 1 to !size + 1
+						if !xmax gt !gaps[!y][2] - !tolerance  then
+							!gaps[!y].delete()
+						else
+							!gaps[!y][1] = !xmax
+							break
+						endif
+					enddo
+					!gaps.compress()
+					break
+				endif
+			endif
+		enddo
+	endif
+	label /end
+	return !gaps
+endmethod
+
+
+$(
+define method .getorderarray() is array
+	!ydiss = array()
+	!types = array()
+	!indices = array()
+	do !x indices !this.xyeles
+		!ele = !this.xyeles[!x]
+
+		!ydiss.append(!ele.ymin)
+		!types.append('min')
+		!indices.append(!x)
+
+		!ydiss.append(!ele.ymin)
+		!types.append('max')
+		!indices.append(!x)
+	enddo
+
+	!tempindices = !ydiss.sortedindices()
+	!ydiss.reindex(!tempindices)
+	!types.reindex(!tempindices)
+	!indices.reindex(!tempindices)
+
+	!result = array()
+	!result.append(!ydiss)
+	!result.append(!types)
+	!result.append(!indices)
+	return !result
+endmethod
+$)
+--$(
+define method .getorderarray(!ydis is real,!height is real,!zdis is real,!maxlen is real) is array	$* get ymin ymax of xyeles and order them
+	!tolerance = 0.01
+	!ymin = !ydis
+	!ymax = !ydis + !height
+	!ydiss = array()
+	!types = array()
+	!indices = array()
+	!movediss = array()
+
+	do !x indices !this.xyeles
+		!ele = !this.xyeles[!x]
+
+		if !ele.zmin.set() and !ele.zmax.set() then
+			if !ele.zmin gt !zdis + !maxlen or !ele.zmax lt !zdis - !maxlen then
+				skip
+			endif
+		endif
+
+		$(
+		!tempdis = !ele.xmax - !ele.xmin
+		if !tempdis gt 9000 then
+			--text no need, all space would be use
+			--if !this.assignnoconcrete.set() and !this.assignnoconcrete then
+			--	skip
+			--endif
+			if abs(!ele.ymax - !ele.ymin - 10000) gt 500 then	$* for concrete shape 20240419
+				skip
+			endif
+		endif
+		$)
+
+		if !this.ifskipconcrete(!ele) then
+			skip
+		endif
+
+		$(
+		if abs(!ele.xmax - !ele.xmin) gt 15000 and abs(!ele.ymax - !ele.ymin) gt 15000 then
+			--!!1(!ele)
+			skip $*在垂直墙的面上。不考虑墙的影响
+		endif
+		$)
+
+		!eleymin = !ele.ymin
+		!eleymax = !ele.ymax
+
+		--$p $!x $!ymin $!eleymin   $!ymax $!eleymax
+		if !eleymin gt !eleymax - 0.01 then		$*mark sure the order of start and end is always right
+			!eleymin = !eleymax - 0.1
+		endif
+
+		if !eleymax ge !ymin + !tolerance then	$* move Y dir and end considering this ele
+			!type = 'end'
+		else									$* move -Y dir and start to consider this ele
+			--elseif !eleymax gt !ymin - !tolerance then
+			!type = 'start'
+		endif
+
+
+		!types.append(!type)
+		--if !eleymax lt !ymin + !tolerance then	$* move -Y dir and start to consider this ele
+		--	!types.append('start')
+		--elseif !eleymax gt !ymin - !tolerance then	$* move Y dir and end considering this ele
+		--	!types.append('end')
+		--endif
+		!ydiss.append(!eleymax)
+		!indices.append(!x)
+		!movedis = abs(!eleymax - !ymin)
+		!movediss.append(!movedis)
+
+
+		if !eleymin le !ymax - !tolerance then
+			!type = 'end'
+		else
+			--elseif !eleymin gt !ymax - !tolerance then
+			!type = 'start'
+		endif
+
+
+		!types.append(!type)
+		!ydiss.append(!eleymin)
+		!indices.append(!x)
+		!movedis = abs(!eleymin - !ymax)
+		!movediss.append(!movedis)
+
+		$(
+		if !eleymin lt !ymin + !tolerance then
+			!ydiss.append(!eleymin)
+			!types.append('end')
+			!indices.append(!x)
+			!movedis = abs(!eleymin - !ymin)
+			!movediss.append(!movedis)
+			!!4l(!ymin,!eleymin,!ymax,!eleymax,!x & ' 1')
+		elseif !eleymin gt !ymax - !tolerance then
+			!ydiss.append(!eleymin)
+			!types.append('start')
+			!indices.append(!x)
+			!movediss.append(abs(!eleymin - !ymax))
+			!!4l(!ymin,!eleymin,!ymax,!eleymax,!x & ' 2')
+		endif
+
+		if !eleymax lt !ymin + !tolerance then
+			!ydiss.append(!eleymax)
+			!types.append('start')
+			!indices.append(!x)
+			!movediss.append(abs(!eleymax - !ymin))
+			!!4l(!ymin,!eleymin,!ymax,!eleymax,!x & ' 3')
+		elseif !eleymax gt !ymax - !tolerance then
+			!ydiss.append(!eleymax)
+			!types.append('end')
+			!indices.append(!x)
+			!movediss.append(abs(!eleymax - !ymax))
+			!!4l(!ymin,!eleymin,!ymax,!eleymax,!x & ' 4')
+		endif
+		$)
+	enddo
+
+	--!!1(!movediss)
+
+	!tempindices = !movediss.sortedindices()
+	!movediss.reindex(!tempindices)
+	!ydiss.reindex(!tempindices)
+	!types.reindex(!tempindices)
+	!indices.reindex(!tempindices)
+
+	!result = array()
+	!result.append(!ydiss)
+	!result.append(!types)
+	!result.append(!indices)
+	!result.append(!movediss)
+	return !result
+endmethod
+--$)
+
+define method .findgoodspaceingaps(!gaps is array,!width is real,!xdis is real) is array
+	!xmin = !xdis
+	!xmax = !xdis + !width
+	!result = array()
+
+	!goodgaps = array()
+	!compares = array()
+	do !x indices !gaps
+		if !gaps[!x][2] - !gaps[!x][1] ge !width then
+			if !gaps[!x][1] gt !xmin then
+				!compares.append(!gaps[!x][1] - !xmin)
+				--!compares[!x] = !gaps[!x][1] - !xmin
+			elseif !gaps[!x][2] lt !xmax then
+				!compares.append(!xmax - !gaps[!x][2])
+				--!compares[!x] = !xmax - !gaps[!x][2]
+			else
+				!result.append(!gaps[!x])		$* best
+				!result.append(0)
+				return !result
+			endif
+			!goodgaps.append(!gaps[!x])
+		endif
+	enddo
+
+	!indices = !compares.sortedindices()
+	!result.append(!goodgaps[!indices[1]])
+	!result.append(!compares[!indices[1]])
+	return !result
+endmethod
+
+define method .getxgaps(!ymin is real, !ymax is real , !width is real) is array
+	!tolerance = 0.01
+	!xdiss1 = array()
+	!xdiss2 = array()
+	do !x indices !this.xyeles
+		!ele = !this.xyeles[!x]
+		if !ele.ymin gt !ymax - !tolerance or !ele.ymax lt !ymin + !tolerance then
+			skip
+		endif
+		!xdiss1.append(!ele.xmin)
+		!xdiss2.append(!ele.xmax)
+	enddo
+
+	!indices = !xdiss1.sortedindices()
+	!xdiss1.reindex(!indices)
+	!xdiss2.reindex(!indices)
+
+	return !this.mergetwoarrtogaps(!xdiss1,!xdiss2,!width)
+endmethod
+
+define method .mergetwoarrtogaps(!diss1 is array, !diss2 is array, !width is real) is array
+	----------------------
+	----------------------Step 1:merge element
+	!size = !diss1.size()
+	do !x from 1 to !size - 1
+		!y = !x + 1
+		if !diss1[!y] le !diss2[!x] then
+			!diss1[!y] = !diss1[!x]
+			!diss2[!y] = max(!diss2[!x],!diss2[!y])
+			!diss1[!x].delete()
+			!diss2[!x].delete()
+		endif
+	enddo
+
+	!diss1.compress()
+	!diss2.compress()
+
+	!gaps = array()
+	!onegap = array()
+	do !x indices !diss1
+		if !x eq 1 then
+			!onegap[1] = !diss1[1] - !width
+			!onegap[2] = !diss1[1]
+		else
+			!onegap[1] = !diss2[!x - 1]
+			!onegap[2] = !diss1[!x]
+		endif
+		!gaps.append(!onegap)
+	enddo
+	!onegap[1] = !diss2.last()
+	!onegap[2] = !diss2.last() + !width
+	!gaps.append(!onegap)
+	return !gaps
+endmethod
+----------------------
+----------------------Step 2:old way
+define method .getyspace(!width is real,!height is real,!inputxdis is real,!inputydis is real)
+	!tolerance = 0.01
+	!firstydis = !inputydis - !height / 2
+	!firstxdis = !inputxdis - !width / 2
+
+	!ydiss = !this.getonedirdiss(!firstydis, !height , 'y',-100000,100000)
+	----------------------------
+	----------------------------Step 1: got ordered ydiss	from pos
+
+
+	!bestlen = 100000
+	do !ydis values !ydiss
+		if !ydis lt !firstydis then
+			!miny = !ydis - !height
+			!maxy = !ydis
+		else
+			!miny = !ydis
+			!maxy = !ydis + !height
+		endif
+
+		!ygap = abs(!miny - !firstydis)
+		if !ygap gt !bestlen then
+			break
+		endif
+
+		!xdiss = !this.getonedirdiss(!firstxdis,!width,'x',!miny,!maxy)
+		do !xdis values !xdiss
+			if !xdis lt !firstxdis then
+				!minx = !xdis - !width
+				!maxx = !xdis
+			else
+				!minx = !xdis
+				!maxx = !xdis + !width
+			endif
+			!xgap = abs(!minx - !firstxdis)
+			!linelen = sqrt(power(!xgap,2) + power(!ygap,2))
+			if !linelen gt !bestlen then
+				break
+			else
+				!bestlen = !linelen
+				!bestxmin = !minx
+				!bestymin = !miny
+				!bestxmax = !maxx
+				!bestymax = !maxy
+			endif
+		enddo
+	enddo
+endmethod
+
+
+define method .getgaps(!inputdis is real, !dirlen is real ,!dirstring is string , !mindisintheotherdir is real, !maxdisintheotherdir is real) is array
+	!tolerance = 0.01
+	!xdiss1 = array()
+	!xdiss2 = array()
+	do !x indices !this.xyeles
+		!ele = !this.xyeles[!x]
+		if !ele.ymin gt !maxdisintheotherdir - !tolerance or !ele.ymax lt !mindisintheotherdir + !tolerance then
+			skip
+		endif
+		!xdiss1.append(!ele.xmin)
+		!xdiss2.append(!ele.xmax)
+	enddo
+
+	!indices = !xdiss1.sortedindices()
+	!xdiss1.reindex(!indices)
+	!xdiss2.reindex(!indices)
+
+	return !diss
+endmethod
+
+define method .getonedirdiss(!inputdis is real, !dirlen is real ,!dirstring is string , !mindisintheotherdir is real, !maxdisintheotherdir is real) is array
+	!tolerance = 0.01
+	!firstdis = !inputdis - !dirlen / 2
+
+	!diss = array()
+	!compares = array()
+	!diss.append(!firstdis)
+	!compares.append(0)
+
+	do !x indices !this.xyeles
+		!ele = !this.xyeles[!x]
+		if !dirstring eq 'y' then
+			if !ele.xmin gt !maxdisintheotherdir - !tolerance or !ele.xmax lt !mindisintheotherdir + !tolerance then
+				skip
+			endif
+			if !ele.ymax gt !firstdis then
+				!diss.append(!ele.ymax)
+				!compares.append(abs(!ele.ymax - !firstdis))
+			endif
+			if !ele.ymin lt !firstdis then
+				!diss.append(!ele.ymin)
+				!compares.append(abs(!ele.ymin - !firstdis))
+			endif
+		else
+			if !ele.ymin gt !maxdisintheotherdir - !tolerance or !ele.ymax lt !mindisintheotherdir + !tolerance then
+				skip
+			endif
+			if !ele.xmax gt !firstdis then
+				!diss.append(!ele.xmax)
+				!compares.append(abs(!ele.xmax - !firstdis))
+			endif
+			if !ele.xmin lt !firstdis then
+				!diss.append(!ele.xmin)
+				!compares.append(abs(!ele.xmin - !firstdis))
+			endif
+		endif
+	enddo
+
+	!indices = !compares.sortedindices()
+	!diss.reindex(!indices)
+
+	return !diss
+endmethod

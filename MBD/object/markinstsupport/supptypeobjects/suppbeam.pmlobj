@@ -1,0 +1,75 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= October 12nd 2023
+--[Function]:	for bj
+------------------------------------------
+
+--Method:
+--Public method:
+--suppbeam(!item is string) 												$*
+
+--Private method:
+--checkvalid(!mem is any) is boolean										$* check if cata element is valid
+
+
+define object suppbeam
+	member .pos1 is position
+	member .pos2 is position
+	member .axis is line
+	member .poss is array
+	member .endposs is array
+	member .len is real
+	member .lenpos1 is position
+	member .lenpos2 is position
+
+	member .profile is profile
+	member .drnstart is direction
+	member .drnend is direction
+	member .mems is array
+
+	member .upstream is array		$*instore suppconnection of upstream
+	member .downstream is array		$*instore suppconnection of downstream
+
+	member .connections is array	$*instore rest suppconnection which is hard to say upstream or downstream
+
+	--member .pos is position
+endobject
+
+define method .suppbeam(!item is string)
+	!type = type of $!item
+	if !type eq 'SCTN' or !type eq 'GENSEC' then
+		!supportsctn = object supportsctn(!item)
+		$(
+		var !posstring pos ppli na prop 0 of $!item wrt/*
+		!pos1 = !posstring.position()
+		var !posstring pos ppli na prop 1 of $!item wrt/*
+		!pos2 = !posstring.position()
+		!line = !pos1.line(!pos2)
+		$)
+		!this.pos1 = !supportsctn.posstart
+		!this.pos2 = !supportsctn.posend
+		!this.poss = !supportsctn.startposs
+		--!tempdir = !pos1.direction(!pos2)
+		--!ori = z is $!tempdir
+		!ori = !supportsctn.ori
+		!this.profile = object profile(!!getcenpoint(!this.poss),!ori,!this.poss)
+		!this.profile.close()
+		!this.axis = !supportsctn.axis
+		!this.drnstart = !supportsctn.drnstart
+		!this.drnend = !supportsctn.drnend
+		!this.endposs = !supportsctn.endposs
+		!this.len = !supportsctn.length
+		!this.lenpos1 = !supportsctn.lenpos1
+		!this.lenpos2 = !supportsctn.lenpos2
+		--!this.pos = !this.pos1.midpoint(!this.pos2)
+
+		!this.mems = array()
+		!this.mems.append(!item)
+	else
+	endif
+endmethod
+Ê

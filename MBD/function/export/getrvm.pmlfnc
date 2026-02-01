@@ -1,0 +1,79 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= April 24th 2023
+--[Function]:	instore rvm of items into files and return string or merged path of rvm file
+------------------------------------------
+
+define function !!getrvm(!items is array, !remitems is array, !rvmname1 is string) is string
+	if !rvmname1.unset() or !rvmname1 eq '' then
+		!RvmName = 'd:\temprvm.rvm'
+	else
+		!rvmname = !rvmname1
+	endif
+
+
+	----------------------
+	----------------------Step x:from siqiang
+	!!deliveryModelMigration.WriteToRvm(!items,!rvmname)
+	handle any
+	elsehandle none
+		return !rvmname
+	endhandle
+
+	$(
+	repre lev 6
+repre lev pipe 6
+repre lev nozz 6
+repre lev struc 6
+repre tube on
+
+export holes on
+export autocolour on
+export autocolour RESET
+export autocolour ALL EQUI colour 238
+export autocolour ALL FRMW colour 252
+export autocolour ALL SUBS colour 251
+export autocolour ALL STRU colour 235
+export autocolour ALL PIPE colour 231
+export autocolour ALL HVAC colour 232
+export autocolour ALL CFLOOR colour 248
+export autocolour ALL CWALL colour 235
+$)
+
+    export system /expdri.so
+    export file "$!RvmName" over
+    export encoding UTFEIGHT
+    export autocolour reset
+    export autocolour on
+
+	export holes on
+
+	$(
+	if !this.optTubeSett.val eq 1 then
+	 export implied tube into single container
+    elseif !this.optTubeSett.val eq 2 then
+        export implied tube into separate container
+    elseif !this.optTubeSett.val eq 3 then
+        export implied tube into upstream container
+    else
+        export implied tube into downstream container
+	endif
+	$)
+
+    do !item values !items
+        export $!item
+    enddo
+	do !remmodel values !remitems
+        export exclude $!remmodel
+    enddo
+    export finish
+
+	!file = object file(!rvmname)
+	!file.close()
+
+	return !rvmname
+endfunction

@@ -1,0 +1,2421 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= May 12nd 2023
+--[Function]:
+------------------------------------------
+
+--Method:
+--Public method:
+--getpolarelement(!pos is position, !ori is orientation, !input is any)	$*input maybe point,line,arc, aidlin,aidtex,lindim,mlabel,aidpoi,aidcir,aidarc  	$*
+--getpolarelement(!polarSystem is polarSystem, !input is any)   			$*
+
+--Private method:
+--addelement()  															$*add one element to this.elements
+--dealaidarc(!line is line, !arc is arc, !aidarc is line)   				$*aidarc
+--dealaidcir(!line is line, !arc is arc, !aidcir is line)   				$*aidcir
+--dealaidlin(!line is line, !arc is arc, !aidline is any)   				$*aidpoi
+--dealaidpoi(!line is line, !arc is arc, !aidpoi is any)					$*aidtext
+--dealaidtex(!line is line, !arc is arc, !aidtext is line)  				$*arc  1
+--dealarc(!line is line, !arc is arc, !arc1 is arc) 						$*arc  2   split to num lines
+--dealarc(!line is line, !arc is arc, !arc1 is arc, !num is real)   		$*
+--deallindim(!line is line,!arc is arc, !lindim is any) 					$*
+--dealline(!line is line, !arc is arc, !line1 is line)  					$*
+--dealmlabel(!line is line,!arc is arc, !lindim is any) 					$*
+--dealpoint(!line is line, !arc is arc, !pos is position)   				$*
+--dealstring(!line is line, !arc is arc, !textpos is position, !ori is orientation, !cheight is real, !string is string)	$*
+--sort(!a,!b) is array  													$*
+--sort(!a,!b,!c) is array   												$*
+--sort(!a,!b,!c,!d) is array												$*
+
+
+define object getpolarelement
+	---only for calculate process    s
+	member .name is string		$* optional
+	member .objects is array
+
+	member .type is string		$* optional
+	member .startdis is real
+	member .enddis is real
+	member .startangle is real
+	member .endangle is real
+	member .startradius is real
+	member .endradius is real
+	---only for calculate process    e
+
+	member .elements is array			$*array of polarelements
+
+	member .basic is boolean		$*pipe or member, igore the leadline if basic is true
+
+	member .arc is arc				$* from polarsystem
+	member .line is line			$* from polarsystem
+endobject
+
+define method .getpolarelement(!polarSystem is polarSystem, !input is any)
+	!this.getpolarelement(!polarSystem.pos,!polarSystem.ori,!polarSystem.basicRadius,!input,false)
+endmethod
+define method .getpolarelement(!polarSystem is polarSystem, !input is any, !basic is boolean)
+	!this.getpolarelement(!polarSystem.pos,!polarSystem.ori,!polarSystem.basicRadius,!input,basic)
+endmethod
+
+define method .getpolarelement(!pos is position, !ori is orientation, !basicRadius is real, !input is any)
+	!this.getpolarelement(!pos,!ori,!basicRadius,!input,false)
+endmethod
+
+define method .getpolarelement(!pos is position, !ori is orientation, !basicRadius is real, !input is any, !basic is boolean)	$*input maybe point,line,arc, aidlin,aidtex,lindim,mlabel,aidpoi,aidcir,aidarc
+	!otype = !input.objecttype()
+	!this.objects.append(!input)
+	if !otype eq 'STRING' or !otype eq 'DBREF' then			$* name or dbref     lindim aidtext aidarc mlabel and so on
+		!this.name = name of $!input
+		!this.type = type of $!input
+	else													$* object    arc line position
+		!this.type = !otype
+	endif
+	!this.basic = !basic
+	--if !this.type eq 'POLARCYLI' then
+	--q var !basicRadius
+	--endif
+	!line = !pos.line(!pos.offset(!ori.zdir(),10000))
+	!arc = object arc(!pos,!ori,0,360,!basicRadius,true)
+
+	!this.line = !line
+	!this.arc = !arc
+
+	!com = '!this.deal' + !this.type + '(!line,!arc,!input)'
+	$!com
+endmethod
+
+define method .dealArray(!line is line,!arc is arc, !inputarr is array)
+	--arr is array of object with same object type which can be merge into one object in space
+	!otype = !inputarr[1].objecttype()
+	if !otype eq 'STRING' or !otype eq 'DBREF' then			$* name or dbref     lindim aidtext aidarc mlabel and so on
+		!otype = type of $!inputarr[1]
+	endif
+
+
+
+	if !otype eq 'LINDIM' then
+		!this.deallindim(!line,!arc,!inputarr)
+	elseif !otype eq 'MLABEL' then
+		!allarrs = array()
+		!merge = true
+		do !name values !inputarr
+			!mlabelpos = pos of $!name wrt/*
+			!ori = ori of $!name wrt/*
+			!stext = stext of $!name
+			!cheight = cheight of $!name
+
+			!dimpos = pos of first dimpos of $!name wrt/*
+			handle any
+				!dimpos = pos of posref of first dimppt of $!name wrt/*
+				handle any
+				endhandle
+			endhandle
+			--if defined(!dimpos) then
+			--!this.dealline(!line,!arc,!dimpos.line(!mlabelpos))	$*unnecessary
+			--endif
+
+			!arrs = !this.getstringdata(!line,!arc,!mlabelpos,!ori,!cheight,!stext)
+
+			if !arrs.size() gt 1 then
+				!merge = false				$* cant be added in one element
+			endif
+
+
+
+			if !merge.not() then
+				do !arr values !arrs
+					!this.addelement(!arr)
+				enddo
+			else
+				!allarrs.appendarray(!arrs)
+			endif
+		enddo
+		if !allarrs.set() then
+			!arr = !allarrs[1]
+			!this.startdis = !arr[1][1]
+			!this.enddis = !arr[1][2]
+			!this.startangle = !arr[2][1]
+			!this.endangle = !arr[2][2]
+			!this.startradius = !arr[3][1]
+			!this.endradius = !arr[3][2]
+
+			do !x from 2 to !allarrs.size()
+				!arr = !allarrs[!x]
+				!this.startdis = min(!this.startdis,!arr[1][1])
+				!this.enddis = max(!this.enddis,!arr[1][2])
+				!this.startangle = min(!this.startangle,!arr[2][1])
+				!this.endangle = max(!this.endangle,!arr[2][2])
+				!this.startradius = min(!this.startradius,!arr[3][1])
+				!this.endradius = max(!this.endradius,!arr[3][2])
+			enddo
+			!this.addelement()
+		endif
+	elseif !otype eq 'AIDLIN' then
+		do !oneaidlin values !inputarr
+			!this.dealaidlin(!line,!arc,!oneaidlin)
+		enddo
+	endif
+endmethod
+
+define method .addelement(!arr is array)
+	!this.startdis = !arr[1][1]
+	!this.enddis = !arr[1][2]
+	!this.startangle = !arr[2][1]
+	!this.endangle = !arr[2][2]
+	!this.startradius = !arr[3][1]
+	!this.endradius = !arr[3][2]
+	!this.addelement()
+endmethod
+
+define method .addelement()
+	!oneele = object polarelement()
+	!oneele.name = !this.name
+	!oneele.type = !this.type
+	!oneele.startdis = !this.startdis
+	!oneele.enddis = !this.enddis
+	!oneele.startangle = !this.startangle
+	!oneele.endangle = !this.endangle
+	!oneele.startradius = !this.startradius
+	!oneele.endradius = !this.endradius
+	!oneele.basic = !this.basic
+
+	!tolerance = 0.01
+	if !oneele.startdis eq !oneele.enddis then
+		!oneele.startdis = !oneele.startdis - !tolerance
+		!oneele.enddis = !oneele.enddis + !tolerance
+	endif
+	if !oneele.startangle eq !oneele.endangle then
+		!oneele.startangle = !oneele.startangle - !tolerance
+		!oneele.endangle = !oneele.endangle + !tolerance
+	endif
+	if !oneele.startradius eq !oneele.endradius then
+		!oneele.startradius = !oneele.startradius - !tolerance
+		!oneele.endradius = !oneele.endradius + !tolerance
+	endif
+
+	!oneele.arc = !this.arc
+	!oneele.line = !this.line
+
+	!this.elements.append(!oneele)
+endmethod
+
+define method .getOnePointData(!line is line, !arc is arc, !pos is position) is array
+	!dis = !!suidirdis(!line.startposition,!line.direction(),!pos)
+	!radius = !line.distance(!pos)
+
+	if !radius lt 1 then
+		!angle = 1000000
+	else
+		!angle = !arc.near(!pos)
+	endif
+
+	!result = array()
+	!result.append(!dis)
+	!result.append(!angle)
+	!result.append(!radius)
+	return !result
+endmethod
+
+define method .getPointsData(!line is line, !arc is arc, !poss is array) is array	$*angles must inside !x to !x + 180
+	--return !this.getpointsData(!line,!arc,!poss,true)
+	--endmethod
+	--define method .getPointsData(!line is line, !arc is arc, !poss is array, !inside180 is boolean) is array
+	!diss = array()
+	!angles = array()
+	!radiuss = array()
+
+	do !pos values !poss
+		!arr = !this.getOnePointData(!line,!arc,!pos)
+
+		!dis = !arr[1]
+		!angle = !arr[2]
+		!radius = !arr[3]
+		!diss.append(!dis)
+		--!angles.append(!angle)
+		if !angle ne 1000000 then
+			!angles.append(!angle)
+		endif
+		!radiuss.append(!radius)
+	enddo
+
+	!diss.sort()
+	!angles.sort()
+	!radiuss.sort()
+
+	if !angles.size() ge 2 then
+		!maxgap = -1
+		do !x indices !angles
+			if !x ne 1 then
+				!gap = !angles[!x] - !angles[!x - 1]
+			else
+				!gap = !angles[!x] - !angles.last() + 360	$*notice: special
+			endif
+			if !gap gt !maxgap then
+				!gapindex = !x
+				!maxgap = !gap
+			endif
+		enddo
+
+		if !gapindex ne 1 then
+
+			do !x from !gapindex to !angles.size()
+				!angles[!x] = !angles[!x] - 360
+			enddo
+			!angles.sort()
+
+		endif
+	endif
+
+	$(
+	!formerangles = !angles
+	if !inside180 then
+		do !x from 2 to !angles.size()
+			if !angles[!x] eq 1000000 then
+				skip
+			endif
+			if !angles[!x] - !angles[1] gt 180 then
+				!angles[!x] = !angles[!x] - 360
+			endif
+		enddo
+	endif
+
+
+
+	!angles.sort()
+	$)
+
+	!disarr[1] = !diss[1]
+	!disarr[2] = !diss.last()
+
+	!anglearr[1] = !angles[1]
+	handle any
+		!anglearr[1] = 0
+		!anglearr[2] = 0
+
+	elsehandle none
+		!anglearr[2] = !angles.last()
+	endhandle
+
+
+
+	$(
+	do !x from !angles.size() to 1 by -1
+		if !angles[!x] ne 1000000 then
+			!anglearr[2] = !angles[!x]
+			break
+		endif
+	enddo
+	$)
+	--!anglearr[2] = !angles.last()
+
+	--if abs(!anglearr[1] - !anglearr[2]) gt 180 then
+
+	--endif
+
+	!radiusarr[1] = !radiuss[1]
+	!radiusarr[2] = !radiuss.last()
+
+
+	!result = array()
+	!result.append(!disarr)
+	!result.append(!anglearr)
+	!result.append(!radiusarr)
+	return !result
+endmethod
+
+
+--lindim mlabel aidtex aidlin aidarc aidcir aidpoi
+define method .dealpoint(!line is line, !arc is arc, !pos is position)
+	!poss = array()
+	!poss.append(!pos)
+	!resultarr = !this.getPointsData(!line,!arc,!poss)
+	!this.addelement(!resultarr)
+endmethod
+
+define method .getlinedata(!line is line, !arc is arc, !line1 is line) is array			$* array of resultarr
+
+	!result = array()
+	!angle = !line1.direction().angle(!line.direction())
+	if !angle lt 0.1 or !angle gt 179.9 then
+
+
+		!dirdis1 = !!suidirdis(!line.startposition,!line.direction(),!line1.startposition)
+		!dirdis2 = !!suidirdis(!line.startposition,!line.direction(),!line1.endposition)
+		!disarr = array()
+		!disarr[1] = min(!dirdis1,!dirdis2)
+		!disarr[2] = max(!dirdis1,!dirdis2)
+
+		!anglearr = array()
+		!anglearr[1] = 0
+		!anglearr[2] = 360
+
+		!radiusarr = array()
+		!radiusarr[1] = 0
+		!radiusarr[2] = 0.1
+
+
+		!oneresult = array()
+		!oneresult.append(!disarr)
+		!oneresult.append(!anglearr)
+		!oneresult.append(!radiusarr)
+		!result.append(!oneresult)
+		return !result
+	else
+		!interpos = !line1.intersection(!line)
+		if !line1.distance(!line) eq 0 and !line1.onprojected(!interpos) then
+			if !interpos.distance(!line1.startposition) gt 0.1 and !interpos.distance(!line1.endposition) gt 0.1 then
+				!result.appendarray(!this.getlinedata(!line,!arc,!line1.startposition.line(!interpos)))
+				!result.appendarray(!this.getlinedata(!line,!arc,!line1.endposition.line(!interpos)))
+				return !result
+			endif
+		endif
+		if !line.distance(!line1.startposition) lt 0.1 then
+			!pos1 = !line1.startposition.offset(!line1.direction(),0.1)
+		else
+			!pos1 = !line1.startposition
+		endif
+
+		if !line.distance(!line1.endposition) lt 0.1 then
+			!pos2 = !line1.endposition.offset(!line1.direction(), - 0.1)
+		else
+			!pos2 = !line1.endposition
+		endif
+
+		!tempposs = array()
+		!tempposs.append(!pos1)
+		!tempposs.append(!pos2)
+		if defined(!interpos) and !line1.onprojected(!interpos) and !interpos.distance(!line1.startposition) gt 0.1 and !interpos.distance(!line1.endposition) gt 0.1 then
+			--get nearest point from line
+			if !line.distance(!interpos) lt 0.1 then
+				!pos3 = !interpos.offset(!line1.direction(),0.1)
+			else
+				!pos3 = !interpos
+			endif
+			!tempposs.append(!pos3)
+		endif
+
+		--q var !tempposs
+
+		!resultarr = !this.getPointsData(!line,!arc,!tempposs)
+
+
+
+		!result.append(!resultarr)
+		return !result
+	endif
+endmethod
+
+define method .dealline(!line is line, !arc is arc, !line1 is line)
+	!arrs = !this.getlinedata(!line,!arc,!line1)
+
+	do !resultarr values !arrs
+		!this.addelement(!resultarr)
+	enddo
+endmethod
+
+define method .sortangle(!angle1 is real, !angle2 is real) is array
+	if !angle1 ge !angle2 then
+		!max = !angle1
+		!min = !angle2
+	else
+		!max = !angle2
+		!min = !angle1
+	endif
+	if abs(!max - !min) gt 180 then
+		!max = !max - 360
+		!aa = !min
+		!min = !max
+		!max = !aa
+	endif
+	!arr = array()
+	!arr.append(!min)
+	!arr.append(!max)
+	return  !arr
+endmethod
+
+define method .sort(!a is real,!b is real) is array
+	!arr[1] = !a
+	!arr[2] = !b
+	!arr.sort()
+	return !arr
+endmethod
+
+define method .sort(!a is real,!b is real,!c is real) is array
+	!arr[1] = !a
+	!arr[2] = !b
+	!arr[3] = !c
+	!arr.sort()
+	return !arr
+endmethod
+
+define method .sort(!a is real,!b is real,!c is real,!d is real) is array
+	!arr[1] = !a
+	!arr[2] = !b
+	!arr[3] = !c
+	!arr[4] = !d
+	!arr.sort()
+	return !arr
+endmethod
+define method .dealarc(!line is line, !arc is arc, !arc1 is arc)
+	!num = 6
+	!this.dealarc(!line, !arc, !arc1, !num)
+endmethod
+define method .getarcdata(!line is line, !arc is arc, !arc1 is arc, !num is real) is array
+	!result = array()
+
+	if !arc1.startangle eq !arc1.endangle or !arc1.startangle eq !arc1.endangle + 360 or !arc1.startangle eq !arc1.endangle - 360 then	$*circle
+		!iscircle = true
+	else
+		!iscircle = false
+	endif
+	--!through = false
+	--q var !line !arc1
+	if (!arc1.orientation.zdir().angle(!line.direction()) - 90) lt 0.01 then
+		!plane = object plane(!arc1.position,!arc1.orientation)
+		if !line.startposition.distance(!plane) lt 0.01 then
+			!onposs = array()
+
+			!points = !line.intersections(!arc1)
+			do !point values !points
+				if !arc1.onprojected(!point) and !line.on(!point) and !line.onprojected(!point) then
+					!onposs.append(!point)
+					--!through = true
+					--break
+				endif
+			enddo
+			if !onposs.set() then
+				if !iscircle then	$*circle
+					if !onposs.size() eq 2 then
+						--!through = true
+						!arc11 = !arc1
+						!arc11.startangle = !arc11.near(!onposs[1])
+						!arc11.endangle = !arc11.near(!onposs[2])
+
+						!arc12 = !arc1
+						!arc12.startangle = !arc11.near(!onposs[2])
+						!arc12.endangle = !arc11.near(!onposs[1])
+
+						!result.appendarray(!this.getarcdata(!line, !arc, !arc11, !num))
+						--!this.dealarc(!line, !arc, !arc12, !num)
+						return !result
+					endif
+				else	$*normal arc (not circle)
+					!startpos = !arc1.angleposition(!arc1.startangle)
+					!endpos = !arc1.angleposition(!arc1.endangle)
+					do !x indices !onposs
+						!pos = !onposs[!x]
+						if !pos.distance(!startpos) lt 0.01 or !pos.distance(!endpos) le 0.01 then
+							!onposs[!x].delete()
+						endif
+					enddo
+					!onposs.compress()
+					if !onposs.set() then
+						--!through = true
+
+						!arc11 = !arc1
+						!arc11.endangle = !arc11.near(!onposs[1])
+
+						!arc12 = !arc1
+						!arc12.startangle = !arc12.near(!onposs[1])
+
+						!result.appendarray(!this.getarcdata(!line, !arc, !arc11, !num))
+						!result.appendarray(!this.getarcdata(!line, !arc, !arc12, !num))
+						return !result
+					endif
+				endif
+			endif
+		endif
+	endif
+
+
+	!angle = !arc1.endangle - !arc1.startangle
+	if !angle lt 0 then
+		!angle = !angle + 360
+	endif
+
+	!perangle = !angle / !num
+	!poss = array()
+	do !x from 0 to !num
+		!posangle = !arc1.startangle + !x * !perangle
+		--!dir = !arc1.angledirection(!posangle)
+		--!pos = !arc1.position.offset(!dir,!arc1.radius)
+		!pos = !arc1.angleposition(!posangle)
+		!poss.append(!pos)
+	enddo
+
+	!tempplane = object plane(!arc1.position,!arc1.orientation)
+	!interpos = !line.intersection(!tempplane)	$*202309081043
+	handle any
+	-----------------------
+	-----------------------because this situation is considered above
+		!inside180 = true
+	elsehandle none
+		if !iscircle then
+			if !interpos.distance(!arc1.position) lt !arc1.radius then	$*202309081043
+			--if !interpos.distance(!arc.position) lt !arc1.radius then
+				!inside180 = false
+			else
+				!inside180 = true
+			endif
+		else
+			!profile = object profile(!arc1.position,!arc1.orientation,!poss)
+			!profile.close()
+
+			if !!posinprofile(!interpos,!profile) then
+			--if !profile.iswithin(!interpos) then
+				!inside180 = false
+			else
+				!inside180 = true
+			endif
+		endif
+	endhandle
+
+
+	--!resultarr = !this.getPointsData(!line,!arc,!poss,!inside180)		$* no need
+
+	!resultarr = !this.getPointsData(!line,!arc,!poss)
+
+	if !inside180.not() and !iscircle then	$*circle
+		!resultarr[2][1] = 0
+		!resultarr[2][1] = 360
+	endif
+
+	!result.append(!resultarr)
+	return !result
+endmethod
+define method .dealarc(!line is line, !arc is arc, !arc1 is arc, !num is real)
+	!arr = !this.getarcdata(!line,!arc,!arc1,!num)
+	do !resultarr values !arrs
+		!this.addelement(!resultarr)
+	enddo
+
+	$(
+	do !x from 1 to !num
+		if !x ne !num then
+			!perline = !poss[!x].line(!poss[!x + 1])
+		else
+			!perline = !poss[!x].line(!poss[1])
+		endif
+		!this.dealline(!line,!arc,!perline)
+	enddo
+	$)
+
+
+	$(
+	-----old 202305171138
+	!paralleline = !arc1.position.line(!arc1.position.offset(!line.direction(),1000))	$* templine go through the centre or circle
+
+	label /paralleagain
+	!points = !paraleline.intersection(!arc1)
+	if !points.size() eq 2 then
+		!dis1 = !!suidirdis(!line.startposition,!line.direction(),!points[1])
+		!dis2 = !!suidirdis(!line.startposition,!line.direction(),!points[2])
+		!temparr = !this.sort(!dis1,!dis2)
+		!ynearpos = !temparr[1]
+		!yfarpos = !temparr[2]
+	elseif !points.size() eq 1 then
+		!paralleline = !line.near(!arc1.position).line(!arc1.position)
+		golabel /paralleagain
+	endif
+
+	!vertline = !line.near(!arc1.position).line(!arc1.position)
+	!points2 = !vertline.intersections(!arc1)
+	if !points2[1].distance(!line) le !points2[2].distance(!line) then
+		!rnearpos = !points[1]
+		!rfarpos = !points[2]
+	else
+		!rnearpos = !points[2]
+		!rfarpos = !points[1]
+	endif
+
+
+	!points = !line.intersections(!arc1)													$* maybe none / one point / two points
+	!pos1 = !points[1]
+	handle any																				$* 1 no intersection point
+		!templine = !arc1.position.line(!arc1.position.offset(!line.direction(),1000))	$* templine go through the centre or circle
+		!points = !templine.intersection(!arc1)
+		!dis1 = !!suidirdis(!line.startposition,!line.direction(),!points[1])
+		!dis2 = !!suidirdis(!line.startposition,!line.direction(),!points[2])
+		!temparr = !this.sort(!dis1,!dis2)
+		!this.startdis = !temparr[1]
+		!this.enddis = !temparr[2]
+
+		!templine = !line.near(!arc1.position).line(!arc1.position)
+		!points2 = !templine.intersections(!arc1)
+
+		if !points2[1].distance(!line) le !points2[2].distance(!line) then
+			!nearpos = !points[1]
+			!farpos = !points[2]
+		else
+			!nearpos = !points[2]
+			!farpos = !points[1]
+		endif
+
+		!this.startradius = !line.near(!nearpos)
+		!this.endradius = !line.near(!farpos)
+
+		!tempdir = !templine.direction().orthogonal(!nearpos.direction(!farpos))
+		handle any				$* line and ar1 at the samle plane
+			!this.startangle = !arc.near(!arc1.position)
+			!this.endangle = !this.endangle
+		elsehandle none			$* line and ar1 not at the samle plane
+			if !tempdir.angle(!line.direction) lt 1 then
+				!this.startangle = !arc.near(!nearpos)
+				!this.endangle = !arc.near(!farpos)
+			else
+				!this.startangle = !arc.near(!farpos)
+				!this.endangle = !arc.near(!nearpos)
+			endif
+		endhandle
+		!this.addelement()
+		return
+	endhandle
+	!pos2 = !points[2]
+	handle any																				$* 2 one intersection point
+		!templine = !arc1.position.line(!arc1.position.offset(!line.direction(),1000))	$* templine go through the centre or circle
+		!points = !templine.intersection(!arc1)
+		!dis1 = !!suidirdis(!line.startposition,!line.direction(),!points[1])
+		!dis2 = !!suidirdis(!line.startposition,!line.direction(),!points[2])
+		!temparr = !this.sort(!dis1,!dis2)
+		!this.startdis = !temparr[1]
+		!this.enddis = !temparr[2]
+
+		!this.startangle = !arc.near(!arc1.position)
+		!this.endangle = !this.endangle
+		!tempdis = !line.distance(!arc1.position)
+		!this.startradius = 0
+		!this.endradius = !tempdis + !arc1.radius
+		!this.addelement()
+		return
+	endhandle
+
+	$* 3 two intersection points
+	!dis1 = !!suidirdis(!line.startposition,!line.direction(),!pos1)
+	!dis2 = !!suidirdis(!line.startposition,!line.direction(),!pos2)
+	!temparr = !this.sort(!dis1,!dis2)
+
+	!this.startdis = !temparr[1]
+	!this.enddis = !temparr[2]
+
+
+
+	!tempdis = !line.distance(!arc1.position)
+	if !tempdis eq 0 then								$* line go through the centre point of circle
+		!this.startradius = 0
+		!this.endradius = !arc1.radius
+
+
+		!tempdir = !pos1.direction(!pos2)
+		!tempangle = !tempdir.angle(!line.direction())
+		if !tempangle lt 0.01 or !tempangle gt 179.99 then					$*paralle
+			$* two polarelement would be generated
+			!tempdir = !line.direction().orthogonal(!arc1.orientation.zdir())
+			do !x from 1 to 2
+				if !x eq 1 then
+					!angle = !arc.angleposition(!arc1.position.offset(!tempdir,1000))
+				else
+					!angle = !arc.angleposition(!arc1.position.offset(!tempdir,-1000))
+				endif
+				!this.startangle = !angle
+				!this.endangle = !angle
+				!this.addelement()
+			enddo
+			return
+		else																$* not paralle
+			!this.startangle = 0
+			!this.endangle = 360
+			!this.addelement()
+			return
+		endif
+	else												$* line not go through the centre point
+		!nearpos = !line.near(!arc1.position)
+		!tempdir = !nearpos.direction(!arc1.position)
+		!templine = !arc1.position.line(!arc.position.offste(!tempdir,1000))
+		!temppoints = !templine.intersections(!arc1)
+		!pos3 = !temppoints[1]
+		!pos4 = !temppoints[2]
+
+		!temparr = !this.sort(!line.distance(!pos1),!line.distance(!pos2),!line.distance(!pos3),!line.distance(!pos4))
+
+
+
+		if !line.on(!pos1) or !line.on(!pos2) then					$* line touch the circle
+
+			if !line.on(!pos1) and !line.on(!pos2) then				$* two intersection points
+
+				!dis1 = !!suidirdis(!line.startposition,!line.direction(),!pos1)
+				!dis2 = !!suidirdis(!line.startposition,!line.direction(),!pos2)
+				!temparr = !this.sort(!dis1,!dis2)
+				if !pos3.distance(!arc1.position) le !pos4.distance(!arc1.position) then
+					!nearpos = !pos3
+					!farpos = !pos4
+				else
+					!nearpos = !pos4
+					!farpos = !pos3
+				endif
+
+				!this.startdis = !temparr[1]
+				!thie.enddis = !temparr[2]
+				!this.startangle = !arc.angleposition(!nearpos)
+				!this.endangle = !this.startangle
+				!this.startradius = 0
+				!this.endradius = !line.distance(!nearpos3)
+				!this.addelement()
+
+				!tempdis = !!suidirdis(!line.startposition,!line.direction(),!arc1.position)
+				!this.startdis = !tempdis - !arc1.radius
+				!thie.enddis = !tempdis + !arc1.radius
+				!this.startangle = !arc.angleposition(!farpos)
+				!this.endangle = !this.startangle
+				!this.startradius = 0
+				!this.endradius = !line.distance(!farpos)
+				!this.addelement()
+
+				return
+			else											$* one intersection point
+				!this.startradius = 0
+			endif
+		else
+			!nearpos3 = !line.near(!pos3)
+			!nearpos4 = !line.near(!pos4)
+			!tempdir1 = !pos3.direction(!nearpos3)
+			!tempdir2 = !pos4.direction(!nearpos4)
+			if !tempdir1.angle(!tempdir2) gt 90 then
+				!this.startradius = 0
+				!this.startangle = 0
+				!this.endangle = 360
+
+				!this.addelement()
+				return
+			else
+				!this.startradius = !temparr[1]
+			endif
+		endif
+		!this.endradius = !temparr.last()
+
+
+	endif
+	$)
+endmethod
+
+
+define method .dealaidpoi(!line is line, !arc is arc, !aidpoi is any)
+	!pos = pos of $!aidpoi wrt/*
+	!this.dealpoint(!line,!arc,!pos)
+endmethod
+
+define method .dealaidlin(!line is line, !arc is arc, !aidline is any)
+	!pos = pos of $!aidline wrt/*
+	!ori = ori of $!aidline wrt/*
+	!len = zlen of $!aidline wrt/*
+	!line1 = !pos.line(!pos.offset(!ori.zdir(),!len))
+	!this.dealline(!line,!arc,!line1)
+endmethod
+
+define method .dealaidtex(!line is line, !arc is arc, !aidtext is any)
+	!textpos = pos of $!aidtext wrt/*
+	!ori = ori of $!aidtext wrt/*
+	!cheight = cheight of $!aidtext wrt/*
+	!text = stext of $!aidtext
+	!this.dealstring(!line,!arc,!textpos,!ori,!cheight,!text)
+endmethod
+
+define method .dealpolarcyli(!line is line, !arc is arc, !polarcyli is polarcyli)
+	--q var !arc.radius
+	--202312111151 ¸ÄÁËÒ»Ð©·½·¨£¬¼ÆËã¸ü¾«È·£¬µ«ÊÇ¸üºÄÊ±¼ä£¬Ã»°ì·¨£¬ÒªÏë×ö¸üºÃµÄ±ÜÈÃ£¬ÐèÒªÎþÉüÊ±¼ä
+	!cylizdir = !polarcyli.ori.zdir()
+	!pos1 = !polarcyli.pos.offset(!cylizdir, - !polarcyli.height / 2)
+	!pos2 = !polarcyli.pos.offset(!cylizdir, !polarcyli.height / 2)
+
+	!zdir = !line.direction()
+	!tempdir1 = !zdir.orthogonal(!cylizdir)
+	handle any
+		--Ô²ÖùÖáÏßÓëlineÍ¬·½Ïò
+		!dis1 = !!suidirdis(!line.startposition,!line.direction(),!pos1)
+		!dis2 = !!suidirdis(!line.startposition,!line.direction(),!pos2)
+		!temparr = !this.sort(!dis1,!dis2)
+
+		!this.startdis = !temparr[1]
+		!this.enddis = !temparr[2]
+
+		!tempdis = !line.distance(!polarcyli.pos)
+		if !tempdis lt !polarcyli.diameter / 2 then
+			--Í¬Öá
+
+			if !tempdis lt !polarcyli.diameter / 10 then	$*Ô²ÖùÖÐÐÄÏß¼¸ºõÓëÖáÖØºÏ
+				!this.startangle = 0
+				!this.endangle = 360
+				!this.startradius = 0
+				!this.endradius = !tempdis + !polarcyli.diameter / 2
+				!this.addelement()
+			else
+
+				!partnum = 12
+				!partangle = 360 / !partnum
+				!cyliarc = object arc(!polarcyli.pos,!polarcyli.ori,0,360,!polarcyli.diameter / 2,true)
+				!linenearpos = !line.near(!polarcyli.pos)
+				!copyarc = !arc
+				!copyarc.position = !linenearpos
+				do !x from 1 to !partnum
+					!this.startangle = (!x - 1) * !partangle
+					!this.endangle = !x * !partangle
+					!this.startradius = 0
+
+
+					!templine1 = !linenearpos.line(!copyarc.angleposition(!this.startangle))
+					!templine2 = !linenearpos.line(!copyarc.angleposition(!this.endangle))
+					!interpoint1s = !templine1.intersections(!cyliarc)
+					!tempdir = !linenearpos.direction(!interpoint1s[1])
+					handle any
+						!tempdir = !linenearpos.direction(!interpoint1s[2])
+						if !tempdir.angle(!templine1.direction()) lt 90 then
+							!interpoint1 = !interpoint1s[2]
+						else
+							!interpoint1 = !interpoint1s[1]
+						endif
+					elsehandle none
+						if !tempdir.angle(!templine1.direction()) lt 90 then
+							!interpoint1 = !interpoint1s[1]
+						else
+							!interpoint1 = !interpoint1s[2]
+						endif
+					endhandle
+					!interpoint2s = !templine2.intersections(!cyliarc)
+					!tempdir = !linenearpos.direction(!interpoint2s[1])
+					handle any
+						!tempdir = !linenearpos.direction(!interpoint2s[2])
+						if !tempdir.angle(!templine1.direction()) lt 90 then
+							!interpoint2 = !interpoint2s[2]
+						else
+							!interpoint2 = !interpoint2s[1]
+						endif
+					elsehandle none
+						if !tempdir.angle(!templine2.direction()) lt 90 then
+							!interpoint2 = !interpoint2s[1]
+						else
+							!interpoint2 = !interpoint2s[2]
+						endif
+					endhandle
+					!this.endradius = max(!line.distance(!interpoint1),!line.distance(!interpoint2))
+					!this.addelement()
+				enddo
+			endif
+		else
+			--²»Í¬Öá,Í¬·½Ïò
+			--Õâ¸ö½üËÆ¼ÆËãÎÊÌâ²»´ó  20231211
+			!tempangle = asin(!polarcyli.diameter / 2 / !tempdis)
+			!angle = !arc.near(!polarcyli.pos)
+			!this.startangle = !angle - !tempangle
+			!this.endangle = !angle + !tempangle
+
+			!this.startradius = !tempdis - !polarcyli.diameter / 2
+			!this.endradius = !this.startradius + !polarcyli.diameter
+			!this.addelement()
+		endif
+
+	elsehandle none
+	--Ô²ÖùÖáÏßÓëline·½Ïò²»Í¬Ê±
+		$(
+		!through = false
+		!temppos1 = !polarcyli.pos.offset(!cylizdir, - !polarcyli.height / 2)
+		!temppos2 = !polarcyli.pos.offset(!cylizdir,!polarcyli.height / 2)
+		!axis = !temppos1.line(!temppos2)
+		if !line.distance(!axis) lt !polarcyli.diameter / 2 then
+			!interpos = !axis.intersection(!line)
+			if !axis.onprojected(!interpos) and !temppos1.distance(!interpos) gt 1 and !temppos2.distance(!interpos)gt 1 then
+				!through = true
+			else
+
+				!plane = object plane(!temppos1,!polarcyli.ori)
+				!interpos = !line.intersection(!plane)
+				handle any
+
+					--!plane = object plane(!temppos2,!polarcyli.ori)
+					--!interpos = !line.intersection(!plane)
+					--if !interpos.distance(!temppos2) lt !polarcyli.diameter / 2 then
+					--	!through = true
+					--endif
+
+
+				elsehandle none
+					if !interpos.distance(!temppos1) lt !polarcyli.diameter / 2 then
+						!through = true
+					else
+						!plane = object plane(!temppos2,!polarcyli.ori)
+						!interpos = !line.intersection(!plane)
+						if !interpos.distance(!temppos2) lt !polarcyli.diameter / 2 then
+							!through = true
+						endif
+					endif
+				endhandle
+			endif
+		endif
+		$)
+		--Ö±½ÓÓÃÔ²ÖùÉÏ°´½Ç¶È·Ö¿ªµÄÏß¶ÎÀ´´úÌæ
+		!tempori = x is $!tempdir1 and z is $!cylizdir
+		!xdir = !tempori.xdir()
+		!ydir = !tempori.ydir()
+		!zdir = !tempori.zdir()
+
+		--!radius = !arc.radius
+		!radius = !polarcyli.diameter / 2
+
+
+		!lines = array()
+
+		!num = max(8,nint(12 * !polarcyli.diameter / 2 / !this.arc.radius))
+
+		--!num = !num.string().upcase().before('MM').before('IN').real()
+		!num = !num.value()
+		--$p $!num
+		--!num = 12
+		!eachangle = 360 / !num
+		!cyliarc = object arc(!polarcyli.pos,!tempori,0,360,!radius,true)
+		do !x from 1 to !num
+			!angle = !x * !eachangle
+
+			!anglepos = !cyliarc.angleposition(!angle)
+			!oneline = !anglepos.offset(!zdir, - !polarcyli.height / 2).line(!anglepos.offset(!zdir, !polarcyli.height / 2))
+			!lines.append(!oneline)
+		enddo
+
+		!this.deallines(!line, !arc, !lines)
+
+		return
+	endhandle
+
+
+return
+
+--old way
+	--q var !arc.radius
+	!cylizdir = !polarcyli.ori.zdir()
+	!pos1 = !polarcyli.pos.offset(!cylizdir, - !polarcyli.height / 2)
+	!pos2 = !polarcyli.pos.offset(!cylizdir, !polarcyli.height / 2)
+
+	!zdir = !line.direction()
+	!tempdir1 = !zdir.orthogonal(!cylizdir)
+	handle any
+		--Ô²ÖùÖáÏßÓëlineÍ¬·½Ïò
+		!dis1 = !!suidirdis(!line.startposition,!line.direction(),!pos1)
+		!dis2 = !!suidirdis(!line.startposition,!line.direction(),!pos2)
+		!temparr = !this.sort(!dis1,!dis2)
+
+		!this.startdis = !temparr[1]
+		!this.enddis = !temparr[2]
+
+		!tempdis = !line.distance(!polarcyli.pos)
+		if !tempdis lt !polarcyli.diameter / 2 then
+			--Í¬Öá
+			!this.startangle = 0
+			!this.endangle = 360
+			!this.startradius = 0
+			!this.endradius = !tempdis + !polarcyli.diameter / 2
+		else
+			--²»Í¬Öá,Í¬·½Ïò
+
+			!tempangle = asin(!polarcyli.diameter / 2 / !tempdis)
+			!angle = !arc.near(!polarcyli.pos)
+			!this.startangle = !angle - !tempangle
+			!this.endangle = !angle + !tempangle
+
+			!this.startradius = !tempdis - !polarcyli.diameter / 2
+			!this.endradius = !this.startradius + !polarcyli.diameter
+		endif
+		!this.addelement()
+	elsehandle none
+		--$(
+		!through = false
+		!temppos1 = !polarcyli.pos.offset(!cylizdir, - !polarcyli.height / 2)
+		!temppos2 = !polarcyli.pos.offset(!cylizdir,!polarcyli.height / 2)
+		!axis = !temppos1.line(!temppos2)
+		if !line.distance(!axis) lt !polarcyli.diameter / 2 then
+			!interpos = !axis.intersection(!line)
+			if !axis.onprojected(!interpos) and !temppos1.distance(!interpos) gt 1 and !temppos2.distance(!interpos)gt 1 then
+				!through = true
+			else
+
+				!plane = object plane(!temppos1,!polarcyli.ori)
+				!interpos = !line.intersection(!plane)
+				handle any
+					$(
+					!plane = object plane(!temppos2,!polarcyli.ori)
+					!interpos = !line.intersection(!plane)
+					if !interpos.distance(!temppos2) lt !polarcyli.diameter / 2 then
+						!through = true
+					endif
+					$)
+
+				elsehandle none
+					if !interpos.distance(!temppos1) lt !polarcyli.diameter / 2 then
+						!through = true
+					else
+						!plane = object plane(!temppos2,!polarcyli.ori)
+						!interpos = !line.intersection(!plane)
+						if !interpos.distance(!temppos2) lt !polarcyli.diameter / 2 then
+							!through = true
+						endif
+					endif
+				endhandle
+			endif
+		endif
+		!tempori = x is $!tempdir1 and z is $!cylizdir
+		!xdir = !tempori.xdir()
+		!ydir = !tempori.ydir()
+		!zdir = !tempori.zdir()
+
+		--!radius = !arc.radius
+		!radius = !polarcyli.diameter / 2
+
+
+		!lines = array()
+
+		!num = max(8,nint(12 * !polarcyli.diameter / 2 / !this.arc.radius))
+
+		--!num = !num.string().upcase().before('MM').before('IN').real()
+		!num = !num.value()
+		--$p $!num
+		--!num = 12
+		!eachangle = 360 / !num
+		!cyliarc = object arc(!polarcyli.pos,!tempori,0,360,!radius,true)
+		do !x from 1 to !num
+			!angle = !x * !eachangle
+
+			!anglepos = !cyliarc.angleposition(!angle)
+			!oneline = !anglepos.offset(!zdir, - !polarcyli.height / 2).line(!anglepos.offset(!zdir, !polarcyli.height / 2))
+			!lines.append(!oneline)
+		enddo
+		!this.deallines(!line, !arc, !lines)
+
+		return
+		--$)
+
+		$(
+
+		!cutlens = array()
+		!sepnum = 3
+		do !x from 1 to !sepnum
+			if !x eq 1 then
+				!cutlen = !arc.radius
+			elseif !x eq 2 then
+				!cutlen = 2 * !arc.radius
+			elseif !x eq 3 then
+				!cutlen = 4 * !arc.radius
+			elseif !x eq 4 then
+				!cutlen = 7 * !arc.radius
+			elseif !x eq 5 then
+				!cutlen = 10 * !arc.radius
+			elseif !x eq 6 then
+				!cutlen = 15 * !arc.radius
+			endif
+			!cutlens.append(!cutlen)
+		enddo
+
+		!points1 = array()
+		!points2 = array()
+
+		!tempdir = !line.direction().orthogonal(!polarcyli.ori.zdir())
+		!tempdir = !tempdir.orthogonal(!line.direction())
+
+
+		do !x from 1 to 3
+			!cutlen = !cutlens[!x]
+			!cutarc = object arc(!arc.position,!arc.orientation,0,360,!cutlen,true)
+
+
+
+			do !oneline values !lines
+				!points = !oneline.intersections(!cutarc)
+				do !point values !points
+					if !oneline.onprojected(!point) then
+						if !cutarc.position.direction(!point).angle(!tempdir) le 90 then
+							if undefined(!points1[!x]) then
+								!points1[!x] = array()
+							endif
+							!points1[!x].append(!oneline.near(!point))
+						else
+							if undefined(!points2[!x]) then
+								!points2[!x] = array()
+							endif
+							!points2[!x].append(!oneline.near(!point))
+						endif
+					endif
+				enddo
+			enddo
+		enddo
+
+
+
+		if !points1.set() then
+			!last1 = !points1.last()
+		else
+			!last1 = array()
+		endif
+		if !points2.set() then
+			!last2 = !points2.last()
+		else
+			!last2 = array()
+		endif
+
+
+		--$p 1
+		--q var !last1
+		--		!last2
+
+		-----add former points to generate a volume
+		--$ (
+		do !x from !sepnum to 2 by -1
+			if defined(!points1[!x]) and defined(!points1[!x - 1]) then
+				!points1[!x].appendarray(!points1[!x - 1])
+			endif
+			if defined(!points2[!x]) and defined(!points2[!x - 1]) then
+				!points2[!x].appendarray(!points2[!x - 1])
+			endif
+		enddo
+		--$  )
+
+
+		--$p 2
+		--q var !last1
+		do !oneline values !lines
+			!tempdis1 = !line.distance(!oneline.startposition)
+			!findx = 0
+			do !x indices !cutlens
+				if !tempdis1 le !cutlens[!x] then
+					!findx = !x
+					break
+				endif
+			enddo
+			if !findx eq 0 then
+				!findx = !cutlens.size() + 1
+			endif
+			if !arc.position.direction(!oneline.startposition).angle(!tempdir) le 90 then
+				if undefined(!points1[!findx]) then
+					!add1 = true
+					!points1[!findx] = array()
+				endif
+				!points1[!findx].append(!oneline.startposition)
+			else
+				if undefined(!points2[!findx]) then
+					!add2 = true
+					!points2[!findx] = array()
+				endif
+				!points2[!findx].append(!oneline.startposition)
+			endif
+
+			!tempdis2 = !line.distance(!oneline.endposition)
+			!findx = 0
+			do !x indices !cutlens
+				if !tempdis2 le !cutlens[!x] then
+					!findx = !x
+					break
+				endif
+			enddo
+			if !findx eq 0 then
+				!findx = !cutlens.size() + 1
+			endif
+			if !arc.position.direction(!oneline.endposition).angle(!tempdir) le 90 then
+				if undefined(!points1[!findx]) then
+					!add1 = true
+					!points1[!findx] = array()
+				endif
+				!points1[!findx].append(!oneline.endposition)
+			else
+				if undefined(!points2[!findx]) then
+					!add2 = true
+					!points2[!findx] = array()
+				endif
+				!points2[!findx].append(!oneline.endposition)
+			endif
+		enddo
+
+		--$p 3
+		--q var !last1
+		--!last2
+
+		-----add former points to generate a volume
+		if defined(!add1) then
+			!points1[!points1.size()].appendarray(!last1)
+		endif
+
+		if defined(!add2) then
+			!points2[!points2.size()].appendarray(!last2)
+		endif
+
+
+
+		do !x from 1 to !sepnum
+			if defined(!points1[!x]) or defined(!points2[!x]) then
+				if defined(!points1[!x]) and defined(!points2[!x]) then
+					!points1[!x].appendarray(!points2[!x])
+					!points2[!x].delete()
+				endif
+				break
+			endif
+		enddo
+
+		!allpoints = !points1
+		!allpoints.appendarray(!points2)
+
+
+
+		do !points values !allpoints
+			!points.unique()
+			if !points.size() le 3 then
+				skip
+			endif
+			if !through then
+				!resultarr = !this.getpointsdata(!line,!arc,!points,false)
+			else
+				!resultarr = !this.getpointsdata(!line,!arc,!points,true)
+			endif
+			!this.addelement(!resultarr)
+		enddo
+		$)
+
+
+		$(
+		--old way 202306081512
+		!poss = array()
+		!poss.append(!polarcyli.pos.offset(!xdir,!radius).offset(!ydir,!radius).offset(!zdir, - !polarcyli.height / 2))
+		!poss.append(!polarcyli.pos.offset(!xdir,!radius).offset(!ydir, - !radius).offset(!zdir, - !polarcyli.height / 2))
+		!poss.append(!polarcyli.pos.offset(!xdir, - !radius).offset(!ydir, - !radius).offset(!zdir, - !polarcyli.height / 2))
+		!poss.append(!polarcyli.pos.offset(!xdir, - !radius).offset(!ydir,!radius).offset(!zdir, - !polarcyli.height / 2))
+
+		do !x from 1 to 4
+			!poss.append(!poss[!x].offset(!zdir,!polarcyli.height))
+		enddo
+
+		!resultarr = !this.getpointsdata(!line,!arc,!poss,true)
+
+		if !through then
+			!resultarr[2][1] = 0
+			!resultarr[2][2] = 360
+			--else
+			--!tempori = x is $!tempdir1 and z is $!cylizdir
+			--!polarbox = object polarbox(!polarcyli.pos,!tempori,!polarcyli.diameter / 2,!polarcyli.diameter / 2,!polarcyli.height)
+			--!this.dealpolarbox(!line,!arc,!polarbox)
+		endif
+		!this.addelement(!resultarr)
+		$)
+
+
+
+		--!templine = !pos1.line(!pos2)
+		--!interpos = !line.intersection(!templine)
+		--!tempdir2 = !cylizdir.orthogonal(!tempdir1)
+
+		--!poss = array()
+		--!poss.append(!pos1.offset(!tempdir1,!polarcyli.diameter / 2))
+		--!poss.append(!pos1.offset(!tempdir1, - !polarcyli.diameter / 2))
+		--!poss.append(!pos1.offset(!tempdir2,!polarcyli.diameter / 2))
+		--!poss.append(!pos1.offset(!tempdir2, - !polarcyli.diameter / 2))
+
+		--!tempori = x is $!tempdir1 and z is $!cylizdir
+		--!polarbox = object polarbox(!polarcyli.pos,!tempori,!polarcyli.diameter / 2,!polarcyli.diameter / 2,!polarcyli.height)
+		--!this.dealpolarbox(!line,!arc,!polarbox)
+
+		$(
+		!arc1 = object arc(!polarcyli.pos.offset(!polarcyli.ori.zdir(), - !polarcyli.height / 2), !polarcyli.ori ,0,360,!polarcyli.diameter / 2,true)
+		!this.dealarc(!line,!arc,!arc1)
+
+		!arc1 = object arc(!polarcyli.pos, !polarcyli.ori ,0,360,!polarcyli.diameter / 2,true)
+		!this.dealarc(!line,!arc,!arc1)
+
+		!arc1 = object arc(!polarcyli.pos.offset(!polarcyli.ori.zdir(), !polarcyli.height / 2), !polarcyli.ori ,0,360,!polarcyli.diameter / 2,true)
+		!this.dealarc(!line,!arc,!arc1)
+
+		!tempdir2 = !cylizdir.orthogonal(!tempdir1)
+
+		!poss = array()
+		!poss.append(!pos1.offset(!tempdir1,!polarcyli.diameter / 2))
+		!poss.append(!pos1.offset(!tempdir1, - !polarcyli.diameter / 2))
+		!poss.append(!pos1.offset(!tempdir2,!polarcyli.diameter / 2))
+		!poss.append(!pos1.offset(!tempdir2, - !polarcyli.diameter / 2))
+
+		do !pos values !poss
+			!templine = !pos.line(!pos.offset(!cylizdir,!polarcyli.height))
+			!this.dealline(!line,!arc,!templine)
+		enddo
+		$)
+	endhandle
+endmethod
+
+define method .deallines(!line is line, !arc is arc, !lines is array)
+	!cutlens = array()
+
+
+	-----------------------
+	-----------------------it is better when sepnum is 5 rather than 3
+	!sepnum = 5
+	!times = split('1 1.1 1.5 2 4 7 10 15 18 20 25 30')
+
+	--!sepnum = 3
+	--!times = split('1 2 4 7 10 15 18 20 25 30')
+
+	do !x from 1 to !sepnum
+		!cutlen = !times[!x].real() * !arc.radius
+		$(
+		if !x eq 1 then
+			!cutlen = !times[!x].real() * !arc.radius
+		elseif !x eq 2 then
+			!cutlen = 2 * !arc.radius
+		elseif !x eq 3 then
+			!cutlen = 4 * !arc.radius
+		elseif !x eq 4 then
+			!cutlen = 7 * !arc.radius
+		elseif !x eq 5 then
+			!cutlen = 10 * !arc.radius
+		elseif !x eq 6 then
+			!cutlen = 15 * !arc.radius
+		endif
+		$)
+		!cutlens.append(!cutlen)
+	enddo
+
+	!points1 = array()			$*different direction
+	!points2 = array()
+
+
+	!tempdir = !line.direction().orthogonal(!lines[1].direction())
+	--handle any
+	--	!!3(!line,!arc,!lines)
+	--	$p $!asdfsaf
+	--endhandle
+	!tempdir = !tempdir.orthogonal(!line.direction())
+
+	!arcs = array()
+	do !x from 1 to !sepnum
+		!cutlen = !cutlens[!x]
+		!cutarc = object arc(!arc.position,!arc.orientation,0,360,!cutlen,true)
+
+		!arcs.append(!cutarc)
+
+		do !oneline values !lines
+			!points = !oneline.intersections(!cutarc)
+			do !point values !points
+				if !oneline.onprojected(!point) then
+					if !cutarc.position.direction(!point).angle(!tempdir) le 90 then
+						if undefined(!points1[!x]) then
+							!points1[!x] = array()
+						endif
+						!points1[!x].append(!oneline.near(!point))
+					else
+						if undefined(!points2[!x]) then
+							!points2[!x] = array()
+						endif
+						!points2[!x].append(!oneline.near(!point))
+					endif
+				endif
+			enddo
+		enddo
+	enddo
+
+	!linearcs = !lines
+	!linearcs.appendarray(!arcs)
+	!temparr[1] = !linearcs
+
+
+
+	if !points1.set() then
+		!last1 = !points1.last()
+	else
+		!last1 = array()
+	endif
+	if !points2.set() then
+		!last2 = !points2.last()
+	else
+		!last2 = array()
+	endif
+
+
+	--$p 1
+	--q var !last1
+	--		!last2
+
+	-----add former points to generate a volume
+	--$(
+	do !x from !sepnum to 2 by -1
+		if defined(!points1[!x]) and defined(!points1[!x - 1]) then
+			!points1[!x].appendarray(!points1[!x - 1])
+		endif
+		if defined(!points2[!x]) and defined(!points2[!x - 1]) then
+			!points2[!x].appendarray(!points2[!x - 1])
+		endif
+	enddo
+	--$)
+
+
+	--$p 2
+	--q var !last1
+	--add startposition and endposition into points1 and points2
+	do !oneline values !lines
+		do !xx from 1 to 2
+			if !xx eq 1 then
+				!temppos = !oneline.startposition
+				--!tempdis1 = !line.distance(!oneline.startposition)
+			else
+				!temppos = !oneline.endposition
+				--!tempdis1 = !line.distance(!oneline.endposition)
+			endif
+			!tempdis1 = !line.distance(!temppos)
+			!findx = 0
+			do !x indices !cutlens
+				if !tempdis1 le !cutlens[!x] then
+					!findx = !x
+					break
+				endif
+			enddo
+			--$p $!findx   aa
+			if !findx eq 0 then
+				!findx = !cutlens.size() + 1		$* if start position is not is range of max cutlen, add a new element for points1 or points2
+			endif
+
+			--$p $!findx   bb
+
+			--q var !arc.position.direction(!oneline.startposition).angle(!tempdir)
+
+			!tempangle = !arc.position.direction(!temppos).angle(!tempdir)
+			if !tempangle gt 85 and !tempangle lt 95 then
+				if defined(!points1[!findx]) and undefined(!points2[!findx]) then
+					!points1[!findx].append(!temppos)
+				elseif undefined(!points1[!findx]) and defined(!points2[!findx]) then
+					!points2[!findx].append(!temppos)
+
+				elseif !points1.size() ge !points2.size() then
+					!add1 = true
+					!points1[!findx] = array()
+					!points1[!findx].append(!temppos)
+				else
+					!add2 = true
+					!points2[!findx] = array()
+					!points2[!findx].append(!temppos)
+				endif
+			elseif !tempangle le 90 then
+				if undefined(!points1[!findx]) then
+					!add1 = true
+					!points1[!findx] = array()
+				endif
+				!points1[!findx].append(!temppos)
+			else
+				if undefined(!points2[!findx]) then
+					!add2 = true
+					!points2[!findx] = array()
+				endif
+				!points2[!findx].append(!temppos)
+			endif
+
+		enddo
+
+		$(
+		!tempdis2 = !line.distance(!oneline.endposition)
+		!findx = 0
+		do !x indices !cutlens
+			if !tempdis2 le !cutlens[!x] then
+				!findx = !x
+				break
+			endif
+		enddo
+		if !findx eq 0 then
+			!findx = !cutlens.size() + 1
+		endif
+		if !arc.position.direction(!oneline.endposition).angle(!tempdir) le 90 then
+			if undefined(!points1[!findx]) then
+				!add1 = true
+				!points1[!findx] = array()
+			endif
+			!points1[!findx].append(!oneline.endposition)
+		else
+			if undefined(!points2[!findx]) then
+				!add2 = true
+				!points2[!findx] = array()
+			endif
+			!points2[!findx].append(!oneline.endposition)
+		endif
+		$)
+	enddo
+
+	--$p 3
+	--q var !last1
+	--!last2
+
+	-----add former points to generate a volume
+	if defined(!add1) then							$* if added a new element to put end point of line, add last array to this element
+		!points1[!points1.maxindex()].appendarray(!last1)
+	endif
+
+	if defined(!add2) then
+		!points2[!points2.maxindex()].appendarray(!last2)
+	endif
+
+
+
+	-----merge the first same level element of points1 and first same level element of points2
+	do !x from 1 to !sepnum
+		if defined(!points1[!x]) or defined(!points2[!x]) then
+			if defined(!points1[!x]) and defined(!points2[!x]) then
+				!points1[!x].appendarray(!points2[!x])
+				!points2[!x].delete()
+			endif
+			break
+		endif
+	enddo
+
+	!allpoints = !points1
+	!allpoints.appendarray(!points2)
+
+	--q var !allpoints
+
+
+	do !points values !allpoints
+		!points.unique()
+		if !points.size() le !sepnum then
+			skip
+		endif
+		!resultarr = !this.getpointsdata(!line,!arc,!points)
+		--if !through then
+		--!resultarr = !this.getpointsdata(!line,!arc,!points,false)  $* no need
+		--else
+		--	!resultarr = !this.getpointsdata(!line,!arc,!points,true)
+		--endif
+		!this.addelement(!resultarr)
+	enddo
+endmethod
+
+define method .dealpolarbox(!line is line, !arc is arc, !inputpolarbox is polarbox)
+	!polarbox = !inputpolarbox
+	!linezdir = !line.direction()
+	!times = 0
+
+	label /again
+	!times = !times + 1
+
+	if !times gt 2 then
+		return
+	endif
+
+
+
+	do !x from 1 to 3
+
+		if !x eq 1 then
+			--!com = '!tempdir1 = !linezdir.orthogonal(!polarbox.ori.xdir())'
+			!angle = !linezdir.angle(!polarbox.ori.xdir())
+		elseif !x eq 2 then
+			--!com = '!tempdir1 = !linezdir.orthogonal(!polarbox.ori.ydir())'
+			!angle = !linezdir.angle(!polarbox.ori.ydir())
+		elseif !x eq 3 then
+			--!com = '!tempdir1 = !linezdir.orthogonal(!polarbox.ori.zdir())'
+			!angle = !linezdir.angle(!polarbox.ori.zdir())
+		endif
+
+
+
+		if !angle lt 1 or !angle gt 179 then
+		--$!com
+		--handle any	$*ÊÔ×ÅÕÒ³öÓëÖáÏß·½ÏòÒ»ÖÂµÄ·½Ïò
+			if !x eq 1 then
+				!dir1 = !polarbox.ori.ydir()
+				!dir2 = !polarbox.ori.zdir()
+				!len1 = !polarbox.ylen
+				!len2 = !polarbox.zlen
+				!pos1 = !polarbox.pos.offset(!polarbox.ori.xdir(), - !polarbox.xlen / 2)
+				!pos2 = !polarbox.pos.offset(!polarbox.ori.xdir(), !polarbox.xlen / 2)
+			elseif !x eq 2 then
+				!dir1 = !polarbox.ori.zdir()
+				!dir2 = !polarbox.ori.xdir()
+				!len1 = !polarbox.zlen
+				!len2 = !polarbox.xlen
+				!pos1 = !polarbox.pos.offset(!polarbox.ori.ydir(), - !polarbox.ylen / 2)
+				!pos2 = !polarbox.pos.offset(!polarbox.ori.ydir(), !polarbox.ylen / 2)
+			elseif !x eq 3 then
+				!dir1 = !polarbox.ori.xdir()
+				!dir2 = !polarbox.ori.ydir()
+				!len1 = !polarbox.xlen
+				!len2 = !polarbox.ylen
+				!pos1 = !polarbox.pos.offset(!polarbox.ori.zdir(), - !polarbox.zlen / 2)
+				!pos2 = !polarbox.pos.offset(!polarbox.ori.zdir(), !polarbox.zlen / 2)
+			endif
+
+			!dis1 = !!suidirdis(!line.startposition,!line.direction(),!pos1)
+			!dis2 = !!suidirdis(!line.startposition,!line.direction(),!pos2)
+			!temparr = !this.sort(!dis1,!dis2)
+
+			!startdis = !temparr[1]
+			!enddis = !temparr[2]
+
+			!poss = array()
+			!poss.append(!polarbox.pos.offset(!dir1,!len1 / 2).offset(!dir2,!len2 / 2))
+			!poss.append(!polarbox.pos.offset(!dir1, - !len1 / 2).offset(!dir2,!len2 / 2))
+			!poss.append(!polarbox.pos.offset(!dir1, - !len1 / 2).offset(!dir2, - !len2 / 2))
+			!poss.append(!polarbox.pos.offset(!dir1,!len1 / 2).offset(!dir2, - !len2 / 2))
+
+			--·½ÏòÐèÒª¸Ä
+			!profile = object profile(!poss[1],object orientation('x is $!dir1 and y is $!dir2'),!poss)
+			!profile.close()
+			--q var !len1 !len2
+
+
+			!interpos = !line.intersection(!profile.plane())
+			--handle any
+				--break
+
+			--	!interpos = !line.intersection(!profile.plane())
+			--endhandle
+			if !!posinprofile(!interpos,!profile) then
+			--if !profile.iswithin(!interpos) then
+				--!resultarr[3][1] = 0
+				--!resultarr[2][1] = 0
+				--!resultarr[2][2] = 360
+
+				!this.startdis = !startdis
+				!this.enddis = !enddis
+
+				!partnum = 12
+				!partangle = 360 / !partnum
+				!edges = !profile.edges()
+				!copyarc = !arc
+				!linenearpos = !line.near(!polarbox.pos)
+				!copyarc.position = !linenearpos
+				do !partx from 1 to !partnum
+					!this.startangle = (!partx - 1) * !partangle
+					!this.endangle = !partx * !partangle
+					!this.startradius = 0
+
+					!interpoint1 = object position()
+					!interpoint2 = object position()
+
+					!goodedgeindex1 = 0
+					!goodedgeindex2 = 0
+
+					!templine1 = !linenearpos.line(!copyarc.angleposition(!this.startangle))
+
+					!templine1 = !templine1.extendend(10000)
+					!maxdis1 = 0
+					do !edgeindex indices !edges
+						!edge = !edges[!edgeindex]
+					--do !edge values !edges
+						!interpos = !templine1.intersection(!edge)
+						handle any
+							skip
+						elsehandle none
+							if !templine1.onprojected(!interpos) and !edge.onprojected(!interpos) then
+								--if !partx eq 4 then
+
+								--endif
+								!interpoint1 = !interpos
+								!onedis = !linenearpos.distance(!interpos)
+								if !onedis gt !maxdis1 then
+									!maxdis1 = !onedis
+									!goodedgeindex1 = !edgeindex
+								endif
+								--break
+							--else
+
+							endif
+						endhandle
+					enddo
+
+					!templine2 = !linenearpos.line(!copyarc.angleposition(!this.endangle))
+					!templine2 = !templine2.extendend(10000)
+					!maxdis2 = 0
+					do !edgeindex indices !edges
+						!edge = !edges[!edgeindex]
+					--do !edge values !edges
+						!interpos = !templine2.intersection(!edge)
+						handle any
+							skip
+						elsehandle none
+							if !templine2.onprojected(!interpos) and !edge.onprojected(!interpos) then
+
+								!interpoint2 = !interpos
+								!onedis = !linenearpos.distance(!interpos)
+								if !onedis gt !maxdis2 then
+									!maxdis2 = !onedis
+									!goodedgeindex2 = !edgeindex
+								endif
+								--break
+							--else
+
+							endif
+						endhandle
+					enddo
+
+					if !interpoint1.unset() or !interpoint2.unset() then	$* the interpos is on one edge of profile
+						skip
+					endif
+
+					!this.endradius = max(!maxdis1,!maxdis2)
+					if !goodedgeindex1 ne !goodedgeindex2 then
+						!interpos = !edges[!goodedgeindex1].intersection(!edges[!goodedgeindex2])
+						handle any
+						elsehandle none
+
+							if !edges[!goodedgeindex1].onprojected(!interpos) and !edges[!goodedgeindex1].onprojected(!interpos) then
+								!this.endradius = max(!this.endradius,!linenearpos.distance(!interpos))
+							endif
+						endhandle
+					--else
+						--!this.endradius = max(!line.distance(!interpoint1),!line.distance(!interpoint2))
+					endif
+
+					if !this.endradius gt 0.1 then
+						!this.addelement()
+					endif
+				enddo
+			else
+				!resultarr = !this.getpointsdata(!line,!arc,!poss) $* no need anymore
+				--!resultarr = !this.getpointsdata(!line,!arc,!poss,true)
+				!resultarr[1][1] = !startdis
+				!resultarr[1][2] = !enddis
+				!this.addelement(!resultarr)
+			endif
+
+			return
+		--endhandle
+		endif
+	enddo
+
+	--Èç¹ûboxµÄÈý¸ö·½Ïò¶¼ºÍÖáÏß·½Ïò²»Ò»ÖÂ
+
+	-----------------------------------------------------------------------------------
+	-----------------------------------------------------------------------------------Step x:×ª»¯³ÉÍ¬ÖáÏòµÄBOX
+	!zdir = !polarbox.ori.zdir()
+	!xdir = !polarbox.ori.xdir()
+	!ydir = !polarbox.ori.ydir()
+	!xlen = !polarbox.xlen
+	!ylen = !polarbox.ylen
+	!zlen = !polarbox.zlen
+	!newposs = array()
+	!newposs.append(!polarbox.pos.offset(!xdir,!xlen / 2).offset(!ydir,!ylen / 2).offset(!zdir,!zlen / 2))
+	!newposs.append(!polarbox.pos.offset(!xdir,!xlen / 2).offset(!ydir,!ylen / 2).offset(!zdir, - !zlen / 2))
+	!newposs.append(!polarbox.pos.offset(!xdir,!xlen / 2).offset(!ydir, - !ylen / 2).offset(!zdir, - !zlen / 2))
+	!newposs.append(!polarbox.pos.offset(!xdir,!xlen / 2).offset(!ydir, - !ylen / 2).offset(!zdir,!zlen / 2))
+	!newposs.append(!polarbox.pos.offset(!xdir, - !xlen / 2).offset(!ydir,!ylen / 2).offset(!zdir,!zlen / 2))
+	!newposs.append(!polarbox.pos.offset(!xdir, - !xlen / 2).offset(!ydir,!ylen / 2).offset(!zdir, - !zlen / 2))
+	!newposs.append(!polarbox.pos.offset(!xdir, - !xlen / 2).offset(!ydir, - !ylen / 2).offset(!zdir, - !zlen / 2))
+	!newposs.append(!polarbox.pos.offset(!xdir, - !xlen / 2).offset(!ydir, - !ylen / 2).offset(!zdir,!zlen / 2))
+
+
+
+	!newxdir = !line.direction()
+	do !tempindex from 1 to 3
+		if !tempindex eq 1 then
+			!tempdir = !xdir
+		elseif !tempindex eq 2 then
+			!tempdir = !ydir
+		else
+			!tempdir = !zdir
+		endif
+		!tempangle = !line.direction().angle(!tempdir)
+		if abs(!tempangle - 90) lt 1 then
+			!newydir = !tempdir
+			break
+		endif
+	enddo
+
+	if undefined(!newydir) then
+		!neardiss = array()
+		do !pos values !newposs
+			!neardiss.append(!line.distance(!pos))
+		enddo
+		!nearindices = !neardiss.sortedindices()
+		!ypos = !newposs[!nearindices[1]]
+		!newydir = !line.near(!ypos).direction(!ypos)
+		handle any
+			!ypos = !newposs[!nearindices.last()]
+			!newydir = !line.near(!ypos).direction(!ypos)
+		endhandle
+	$(
+		!xdiss = array()
+		!neardiss = array()
+		do !pos values !newposs
+			!dis = !!suidirdis(!line.startposition,!newxdir,!pos)
+			!xdiss.append(!dis)
+			!neardiss.append(!line.distance(!pos))
+		enddo
+		!xdiss.sort()
+
+		!nearindices = !neardiss.sortedindices()
+		!ypos = !newposs[!nearindices[1]]
+		!ydir = !line.near(!ypos).direction(!ypos)
+
+		!tempori = x is $!newxdir and y is $!ydir
+		!zdir = !tempori.zdir()
+
+		!ydiss = array()
+		!zdiss = array()
+		do !pos values !newposs
+			!dis = !!suidirdis(!line.startposition,!ydir,!pos)
+			!ydiss.append(!dis)
+			!dis = !!suidirdis(!line.startposition,!zdir,!pos)
+			!zdiss.append(!dis)
+		enddo
+		$)
+	endif
+	!tempori = x is $!newxdir and y is $!newydir
+	!newzdir = !tempori.zdir()
+
+	!xdiss = array()
+	!ydiss = array()
+	!zdiss = array()
+	do !pos values !newposs
+		!dis = !!suidirdis(!line.startposition,!newxdir,!pos)
+		!xdiss.append(!dis)
+		!dis = !!suidirdis(!line.startposition,!newydir,!pos)
+		!ydiss.append(!dis)
+		!dis = !!suidirdis(!line.startposition,!newzdir,!pos)
+		!zdiss.append(!dis)
+	enddo
+
+	!xdiss.sort()
+	!ydiss.sort()
+	!zdiss.sort()
+
+
+
+
+	!boxori = x is $!newxdir and z is $!newzdir
+	!boxpos = !line.startposition.offset(!newxdir,(!xdiss[1] + !xdiss.last()) / 2).offset(!newydir,(!ydiss[1] + !ydiss.last()) / 2).offset(!newzdir,(!zdiss[1] + !zdiss.last()) / 2)
+	!polarbox = object polarbox(!boxpos,!boxori,!xdiss.last() - !xdiss[1],!ydiss.last() - !ydiss[1],!zdiss.last() - !zdiss[1])
+	golabel /again
+
+
+	$(
+	--Õâ·½ÏòÊÇÓÐÎÊÌâµÄ£¬Èç¹ûBOXÌ«´ó£¬linesÐÎ³ÉµÄµã¼¯²»¹»
+
+	!zdir = !polarbox.ori.zdir()
+	!xdir = !polarbox.ori.xdir()
+	!ydir = !polarbox.ori.ydir()
+	!len1 = !polarbox.xlen
+	!len2 = !polarbox.ylen
+	!len3 = !polarbox.zlen
+	!poss = array()
+	!poss.append(!polarbox.pos.offset(!xdir,!len1 / 2).offset(!ydir,!len2 / 2))
+	!poss.append(!polarbox.pos.offset(!xdir, - !len1 / 2).offset(!ydir,!len2 / 2))
+	!poss.append(!polarbox.pos.offset(!xdir, - !len1 / 2).offset(!ydir, - !len2 / 2))
+	!poss.append(!polarbox.pos.offset(!xdir,!len1 / 2).offset(!ydir, - !len2 / 2))
+
+	!newposs = array()
+	do !x from 1 to 4
+		!newposs.append(!poss[!x].offset(!zdir, - !len3 / 2))
+		!newposs.append(!poss[!x].offset(!zdir, !len3 / 2))
+	enddo
+
+	!lines = array()
+	do !x from 1 to 4
+		!lines.append(!newposs[!x].line(!newposs[!x + 1]))
+		if !x ne 4 then
+			!lines.append(!newposs[!x].line(!newposs[!x + 2]))
+			!lines.append(!newposs[!x + 1].line(!newposs[!x + 3]))
+		else
+			!lines.append(!newposs[!x].line(!newposs[1]))
+			!lines.append(!newposs[!x + 1].line(!newposs[2]))
+		endif
+	enddo
+
+	!this.deallines(!line, !arc, !lines)
+	$)
+
+
+	return
+
+	----------------------------------------------------------------------------------------------------------------
+
+	-----------------old way 202306091506
+	!zdir = !polarbox.ori.zdir()
+	!xdir = !polarbox.ori.xdir()
+	!ydir = !polarbox.ori.ydir()
+
+	!poss = array()
+	!poss.append(!polarbox.pos.offset(!xdir,!polarbox.xlen / 2).offset(!ydir,!polarbox.ylen / 2).offset(!zdir, - !polarbox.zlen / 2))
+	!poss.append(!polarbox.pos.offset(!xdir,!polarbox.xlen / 2).offset(!ydir, - !polarbox.ylen / 2).offset(!zdir, - !polarbox.zlen / 2))
+	!poss.append(!polarbox.pos.offset(!xdir, - !polarbox.xlen / 2).offset(!ydir, - !polarbox.ylen / 2).offset(!zdir, - !polarbox.zlen / 2))
+	!poss.append(!polarbox.pos.offset(!xdir, - !polarbox.xlen / 2).offset(!ydir,!polarbox.ylen / 2).offset(!zdir, - !polarbox.zlen / 2))
+	do !x from 1 to 4
+		!poss.append(!poss[!x].offset(!zdir,!polarbox.zlen))
+	enddo
+
+	!interposs = array()
+	do !x from 1 to 6
+		if !x eq 1 then
+			!nums = split('1 2 3 4')
+		elseif !x eq 2 then
+			!nums = split('5 6 7 8')
+		elseif !x eq 3 then
+			!nums = split('1 2 6 5')
+		elseif !x eq 4 then
+			!nums = split('2 3 7 6')
+		elseif !x eq 5 then
+			!nums = split('3 4 8 7')
+		elseif !x eq 6 then
+			!nums = split('4 1 5 8')
+		endif
+
+		!tempposs = array()
+		do !num values !nums
+			!tempposs.append(!poss[$!num])
+		enddo
+		!tempdir1 = !tempposs[1].direction(!tempposs[2])
+		!tempdir2 = !tempposs[1].direction(!tempposs[4])
+		!profile = object profile(!tempposs[1],object orientation('x is $!tempdir1 and y is $!tempdir2'),!tempposs)
+		!profile.close()
+		!interpos = !line.intersection(!profile.plane())
+		handle any
+			if !!posinprofile(!interpos,!profile) then
+			--if !profile.iswithin(!interpos) then
+				!interposs.append(!interpos)
+			endif
+		endhandle
+	enddo
+
+	!resultarr = !this.getpointsdata(!line,!arc,!poss) $* no need anymore
+	--!resultarr = !this.getpointsdata(!line,!arc,!poss,true)
+	if !interposs.size() eq 2 then	$*through
+		!resultarr[2][1] = 0
+		!resultarr[2][2] = 360
+	endif
+	!this.addelement(!resultarr)
+	return
+
+
+
+	-----oldway 202305241428
+	!zdir = !polarbox.ori.zdir()
+	!xdir = !polarbox.ori.xdir()
+	!ydir = !polarbox.ori.ydir()
+
+	!poss = array()
+	!poss.append(!polarbox.pos.offset(!xdir,!polarbox.xlen / 2).offset(!ydir,!polarbox.ylen / 2).offset(!zdir, - !polarbox.zlen / 2))
+	!poss.append(!polarbox.pos.offset(!xdir,!polarbox.xlen / 2).offset(!ydir, - !polarbox.ylen / 2).offset(!zdir, - !polarbox.zlen / 2))
+	!poss.append(!polarbox.pos.offset(!xdir, - !polarbox.xlen / 2).offset(!ydir, - !polarbox.ylen / 2).offset(!zdir, - !polarbox.zlen / 2))
+	!poss.append(!polarbox.pos.offset(!xdir, - !polarbox.xlen / 2).offset(!ydir,!polarbox.ylen / 2).offset(!zdir, - !polarbox.zlen / 2))
+
+	!lines = array()
+	do !pos values !poss
+		!line1 = !pos.line(!pos.offset(!zdir,!polarbox.zlen))
+		!interpos = !line1.intersection(!line)
+		handle any
+		elsehandle none
+			if !line1.distance(!line) eq 0 and !line1.onprojected(!interpos) and !interpos.distance(!line1.startposition) gt 0.1 and !interpos.distance(!line1.endposition) gt 0.1 then
+				if !interpos.distance(!line1.startposition) gt 0.1 and !interpos.distance(!line1.endposition) gt 0.1 then
+					!lines.append(!line1.startposition.line(!interpos))
+					!lines.append(!line1.endposition.line(!interpos))
+				else
+					!lines.append(!line1)
+				endif
+			else
+				!lines.append(!line1)
+			endif
+		endhandle
+	enddo
+
+	!startdiss = array()
+	!enddiss = array()
+	!startangles = array()
+	!endangles = array()
+	!startradiuss = array()
+	!endradiuss = array()
+
+	do !line1 values !lines
+		!interpos = !line1.intersection(!line)
+
+		!pos1 = !line1.startposition
+		!pos2 = !line1.endposition
+		!dis1 = !!suidirdis(!line.startposition,!line.direction(),!pos1)
+		!dis2 = !!suidirdis(!line.startposition,!line.direction(),!pos2)
+		!temparr = !this.sort(!dis1,!dis2)
+
+
+		!startdiss.append(!temparr[1])
+		!enddiss.append(!temparr[2])
+
+		!angle1 = !arc.near(!pos1)
+		!angle2 = !arc.near(!pos2)
+		!temparr = !this.sortangle(!angle1,!angle2)
+		!startangles.append(!temparr[1])
+		!endangles.append(!temparr[2])
+
+		!radius1 = !line.distance(!pos1)
+		!radius2 = !line.distance(!pos2)
+
+		if defined(!interpos) and !line1.onprojected(!interpos) then
+			!temparr = !this.sort(!radius1,!radius2,!line.distance(!interpos))
+		else
+			!temparr = !this.sort(!radius1,!radius2)
+		endif
+
+		!startradiuss.append(!temparr[1])
+		!endradiuss.append(!temparr.last())
+	enddo
+
+	!startdiss.sort()
+	!enddiss.sort()
+	!startangles.sort()
+	!endangles.sort()
+	!startradiuss.sort()
+	!endradiuss.sort()
+
+	!this.startdis = !startdiss[1]
+	!this.enddis = !enddiss.last()
+	!this.startangle = !startangles[1]
+	!this.endangle = !endangles.last()
+	!this.startradius = !startradiuss[1]
+	!this.endradius = !endradiuss.last()
+
+	!this.addelement()
+endmethod
+
+define method .dealaidcir(!line is line, !arc is arc, !aidcir is any)
+	!arcpos = pos of $!aidcir wrt/*
+	!ori = ori of $!aidcir wrt/*
+	!radius = radius of $!aidcir
+	!arc1 = object arc(!arcpos,!ori,0,360,!radius,true)
+	!this.dealarc(!line,!arc,!arc1)
+endmethod
+
+define method .dealaidarc(!line is line, !arc is arc, !aidarc is any)
+	!arcpos = pos of $!aidarc wrt/*
+	!ori = ori of $!aidarc wrt/*
+	!radius = radius of $!aidarc
+	!sweepangle = sweepangle of $!aidarc
+	!startangle = stangle of $!aidarc
+	!endangle = !startangle + !sweepangle
+	!arc1 = object arc(!arcpos,!ori,!startangle,!endangle,!radius,true)
+	!this.dealarc(!line,!arc,!arc1)
+endmethod
+
+define method .getstringdata(!line is line, !arc is arc, !textpos is position, !ori is orientation, !cheight is real, !inputstring is string) is array
+	--!string = !inputstring.string('D2').replace('.00','')
+	!result = array()
+	!string = !inputstring
+	--!len = !!mbdtextlen(!string) * !cheight * 0.75
+	--!len = !!mbdtextlen(!string) * !cheight * 0.8
+	!len = !!mbdtextlen(!string) * !cheight
+
+	!xdir = !ori.xdir()
+	!ydir = !ori.ydir()
+
+	!lines = array()
+	!poss[1] = !textpos
+	!poss[2] = !poss[1].offset(!ydir,!cheight)
+	!poss[3] = !poss[2].offset(!xdir,!len)
+	!poss[4] = !poss[1].offset(!xdir,!len)
+
+	!plane = object plane(!poss[1],!ori)
+	!interpos = !plane.intersection(!line)
+	handle any
+		-----------------------
+		-----------------------if the line is paralle with the plane
+		-----------------------------------------------------------------------------------
+		-----------------------------------------------------------------------------------Step x:
+		if !line.startposition.distance(!plane) lt 0.01 then
+			-----------------------
+			-----------------------if the line is in the plane
+			--if !poss[1].distance(!plane) lt 0.01 then
+			!poss1 = array()
+			!poss2 = array()
+			!interposs = array()
+			do !x indices !poss
+				if !x ne !poss.size() then
+					!templine = !poss[!x].line(!poss[!x + 1])
+				else
+					!templine = !poss[!x].line(!poss[1])
+				endif
+				!interpos = !line.intersection(!templine)
+				handle any
+					if !line.distance(!templine) lt 0.1 then
+
+						-----------------------
+						-----------------------if one edge of string is same with line
+						!resultarr = !this.getpointsdata(!line,!arc,!poss)
+						--!this.addelement(!resultarr)
+						!result.append(!resultarr)
+						return !result
+					endif
+				elsehandle none
+					if !templine.onprojected(!interpos) then
+						!interposs.append(!interpos)
+					endif
+				endhandle
+				!onedir = !line.near(!poss[!x]).direction(!poss[!x])
+				handle any
+					!poss1.append(!poss[!x])
+					!poss2.append(!poss[!x])
+					skip
+				endhandle
+				if undefined(!firstdir) then
+					!firstdir = !onedir
+				endif
+				if !firstdir.angle(!onedir) lt 90 then
+					!poss1.append(!poss[!x])
+				else
+					!poss2.append(!poss[!x])
+				endif
+			enddo
+			if !interposs.size() eq 2 then
+
+				-----------------------
+				-----------------------if line is go through the string, split the string into two part
+				!poss1.appendarray(!interposs)
+				!resultarr = !this.getpointsdata(!line,!arc,!poss1)
+				!result.append(!resultarr)
+				--!this.addelement(!resultarr)
+
+				!poss2.appendarray(!interposs)
+				!resultarr = !this.getpointsdata(!line,!arc,!poss2)
+				!result.append(!resultarr)
+				--!this.addelement(!resultarr)
+			else
+				!resultarr = !this.getpointsdata(!line,!arc,!poss)
+				!result.append(!resultarr)
+				--!this.addelement(!resultarr)
+			endif
+		else
+			!resultarr = !this.getpointsdata(!line,!arc,!poss)
+			!result.append(!resultarr)
+			--!this.addelement(!resultarr)
+		endif
+	elsehandle none
+		!resultarr = !this.getpointsdata(!line,!arc,!poss)
+		!profile = object profile(!poss[1],!ori,!poss)
+		!profile.close()
+		--!!6(!textpos,!line,!arc,!poss,!profile,!interpos)
+		if !!posinprofile(!interpos,!profile) then
+		--if !profile.iswithin(!interpos) then
+			!resultarr[2][1] = 0
+			!resultarr[2][2] = 360
+		endif
+		!result.append(!resultarr)
+		--!this.addelement(!resultarr)
+	endhandle
+	return !result
+endmethod
+
+define method .dealstring(!line is line, !arc is arc, !textpos is position, !ori is orientation, !cheight is real, !inputstring is string)
+	!arr = !this.getstringdata(!line,!arc,!textpos,!ori,!cheight,!inputstring)
+	do !resultarr values !arr
+		!this.addelement(!resultarr)
+	enddo
+endmethod
+
+
+
+define method .getLindimData(!line is line,!arc is arc, !inputlindims is any) is array
+	if !inputlindims.objecttype() eq 'ARRAY' then
+		!lindims = !inputlindims
+	else
+		!lindims = array()
+		!lindims.append(!inputlindims)
+	endif
+
+
+	!result = array()
+	!dimpos = pos of $!lindims[1] wrt/*
+	!ori = ori of $!lindims[1] wrt/*
+	!xdir = !ori.xdir()
+	!ydir = !ori.ydir()
+	!zdir = !ori.zdir()
+	!plane = object plane(!dimpos,!ori)
+
+
+	---get vertlines and endlines and get text range in radius
+	!textminradius = 0
+	!textmaxradius = 0
+	!endlines = array()
+	!vertlines = array()
+	do !lindim values !lindims
+		!onedimpos = pos of $!lindim wrt/*
+		!oneori = ori of $!lindim wrt/*
+		!cheight = cheight of $!lindim wrt/*
+		var !dimposnames coll all dimpos for $!lindim
+		do !dimposname values !dimposnames
+			!onepos = pos of $!dimposname wrt/*
+			!vertpos = !plane.near(!onepos)
+			if !vertpos.distance(!onepos) gt 0.1 then
+				!vertlines.append(!onepos.line(!vertpos))
+			endif
+
+
+
+			!templine = !vertpos.line(!vertpos.offset(!ydir,1000))
+			if undefined(!lineextenddir) then
+				!lineextenddir = !vertpos.direction(!templine.near(!dimpos))
+			endif
+
+			!endpos = !templine.near(!dimpos)
+			if defined(!lineextenddir) then
+				!endpos = !endpos.offset(!lineextenddir,!cheight)
+			endif
+
+			if !vertpos.distance(!endpos) gt 0.1 then
+				!endlines.append(!vertpos.line(!endpos))
+			endif
+		enddo
+		if !oneori.ydir().angle(!ydir) lt 90 then
+			!oneminradius = !!suidirdis(!dimpos,!ydir,!onedimpos)
+			!onemaxradius = !oneminradius + !cheight
+		else
+			!onemaxradius = !!suidirdis(!dimpos,!ydir,!onedimpos)
+			!oneminradius = !onemaxradius - !cheight
+		endif
+		!textminradius = min(!textminradius,!oneminradius)
+		!textmaxradius = max(!textmaxradius,!onemaxradius)
+	enddo
+
+
+
+
+
+	-----------------------------------remove repeated lines and get text range in dis
+	!elelines = array()
+	do !times from 1 to 2
+		if !times eq 1 then
+			!dir = !xdir
+			!lines = !endlines
+		else
+			!dir = !ydir
+			!lines = !vertlines
+		endif
+		!diss = array()
+		!dirs = array()
+		!samelines = array()
+		do !oneline values !lines
+			!onedis = !!suidirdis(!dimpos,!dir,!oneline.endposition)
+			if !times eq 1 then
+				if undefined(!textmindis) then
+					!textmindis = !onedis
+					!textmaxdis = !onedis
+				else
+					!textmindis = min(!textmindis,!onedis)
+					!textmaxdis = max(!textmaxdis,!onedis)
+				endif
+			endif
+
+			!onedir = !oneline.direction()
+			!find = false
+			do !x indices !diss
+				if abs(!onedis - !diss[!x]) lt 0.01 and !onedir.angle(!dirs[!x]) lt 0.01 then
+					!find = true
+					if !oneline.startposition.distance(!samelines[!x].endposition) gt !samelines[!x].length() then
+						!samelines[!x] = !oneline
+					endif
+					break
+				endif
+			enddo
+			if !find.not() then
+				!diss.append(!onedis)
+				!dirs.append(!onedir)
+				!samelines.append(!oneline)
+			endif
+		enddo
+		!elelines.appendarray(!sameLines)
+	enddo
+	!result.append(!elelines)
+
+
+	--get four points of text
+
+	!poss = array()
+	!poss.append(!dimpos.offset(!xdir,!textmindis).offset(!ydir,!textminradius))
+	!poss.append(!dimpos.offset(!xdir,!textmindis).offset(!ydir,!textmaxradius))
+	!poss.append(!dimpos.offset(!xdir,!textmaxdis).offset(!ydir,!textminradius))
+	!poss.append(!dimpos.offset(!xdir,!textmaxdis).offset(!ydir,!textmaxradius))
+
+	!result.append(!poss)
+
+	return !result
+endmethod
+
+define method .deallindim(!line is line,!arc is arc, !lindim is any)
+	!arr = !this.getlindimdata(!line,!arc,!lindim)
+
+	if !arr.set() then
+		do !oneline values !arr[1]
+			!this.dealline(!line,!arc,!oneline)
+		enddo
+		if !arr.size() eq 2 then
+			!result = !this.getpointsdata(!line,!arc,!arr[2])
+			!this.addelement(!result)
+		endif
+	endif
+	return
+
+	$(
+	---old way 202305251612
+	!dimpos = pos of $!lindim wrt/*
+	!ori = ori of $!lindim wrt/*
+	!ydir = !ori.ydir()
+	!cheight = cheight of $!lindim wrt/*
+	var !dimposnames coll all dimpos for $!lindim
+
+	!plane = object plane(!dimpos,!ori)
+
+	!endposs = array()
+	do !dimposname values !dimposnames
+		!onepos = pos of $!dimposname wrt/*
+		!vertpos = !plane.near(!onepos)
+		if !vertpos.distance(!onepos) gt 0.1 then
+			!this.dealline(!line,!arc,!onepos.line(!vertpos))
+		endif
+
+		!templine = !vertpos.line(!vertpos.offset(!ydir,1000))
+		!endpos = !templine.near(!dimpos)
+		if !vertpos.distance(!endpos) gt 0.1 then
+			!this.dealline(!line,!arc,!vertpos.line(!endpos))
+		endif
+
+		!endposs.append(!endpos)
+	enddo
+
+
+
+	do !x from 1 to !endposs.size() - 1
+		!pos1 = !endposs[!x]
+		!pos2 = !endposs[!x + 1]
+		!templine = !pos1.line(!pos2)
+		!this.dealline(!line,!arc,!templine)
+
+
+		!dis = !pos1.distance(!pos2)
+		!string = !dis.string('D2').replace('.00','')
+		!notindex = !string.match('.')
+		if !notindex ne 0 then
+			if !string.length() ge !notindex + 2 then
+				if !string.substring(!notindex + 2,1) eq '0' then
+					!string = !string.substring(1,!notindex + 1) & !string.substring(!notindex + 3)
+				endif
+			endif
+		endif
+		!midpoint = !pos1.midpoint(!pos2)
+		!textpos = !midpoint.offset(!ori.xdir(), - !!mbdtextlen(!string) / 2)
+		!this.dealstring(!line,!arc,!textpos,!ori,!cheight,!string)
+	enddo
+	$)
+endmethod
+
+define method .dealmlabel(!line is line,!arc is arc, !lindim is any)
+	!mlabelpos = pos of $!this.name wrt/*
+	!ori = ori of $!this.name wrt/*
+	!stext = stext of $!this.name
+	!cheight = cheight of $!this.name
+
+	!dimpos = pos of first dimpos of $!this.name wrt/*
+	handle any
+		!dimpos = pos of posref of first dimppt of $!this.name wrt/*
+		handle any
+		endhandle
+	endhandle
+	--if defined(!dimpos) then
+	--!this.dealline(!line,!arc,!dimpos.line(!mlabelpos))	$*unnecessary
+	--endif
+
+	!this.dealstring(!line,!arc,!mlabelpos,!ori,!cheight,!stext)
+endmethod
+
+
+°

@@ -1,0 +1,30 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= April 24th 2024
+--[Function]:
+------------------------------------------
+
+define function !!getnodenamesforele(!mem is any) is string
+	!memtype = type of $!mem
+	if !memtype eq 'TUBI' then
+		var !ref ref of $!mem
+		!branname = name of owner of $!mem
+		var !tubis coll all tubi for $!branname
+		do !index indices !tubis
+			var !oneref ref of $!tubis[$!index]
+			if !oneref eq !ref then
+				!goodindex = !index
+				break
+			endif
+		enddo
+		!nodenames = 'TUBE ' & !goodindex & | of BRANCH | & !branname
+	else
+		!nodenames = flnm of $!mem
+	endif
+	return !nodenames
+endfunction
+ео

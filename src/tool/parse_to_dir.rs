@@ -4,9 +4,9 @@ use glam::{DVec3, Vec3};
 use nom::IResult;
 use nom::Parser;
 use nom::branch::alt;
-use nom::bytes::complete::{tag, take_until};
+use nom::bytes::complete::tag;
 use nom::character::complete::space0;
-use nom::combinator::{map_res, opt, recognize};
+use nom::combinator::{map_res, opt};
 use nom::error::Error;
 use nom::number::complete::{double, float};
 use nom::sequence::{delimited, preceded, tuple};
@@ -50,9 +50,32 @@ where
 }
 
 fn parse_pos_expr(input: &str) -> IResult<&str, (String, bool)> {
-    let (input, content) = recognize(take_until(")")).parse(input)?;
-    // let (input, _) = tag(")").parse(input)?;
-    Ok((input, (content.trim().to_string(), false)))
+    // 旧实现用 `take_until(")")`，遇到嵌套括号会在“第一个 )”处提前截断：
+    //   "( ATTRIB PARA[10 ] / 2 ) )" -> "( ATTRIB PARA[10 ] / 2"
+    // 从而导致后续 eval_str_to_f64 收到括号不平衡的表达式。
+    //
+    // 这里按“括号深度”扫描：depth==0 的 ')' 视为当前 value 的结束符；
+    // depth>0 的 ')' 属于内部表达式括号，应保留在 content 中。
+    let mut depth: i32 = 0;
+    for (idx, ch) in input.char_indices() {
+        match ch {
+            '(' => depth += 1,
+            ')' => {
+                if depth == 0 {
+                    let content = input[..idx].trim().to_string();
+                    let rest = &input[idx..];
+                    return Ok((rest, (content, false)));
+                }
+                depth -= 1;
+            }
+            _ => {}
+        }
+    }
+
+    Err(nom::Err::Error(Error::new(
+        input,
+        nom::error::ErrorKind::TakeUntil,
+    )))
 }
 
 // fn parse_bracket_content(input: &str) -> IResult<&str, String> {
@@ -155,6 +178,16 @@ pub fn parse_str_to_vec3(input: &str) -> Option<DVec3> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_parse_pos_expr_nested_parentheses_not_truncated() {
+        // 复现：内层表达式自带括号，外层 value 也被括号包裹时，旧实现会截断并丢失右括号。
+        let input = "( ATTRIB PARA[10 ] / 2 ) )";
+        let (rest, (content, neg)) = parse_pos_expr(input).unwrap();
+        assert!(!neg);
+        assert_eq!(content, "( ATTRIB PARA[10 ] / 2 )");
+        assert_eq!(rest, ")");
+    }
 
     #[test]
     fn test_parse_str_to_vec3() {

@@ -1,0 +1,286 @@
+define object supportSctn
+	member .ref is string
+	member .zdir is direction
+	member .posstart is position
+	member .posend is position
+	member .drnstart is direction
+	member .drnend is direction
+	member .axis is line
+
+
+	member .ori is orientation
+	member .xlen is real
+	member .ylen is real
+	member .zlen is real
+
+	member .startposs is array
+	member .endposs is array
+
+	member .startplane is plane
+	member .endplane is plane
+
+	member .outsidePoints is array
+	member .maxDis is real
+
+	member .length is real
+	member .lenpos1 is position
+	member .lenpos2 is position
+
+	member .adlongth is real
+endobject
+
+define method .supportSctn(!sctn is any)
+	var !ref ref of $!sctn
+	!this.ref = !ref
+	if type of $!sctn eq 'SCTN' then
+		--q var !this.ref !sctn
+		var !spref spref of $!sctn
+		if !spref.match('[') ne 0 then	$*For cn company
+			var !posstartstring1 pos ppli FOC prop 0 of $!sctn wrt/*
+			var !posendstring1 pos ppli FOC prop 1 of $!sctn wrt/*
+            var !posstartstring2 pos ppli LBOC prop 0 of $!sctn wrt/*
+			var !posendstring2 pos ppli LBOC prop 1 of $!sctn wrt/*
+            var !posstartstring3 pos ppli LTOC prop 0 of $!sctn wrt/*
+			var !posendstring3 pos ppli LTOC prop 1 of $!sctn wrt/*
+            !allDist = array()
+            !dist1 = !posstartstring1.position().Distance(!posendstring1.position())
+            !dist2 = !posstartstring2.position().Distance(!posendstring2.position())
+            !dist3 = !posstartstring3.position().Distance(!posendstring3.position())
+            !allDist.append(!dist1)
+            !allDist.append(!dist2)
+            !allDist.append(!dist3)
+            !allDistindex = !allDist.sortedindices()
+            if  !allDistindex[3] eq 1 then
+                !posstartstring = !posstartstring1
+                !posendstring = !posendstring1
+            elseif !allDistindex[3] eq 2 then
+                !posstartstring = !posstartstring2
+                !posendstring = !posendstring2
+            elseif !allDistindex[3] eq 3 then
+                !posstartstring = !posstartstring3
+                !posendstring = !posendstring3
+            endif
+			!this.posstart = !posstartstring.position()
+			!this.posend = !posendstring.position()
+        elseif !spref.match('HW') ne 0  or !spref.match('D1') ne 0 or !spref.match('D2') ne 0 then	$*For cn company
+			var !posstartstring1 pos ppli LTOS prop 0 of $!sctn wrt/*
+			var !posendstring1 pos ppli LTOS prop 1 of $!sctn wrt/*
+            var !posstartstring2 pos ppli LBOS prop 0 of $!sctn wrt/*
+			var !posendstring2 pos ppli LBOS prop 1 of $!sctn wrt/*
+            var !posstartstring3 pos ppli RBOS prop 0 of $!sctn wrt/*
+			var !posendstring3 pos ppli RBOS prop 1 of $!sctn wrt/*
+            var !posstartstring4 pos ppli RTOS prop 0 of $!sctn wrt/*
+			var !posendstring4 pos ppli RTOS prop 1 of $!sctn wrt/*
+            !allDist = array()
+            !dist1 = !posstartstring1.position().Distance(!posendstring1.position())
+            !dist2 = !posstartstring2.position().Distance(!posendstring2.position())
+            !dist3 = !posstartstring3.position().Distance(!posendstring3.position())
+            !dist4 = !posstartstring4.position().Distance(!posendstring4.position())
+            !allDist.append(!dist1)
+            !allDist.append(!dist2)
+            !allDist.append(!dist3)
+            !allDist.append(!dist4)
+            !allDistindex = !allDist.sortedindices()
+            if  !allDistindex[4] eq 1 then
+                !posstartstring = !posstartstring1
+                !posendstring = !posendstring1
+            elseif !allDistindex[4] eq 2 then
+                !posstartstring = !posstartstring2
+                !posendstring = !posendstring2
+            elseif !allDistindex[4] eq 3 then
+                !posstartstring = !posstartstring3
+                !posendstring = !posendstring3
+            elseif !allDistindex[4] eq 4 then
+                !posstartstring = !posstartstring4
+                !posendstring = !posendstring4
+            endif
+			!this.posstart = !posstartstring.position()
+			!this.posend = !posendstring.position()
+		else
+			!this.posstart = posstart of $!sctn wrt/*
+			!this.posend = posend of $!sctn wrt/*
+		endif
+		!this.drnstart = drnstart of $!sctn wrt/*
+		!this.drnend = drnend of $!sctn wrt/*
+	elseif type of $!sctn eq 'GENSEC' then
+		var !poinsps coll all poinsp for $!sctn
+		!this.posstart = pos of $!poinsps[1] wrt/*
+		!lastp = !poinsps.last()
+		!this.posend = pos of $!lastp wrt/*
+		!this.drnstart = drnstart of first spine of $!sctn wrt/*
+		!this.drnend = drnend of first spine of $!sctn wrt/*
+	endif
+	!this.axis = !this.posstart.line(!this.posend)
+
+	!this.adlongth = :SUPP-ADLONGTH of $!sctn
+	handle any
+	--q var !!error
+		!this.adlongth = 0
+	elsehandle none
+		if !this.adlongth.unset() then
+			!this.adlongth = 0
+		endif
+	endhandle
+
+	!this.zdir = !this.axis.direction()
+
+	!this.startplane = object plane(!this.posstart,object orientation('z is $!this.drnstart'))
+	!this.endplane = object plane(!this.posend,object orientation('z is $!this.drnend'))
+	!this.ori = ori of $!sctn wrt/*
+	!this.getPoss()
+	!this.getlength()
+endmethod
+
+define method .getlength()
+	!poss = !this.startposs
+	!poss.appendarray(!this.endposs)
+	--!mindis = 100000
+	--!maxdis = -100000
+	!diss = array()
+	do !pos values !poss
+		!dis = !this.posstart.distance(!this.axis.near(!pos))
+		!dir = !this.posstart.direction(!this.axis.near(!pos))
+		handle any
+		elsehandle none
+			if !dir.angle(!this.zdir) gt 90 then
+				!dis = - !dis
+			endif
+		endhandle
+		!diss.append(!dis)
+		--!mindis = min(!mindis,!dis)
+		--!maxdis = max(!maxdis,!dis)
+	enddo
+	--!this.length = !maxdis - !mindis
+	!indices = !diss.sortedindices()
+	!diss.reindex(!indices)
+	!this.length = !diss.last() - !diss[1]
+
+    --modify by jyg 20240927
+    if  !this.length.string('d2').after('.').real() gt 0 then
+        !this.length = real(string(!this.length.string('d2').Before('.').real() + 1) + 'mm')
+    endif
+
+	!this.lenpos1 = !poss[!indices[1]]
+	!this.lenpos2 = !poss[!indices.last()]
+
+	$(
+	if abs(!this.axis.length() - !this.length) gt 0.1 or abs(!diss[1]) gt 0.1 then
+		!setpos = false
+		do !x indices !this.startposs
+			if abs(!this.startposs[!x].distance(!this.endposs[!x]) - !this.length) lt 0.1 then
+				!this.posstart = !this.startposs[!x]
+				!this.posend = !this.endposs[!x]
+				!setpos = true
+				break
+			endif
+		enddo
+		if !setpos.not() then
+			!this.posstart = !this.axis.near(!this.lenpos1)
+			!this.posend = !this.axis.near(!this.lenpos2)
+		endif
+		!this.axis = !this.posstart.line(!this.posend)
+	endif
+	$)
+endmethod
+
+define method .getPoss()
+	!points = !!getSctnPoints(!this.ref)
+
+$(
+	!diss = array()
+	!xdir = !this.ori.xdir()
+	!ydir = !this.ori.ydir()
+	do !point values !points
+		!dis = !point.distance(!this.posstart)
+		!diss.append(!dis)
+	enddo
+	!indices = !diss.sortedindices().invert()
+	!diss.reindex(!indices)
+	!points.reindex(!indices)
+
+	!maxdis = !diss[!indices[1]]
+	!mindis = 0.98 * !maxdis
+	do !x indices !diss
+		if !diss[!x] gt !mindis then
+			!this.outsidePoints.append(!points[!x])
+		else
+			break
+		endif
+	enddo
+$)
+
+
+	!xdiss = array()
+	!ydiss = array()
+
+	!maxdis1 = 0
+	!maxdis2 = 0
+	!maxdis3 = 0
+	!maxdis4 = 0
+
+	!cenpoint = !!getcenpoint(!points)
+
+	!xdir = !this.ori.xdir()
+	!ydir = !this.ori.ydir()
+	do !x indices !points
+		!point = !points[!x]
+		!xdis = !!suidirdis(!cenpoint,!xdir,!point)
+		!ydis = !!suidirdis(!cenpoint,!ydir,!point)
+		!dis = sqrt(power(!xdis,2) + power(!ydis,2))
+		if !xdis gt 0 and !ydis gt 0 then
+			if !dis gt !maxdis1 then
+				!maxdis1 = !dis
+				!max1 = !x
+			endif
+		elseif !xdis lt 0 and !ydis gt 0 then
+			if !dis gt !maxdis2 then
+				!maxdis2 = !dis
+				!max2 = !x
+			endif
+		elseif !xdis lt 0 and !ydis lt 0 then
+			if !dis gt !maxdis3 then
+				!maxdis3 = !dis
+				!max3 = !x
+			endif
+		elseif !xdis gt 0 and !ydis lt 0 then
+			if !dis gt !maxdis4 then
+				!maxdis4 = !dis
+				!max4 = !x
+			endif
+		endif
+		!xdiss.append(!xdis)
+		!ydiss.append(!ydis)
+
+	enddo
+	!xdiss.sort()
+	!ydiss.sort()
+	!this.xlen = !xdiss.last() - !xdiss[1]
+	!this.ylen = !ydiss.last() - !ydiss[1]
+
+	!this.maxdis = 0
+	do !x from 1 to 4
+		if defined(!max$!x) then
+			!this.outsidePoints.append(!points[!max$!x])
+			!this.maxdis = max(!this.maxdis,!maxdis$!x)
+		endif
+	enddo
+
+	do !point values !this.outsidepoints
+		!line = !point.line(!point.offset(!this.zdir,1000))
+		!this.startposs.append(!line.intersection(!this.startplane))
+		handle any
+			!this.drnstart = !this.zdir
+			!this.startplane = object plane(!this.posstart,object orientation('z is $!this.drnstart'))
+			!this.startposs.append(!line.intersection(!this.startplane))
+		endhandle
+		!this.endposs.append(!line.intersection(!this.endplane))
+		handle any
+			!this.drnend = !this.zdir
+			!this.endplane = object plane(!this.posend,object orientation('z is $!this.drnend'))
+			!this.endposs.append(!line.intersection(!this.endplane))
+		endhandle
+	enddo
+endmethod
+
+
+Ñ

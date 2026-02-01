@@ -1,0 +1,51 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= February 7th 2024
+--[Function]:
+------------------------------------------
+
+define function !!getmbdfilename(!input is any) is string
+	!filename = ''
+	if !input.objecttype() eq 'ARRAY' then
+		!item = !input[1]
+		handle any
+			return !filename
+		endhandle
+		!dbref = object dbref(!item)
+	elseif !input.objecttype() eq 'DBREF' then
+		!dbref = !input
+	else
+		!dbref = object dbref(!input)
+	endif
+
+	if !dbref.badref() then
+		return !filename
+	else
+		!show = !!deliveryModelMigration.shown()
+		handle any
+			pml reload form !!deliveryModelMigration
+			handle any
+			endhandle
+		elsehandle none
+			if !show.not() then
+				pml reload form !!deliveryModelMigration
+				handle any
+				endhandle
+			endif
+		endhandle
+		--q var !!deliveryModelMigration
+		!filename = !!deliveryModelMigration.getFileAutoName(!dbref)
+		handle any
+		endhandle
+		if undefined(!filename) or !filename.unset() or !filename eq '' then
+			!name = name of $!dbref
+			!filename = !name.replace('=','_').replace('/','_').replace('\','_')
+		endif
+		return !filename
+	endif
+endfunction
+Ù,

@@ -1,0 +1,1613 @@
+﻿
+14:50:46 27 February 2025
+/1VNA501LP-SUPP-01 failed to draw
+(2,779)   Method <DIMLINE>.DRAW(<REAL>,<REAL>,<REAL>) not found
+ In line 3953 of PML function instsupport.DRAW
+        !dimline.Draw(1,2,3)
+ Called from line 682 of PML function markinstpipesuppform.DRAWALL
+		!this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+15:22:45 26 February 2025
+/1VCP001LT-R2 failed to draw
+(2,751)   Variable !W does not exist
+ In line 31 of PML function getcenpoint
+	!e = (!w + !e) / 2
+ Called from line 4335 of PML function instsupport.GETLOCATIONPOSITION
+	return !!getcenpoint(!poss)
+ Called from line 3925 of PML function instsupport.DRAW
+		!locationpos = !this.getlocationposition()
+ Called from line 682 of PML function markinstpipesuppform.DRAWALL
+		!this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+14:04:41 20 February 2025
+/1UR04-RACK 对象化失败
+(2,204)   User defined attribute :ZD_BZBM not valid for element ZONE /1UR04-RACK
+ In line 260 of PML function instsupport.GETATTS
+        !this.standard = :ZD_BZBM of $!this.suppname
+ Called from line 210 of PML function instsupport.INSTSUPPORT
+	!this.getatts()
+ Called from line 191 of PML function instsupport.INSTSUPPORT
+	!this.instsupport(!item,!drawtype)
+ Called from line 458 of PML function markinstpipesuppform.ADDONECE
+			!supp = object instsupport(!name)
+ Called from line 388 of PML function markinstpipesuppform.ADDCE
+	!this.addonece()
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+21:54:36 18 February 2025
+/1VES403MP-SUPP-09 failed to draw
+(2,779)   Method <DBREF>.STIRNG() not found
+ In line 4814 of PML function instsupport.SPECIALMATERIALSJSON
+        !onearr.insert(2,|"refno":["| + !tryname.dbref().ref.stirng() + |"],|)
+ Called from line 4734 of PML function instsupport.GETJSONDATA
+	!jsonmem.separateMaterial = !this.specialmaterialsJson(!elematerialAttS, !elematerialAttShow,!this.nodename)
+ Called from line 4320 of PML function instsupport.GETJSONARRAY
+		!result = !this.getjsondata(!!markinstpipesuppform.materialAttS, !!markinstpipesuppform.materialAttShow,!!markinstpipesuppform.elematerialAttS, !!markinstpipesuppform.elematerialAttShow, !!markinstpipesuppform.suppAtts ,!!markinstpipesuppform.suppAttShow)
+ Called from line 4337 of PML function instsupport.GENERATEJSONATTRVM
+	!result = !this.getjsonarray()
+ Called from line 4113 of PML function instsupport.DRAW
+		!this.generatejsonattrvm()
+ Called from line 682 of PML function markinstpipesuppform.DRAWALL
+		!this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+21:54:06 18 February 2025
+/1VES403MP-SUPP-09 failed to draw
+(2,779)   Method <STRING>.+(<DBREF>) not found
+ In line 4814 of PML function instsupport.SPECIALMATERIALSJSON
+        !onearr.insert(2,|"refno":["| + !tryname.dbref().ref + |"],|)
+ Called from line 4734 of PML function instsupport.GETJSONDATA
+	!jsonmem.separateMaterial = !this.specialmaterialsJson(!elematerialAttS, !elematerialAttShow,!this.nodename)
+ Called from line 4320 of PML function instsupport.GETJSONARRAY
+		!result = !this.getjsondata(!!markinstpipesuppform.materialAttS, !!markinstpipesuppform.materialAttShow,!!markinstpipesuppform.elematerialAttS, !!markinstpipesuppform.elematerialAttShow, !!markinstpipesuppform.suppAtts ,!!markinstpipesuppform.suppAttShow)
+ Called from line 4337 of PML function instsupport.GENERATEJSONATTRVM
+	!result = !this.getjsonarray()
+ Called from line 4113 of PML function instsupport.DRAW
+		!this.generatejsonattrvm()
+ Called from line 682 of PML function markinstpipesuppform.DRAWALL
+		!this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+21:52:07 18 February 2025
+/1VES403MP-SUPP-09 failed to draw
+(46,98)   PML: IF (line 47) has no matching ENDIF
+ In line 48 of PML function getsuppdata
+        if  !rev eq 'merge' then
+ Called from line 525 of PML function instsupport.SUMMATERIALS
+        !rowarrs = !!GetSuppData(!this.SUPPNAME,!SuppType,!CurrRev)
+ Called from line 4762 of PML function instsupport.MATERIALSJSON
+	!materials = !this.sumMaterials(!materialAttS)
+ Called from line 4733 of PML function instsupport.GETJSONDATA
+	!jsonmem.material = !this.materialsJson(!materialAttS, !materialAttShow,!this.nodename)
+ Called from line 4320 of PML function instsupport.GETJSONARRAY
+		!result = !this.getjsondata(!!markinstpipesuppform.materialAttS, !!markinstpipesuppform.materialAttShow,!!markinstpipesuppform.elematerialAttS, !!markinstpipesuppform.elematerialAttShow, !!markinstpipesuppform.suppAtts ,!!markinstpipesuppform.suppAttShow)
+ Called from line 4337 of PML function instsupport.GENERATEJSONATTRVM
+	!result = !this.getjsonarray()
+ Called from line 4113 of PML function instsupport.DRAW
+		!this.generatejsonattrvm()
+ Called from line 682 of PML function markinstpipesuppform.DRAWALL
+		!this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+21:51:45 18 February 2025
+/1VES403MP-SUPP-09 failed to draw
+(46,97)   PML: DO (line 32) has no matching ENDDO
+ In line 47 of PML function getsuppdata
+        !Quantity = !SuppDataList[!SuppQuantity]
+ Called from line 525 of PML function instsupport.SUMMATERIALS
+        !rowarrs = !!GetSuppData(!this.SUPPNAME,!SuppType,!CurrRev)
+ Called from line 4762 of PML function instsupport.MATERIALSJSON
+	!materials = !this.sumMaterials(!materialAttS)
+ Called from line 4733 of PML function instsupport.GETJSONDATA
+	!jsonmem.material = !this.materialsJson(!materialAttS, !materialAttShow,!this.nodename)
+ Called from line 4320 of PML function instsupport.GETJSONARRAY
+		!result = !this.getjsondata(!!markinstpipesuppform.materialAttS, !!markinstpipesuppform.materialAttShow,!!markinstpipesuppform.elematerialAttS, !!markinstpipesuppform.elematerialAttShow, !!markinstpipesuppform.suppAtts ,!!markinstpipesuppform.suppAttShow)
+ Called from line 4337 of PML function instsupport.GENERATEJSONATTRVM
+	!result = !this.getjsonarray()
+ Called from line 4113 of PML function instsupport.DRAW
+		!this.generatejsonattrvm()
+ Called from line 682 of PML function markinstpipesuppform.DRAWALL
+		!this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+21:51:17 18 February 2025
+/1VES403MP-SUPP-09 failed to draw
+(46,97)   PML: DO (line 32) has no matching ENDDO
+ In line 47 of PML function getsuppdata
+        !Quantity = !SuppDataList[!SuppQuantity]
+ Called from line 525 of PML function instsupport.SUMMATERIALS
+        !rowarrs = !!GetSuppData(!this.SUPPNAME,!SuppType,!CurrRev)
+ Called from line 4762 of PML function instsupport.MATERIALSJSON
+	!materials = !this.sumMaterials(!materialAttS)
+ Called from line 4733 of PML function instsupport.GETJSONDATA
+	!jsonmem.material = !this.materialsJson(!materialAttS, !materialAttShow,!this.nodename)
+ Called from line 4320 of PML function instsupport.GETJSONARRAY
+		!result = !this.getjsondata(!!markinstpipesuppform.materialAttS, !!markinstpipesuppform.materialAttShow,!!markinstpipesuppform.elematerialAttS, !!markinstpipesuppform.elematerialAttShow, !!markinstpipesuppform.suppAtts ,!!markinstpipesuppform.suppAttShow)
+ Called from line 4337 of PML function instsupport.GENERATEJSONATTRVM
+	!result = !this.getjsonarray()
+ Called from line 4113 of PML function instsupport.DRAW
+		!this.generatejsonattrvm()
+ Called from line 682 of PML function markinstpipesuppform.DRAWALL
+		!this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+21:51:01 18 February 2025
+/1VES403MP-SUPP-09 failed to draw
+(46,97)   PML: DO (line 32) has no matching ENDDO
+ In line 47 of PML function getsuppdata
+        !Quantity = !SuppDataList[!SuppQuantity]
+ Called from line 525 of PML function instsupport.SUMMATERIALS
+        !rowarrs = !!GetSuppData(!this.SUPPNAME,!SuppType,!CurrRev)
+ Called from line 4762 of PML function instsupport.MATERIALSJSON
+	!materials = !this.sumMaterials(!materialAttS)
+ Called from line 4733 of PML function instsupport.GETJSONDATA
+	!jsonmem.material = !this.materialsJson(!materialAttS, !materialAttShow,!this.nodename)
+ Called from line 4320 of PML function instsupport.GETJSONARRAY
+		!result = !this.getjsondata(!!markinstpipesuppform.materialAttS, !!markinstpipesuppform.materialAttShow,!!markinstpipesuppform.elematerialAttS, !!markinstpipesuppform.elematerialAttShow, !!markinstpipesuppform.suppAtts ,!!markinstpipesuppform.suppAttShow)
+ Called from line 4337 of PML function instsupport.GENERATEJSONATTRVM
+	!result = !this.getjsonarray()
+ Called from line 4113 of PML function instsupport.DRAW
+		!this.generatejsonattrvm()
+ Called from line 682 of PML function markinstpipesuppform.DRAWALL
+		!this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+21:50:25 18 February 2025
+/1VES403MP-SUPP-09 failed to draw
+(46,97)   PML: DO (line 32) has no matching ENDDO
+ In line 47 of PML function getsuppdata
+        !Quantity = !SuppDataList[!SuppQuantity]
+ Called from line 525 of PML function instsupport.SUMMATERIALS
+        !rowarrs = !!GetSuppData(!this.SUPPNAME,!SuppType,!CurrRev)
+ Called from line 4762 of PML function instsupport.MATERIALSJSON
+	!materials = !this.sumMaterials(!materialAttS)
+ Called from line 4733 of PML function instsupport.GETJSONDATA
+	!jsonmem.material = !this.materialsJson(!materialAttS, !materialAttShow,!this.nodename)
+ Called from line 4320 of PML function instsupport.GETJSONARRAY
+		!result = !this.getjsondata(!!markinstpipesuppform.materialAttS, !!markinstpipesuppform.materialAttShow,!!markinstpipesuppform.elematerialAttS, !!markinstpipesuppform.elematerialAttShow, !!markinstpipesuppform.suppAtts ,!!markinstpipesuppform.suppAttShow)
+ Called from line 4337 of PML function instsupport.GENERATEJSONATTRVM
+	!result = !this.getjsonarray()
+ Called from line 4113 of PML function instsupport.DRAW
+		!this.generatejsonattrvm()
+ Called from line 682 of PML function markinstpipesuppform.DRAWALL
+		!this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+15:52:09 18 February 2025
+/1VES403MP-SUPP-09 failed to draw
+(2,752)   Array element 3 does not exist
+ In line 4780 of PML function instsupport.MATERIALSJSON
+        !onearr.insert(2,|"refno":["| + !this.materials[!y].name + |"],|)
+ Called from line 4730 of PML function instsupport.GETJSONDATA
+	!jsonmem.material = !this.materialsJson(!materialAttS, !materialAttShow,!this.nodename)
+ Called from line 4317 of PML function instsupport.GETJSONARRAY
+		!result = !this.getjsondata(!!markinstpipesuppform.materialAttS, !!markinstpipesuppform.materialAttShow,!!markinstpipesuppform.elematerialAttS, !!markinstpipesuppform.elematerialAttShow, !!markinstpipesuppform.suppAtts ,!!markinstpipesuppform.suppAttShow)
+ Called from line 4334 of PML function instsupport.GENERATEJSONATTRVM
+	!result = !this.getjsonarray()
+ Called from line 4110 of PML function instsupport.DRAW
+		!this.generatejsonattrvm()
+ Called from line 682 of PML function markinstpipesuppform.DRAWALL
+		!this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+15:51:15 18 February 2025
+/1VES403MP-SUPP-09 failed to draw
+(2,752)   Array element 3 does not exist
+ In line 4780 of PML function instsupport.MATERIALSJSON
+        !onearr.insert(2,|"refno":["| + !this.materials[!y].name + |"],|)
+ Called from line 4730 of PML function instsupport.GETJSONDATA
+	!jsonmem.material = !this.materialsJson(!materialAttS, !materialAttShow,!this.nodename)
+ Called from line 4317 of PML function instsupport.GETJSONARRAY
+		!result = !this.getjsondata(!!markinstpipesuppform.materialAttS, !!markinstpipesuppform.materialAttShow,!!markinstpipesuppform.elematerialAttS, !!markinstpipesuppform.elematerialAttShow, !!markinstpipesuppform.suppAtts ,!!markinstpipesuppform.suppAttShow)
+ Called from line 4334 of PML function instsupport.GENERATEJSONATTRVM
+	!result = !this.getjsonarray()
+ Called from line 4110 of PML function instsupport.DRAW
+		!this.generatejsonattrvm()
+ Called from line 682 of PML function markinstpipesuppform.DRAWALL
+		!this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+15:48:13 18 February 2025
+/1VES403MP-SUPP-09 failed to draw
+(2,752)   Array element 3 does not exist
+ In line 4780 of PML function instsupport.MATERIALSJSON
+        !onearr.insert(2,|"refno":["| + !this.materials[!y].name + |"],|)
+ Called from line 4730 of PML function instsupport.GETJSONDATA
+	!jsonmem.material = !this.materialsJson(!materialAttS, !materialAttShow,!this.nodename)
+ Called from line 4317 of PML function instsupport.GETJSONARRAY
+		!result = !this.getjsondata(!!markinstpipesuppform.materialAttS, !!markinstpipesuppform.materialAttShow,!!markinstpipesuppform.elematerialAttS, !!markinstpipesuppform.elematerialAttShow, !!markinstpipesuppform.suppAtts ,!!markinstpipesuppform.suppAttShow)
+ Called from line 4334 of PML function instsupport.GENERATEJSONATTRVM
+	!result = !this.getjsonarray()
+ Called from line 4110 of PML function instsupport.DRAW
+		!this.generatejsonattrvm()
+ Called from line 682 of PML function markinstpipesuppform.DRAWALL
+		!this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+10:30:09 18 February 2025
+/1VES403MP-SUPP-09 failed to draw
+(2,752)   Array element 3 does not exist
+ In line 4780 of PML function instsupport.MATERIALSJSON
+        !onearr.insert(2,|"refno":["| + !this.materials[!y].name + |"],|)
+ Called from line 4730 of PML function instsupport.GETJSONDATA
+	!jsonmem.material = !this.materialsJson(!materialAttS, !materialAttShow,!this.nodename)
+ Called from line 4317 of PML function instsupport.GETJSONARRAY
+		!result = !this.getjsondata(!!markinstpipesuppform.materialAttS, !!markinstpipesuppform.materialAttShow,!!markinstpipesuppform.elematerialAttS, !!markinstpipesuppform.elematerialAttShow, !!markinstpipesuppform.suppAtts ,!!markinstpipesuppform.suppAttShow)
+ Called from line 4334 of PML function instsupport.GENERATEJSONATTRVM
+	!result = !this.getjsonarray()
+ Called from line 4110 of PML function instsupport.DRAW
+		!this.generatejsonattrvm()
+ Called from line 682 of PML function markinstpipesuppform.DRAWALL
+		!this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+10:29:07 18 February 2025
+/1VES403MP-SUPP-09 failed to draw
+(2,752)   Array element 3 does not exist
+ In line 4778 of PML function instsupport.MATERIALSJSON
+        !onearr.insert(2,|"refno":["| + !this.materials[!y].name + |"],|)
+ Called from line 4730 of PML function instsupport.GETJSONDATA
+	!jsonmem.material = !this.materialsJson(!materialAttS, !materialAttShow,!this.nodename)
+ Called from line 4317 of PML function instsupport.GETJSONARRAY
+		!result = !this.getjsondata(!!markinstpipesuppform.materialAttS, !!markinstpipesuppform.materialAttShow,!!markinstpipesuppform.elematerialAttS, !!markinstpipesuppform.elematerialAttShow, !!markinstpipesuppform.suppAtts ,!!markinstpipesuppform.suppAttShow)
+ Called from line 4334 of PML function instsupport.GENERATEJSONATTRVM
+	!result = !this.getjsonarray()
+ Called from line 4110 of PML function instsupport.DRAW
+		!this.generatejsonattrvm()
+ Called from line 682 of PML function markinstpipesuppform.DRAWALL
+		!this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+10:18:48 18 February 2025
+/1VES403MP-SUPP-09 failed to draw
+(2,754)   Argument 2 to + or & is unset
+ In line 70 of PML function jsonmem.GETJSONTEXT
+	!result.append(|   "E3DProject": "| + !this.E3DProject + |",|)
+ Called from line 4732 of PML function instsupport.GETJSONDATA
+	return !jsonmem.getjsontext()
+ Called from line 4317 of PML function instsupport.GETJSONARRAY
+		!result = !this.getjsondata(!!markinstpipesuppform.materialAttS, !!markinstpipesuppform.materialAttShow,!!markinstpipesuppform.elematerialAttS, !!markinstpipesuppform.elematerialAttShow, !!markinstpipesuppform.suppAtts ,!!markinstpipesuppform.suppAttShow)
+ Called from line 4334 of PML function instsupport.GENERATEJSONATTRVM
+	!result = !this.getjsonarray()
+ Called from line 4110 of PML function instsupport.DRAW
+		!this.generatejsonattrvm()
+ Called from line 682 of PML function markinstpipesuppform.DRAWALL
+		!this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+10:23:05 13 September 2024
+/1WSR002LP-SUPP-03 failed to draw
+(46,73)   PML: Variable value not set
+ In line 4095 of PML function instsupport.DRAW
+            if  !this.textMater then
+ Called from line 682 of PML function markinstpipesuppform.DRAWALL
+		!this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+15:00:50 29 August 2024
+/1VEE001MP-SUPP-11 failed to draw
+(2,754)   Argument 2 to MIN is unset
+ In line 3764 of PML function instsupport.GETVOLUME
+			!volume.from.east = min(!volume.from.east,!onevolume.from.east)
+ Called from line 3789 of PML function instsupport.GETCHEIGHT
+		!volume = !this.getvolume()
+ Called from line 3796 of PML function instsupport.DRAW
+	!this.getcheight()
+ Called from line 682 of PML function markinstpipesuppform.DRAWALL
+		!this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+14:55:10 29 August 2024
+/1VEE001MP-SUPP-11 failed to draw
+(2,754)   Argument 2 to MIN is unset
+ In line 3763 of PML function instsupport.GETVOLUME
+			!volume.from.east = min(!volume.from.east,!onevolume.from.east)
+ Called from line 3788 of PML function instsupport.GETCHEIGHT
+		!volume = !this.getvolume()
+ Called from line 3795 of PML function instsupport.DRAW
+	!this.getcheight()
+ Called from line 682 of PML function markinstpipesuppform.DRAWALL
+		!this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:45:37 20 May 2024
+/S128.003 failed to draw
+(46,17)   PML: BREAK or SKIP must occur in a DO loop
+ In line 936 of PML function planesystem.DELETEREPEATDIMLINE
+			skip
+ Called from line 1043 of PML function planesystem.DELETEREPEATEDDIMLINES
+					!delnum = !this.deleterepeatdimline(!x,!y)
+ Called from line 117 of PML function planesystem.PLANESYSTEM
+	!this.deleterepeateddimlines()	$* for inst pipe supp/ inst supp, not for em4 support
+ Called from line 3733 of PML function instsupport.DRAW
+	!this.planeSystem = object planesystem(!this.partobjects,!this.partconnections,!this.textindexs,!this.cheight,!lookdir)
+ Called from line 682 of PML function markinstpipesuppform.DRAWALL
+		!this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:44:44 20 May 2024
+/S128.003 failed to draw
+(2,869)   Error in conversion to world co-ordinates. Check for unset objects
+ In line 933 of PML function planesystem.DELETEREPEATDIMLINE
+		!angle = !dimline1.planedir.angle(!dimline2.planedir)
+ Called from line 1042 of PML function planesystem.DELETEREPEATEDDIMLINES
+					!delnum = !this.deleterepeatdimline(!x,!y)
+ Called from line 117 of PML function planesystem.PLANESYSTEM
+	!this.deleterepeateddimlines()	$* for inst pipe supp/ inst supp, not for em4 support
+ Called from line 3733 of PML function instsupport.DRAW
+	!this.planeSystem = object planesystem(!this.partobjects,!this.partconnections,!this.textindexs,!this.cheight,!lookdir)
+ Called from line 682 of PML function markinstpipesuppform.DRAWALL
+		!this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:43:20 20 May 2024
+/S128.003 failed to draw
+(2,869)   Error in conversion to world co-ordinates. Check for unset objects
+ In line 933 of PML function planesystem.DELETEREPEATDIMLINE
+		!angle = !dimline1.planedir.angle(!dimline2.planedir)
+ Called from line 1042 of PML function planesystem.DELETEREPEATEDDIMLINES
+					!delnum = !this.deleterepeatdimline(!x,!y)
+ Called from line 117 of PML function planesystem.PLANESYSTEM
+	!this.deleterepeateddimlines()	$* for inst pipe supp/ inst supp, not for em4 support
+ Called from line 3733 of PML function instsupport.DRAW
+	!this.planeSystem = object planesystem(!this.partobjects,!this.partconnections,!this.textindexs,!this.cheight,!lookdir)
+ Called from line 682 of PML function markinstpipesuppform.DRAWALL
+		!this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+16:24:06 15 May 2024
+/1ZBR015LP-SUPP-01 failed to draw
+(2,752)   Array element 8 does not exist
+ In line 1109 of PML function planesystem.GETCLAMPNEARPOINT
+	!object = !this.objects[!goodindex]
+ Called from line 1094 of PML function planesystem.GENERATELINEWITHNEARITEM
+	!nearpos = !this.getclampnearpoint(!pos,!goodindex)
+ Called from line 1087 of PML function planesystem.FINDLINEFORPOINT
+			!this.generateLinewithNearItem(!pos,!objectx,!goodindex)
+ Called from line 1032 of PML function planesystem.CHECKSUPPPOINT
+				!this.findlineforpoint(!objectpos,!objectx)
+ Called from line 106 of PML function planesystem.PLANESYSTEM
+		!this.checksupppoint(!poss)	$*dimline in suisupport use point projected to line, so more useless dim would be generated here if use this method
+ Called from line 3732 of PML function instsupport.DRAW
+	!this.planeSystem = object planesystem(!this.partobjects,!this.partconnections,!this.textindexs,!this.cheight,!lookdir)
+ Called from line 679 of PML function markinstpipesuppform.DRAWALL
+		!this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+16:22:05 15 May 2024
+/1ZBR015LP-SUPP-01 failed to draw
+(2,752)   Array element 8 does not exist
+ In line 1108 of PML function planesystem.GETCLAMPNEARPOINT
+	!object = !this.objects[!goodindex]
+ Called from line 1093 of PML function planesystem.GENERATELINEWITHNEARITEM
+	!nearpos = !this.getclampnearpoint(!pos,!goodindex)
+ Called from line 1086 of PML function planesystem.FINDLINEFORPOINT
+			!this.generateLinewithNearItem(!pos,!objectx,!goodindex)
+ Called from line 1031 of PML function planesystem.CHECKSUPPPOINT
+				!this.findlineforpoint(!objectpos,!objectx)
+ Called from line 106 of PML function planesystem.PLANESYSTEM
+		!this.checksupppoint(!poss)	$*dimline in suisupport use point projected to line, so more useless dim would be generated here if use this method
+ Called from line 3732 of PML function instsupport.DRAW
+	!this.planeSystem = object planesystem(!this.partobjects,!this.partconnections,!this.textindexs,!this.cheight,!lookdir)
+ Called from line 679 of PML function markinstpipesuppform.DRAWALL
+		!this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+16:20:00 15 May 2024
+/1ZBR015LP-SUPP-01 failed to draw
+(2,752)   Array element 8 does not exist
+ In line 1107 of PML function planesystem.GETCLAMPNEARPOINT
+	!object = !this.objects[!goodindex]
+ Called from line 1092 of PML function planesystem.GENERATELINEWITHNEARITEM
+	!nearpos = !this.getclampnearpoint(!pos,!goodindex)
+ Called from line 1085 of PML function planesystem.FINDLINEFORPOINT
+			!this.generateLinewithNearItem(!pos,!objectx,!goodindex)
+ Called from line 1030 of PML function planesystem.CHECKSUPPPOINT
+				!this.findlineforpoint(!objectpos,!objectx)
+ Called from line 105 of PML function planesystem.PLANESYSTEM
+		!this.checksupppoint(!poss)	$*dimline in suisupport use point projected to line, so more useless dim would be generated here if use this method
+ Called from line 3732 of PML function instsupport.DRAW
+	!this.planeSystem = object planesystem(!this.partobjects,!this.partconnections,!this.textindexs,!this.cheight,!lookdir)
+ Called from line 679 of PML function markinstpipesuppform.DRAWALL
+		!this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:27:29 13 May 2024
+/1ZBR015LP-SUPP-01 failed to draw
+(2,752)   Array element 8 does not exist
+ In line 1107 of PML function planesystem.GETCLAMPNEARPOINT
+	!object = !this.objects[!goodindex]
+ Called from line 1092 of PML function planesystem.GENERATELINEWITHNEARITEM
+	!nearpos = !this.getclampnearpoint(!pos,!goodindex)
+ Called from line 1085 of PML function planesystem.FINDLINEFORPOINT
+			!this.generateLinewithNearItem(!pos,!objectx,!goodindex)
+ Called from line 1030 of PML function planesystem.CHECKSUPPPOINT
+				!this.findlineforpoint(!objectpos,!objectx)
+ Called from line 105 of PML function planesystem.PLANESYSTEM
+		!this.checksupppoint(!poss)	$*dimline in suisupport use point projected to line, so more useless dim would be generated here if use this method
+ Called from line 3732 of PML function instsupport.DRAW
+	!this.planeSystem = object planesystem(!this.partobjects,!this.partconnections,!this.textindexs,!this.cheight,!lookdir)
+ Called from line 679 of PML function markinstpipesuppform.DRAWALL
+		!this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+13:50:18 29 March 2024
+/6RHR008LP-SUPP-02 failed to draw
+(46,70)   PML: Function called with too many arguments
+ In line 12 of PML function eye
+
+ Called from line 272 of PML function orixyeles.FINDTEXTSPACE
+
+ Called from line 273 of PML function drawplane.PUTTEXT
+	!cornerposs = !this.allorixyeles[!goodindex].findtextspace(!text,!pos,!this.cheight,!this.planeShapes)
+ Called from line 459 of PML function planesystem.ASSIGNMLABELS
+			!tempshape = !drawplane.puttext(!text,!pos,!this.realShapes)
+ Called from line 112 of PML function planesystem.PLANESYSTEM
+	!this.assignMlabels()
+ Called from line 3681 of PML function instsupport.DRAW
+	!this.planeSystem = object planesystem(!this.partobjects,!this.partconnections,!this.textindexs,!this.cheight,!lookdir)
+ Called from line 668 of PML function markinstpipesuppform.DRAWALL
+		!this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+10:05:57 29 March 2024
+/6RHR008LP-SUPP-02 failed to draw
+(47,15)   CP: Syntax error
+ In line 1055 of PML function planesystem.GETSHAPES
+				!ori = z is ^^Unset
+ Called from line 1 of Internal Command Internal Command
+CADCEVALBLCK !this.getShapes(!evalindex)
+ Called from line 103 of PML function planesystem.PLANESYSTEM
+	!this.objects.evaluate(object block('!this.getShapes(!evalindex)'))
+ Called from line 3682 of PML function instsupport.DRAW
+	!this.planeSystem = object planesystem(!this.partobjects,!this.partconnections,!this.textindexs,!this.cheight,!lookdir)
+ Called from line 668 of PML function markinstpipesuppform.DRAWALL
+		!this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+09:43:48 29 March 2024
+/6RHR008LP-SUPP-02 failed to draw
+(47,15)   CP: Syntax error
+ In line 1055 of PML function planesystem.GETSHAPES
+				!ori = z is ^^Unset
+ Called from line 1 of Internal Command Internal Command
+CADCEVALBLCK !this.getShapes(!evalindex)
+ Called from line 103 of PML function planesystem.PLANESYSTEM
+	!this.objects.evaluate(object block('!this.getShapes(!evalindex)'))
+ Called from line 3682 of PML function instsupport.DRAW
+	!this.planeSystem = object planesystem(!this.partobjects,!this.partconnections,!this.textindexs,!this.cheight,!lookdir)
+ Called from line 668 of PML function markinstpipesuppform.DRAWALL
+		!this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+09:42:03 29 March 2024
+/6RHR008LP-SUPP-02 failed to draw
+(47,15)   CP: Syntax error
+ In line 1055 of PML function planesystem.GETSHAPES
+				!ori = z is ^^Unset
+ Called from line 1 of Internal Command Internal Command
+CADCEVALBLCK !this.getShapes(!evalindex)
+ Called from line 103 of PML function planesystem.PLANESYSTEM
+	!this.objects.evaluate(object block('!this.getShapes(!evalindex)'))
+ Called from line 3682 of PML function instsupport.DRAW
+	!this.planeSystem = object planesystem(!this.partobjects,!this.partconnections,!this.textindexs,!this.cheight,!lookdir)
+ Called from line 668 of PML function markinstpipesuppform.DRAWALL
+		!this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+09:40:18 29 March 2024
+/6RHR008LP-SUPP-02 failed to draw
+(47,15)   CP: Syntax error
+ In line 1053 of PML function planesystem.GETSHAPES
+				!ori = z is ^^Unset
+ Called from line 1 of Internal Command Internal Command
+CADCEVALBLCK !this.getShapes(!evalindex)
+ Called from line 103 of PML function planesystem.PLANESYSTEM
+	!this.objects.evaluate(object block('!this.getShapes(!evalindex)'))
+ Called from line 3682 of PML function instsupport.DRAW
+	!this.planeSystem = object planesystem(!this.partobjects,!this.partconnections,!this.textindexs,!this.cheight,!lookdir)
+ Called from line 668 of PML function markinstpipesuppform.DRAWALL
+		!this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+14:06:46 5 March 2024
+INSTSUPPORT failed to draw
+(2,751)   Variable !GOODINDEX does not exist
+ In line 4120 of PML function instsupport.GETTEXTINDEXS
+		!temparr.append(!goodindex)
+ Called from line 3723 of PML function instsupport.DRAW
+	!this.gettextindexs()
+ Called from line 679 of PML function markinstpipesuppform.DRAWALL
+		!this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+14:04:02 5 March 2024
+INSTSUPPORT failed to draw
+(2,751)   Variable !GOODINDEX does not exist
+ In line 4119 of PML function instsupport.GETTEXTINDEXS
+		!temparr.append(!goodindex)
+ Called from line 3723 of PML function instsupport.DRAW
+	!this.gettextindexs()
+ Called from line 679 of PML function markinstpipesuppform.DRAWALL
+		!this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+16:10:37 26 February 2024
+/6WCC012LD-SUPP-07 对象化失败
+(2,759)   Object does not have a member ROOM
+ In line 337 of PML function instsupport.GETATTS
+			$!com
+ Called from line 267 of PML function instsupport.INSTSUPPORT
+	!this.getatts()
+ Called from line 248 of PML function instsupport.INSTSUPPORT
+	!this.instsupport(!item,!drawtype)
+ Called from line 432 of PML function markinstpipesuppform.ADDCE
+			!supp = object instsupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+16:06:31 26 February 2024
+/6WCC012LD-SUPP-07 对象化失败
+(2,759)   Object does not have a member REV
+ In line 324 of PML function instsupport.GETSUPPATTS
+		!this.rev = ''
+ Called from line 266 of PML function instsupport.INSTSUPPORT
+	!this.getsuppatts()
+ Called from line 247 of PML function instsupport.INSTSUPPORT
+	!this.instsupport(!item,!drawtype)
+ Called from line 432 of PML function markinstpipesuppform.ADDCE
+			!supp = object instsupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+09:00:26 23 February 2024
+INSTSUPPORT failed to draw
+(2,785)   Unset/Invalid object passed to method
+ In line 749 of PML function planesystem.GETDIMLINES
+			!this.addconnectionpos(!object.lines[!x].direction(),!poss,!index,1)
+ Called from line 1 of Internal Command Internal Command
+CADCEVALBLCK !this.getDimLines(!evalindex)
+ Called from line 76 of PML function planesystem.PLANESYSTEM
+	!this.objects.evaluate(object block('!this.getDimLines(!evalindex)'))
+ Called from line 3594 of PML function instsupport.DRAW
+	!this.planeSystem = object planesystem(!this.partobjects,!this.partconnections,!this.textindexs,!this.cheight)
+ Called from line 654 of PML function markinstpipesuppform.DRAWALL
+		!this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+08:59:55 23 February 2024
+INSTSUPPORT failed to draw
+(2,785)   Unset/Invalid object passed to method
+ In line 749 of PML function planesystem.GETDIMLINES
+			!this.addconnectionpos(!object.lines[!x].direction(),!poss,!index,1)
+ Called from line 1 of Internal Command Internal Command
+CADCEVALBLCK !this.getDimLines(!evalindex)
+ Called from line 76 of PML function planesystem.PLANESYSTEM
+	!this.objects.evaluate(object block('!this.getDimLines(!evalindex)'))
+ Called from line 3594 of PML function instsupport.DRAW
+	!this.planeSystem = object planesystem(!this.partobjects,!this.partconnections,!this.textindexs,!this.cheight)
+ Called from line 654 of PML function markinstpipesuppform.DRAWALL
+		!this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+08:58:43 23 February 2024
+INSTSUPPORT failed to draw
+(2,785)   Unset/Invalid object passed to method
+ In line 749 of PML function planesystem.GETDIMLINES
+			!this.addconnectionpos(!object.lines[!x].direction(),!poss,!index,1)
+ Called from line 1 of Internal Command Internal Command
+CADCEVALBLCK !this.getDimLines(!evalindex)
+ Called from line 76 of PML function planesystem.PLANESYSTEM
+	!this.objects.evaluate(object block('!this.getDimLines(!evalindex)'))
+ Called from line 3594 of PML function instsupport.DRAW
+	!this.planeSystem = object planesystem(!this.partobjects,!this.partconnections,!this.textindexs,!this.cheight)
+ Called from line 654 of PML function markinstpipesuppform.DRAWALL
+		!this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+08:58:09 23 February 2024
+INSTSUPPORT failed to draw
+(2,785)   Unset/Invalid object passed to method
+ In line 748 of PML function planesystem.GETDIMLINES
+
+ Called from line 1 of Internal Command Internal Command
+CADCEVALBLCK !this.getDimLines(!evalindex)
+ Called from line 76 of PML function planesystem.PLANESYSTEM
+	!this.objects.evaluate(object block('!this.getDimLines(!evalindex)'))
+ Called from line 3594 of PML function instsupport.DRAW
+	!this.planeSystem = object planesystem(!this.partobjects,!this.partconnections,!this.textindexs,!this.cheight)
+ Called from line 654 of PML function markinstpipesuppform.DRAWALL
+		!this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+19:18:30 22 February 2024
+INSTSUPPORT failed to draw
+(2,785)   Unset/Invalid object passed to method
+ In line 748 of PML function planesystem.GETDIMLINES
+			!this.addconnectionpos(!object.lines[!x].direction(),!poss,!index,1)
+ Called from line 1 of Internal Command Internal Command
+CADCEVALBLCK !this.getDimLines(!evalindex)
+ Called from line 76 of PML function planesystem.PLANESYSTEM
+	!this.objects.evaluate(object block('!this.getDimLines(!evalindex)'))
+ Called from line 3594 of PML function instsupport.DRAW
+	!this.planeSystem = object planesystem(!this.partobjects,!this.partconnections,!this.textindexs,!this.cheight)
+ Called from line 654 of PML function markinstpipesuppform.DRAWALL
+		!this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+15:51:34 27 June 2023
+/S103.005 对象化失败
+
+15:52:07 27 June 2023
+/S103.005 对象化失败
+
+15:52:31 27 June 2023
+/S103.005 对象化失败
+
+15:53:35 27 June 2023
+/S103.005 Failed to get attribution list of this support
+
+15:56:51 27 June 2023
+/S103.005 对象化失败
+
+15:57:45 27 June 2023
+/S103.005 对象化失败
+
+15:58:08 27 June 2023
+/S103.005 对象化失败
+
+15:59:39 27 June 2023
+/S103.005 对象化失败
+
+16:00:20 27 June 2023
+/S103.005 对象化失败
+
+16:00:34 27 June 2023
+/S103.005 对象化失败
+
+16:01:31 27 June 2023
+/S103.005 对象化失败
+
+16:03:01 27 June 2023
+/S103.005 对象化失败
+
+16:48:14 28 June 2023
+SUISUPPORT failed to draw
+
+16:49:15 28 June 2023
+SUISUPPORT failed to draw
+(2,779)   Method <STRING>.+(<ARRAY>) not found
+ In line 1452 of PML function suisupport.DRAWONELINE
+	!lindim = object lindim(!this.mbdstru.dimgro,!dimpos, !ori, !this.linePoss[!x], !this.cheight,'一级尺寸','node:' + !!getsuppname(!this.inputref),!this.changeCheightAuto,!this.sepSmallDim)
+ Called from line 1 of Internal Command Internal Command
+CADCEVALBLCK !this.drawOneLine(!evalindex)
+ Called from line 204 of PML function suisupport.DRAW
+	!this.lines.evaluate(object block('!this.drawOneLine(!evalindex)'))
+ Called from line 316 of PML function marksuppform.DRAWALL
+		!this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:14:58 29 June 2023
+/S316.007 对象化失败
+(2,752)   Array element 4 does not exist
+ In line 1355 of PML function suisupport.ADDRESTATTAPOINTS
+			!this.linePoss[!oppositex].append(!lineinterpoints[!oppositex])
+ Called from line 198 of PML function suisupport.GETLINEDATA
+		!this.addrestattapoints()
+ Called from line 125 of PML function suisupport.SUISUPPORT
+	!this.getLineData()
+ Called from line 176 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+17:17:55 29 June 2023
+/S316.007 对象化失败
+(2,751)   Variable !!NEARESTPOS does not exist
+ In line 1359 of PML function suisupport.ADDRESTATTAPOINTS
+			if !!nearestpos.distance(!lineinterpoints[!indices[1]]) lt 1 then
+ Called from line 198 of PML function suisupport.GETLINEDATA
+		!this.addrestattapoints()
+ Called from line 125 of PML function suisupport.SUISUPPORT
+	!this.getLineData()
+ Called from line 176 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+17:18:22 29 June 2023
+/S316.007 对象化失败
+(2,752)   Array element 4 does not exist
+ In line 1367 of PML function suisupport.ADDRESTATTAPOINTS
+				!poss[2] = !lineinterpoints[!oppositex]
+ Called from line 198 of PML function suisupport.GETLINEDATA
+		!this.addrestattapoints()
+ Called from line 125 of PML function suisupport.SUISUPPORT
+	!this.getLineData()
+ Called from line 176 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+19:37:54 29 June 2023
+SUISUPPORT failed to draw
+(2,751)   Variable !TEMPCHEIGHT does not exist
+ In line 302 of PML function lindim.SEPSMALLDIM
+			!pointsPos.append(!tempCheight)
+ Called from line 143 of PML function lindim.CREATE
+	!allpointsPos = !this.sepSmallDim()
+ Called from line 116 of PML function lindim.LINDIM
+	return !this.create()
+ Called from line 65 of PML function lindim.LINDIM
+	return !this.lindim(!owner, !lindimpos, !ori, !points, !cheight, !function, !desc)
+ Called from line 1703 of PML function suisupport.DRAWONELINE
+	!lindim = object lindim(!this.mbdstru.dimgro,!dimpos, !ori, !this.linePoss[!x], !this.cheight,'一级尺寸','node:' + !this.nodename,!this.changeCheightAuto,!this.sepSmallDim)
+ Called from line 1 of Internal Command Internal Command
+CADCEVALBLCK !this.drawOneLine(!evalindex)
+ Called from line 230 of PML function suisupport.DRAW
+	!this.lines.evaluate(object block('!this.drawOneLine(!evalindex)'))
+ Called from line 338 of PML function marksuppform.DRAWALL
+		!this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+19:38:45 29 June 2023
+SUISUPPORT failed to draw
+(2,751)   Variable !TEMPCHEIGHT does not exist
+ In line 302 of PML function lindim.SEPSMALLDIM
+			!pointsPos.append(!tempCheight)
+ Called from line 143 of PML function lindim.CREATE
+	!allpointsPos = !this.sepSmallDim()
+ Called from line 116 of PML function lindim.LINDIM
+	return !this.create()
+ Called from line 65 of PML function lindim.LINDIM
+	return !this.lindim(!owner, !lindimpos, !ori, !points, !cheight, !function, !desc)
+ Called from line 1703 of PML function suisupport.DRAWONELINE
+	!lindim = object lindim(!this.mbdstru.dimgro,!dimpos, !ori, !this.linePoss[!x], !this.cheight,'一级尺寸','node:' + !this.nodename,!this.changeCheightAuto,!this.sepSmallDim)
+ Called from line 1 of Internal Command Internal Command
+CADCEVALBLCK !this.drawOneLine(!evalindex)
+ Called from line 230 of PML function suisupport.DRAW
+	!this.lines.evaluate(object block('!this.drawOneLine(!evalindex)'))
+ Called from line 338 of PML function marksuppform.DRAWALL
+		!this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+10:05:04 30 June 2023
+SUISUPPORT failed to draw
+(46,8)    PML: ELSE (line 163) has no matching IF
+ In line 163 of PML function dimoripos.GETTEXTORI
+	else										$*zlr is near horizontal
+ Called from line 56 of PML function dimoripos.GETORIANDPOS
+	!this.getTextOri()
+ Called from line 44 of PML function dimoripos.DIMORIPOS
+	!this.getOriAndPos()
+ Called from line 1690 of PML function suisupport.DRAWONELINE
+	!dimOriPos = object dimOriPos(!this.lines[!x],!this.cenpoint,!this.dirObject.lookDirs,!this.lineMaxDiss[!x],!this.cheight,211)
+ Called from line 1 of Internal Command Internal Command
+CADCEVALBLCK !this.drawOneLine(!evalindex)
+ Called from line 230 of PML function suisupport.DRAW
+	!this.lines.evaluate(object block('!this.drawOneLine(!evalindex)'))
+ Called from line 338 of PML function marksuppform.DRAWALL
+		!this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+11:07:03 30 June 2023
+SUISUPPORT failed to draw
+(47,15)   CP: Syntax error
+ In line 171 of PML function dimoripos.GETTEXTORI
+		!ori = y ^^s E WRT /* and z is U WRT /*
+ Called from line 56 of PML function dimoripos.GETORIANDPOS
+	!this.getTextOri()
+ Called from line 44 of PML function dimoripos.DIMORIPOS
+	!this.getOriAndPos()
+ Called from line 1692 of PML function suisupport.DRAWONELINE
+	!dimOriPos = object dimOriPos(!this.lines[!x],!this.cenpoint,!this.dirObject.lookDirs,!this.lineMaxDiss[!x],!this.cheight,211)
+ Called from line 1 of Internal Command Internal Command
+CADCEVALBLCK !this.drawOneLine(!evalindex)
+ Called from line 232 of PML function suisupport.DRAW
+	!this.lines.evaluate(object block('!this.drawOneLine(!evalindex)'))
+ Called from line 338 of PML function marksuppform.DRAWALL
+		!this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+11:07:32 30 June 2023
+SUISUPPORT failed to draw
+(46,73)   PML: Variable value not set
+ In line 1696 of PML function suisupport.DRAWONELINE
+	if !dimOriPos.invert then
+ Called from line 1 of Internal Command Internal Command
+CADCEVALBLCK !this.drawOneLine(!evalindex)
+ Called from line 232 of PML function suisupport.DRAW
+	!this.lines.evaluate(object block('!this.drawOneLine(!evalindex)'))
+ Called from line 338 of PML function marksuppform.DRAWALL
+		!this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+11:10:02 30 June 2023
+SUISUPPORT failed to draw
+(2,779)   Method <DIRECTION>.DIRECTION() not found
+ In line 204 of PML function dimoripos.GETTEXTORI
+	if !linedir.direction().angle(!xdir) gt 90 then
+ Called from line 56 of PML function dimoripos.GETORIANDPOS
+	!this.getTextOri()
+ Called from line 44 of PML function dimoripos.DIMORIPOS
+	!this.getOriAndPos()
+ Called from line 1692 of PML function suisupport.DRAWONELINE
+	!dimOriPos = object dimOriPos(!this.lines[!x],!this.cenpoint,!this.dirObject.lookDirs,!this.lineMaxDiss[!x],!this.cheight,211)
+ Called from line 1 of Internal Command Internal Command
+CADCEVALBLCK !this.drawOneLine(!evalindex)
+ Called from line 232 of PML function suisupport.DRAW
+	!this.lines.evaluate(object block('!this.drawOneLine(!evalindex)'))
+ Called from line 338 of PML function marksuppform.DRAWALL
+		!this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+16:22:06 30 June 2023
+SUISUPPORT failed to draw
+(2,759)   Object does not have a member INVERT
+ In line 216 of PML function dimoripos.GETTEXTORI
+		!this.invert = false
+ Called from line 56 of PML function dimoripos.GETORIANDPOS
+	!this.getTextOri()
+ Called from line 44 of PML function dimoripos.DIMORIPOS
+	!this.getOriAndPos()
+ Called from line 1692 of PML function suisupport.DRAWONELINE
+	!dimOriPos = object dimOriPos(!this.lines[!x],!this.cenpoint,!this.dirObject.lookDirs,!this.lineMaxDiss[!x],!this.cheight,211)
+ Called from line 1 of Internal Command Internal Command
+CADCEVALBLCK !this.drawOneLine(!evalindex)
+ Called from line 232 of PML function suisupport.DRAW
+	!this.lines.evaluate(object block('!this.drawOneLine(!evalindex)'))
+ Called from line 338 of PML function marksuppform.DRAWALL
+		!this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+14:15:09 5 July 2023
+/S103.005 对象化失败
+(2,758)   Expression result not of expected type (BOOLEAN/REAL)
+ In line 74 of PML function supportsctn.GETLENGTH
+			if !dir.angle(!this.zdir) then
+ Called from line 61 of PML function supportsctn.SUPPORTSCTN
+	!this.getlength()
+ Called from line 602 of PML function suisupport.GETSUPPORTSCTNS
+		!this.supportSctns.append(object supportSctn(!sctn))
+ Called from line 551 of PML function suisupport.GETTYPEDATA
+	!this.getSupportSctns()				$*sctns
+ Called from line 186 of PML function suisupport.GETLINEDATA
+	!this.getTypeData()
+ Called from line 127 of PML function suisupport.SUISUPPORT
+	!this.getLineData()
+ Called from line 243 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+14:17:04 5 July 2023
+/S103.005 对象化失败
+(2,759)   Object does not have a member ALLSUPPORTPANES
+ In line 558 of PML function suisupport.GETTYPEDATA
+	!this.allsupportpanes = !temparr[3]	$*all supportpane
+ Called from line 186 of PML function suisupport.GETLINEDATA
+	!this.getTypeData()
+ Called from line 127 of PML function suisupport.SUISUPPORT
+	!this.getLineData()
+ Called from line 243 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+14:19:17 5 July 2023
+/S103.005 对象化失败
+(46,93)   PML: No object definition in progress.
+ In line 153 of PML function suisupport.GETMATERIAL
+	member .hangMems is array				$*hang
+ Called from line 130 of PML function suisupport.SUISUPPORT
+	!this.getmaterial()
+ Called from line 243 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+14:19:44 5 July 2023
+/S103.005 对象化失败
+(46,87)   PML: Object definition for SUPPMATERIAL could not be found.
+ In line 154 of PML function suisupport.GETMATERIAL
+		!suppmaterial = object suppmaterial(!supportsctn.ref,!supportsctn.length / 1000)
+ Called from line 130 of PML function suisupport.SUISUPPORT
+	!this.getmaterial()
+ Called from line 243 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+14:28:10 5 July 2023
+/S103.005 对象化失败
+(46,87)   PML: Object definition for SUPPMATERIAL could not be found.
+ In line 154 of PML function suisupport.GETMATERIAL
+		!suppmaterial = object suppmaterial(!supportsctn.ref,!supportsctn.length / 1000)
+ Called from line 130 of PML function suisupport.SUISUPPORT
+	!this.getmaterial()
+ Called from line 245 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+15:59:31 10 July 2023
+/S103.005 对象化失败
+(2,759)   Object does not have a member MATARIALDATA
+ In line 76 of PML function suppmaterial.SUPPMATERIAL
+	!dataarr = !!marksuppform.matarialdata[!index]
+ Called from line 154 of PML function suisupport.GETMATERIAL
+		!suppmaterial = object suppmaterial(!supportsctn.ref,!supportsctn.length / 1000)
+ Called from line 130 of PML function suisupport.SUISUPPORT
+	!this.getmaterial()
+ Called from line 225 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+16:00:13 10 July 2023
+/S103.005 对象化失败
+(2,761)   Cannot assign variable to result - incompatible types (REAL=STRING)
+ In line 99 of PML function suppmaterial.SUPPMATERIAL
+	!this.size = !dataarr[!sizeindex]
+ Called from line 154 of PML function suisupport.GETMATERIAL
+		!suppmaterial = object suppmaterial(!supportsctn.ref,!supportsctn.length / 1000)
+ Called from line 130 of PML function suisupport.SUISUPPORT
+	!this.getmaterial()
+ Called from line 225 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+16:02:11 10 July 2023
+/S103.005 对象化失败
+(2,756)   Array index is unset
+ In line 101 of PML function suppmaterial.SUPPMATERIAL
+	!this.rccm = !dataarr[!rccmindex]
+ Called from line 154 of PML function suisupport.GETMATERIAL
+		!suppmaterial = object suppmaterial(!supportsctn.ref,!supportsctn.length / 1000)
+ Called from line 130 of PML function suisupport.SUISUPPORT
+	!this.getmaterial()
+ Called from line 225 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+16:03:07 10 July 2023
+/S103.005 对象化失败
+(2,759)   Object does not have a member PERWEIGHT
+ In line 104 of PML function suppmaterial.SUPPMATERIAL
+	!this.perWeight = !dataarr[!perWeightindex]
+ Called from line 154 of PML function suisupport.GETMATERIAL
+		!suppmaterial = object suppmaterial(!supportsctn.ref,!supportsctn.length / 1000)
+ Called from line 130 of PML function suisupport.SUISUPPORT
+	!this.getmaterial()
+ Called from line 225 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+16:06:30 10 July 2023
+/S103.005 对象化失败
+(2,761)   Cannot assign variable to result - incompatible types (REAL=STRING)
+ In line 106 of PML function suppmaterial.SUPPMATERIAL
+	!this.perWeight = !dataarr[!perWeightindex]
+ Called from line 154 of PML function suisupport.GETMATERIAL
+		!suppmaterial = object suppmaterial(!supportsctn.ref,!supportsctn.length / 1000)
+ Called from line 130 of PML function suisupport.SUISUPPORT
+	!this.getmaterial()
+ Called from line 225 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+16:06:54 10 July 2023
+/S103.005 对象化失败
+(2,761)   Cannot assign variable to result - incompatible types (REAL=STRING)
+ In line 106 of PML function suppmaterial.SUPPMATERIAL
+	!this.perWeight = !dataarr[!perWeightindex]
+ Called from line 154 of PML function suisupport.GETMATERIAL
+		!suppmaterial = object suppmaterial(!supportsctn.ref,!supportsctn.length / 1000)
+ Called from line 130 of PML function suisupport.SUISUPPORT
+	!this.getmaterial()
+ Called from line 225 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+16:38:20 10 July 2023
+/S103.005 对象化失败
+(2,759)   Object does not have a member MATERIALS
+ In line 176 of PML function suisupport.GETMATERIAL
+	!this.materials = !materials
+ Called from line 130 of PML function suisupport.SUISUPPORT
+	!this.getmaterial()
+ Called from line 228 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+09:42:44 11 July 2023
+/S103.005 对象化失败
+(2,779)   Method <SUISUPPORT>.GETWELDS() not found
+ In line 140 of PML function suisupport.SUISUPPORT
+	!this.getwelds()
+ Called from line 230 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+10:43:08 11 July 2023
+/S103.005 对象化失败
+(2,759)   Object does not have a member FUNCTION
+ In line 181 of PML function suisupport.GETSUPPATTS
+	!this.function = !functionstring
+ Called from line 142 of PML function suisupport.SUISUPPORT
+	!this.getsuppatts()
+ Called from line 230 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+16:26:32 11 July 2023
+SUISUPPORT failed to draw
+(2,759)   Object does not have a member STRING
+ In line 2048 of PML function suisupport.DRAWMATERIAL
+		!materialtext = !material.order.string
+ Called from line 430 of PML function suisupport.DRAW
+	!this.drawmaterial()
+ Called from line 421 of PML function marksuppform.DRAWALL
+		!this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+16:26:57 11 July 2023
+SUISUPPORT failed to draw
+(2,779)   Method <LINE>.DISTANCE(<STRING>) not found
+ In line 2056 of PML function suisupport.DRAWMATERIAL
+			!dis = !line.distance(!pos)
+ Called from line 430 of PML function suisupport.DRAW
+	!this.drawmaterial()
+ Called from line 421 of PML function marksuppform.DRAWALL
+		!this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+16:31:46 11 July 2023
+SUISUPPORT failed to draw
+(2,759)   Object does not have a member XDIR
+ In line 2065 of PML function suisupport.DRAWMATERIAL
+		!mlabelpos = !mlabelpos.offset(!textori.xdir, 500)
+ Called from line 430 of PML function suisupport.DRAW
+	!this.drawmaterial()
+ Called from line 421 of PML function marksuppform.DRAWALL
+		!this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+16:39:21 8 August 2023
+/R703.002 对象化失败
+(46,58)   PML: Method SUPPMATERIAL could not be found
+ In line 219 of PML function suisupport.GETMATERIAL
+		!suppmaterial = object suppmaterial(!mem,1)
+ Called from line 141 of PML function suisupport.SUISUPPORT
+	!this.getmaterial()
+ Called from line 243 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+11:02:02 15 August 2023
+/6VFL-KA-S1004 对象化失败
+(47,62)   CP: Incomplete command line
+ In line 229 of PML function suisupport.GETMATERIAL
+	var !AllPFIT coll all PFIT for ^^
+ Called from line 141 of PML function suisupport.SUISUPPORT
+	!this.getmaterial()
+ Called from line 243 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+15:17:38 15 August 2023
+/6VFL-KA-S1018 对象化失败
+(47,62)   CP: Incomplete command line
+ In line 229 of PML function suisupport.GETMATERIAL
+	var !AllPFIT coll all PFIT for ^^
+ Called from line 141 of PML function suisupport.SUISUPPORT
+	!this.getmaterial()
+ Called from line 243 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+15:24:34 15 August 2023
+/6VFL-KA-S1014 对象化失败
+(47,62)   CP: Incomplete command line
+ In line 229 of PML function suisupport.GETMATERIAL
+	var !AllPFIT coll all PFIT for ^^
+ Called from line 141 of PML function suisupport.SUISUPPORT
+	!this.getmaterial()
+ Called from line 243 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+15:52:41 15 August 2023
+/6VFL-KA-S1004 对象化失败
+(2,111)   Cannot access element type REST from the level of SUPPORT /6VFL-KA-S1004
+ In line 69 of PML function mbdstru.MBDSTRU
+		!tempname = name of $!type of $!item
+ Called from line 568 of PML function suisupport.GETNAME
+		!this.mbdstru = object mbdstru(!this.inputref)
+ Called from line 378 of PML function suisupport.GETLINEDATA
+	if !this.getName().not() then
+ Called from line 138 of PML function suisupport.SUISUPPORT
+	if !this.getLineData().not() then
+ Called from line 243 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+16:19:12 15 August 2023
+/MDS/VH106/600 对象化失败
+(2,891)   An invalid zero direction has been obtained
+ In line 22 of PML function supporthangmem.SUPPORTHANGMEM
+	!this.zdir = !this.posstart.direction(!this.posend)
+ Called from line 827 of PML function suisupport.GETHANGMEMS
+				!this.hangMems.append(object supportHangMem(!mem))
+ Called from line 760 of PML function suisupport.GETTYPEDATA
+	!this.getHangMems()
+ Called from line 384 of PML function suisupport.GETLINEDATA
+	!this.getTypeData()
+ Called from line 138 of PML function suisupport.SUISUPPORT
+	if !this.getLineData().not() then
+ Called from line 243 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+16:19:19 15 August 2023
+/6VFL-KA-S1004 对象化失败
+(2,111)   Cannot access element type REST from the level of SUPPORT /6VFL-KA-S1004
+ In line 69 of PML function mbdstru.MBDSTRU
+		!tempname = name of $!type of $!item
+ Called from line 568 of PML function suisupport.GETNAME
+		!this.mbdstru = object mbdstru(!this.inputref)
+ Called from line 378 of PML function suisupport.GETLINEDATA
+	if !this.getName().not() then
+ Called from line 138 of PML function suisupport.SUISUPPORT
+	if !this.getLineData().not() then
+ Called from line 243 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+16:27:26 15 August 2023
+/6VFL-KA-S1004 对象化失败
+(2,111)   Cannot access element type REST from the level of SUPPORT /6VFL-KA-S1004
+ In line 69 of PML function mbdstru.MBDSTRU
+		!tempname = name of $!type of $!item
+ Called from line 568 of PML function suisupport.GETNAME
+		!this.mbdstru = object mbdstru(!this.inputref)
+ Called from line 378 of PML function suisupport.GETLINEDATA
+	if !this.getName().not() then
+ Called from line 138 of PML function suisupport.SUISUPPORT
+	if !this.getLineData().not() then
+ Called from line 243 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+16:27:56 15 August 2023
+/6VFL-KA-S1004 对象化失败
+(2,111)   Cannot access element type REST from the level of SUPPORT /6VFL-KA-S1004
+ In line 69 of PML function mbdstru.MBDSTRU
+		!tempname = name of $!type of $!item
+ Called from line 568 of PML function suisupport.GETNAME
+		!this.mbdstru = object mbdstru(!this.inputref)
+ Called from line 378 of PML function suisupport.GETLINEDATA
+	if !this.getName().not() then
+ Called from line 138 of PML function suisupport.SUISUPPORT
+	if !this.getLineData().not() then
+ Called from line 243 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+16:28:55 15 August 2023
+/6VFL-KA-S1004 对象化失败
+(2,111)   Cannot access element type REST from the level of SUPPORT /6VFL-KA-S1004
+ In line 69 of PML function mbdstru.MBDSTRU
+		!tempname = name of $!type of $!item
+ Called from line 568 of PML function suisupport.GETNAME
+		!this.mbdstru = object mbdstru(!this.inputref)
+ Called from line 378 of PML function suisupport.GETLINEDATA
+	if !this.getName().not() then
+ Called from line 138 of PML function suisupport.SUISUPPORT
+	if !this.getLineData().not() then
+ Called from line 243 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+16:29:57 15 August 2023
+/6VFL-KA-S1004 对象化失败
+(2,111)   Cannot access element type REST from the level of SUPPORT /6VFL-KA-S1004
+ In line 69 of PML function mbdstru.MBDSTRU
+		!tempname = name of $!type of $!item
+ Called from line 568 of PML function suisupport.GETNAME
+		!this.mbdstru = object mbdstru(!this.inputref)
+ Called from line 378 of PML function suisupport.GETLINEDATA
+	if !this.getName().not() then
+ Called from line 138 of PML function suisupport.SUISUPPORT
+	if !this.getLineData().not() then
+ Called from line 245 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+16:35:18 15 August 2023
+/6VFL-KA-S1004 对象化失败
+(2,111)   Cannot access element type REST from the level of SUPPORT /6VFL-KA-S1004
+ In line 70 of PML function mbdstru.MBDSTRU
+		!tempname = name of $!type of $!item
+ Called from line 568 of PML function suisupport.GETNAME
+		!this.mbdstru = object mbdstru(!this.inputref)
+ Called from line 378 of PML function suisupport.GETLINEDATA
+	if !this.getName().not() then
+ Called from line 138 of PML function suisupport.SUISUPPORT
+	if !this.getLineData().not() then
+ Called from line 245 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+16:35:55 15 August 2023
+/6VFL-KA-S1004 对象化失败
+(2,111)   Cannot access element type REST from the level of SUPPORT /6VFL-KA-S1004
+ In line 70 of PML function mbdstru.MBDSTRU
+		!tempname = name of $!type of $!item
+ Called from line 568 of PML function suisupport.GETNAME
+		!this.mbdstru = object mbdstru(!this.inputref)
+ Called from line 378 of PML function suisupport.GETLINEDATA
+	if !this.getName().not() then
+ Called from line 138 of PML function suisupport.SUISUPPORT
+	if !this.getLineData().not() then
+ Called from line 245 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+16:36:45 15 August 2023
+/6VFL-KA-S1004 对象化失败
+(2,111)   Cannot access element type REST from the level of SUPPORT /6VFL-KA-S1004
+ In line 70 of PML function mbdstru.MBDSTRU
+		!tempname = name of $!type of $!item
+ Called from line 568 of PML function suisupport.GETNAME
+		!this.mbdstru = object mbdstru(!this.inputref)
+ Called from line 378 of PML function suisupport.GETLINEDATA
+	if !this.getName().not() then
+ Called from line 138 of PML function suisupport.SUISUPPORT
+	if !this.getLineData().not() then
+ Called from line 245 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+16:37:24 15 August 2023
+/6VFL-KA-S1004 对象化失败
+(2,111)   Cannot access element type REST from the level of SUPPORT /6VFL-KA-S1004
+ In line 70 of PML function mbdstru.MBDSTRU
+		!tempname = name of $!type of $!item
+ Called from line 569 of PML function suisupport.GETNAME
+		!this.mbdstru = object mbdstru(!this.inputref)
+ Called from line 378 of PML function suisupport.GETLINEDATA
+	if !this.getName().not() then
+ Called from line 138 of PML function suisupport.SUISUPPORT
+	if !this.getLineData().not() then
+ Called from line 245 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+16:38:59 15 August 2023
+/6VFL-KA-S1004 对象化失败 没找到supp
+(2,111)   Cannot access element type REST from the level of SUPPORT /6VFL-KA-S1004
+ In line 70 of PML function mbdstru.MBDSTRU
+		!tempname = name of $!type of $!item
+ Called from line 568 of PML function suisupport.GETNAME
+		!this.mbdstru = object mbdstru(!this.inputref)
+ Called from line 378 of PML function suisupport.GETLINEDATA
+	if !this.getName().not() then
+ Called from line 138 of PML function suisupport.SUISUPPORT
+	if !this.getLineData().not() then
+ Called from line 245 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+16:44:49 15 August 2023
+/6VFL-KA-S1004 对象化失败
+(2,759)   Object does not have a member POSSEND
+ In line 49 of PML function supportsctn.SUPPORTSCTN
+		!this.possend = pos of $!lastp wrt/*
+ Called from line 802 of PML function suisupport.GETSUPPORTSCTNS
+		!this.supportSctns.append(object supportSctn(!sctn))
+ Called from line 751 of PML function suisupport.GETTYPEDATA
+	!this.getSupportSctns()				$*sctns
+ Called from line 384 of PML function suisupport.GETLINEDATA
+	!this.getTypeData()
+ Called from line 138 of PML function suisupport.SUISUPPORT
+	if !this.getLineData().not() then
+ Called from line 245 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+16:45:41 15 August 2023
+/6VFL-KA-S1004 对象化失败
+(2,759)   Object does not have a member POSSEND
+ In line 49 of PML function supportsctn.SUPPORTSCTN
+		!this.possend = pos of $!lastp wrt/*
+ Called from line 803 of PML function suisupport.GETSUPPORTSCTNS
+		!this.supportSctns.append(object supportSctn(!sctn))
+ Called from line 752 of PML function suisupport.GETTYPEDATA
+	!this.getSupportSctns()				$*sctns
+ Called from line 384 of PML function suisupport.GETLINEDATA
+	!this.getTypeData()
+ Called from line 138 of PML function suisupport.SUISUPPORT
+	if !this.getLineData().not() then
+ Called from line 245 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+16:51:40 15 August 2023
+/6VFL-KA-S1004 对象化失败
+(2,759)   Object does not have a member POSSEND
+ In line 49 of PML function supportsctn.SUPPORTSCTN
+		!this.possend = pos of $!lastp wrt/*
+ Called from line 803 of PML function suisupport.GETSUPPORTSCTNS
+		!this.supportSctns.append(object supportSctn(!sctn))
+ Called from line 752 of PML function suisupport.GETTYPEDATA
+	!this.getSupportSctns()				$*sctns
+ Called from line 384 of PML function suisupport.GETLINEDATA
+	!this.getTypeData()
+ Called from line 138 of PML function suisupport.SUISUPPORT
+	if !this.getLineData().not() then
+ Called from line 245 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+17:37:49 15 August 2023
+/6VFL-KA-S1004 对象化失败
+(2,201)   Element SUPPORT /6VFL-KA-S1004 does not have attribute PDIR
+ In line 1362 of PML function suisupport.ADDRESTATTAPOINTS
+							!attadir = p1 dir
+ Called from line 415 of PML function suisupport.GETLINEDATA
+		!this.addrestattapoints()
+ Called from line 138 of PML function suisupport.SUISUPPORT
+	if !this.getLineData().not() then
+ Called from line 245 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+15:06:43 16 August 2023
+/6VFL-KA-S1004 对象化失败
+(2,752)   Array element 1 does not exist
+ In line 1518 of PML function suisupport.ADDRESTATTAPOINTS
+			!tempdir = !sctn.startposs[!tempindices[1]].direction(!sctn.startposs[!tempindices[2]])
+ Called from line 415 of PML function suisupport.GETLINEDATA
+		!this.addrestattapoints()
+ Called from line 138 of PML function suisupport.SUISUPPORT
+	if !this.getLineData().not() then
+ Called from line 245 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+15:11:58 16 August 2023
+/6VFL-KA-S1004 对象化失败
+(2,111)   Cannot access element type LINE from the level of STRUCTURE /6VFL-KA-S1004/STRU
+ In line 1517 of PML function suisupport.ADDRESTATTAPOINTS
+
+ Called from line 415 of PML function suisupport.GETLINEDATA
+		!this.addrestattapoints()
+ Called from line 138 of PML function suisupport.SUISUPPORT
+	if !this.getLineData().not() then
+ Called from line 245 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+15:12:23 16 August 2023
+/6VFL-KA-S1004 对象化失败
+(2,752)   Array element 1 does not exist
+ In line 1520 of PML function suisupport.ADDRESTATTAPOINTS
+			!tempdir = !sctn.startposs[!tempindices[1]].direction(!sctn.startposs[!tempindices[2]])
+ Called from line 415 of PML function suisupport.GETLINEDATA
+		!this.addrestattapoints()
+ Called from line 138 of PML function suisupport.SUISUPPORT
+	if !this.getLineData().not() then
+ Called from line 245 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+15:15:18 16 August 2023
+/6VFL-KA-S1004 对象化失败
+(2,752)   Array element 1 does not exist
+ In line 1520 of PML function suisupport.ADDRESTATTAPOINTS
+			!tempdir = !sctn.startposs[!tempindices[1]].direction(!sctn.startposs[!tempindices[2]])
+ Called from line 415 of PML function suisupport.GETLINEDATA
+		!this.addrestattapoints()
+ Called from line 138 of PML function suisupport.SUISUPPORT
+	if !this.getLineData().not() then
+ Called from line 245 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+15:16:51 16 August 2023
+/6VFL-KA-S1004 对象化失败
+(2,752)   Array element 1 does not exist
+ In line 1520 of PML function suisupport.ADDRESTATTAPOINTS
+			!tempdir = !sctn.startposs[!tempindices[1]].direction(!sctn.startposs[!tempindices[2]])
+ Called from line 415 of PML function suisupport.GETLINEDATA
+		!this.addrestattapoints()
+ Called from line 138 of PML function suisupport.SUISUPPORT
+	if !this.getLineData().not() then
+ Called from line 245 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+15:31:28 16 August 2023
+/6VFL-KA-S1004 对象化失败
+(2,752)   Array element 1 does not exist
+ In line 1520 of PML function suisupport.ADDRESTATTAPOINTS
+			!tempdir = !sctn.startposs[!tempindices[1]].direction(!sctn.startposs[!tempindices[2]])
+ Called from line 415 of PML function suisupport.GETLINEDATA
+		!this.addrestattapoints()
+ Called from line 138 of PML function suisupport.SUISUPPORT
+	if !this.getLineData().not() then
+ Called from line 245 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+16:20:12 16 August 2023
+/6VFL-KA-S1004 对象化失败
+(2,752)   Array element 1 does not exist
+ In line 1520 of PML function suisupport.ADDRESTATTAPOINTS
+			!tempdir = !sctn.startposs[!tempindices[1]].direction(!sctn.startposs[!tempindices[2]])
+ Called from line 415 of PML function suisupport.GETLINEDATA
+		!this.addrestattapoints()
+ Called from line 138 of PML function suisupport.SUISUPPORT
+	if !this.getLineData().not() then
+ Called from line 245 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+16:21:36 16 August 2023
+/6VFL-KA-S1004 对象化失败
+(2,752)   Array element 1 does not exist
+ In line 1520 of PML function suisupport.ADDRESTATTAPOINTS
+			!tempdir = !sctn.startposs[!tempindices[1]].direction(!sctn.startposs[!tempindices[2]])
+ Called from line 415 of PML function suisupport.GETLINEDATA
+		!this.addrestattapoints()
+ Called from line 138 of PML function suisupport.SUISUPPORT
+	if !this.getLineData().not() then
+ Called from line 245 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+16:27:47 16 August 2023
+/6VFL-KA-S1004 对象化失败
+(2,781)   Cannot append contents of array onto itself
+ In line 87 of PML function getsctnpoints
+					!onepoints.appendarray(!onepoints)
+ Called from line 85 of PML function supportsctn.GETPOSS
+	!points = !!getSctnPoints(!this.ref)
+ Called from line 60 of PML function supportsctn.SUPPORTSCTN
+	!this.getPoss()
+ Called from line 829 of PML function suisupport.GETSUPPORTSCTNS
+		!this.supportSctns.append(object supportSctn(!sctn))
+ Called from line 765 of PML function suisupport.GETTYPEDATA
+	!this.getSupportSctns()				$*sctns
+ Called from line 395 of PML function suisupport.GETLINEDATA
+	!this.getTypeData()
+ Called from line 138 of PML function suisupport.SUISUPPORT
+	if !this.getLineData().not() then
+ Called from line 245 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+16:52:41 16 August 2023
+/6VFL-KA-S1004 对象化失败
+(2,751)   Variable !TEMPINDICES does not exist
+ In line 1526 of PML function suisupport.ADDRESTATTAPOINTS
+			!plane = object plane(!sctn.startposs[!tempindices[1]],object orientation('z is $!planedir'))
+ Called from line 415 of PML function suisupport.GETLINEDATA
+		!this.addrestattapoints()
+ Called from line 138 of PML function suisupport.SUISUPPORT
+	if !this.getLineData().not() then
+ Called from line 245 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+19:00:56 11 September 2023
+SUISUPPORT failed to draw
+(2,754)   Argument 2 to * is unset
+ In line 426 of PML function lindim.CHANGECHEIGHTAUTO
+		!this.cheight = max(!this.cheight * !this.ChangeCheightAutobili,!newcheight)
+ Called from line 174 of PML function lindim.CREATE
+	!this.changeCheightAuto()
+ Called from line 145 of PML function lindim.LINDIM
+	return !this.create()
+ Called from line 94 of PML function lindim.LINDIM
+	return !this.lindim(!owner, !lindimpos, !ori, !points, !cheight, !function, !desc)
+ Called from line 1997 of PML function suisupport.DRAWONELINE
+	!lindim = object lindim(!this.mbdstru.dimgro,!dimpos, !ori, !this.linePoss[!x], !this.cheight,'一级尺寸','node:' + !this.nodename,!this.changeCheightAuto,!this.sepSmallDim)
+ Called from line 1 of Internal Command Internal Command
+CADCEVALBLCK !this.drawOneLine(!evalindex)
+ Called from line 449 of PML function suisupport.DRAW
+	!this.lines.evaluate(object block('!this.drawOneLine(!evalindex)'))
+ Called from line 436 of PML function marksuppform.DRAWALL
+		!this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()

@@ -1,0 +1,51 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= April 10th 2023
+--[Function]:
+------------------------------------------
+
+define function !!getpremem(!cename is any) is string
+	var !mode mode
+	forwards
+	!preone = name of $!cename
+	label /preone
+	!preone =name of pre of $!preone
+	label /preoneok
+	handle any
+		!bran = name of bran of $!preone
+		handle any
+			$!mode
+			return ''
+		endhandle
+		label /nextbran
+		!bran = name of href of $!bran
+		handle any
+			$!mode
+			return ''
+		elsehandle none
+			if type of $!bran ne 'BRAN' then
+				$!mode
+				return !bran
+			else
+				!preone = name of last mem of $!bran
+				handle any
+					golabel /nextbran
+				elsehandle none
+					golabel /preoneok
+				endhandle
+			endif
+		endhandle
+	elsehandle none
+		!type = type of $!preone
+		if !type eq 'ATTA' then
+			golabel /preone
+		else
+			$!mode
+			return !preone
+		endif
+	endhandle
+endfunction

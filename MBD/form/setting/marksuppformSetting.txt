@@ -1,0 +1,10 @@
+﻿colcombobox:blue
+enhancered:TRUE
+cheightbili:0.2
+autocheight:true
+autocheightbili:0.5
+sepSmallDim:true
+ignoreline:true
+plusstringcheightbili:0.6
+generatejson:false
+filepath:D:\MBD\EM4SUPP\

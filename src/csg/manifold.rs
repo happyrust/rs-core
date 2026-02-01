@@ -1,9 +1,6 @@
 use std::collections::HashMap;
-use std::mem;
 use std::path::Path;
 
-use crate::shape::pdms_shape::{Edge, Edges, PlantMesh};
-use crate::tool::float_tool::*;
 use glam::{DMat4, Vec2, Vec3};
 use manifold_rs::{Manifold, Mesh};
 
@@ -75,14 +72,6 @@ impl ManifoldRust {
         Self {
             inner: Manifold::cube(1e-10, 1e-10, 1e-10),
         }
-    }
-
-    pub fn convert_to_manifold(plant_mesh: PlantMesh, mat4: DMat4, more_precsion: bool) -> Self {
-        Self::from_mesh(&ManifoldMeshRust::convert_to_manifold_mesh(
-            plant_mesh,
-            mat4,
-            more_precsion,
-        ))
     }
 
     /// 从 GLB 文件直接转换为 Manifold
@@ -230,12 +219,79 @@ impl ManifoldRust {
     /// 注意：导出时会将 manifold mesh（共享顶点）转换为普通 mesh（重复顶点），
     /// 以保证渲染时边缘轮廓清晰（每个面有独立的法线）
     pub fn export_to_glb(&self, path: &Path) -> anyhow::Result<()> {
-        // 使用 From<&ManifoldRust> for PlantMesh 转换，
-        // 该转换会将共享顶点的 manifold mesh 转为每个三角形独立顶点的普通 mesh
-        let plant_mesh: PlantMesh = self.into();
+        let rs_mesh = self.inner.to_mesh();
+        let prop_num = rs_mesh.num_props() as usize;
+        let raw_vertices = rs_mesh.vertices();
+        let old_indices = rs_mesh.indices();
 
-        if plant_mesh.vertices.is_empty() || plant_mesh.indices.is_empty() {
+        if raw_vertices.is_empty() || old_indices.is_empty() {
             return Err(anyhow::anyhow!("布尔运算结果为空，无法导出"));
+        }
+        if prop_num < 3 {
+            return Err(anyhow::anyhow!(
+                "Manifold mesh 顶点属性数异常：prop_num={}",
+                prop_num
+            ));
+        }
+
+        // 将共享顶点拓扑展开成 per-triangle 顶点（保证硬边 + 便于过滤退化三角形）。
+        let vert_num = raw_vertices.len() / prop_num;
+        let mut positions: Vec<f32> = Vec::with_capacity(old_indices.len() * 3);
+        let mut normals: Vec<f32> = Vec::with_capacity(old_indices.len() * 3);
+        let mut indices: Vec<u32> = Vec::with_capacity(old_indices.len());
+
+        let mut out_v = 0u32;
+        let mut dropped = 0u32;
+        for tri in old_indices.chunks_exact(3) {
+            let ia = tri[0] as usize;
+            let ib = tri[1] as usize;
+            let ic = tri[2] as usize;
+            if ia >= vert_num || ib >= vert_num || ic >= vert_num {
+                dropped += 1;
+                continue;
+            }
+
+            let a = Vec3::new(
+                raw_vertices[prop_num * ia + 0],
+                raw_vertices[prop_num * ia + 1],
+                raw_vertices[prop_num * ia + 2],
+            );
+            let b = Vec3::new(
+                raw_vertices[prop_num * ib + 0],
+                raw_vertices[prop_num * ib + 1],
+                raw_vertices[prop_num * ib + 2],
+            );
+            let c = Vec3::new(
+                raw_vertices[prop_num * ic + 0],
+                raw_vertices[prop_num * ic + 1],
+                raw_vertices[prop_num * ic + 2],
+            );
+
+            let n = (b - a).cross(c - a);
+            let n2 = n.length_squared();
+            // 过滤退化三角形，避免 normalize(0) => NaN 写入 GLB。
+            if !n2.is_finite() || n2 <= 1e-20 {
+                dropped += 1;
+                continue;
+            }
+            let n = n / n2.sqrt();
+
+            positions.extend_from_slice(&[a.x, a.y, a.z, b.x, b.y, b.z, c.x, c.y, c.z]);
+            normals.extend_from_slice(&[
+                n.x, n.y, n.z, //
+                n.x, n.y, n.z, //
+                n.x, n.y, n.z,
+            ]);
+
+            indices.extend_from_slice(&[out_v, out_v + 1, out_v + 2]);
+            out_v += 3;
+        }
+
+        if indices.is_empty() {
+            return Err(anyhow::anyhow!(
+                "布尔运算结果导出失败：所有三角形被过滤（dropped={}）",
+                dropped
+            ));
         }
 
         // 确保父目录存在
@@ -243,7 +299,9 @@ impl ManifoldRust {
             std::fs::create_dir_all(parent)?;
         }
 
-        crate::fast_model::export_model::export_glb::export_single_mesh_to_glb(&plant_mesh, path)?;
+        crate::fast_model::export_model::export_glb::export_raw_buffers_to_glb(
+            &positions, &normals, &indices, path,
+        )?;
         Ok(())
     }
 
@@ -252,11 +310,26 @@ impl ManifoldRust {
     /// 注意：导出时会将 manifold mesh（共享顶点）转换为普通 mesh（重复顶点），
     /// 以保证渲染时边缘轮廓清晰（每个面有独立的法线）
     pub fn export_to_obj(&self, path_str: &str) -> anyhow::Result<()> {
-        // 使用 From<&ManifoldRust> for PlantMesh 转换
-        let plant_mesh: PlantMesh = self.into();
+        use std::io::Write;
 
-        if plant_mesh.vertices.is_empty() || plant_mesh.indices.is_empty() {
+        let rs_mesh = self.inner.to_mesh();
+        let prop_num = rs_mesh.num_props() as usize;
+        let raw_vertices = rs_mesh.vertices();
+        let old_indices = rs_mesh.indices();
+
+        if old_indices.is_empty() {
             return Err(anyhow::anyhow!("布尔运算结果为空，无法导出"));
+        }
+
+        // 顶点数 = raw_vertices.len() / prop_num
+        let vert_num = raw_vertices.len() / prop_num;
+        let mut vert: Vec<[f32; 3]> = Vec::with_capacity(vert_num);
+        for i in 0..vert_num {
+            vert.push([
+                raw_vertices[prop_num * i + 0],
+                raw_vertices[prop_num * i + 1],
+                raw_vertices[prop_num * i + 2],
+            ]);
         }
 
         // 确保父目录存在
@@ -265,9 +338,50 @@ impl ManifoldRust {
             std::fs::create_dir_all(parent)?;
         }
 
-        plant_mesh
-            .export_obj(false, path_str)
-            .map_err(|e| anyhow::anyhow!(e))
+        let mut file = std::fs::File::create(path)?;
+
+        // 写入顶点（展开为 per-triangle 顶点）
+        let mut vertices: Vec<Vec3> = Vec::with_capacity(old_indices.len());
+        let mut normals: Vec<Vec3> = Vec::with_capacity(old_indices.len());
+
+        for c in old_indices.chunks(3) {
+            if c.len() != 3 {
+                continue;
+            }
+            let a: Vec3 = Vec3::from(vert[c[0] as usize]);
+            let b: Vec3 = Vec3::from(vert[c[1] as usize]);
+            let c: Vec3 = Vec3::from(vert[c[2] as usize]);
+
+            let normal = ((b - a).cross(c - a)).normalize();
+
+            vertices.push(a);
+            vertices.push(b);
+            vertices.push(c);
+
+            normals.push(normal);
+            normals.push(normal);
+            normals.push(normal);
+        }
+
+        // 写入顶点
+        for v in &vertices {
+            writeln!(file, "v {} {} {}", v.x, v.y, v.z)?;
+        }
+
+        // 写入法线
+        for n in &normals {
+            writeln!(file, "vn {} {} {}", n.x, n.y, n.z)?;
+        }
+
+        // 写入面（OBJ 索引从 1 开始）
+        for i in (0..vertices.len()).step_by(3) {
+            let i1 = i + 1;
+            let i2 = i + 2;
+            let i3 = i + 3;
+            writeln!(file, "f {}//{} {}//{} {}//{}", i1, i1, i2, i2, i3, i3)?;
+        }
+
+        Ok(())
     }
 
     pub fn from_mesh(m: &ManifoldMeshRust) -> Self {
@@ -394,6 +508,25 @@ impl ManifoldRust {
         result
     }
 
+    /// 从顶点数组和索引数组创建 ManifoldRust
+    ///
+    /// # 参数
+    /// * `vertices` - 顶点数组，每个元素是 Vec3
+    /// * `indices` - 索引数组
+    /// * `mat4` - 变换矩阵
+    /// * `more_precision` - 是否使用更高精度
+    ///
+    /// 此方法会自动进行顶点焊接以确保流形拓扑
+    pub fn from_vertices_indices(
+        vertices: &[glam::Vec3],
+        indices: &[u32],
+        mat4: glam::DMat4,
+        more_precision: bool,
+    ) -> Self {
+        let mesh = ManifoldMeshRust::from_vertices_indices(vertices, indices, mat4, more_precision);
+        Self::from_mesh(&mesh)
+    }
+
     pub fn destroy(&self) {
         // manifold-rs 使用 RAII，无需手动释放
     }
@@ -477,36 +610,38 @@ impl ManifoldMeshRust {
         )
     }
 
-    /// 将 PlantMesh 转换为 ManifoldMeshRust
+    /// 从顶点数组和索引数组创建 ManifoldMeshRust
     ///
-    /// 注意：PlantMesh 应该已经在 CSG 生成阶段通过 weld_vertices_for_manifold
-    /// 保证了流形性，这里只需要应用变换矩阵并转换数据格式。
-    pub fn convert_to_manifold_mesh(
-        mut plant_mesh: PlantMesh,
-        mat4: DMat4,
-        ceil_or_trunc: bool,
+    /// # 参数
+    /// * `vertices` - 顶点数组，每个元素是 [x, y, z] 或 Vec3
+    /// * `indices` - 索引数组
+    /// * `mat4` - 变换矩阵
+    /// * `more_precision` - 是否使用更高精度
+    ///
+    /// 此方法会自动进行顶点焊接以确保流形拓扑
+    pub fn from_vertices_indices(
+        vertices: &[glam::Vec3],
+        indices: &[u32],
+        mat4: glam::DMat4,
+        more_precision: bool,
     ) -> Self {
-        let vertices = mem::take(&mut plant_mesh.vertices);
-        let indices = plant_mesh.indices;
-
         if vertices.is_empty() || indices.is_empty() {
             return Self::new();
         }
 
-        let _ = ceil_or_trunc;
-
-        // 关键：对“非共享顶点”网格做顶点焊接（Manifold 需要共享拓扑）。
-        // 使用自适应量化精度，避免因坐标尺度不同导致过度/不足合并。
-        let base_precision = Self::compute_adaptive_precision(&vertices, &mat4) as f64;
+        // 计算自适应精度
+        let mut base_precision = Self::compute_adaptive_precision(vertices, &mat4) as f64;
+        if more_precision {
+            base_precision = (base_precision * 1000.0).min(1_000_000_000.0);
+        }
 
         let build = |precision: f64| -> (Vec<f32>, Vec<u32>) {
             let mut map: HashMap<(i64, i64, i64), u32> = HashMap::new();
             let mut remap: Vec<u32> = Vec::with_capacity(vertices.len());
             let mut welded_vertices: Vec<f32> = Vec::new();
 
-            for v in &vertices {
-                let pt =
-                    mat4.transform_point3(glam::DVec3::new(v.x as f64, v.y as f64, v.z as f64));
+            for v in vertices {
+                let pt = mat4.transform_point3(glam::DVec3::new(v.x as f64, v.y as f64, v.z as f64));
                 let key = Self::quantize_vertex(pt.x, pt.y, pt.z, precision);
                 if let Some(&idx) = map.get(&key) {
                     remap.push(idx);
@@ -540,8 +675,8 @@ impl ManifoldMeshRust {
         let input_triangles = indices.len() / 3;
         let (mut transformed_vertices, mut welded_indices) = build(base_precision);
         if input_triangles > 0 && welded_indices.is_empty() {
-            // 退化保护：量化过粗时会把“薄壁/小三角形”合并塌陷成退化三角形，导致全被过滤。
-            // 这里提高精度重试（更细的网格单位）。
+            // 退化保护：量化过粗时会把"薄壁/小三角形"合并塌陷成退化三角形，导致全被过滤。
+            // 这里提高精度重试。
             let retry_precision = (base_precision * 1000.0).min(1_000_000_000.0);
             (transformed_vertices, welded_indices) = build(retry_precision);
         }
@@ -551,169 +686,7 @@ impl ManifoldMeshRust {
             indices: welded_indices,
         }
     }
+
 }
 //负实体的模型应该更大一些
 //正实体的模型更小一些
-
-// impl From<(&PlantMesh, &DMat4)> for ManifoldMeshRust {
-//     fn from(c: (&PlantMesh, &DMat4)) -> Self {
-//         let m = c.0;
-//         let t = c.1;
-//         unsafe {
-//             let mesh = ManifoldMeshRust::new();
-//             let mut verts: Vec<f32> = Vec::with_capacity(m.vertices.len() * 3);
-//             for v in m.vertices.clone() {
-//                 let pt = t.transform_point3(glam::DVec3::from(v));
-//                 // verts.push(f64_round_3(pt[0]) as _);
-//                 // verts.push(f64_round_3(pt[1]) as _);
-//                 // verts.push(f64_round_3(pt[2]) as _);
-//
-//                 verts.push(f64_round_1(pt[0]) as _);
-//                 verts.push(f64_round_1(pt[1]) as _);
-//                 verts.push(f64_round_1(pt[2]) as _);
-//             }
-//             manifold_meshgl(mesh.ptr as _,
-//                             verts.as_ptr() as _, m.vertices.len(), 3,
-//                             m.indices.as_ptr() as _, m.indices.len() / 3);
-//             mesh
-//         }
-//     }
-// }
-
-impl From<&PlantMesh> for ManifoldMeshRust {
-    fn from(m: &PlantMesh) -> Self {
-        let mut verts = Vec::with_capacity(m.vertices.len() * 3);
-        //todo 是否要根据包围盒的大小来判断用哪个等级的round
-        for v in m.vertices.clone() {
-            verts.push(f32_round_1(v[0]));
-            verts.push(f32_round_1(v[1]));
-            verts.push(f32_round_1(v[2]));
-        }
-        Self {
-            vertices: verts,
-            indices: m.indices.clone(),
-        }
-    }
-}
-
-impl From<&PlantMesh> for ManifoldRust {
-    fn from(m: &PlantMesh) -> Self {
-        let mesh: ManifoldMeshRust = m.into();
-        Self::from_mesh(&mesh)
-    }
-}
-
-impl From<PlantMesh> for ManifoldRust {
-    fn from(m: PlantMesh) -> Self {
-        let mesh: ManifoldMeshRust = (&m).into();
-        Self::from_mesh(&mesh)
-    }
-}
-
-// impl From<(&PlantMesh, &DMat4)> for ManifoldRust {
-//     fn from(m: (&PlantMesh, &DMat4)) -> Self {
-//         unsafe {
-//             let mesh: ManifoldMeshRust = m.into();
-//             Self::from_mesh(&mesh)
-//         }
-//     }
-// }
-// impl From<ManifoldRust> for PlantMesh {
-//     fn from(m: ManifoldRust) -> Self {
-//         (&m).into()
-//     }
-// }
-
-impl From<&ManifoldRust> for PlantMesh {
-    fn from(m: &ManifoldRust) -> Self {
-        use std::collections::HashSet;
-
-        let rs_mesh = m.inner.to_mesh();
-        let prop_num = rs_mesh.num_props() as usize;
-        let raw_vertices = rs_mesh.vertices();
-        let old_indices = rs_mesh.indices();
-
-        if old_indices.is_empty() {
-            return Self::default();
-        }
-
-        // 顶点数 = raw_vertices.len() / prop_num
-        let vert_num = raw_vertices.len() / prop_num;
-        let mut vert: Vec<[f32; 3]> = Vec::with_capacity(vert_num);
-        for i in 0..vert_num {
-            vert.push([
-                raw_vertices[prop_num * i + 0],
-                raw_vertices[prop_num * i + 1],
-                raw_vertices[prop_num * i + 2],
-            ]);
-        }
-
-        let tri_num = old_indices.len() / 3;
-        let index_num = tri_num * 3;
-        let mut indices = Vec::with_capacity(index_num);
-        let mut normals = Vec::with_capacity(index_num);
-        let mut vertices = Vec::with_capacity(index_num);
-
-        for (i, c) in old_indices.chunks(3).enumerate() {
-            let a: Vec3 = Vec3::from(vert[c[0] as usize]);
-            let b: Vec3 = Vec3::from(vert[c[1] as usize]);
-            let c: Vec3 = Vec3::from(vert[c[2] as usize]);
-
-            let normal = ((b - a).cross(c - a)).normalize();
-
-            vertices.push(a.into());
-            vertices.push(b.into());
-            vertices.push(c.into());
-
-            normals.push(normal);
-            normals.push(normal);
-            normals.push(normal);
-            let i = i as u32;
-            indices.push(i * 3 + 0);
-            indices.push(i * 3 + 1);
-            indices.push(i * 3 + 2);
-        }
-
-        // 提取边
-        let mut edge_set: HashSet<(u32, u32)> = HashSet::new();
-        for triangle in indices.chunks_exact(3) {
-            let v0 = triangle[0];
-            let v1 = triangle[1];
-            let v2 = triangle[2];
-            let edges = [
-                if v0 < v1 { (v0, v1) } else { (v1, v0) },
-                if v1 < v2 { (v1, v2) } else { (v2, v1) },
-                if v2 < v0 { (v2, v0) } else { (v0, v2) },
-            ];
-            for edge in edges {
-                edge_set.insert(edge);
-            }
-        }
-        let edges: Edges = edge_set
-            .iter()
-            .filter_map(|(idx0, idx1)| {
-                if *idx0 < vertices.len() as u32 && *idx1 < vertices.len() as u32 {
-                    Some(Edge::new(vec![
-                        vertices[*idx0 as usize],
-                        vertices[*idx1 as usize],
-                    ]))
-                } else {
-                    None
-                }
-            })
-            .collect();
-
-        let mut mesh = Self {
-            indices,
-            vertices,
-            normals,
-            uvs: Vec::new(),
-            wire_vertices: vec![],
-            edges,
-            aabb: None,
-        };
-        mesh.generate_auto_uvs();
-        mesh.sync_wire_vertices_from_edges();
-        mesh
-    }
-}

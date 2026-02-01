@@ -1,0 +1,32 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= March 8th 2024
+--[Function]:
+------------------------------------------
+
+define function !!setattvalue(!object is any, !name is string, !strings is array)
+	do !string values !strings
+		!att = !string.before('/')
+		!word = !string.after('/')
+		!com = '!object.' + !att + ' = ' + !word + ' of $' + '!name'
+        --q var !name !com
+		$!com
+		handle any
+			!objectcom = |!objecttype = !object.| & !att & |.objecttype()|
+			$!objectcom
+			if !objecttype eq 'STRING' then
+				!com = |!object.| + !att + | = ''|
+			elseif !objecttype eq 'REAL' then
+				!com = |!object.| + !att + | = 0|
+			else
+				!com = |!object.| + !att + | = object | & !objecttype & |()|
+			endif
+			$!com
+		endhandle
+	enddo
+endfunction
+¯@

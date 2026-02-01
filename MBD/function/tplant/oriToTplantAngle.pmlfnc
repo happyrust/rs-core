@@ -1,0 +1,103 @@
+﻿------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= November 18th 2022
+--[Function]:
+--
+--[REV]
+--Revision		= 1.1
+--Date			= May 18th 2023
+--[Function]:	change the method    but it is useless, tplant does not use this
+------------------------------------------
+
+--------change ori of element in PDMS/E3D to rotate angle in TPLANT
+--tplant的三个方向的旋转角度有可能不一样，但是物体是方位可以一样，也就是说有时候一个方向旋转的效果也可以通过其它两个方向来实现
+--tplant三个方向的角度逻辑是，x 0 y 0 z 0相对于PDMS/E3D来说是 Y is N and Z is U，X当然是E，然后绕X轴（当前与E轴重合）旋转得到x旋转角度，其它两个方向y z角度还是0，
+--再绕Y轴（与N轴已经不重合了，除非刚刚旋转了360的N倍），得到Y轴旋转角度，其它不变，再绕z轴旋转得到z方向的角度，其它两个方向角度也不变
+--假定x y z 在每个方向上都是不多于一次转动就得到的结果，从这个逻辑可以得到一个反推逻辑程序，算出x y z的角度
+--反推程序简述：
+--Z方向角度反推: X转动只会把Y轴在 n u这个面里变动，Y轴转动不会改变自己，Z轴转动会把Y轴转出NU这个面，由现在的以Z轴为法线通过Y轴的面与NU这个面相交得到Y轴与相交线的夹角，从而得到Z轴旋转角度
+--这里面需要注意的是，Z轴有可能是E或W，那Y还是在NU面内，特殊情况特殊考虑。还有两个面相交线与Y轴有两个夹角，其它都可以算出结果，虽然结果不一样，但是表示的是同一方位
+--在得到Z方向旋转角度的情况下，把物体方位还原成Z没有旋转的样子，那就是Z为0，只有X 和Y旋转过。由X与E的夹角很容易得到Y旋转的角度。然后还原成Y轴没有转动的样子，再由Y与N的角得到X转动角度
+define function !!oriToTplantAngle(!element is any) is array
+	if !element.objecttype() ne 'ORIENTATION' then
+		!ori = ori of $!element wrt/*
+	else
+		!ori = !element
+	endif
+
+
+	$(
+	------------202305181623
+	!xangle = !ori.alpha
+	!yangle = !ori.beta
+	!zangle = !ori.gamma
+	$)
+
+	--$(
+	!pos = e 0 n 0 u 0 wrt/*
+	--!xdir = !ori.xdir()
+	!ydir = !ori.ydir()
+	!zdir = !ori.zdir()
+
+	!wplane = object plane(!pos,z is w)
+	!tempori = object orientation('z is $!zdir')
+	!zplane = object plane(!pos,!tempori)
+	!line = !wplane.intersection(!zplane)
+	handle any
+		!arc = object arc(!pos,x is n and z is e,0,360,1000,true)
+		!angle = !arc.near(!pos.offset(!ydir,1000))
+		if !zdir.angle(e) eq 0 then	$* z is e, yangle must be 90, xangle + zangle = !angle
+			!yangle = 90
+			!tempAngle = 0	$*tempangle could be any real
+			!xangle = !angle - !tempAngle
+			!zangle = !tempAngle
+		else	$* z is w, yangle must be -90, xangle + zangle = !angle
+			!yangle = -90
+			!tempAngle = 0	$*tempangle could be any real
+			!xangle = !angle + !tempAngle
+			!zangle = !tempAngle
+		endif
+	elsehandle none
+		!oldydirBeforeZturn = !line.direction()	$* two possibilities
+		!arc = object arc(!pos,object orientation('x is $!oldydirBeforeZturn and z is $!zdir'),0,360,1000,true)
+		!zangle = !arc.near(!pos.offset(!ydir,1000))
+		!oldxdirBeforeZturn = !oldydirBeforeZturn.orthogonal(!zdir)
+
+		!arc = object arc(!pos,object orientation('x is E and z is $!oldydirBeforeZturn'),0,360,1000,true)
+		!yangle = !arc.near(!pos.offset(!oldxdirBeforeZturn,1000))
+
+		!arc = object arc(!pos,object orientation('x is n and z is e'),0,360,1000,true)
+		!xangle = !arc.near(!pos.offset(!oldydirBeforeZturn,1000))
+	endhandle
+	--$)
+
+	--$(
+	--202305181701
+	if !xangle gt 180 then
+		!xangle = !xangle - 360
+	endif
+	if !yangle gt 180 then
+		!yangle = !yangle - 360
+	endif
+	if !zangle gt 180 then
+		!zangle = !zangle - 360
+	endif
+	--$)
+
+	!anglestring1 = !xangle.string('D1').lowcase().before('.0').before('degree') + ' ' + !yangle.string('D1').lowcase().before('.0').before('degree') + ' ' + !zangle.string('D1').lowcase().before('.0').before('degree')
+	!anglestring2 = 'X ' + !xangle.string('D1').lowcase().before('.0').before('degree') + ' Y ' + !yangle.string('D1').lowcase().before('.0').before('degree') + ' Z ' + !zangle.string('D1').lowcase().before('.0').before('degree')
+	--q var !xangle.string('d6').real().value()
+
+	!result = array()
+	!result.append(!xangle)
+	!result.append(!yangle)
+	!result.append(!zangle)
+	!result.append(!anglestring1)
+	!result.append(!anglestring2)
+	return !result
+endfunction
+�

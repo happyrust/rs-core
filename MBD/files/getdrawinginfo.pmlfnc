@@ -1,0 +1,97 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= March 8th 2024
+--[Function]:
+------------------------------------------
+
+define function !!getdrawinginfo(!object is any)
+	!object.drawcompany = !!getmbdcompanyname()
+	!projectdata = object projectdata()
+
+	!type = !object.objecttype()
+    --q var !type
+	if !type inset('ISOBRAN','SETHVAC','SETELEC','SETEQUI') then
+		!nodename = !object.branname
+	elseif !type inset('SUISUPPORT','INSTSUPPORT','SETELECDETAIL','SETSUPPDETAIL','SETHVACDETAIL') then
+		!nodename = !object.suppname
+	elseif !type eq 'MARKEQUI' then
+		!nodename = !object.equiname
+	elseif !type eq 'MARKCIVIL' then
+		!nodename = !object.civilname
+	endif
+
+	!object.drawproject = !projectdata.project
+
+	!object.drawengineering = :ZD_GCDH of $!nodename
+	handle any
+		!object.drawengineering = ''
+	elsehandle none
+		if !object.drawengineering.unset() then
+			!object.drawengineering = ''
+		endif
+	endhandle
+
+
+	!object.drawsubprojectnumber = :ZD_ZXHM of $!nodename
+	handle any
+		!object.drawsubprojectnumber = ''
+	elsehandle none
+		if !object.drawsubprojectnumber.unset() then
+			!object.drawsubprojectnumber = ''
+		endif
+	endhandle
+
+	!object.drawgroup = :ZD_JZBH of $!nodename
+	handle any
+		!object.drawgroup = ''
+	elsehandle none
+		if !object.drawgroup.unset() then
+			!object.drawgroup = ''
+		endif
+	endhandle
+
+	!object.drawmajor = :ZD_ZYMC of $!nodename
+	handle any
+		!object.drawmajor = ''
+	elsehandle none
+		if !object.drawmajor.unset() then
+			!object.drawmajor = ''
+		endif
+	endhandle
+    !code = !object.drawmajor
+	if !code eq '' then
+         !object.drawmajor = :ZD_ZYDM of $!nodename
+        handle any
+            !object.drawmajor = ''
+        elsehandle none
+            if !object.drawmajor.unset() then
+                !object.drawmajor = ''
+            endif
+        endhandle
+    endif
+	$(
+	!nbbm = :zd_nbbm of $!nodename
+	handle any
+		!nbbm = ''
+	endhandle
+	!projectdata.name = !nbbm.substring(6,2)
+	handle any
+		!projectdata.name = ''
+	endhandle
+
+	!projectdata.group = !nbbm.substring(5,1)
+	handle any
+		!projectdata.group = ''
+	endhandle
+
+	!object.drawproject = !projectdata.project
+	!object.drawengineering = !projectdata.number
+	!object.drawsubprojectnumber = !projectdata.name
+	!object.drawgroup = !projectdata.group
+	$)
+endfunction
+°

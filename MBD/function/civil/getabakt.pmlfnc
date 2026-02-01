@@ -1,0 +1,93 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= December 21st 2023
+--[Function]:
+------------------------------------------
+
+define function !!getabakt(!civilname is string) is array
+	----------------------------
+	----------------------------Step 1:new rule
+	!frmw = name of frmw of $!civilname
+	!names = array()
+	!ab = !frmw + '-AB'
+	!ak = !frmw + '-AK'
+	!t = !frmw + '-AT'
+
+	!names.append(!ab)
+	!names.append(!ak)
+	!names.append(!t)
+	do !x indices !names
+		!abname = name of $!names[$!x]
+		handle any
+			!names[!x].delete()
+		endhandle
+	enddo
+	!names.compress()
+	--return !names
+
+
+
+	----------------------------
+	----------------------------Step 2: old rule , program from markcivilform
+	!civiltype = type of $!civilname
+	if !civiltype eq 'FLOOR' then
+		!owner = name of cfloor of $!civilname
+		handle any	$*6DA-CIVI-G-S-C has no CFLOOR
+			!owner = name of owner of $!civilname
+		endhandle
+	else
+		!owner = name of cwall of $!civilname
+	endif
+
+
+
+
+	!parts = !owner.split('-')
+
+	!abparts = !parts
+	!abparts[!abparts.size() - 1] = 'AB'
+	!abname = !abparts[1]
+	do !x from 2 to !abparts.size()
+		!abname = !abname + '-' + !abparts[!x]
+	enddo
+
+
+	!akparts = !parts
+	!akparts[!akparts.size() - 1] = 'AK'
+	!akname = !akparts[1]
+	do !x from 2 to !akparts.size()
+		!akname = !akname + '-' + !akparts[!x]
+	enddo
+
+
+	!tparts = !parts
+	!tparts[!tparts.size() - 1] = 'T'
+	!tname = !tparts[1]
+	do !x from 2 to !tparts.size()
+		!tname = !tname + '-' + !tparts[!x]
+	enddo
+
+	!names.append(!abname)
+	!names.append(!akname)
+	!names.append(!tname)
+
+	!names.unique()
+
+
+	!newnames = array()
+	do !name values !names
+		!goodname = name of $!name
+		handle any
+		elsehandle none
+			!newnames.append(!goodname)
+		endhandle
+	enddo
+
+	return !newnames
+endfunction
+
+”

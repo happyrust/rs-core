@@ -1,0 +1,30 @@
+ï»¿------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= May 22nd 2023
+--[Function]:
+------------------------------------------
+
+define object polarcyli
+	member .name is string
+	member .pos is position
+	member .ori  is orientation
+	member .diameter is real
+	member .height is real
+endobject
+
+define method .polarcyli(!pos is position, !ori is orientation, !diameter is real,!height is real)
+	!this.pos = !pos
+	!this.ori = !ori
+	!this.diameter = !diameter
+	!this.height = !height
+endmethod
+
+
+
+
+
+ø“

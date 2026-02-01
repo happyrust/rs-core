@@ -1,0 +1,130 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= April 10th 2023
+--[Function]:
+------------------------------------------
+
+--Method:
+--aidtext(!item is any) 													$*get aidtext from item in PDMS
+--aidtext(!where is any, !aidtextpos is position, !ori is orientation, !stext is string, !cheight is real, !function is string, !desc is string) is boolean
+-- 	$*get aidtext from input data
+
+--create() is boolean   													$*to create a aidtext in PDMS
+--json() is array   														$*get json data
+
+
+define object aidtext
+	member .owner is string
+	member .name is string
+	member .pos is position
+	member .ori is orientation
+	member .stext is string
+	member .cheight is real
+	member .function is string			$*function for
+	member .desc is string				$*nodenames
+endobject
+
+define method .aidtext(!item is any)
+	!this.name = name of aidtext of $!item
+	handle any
+		return
+	endhandle
+	!this.owner = name of owner of $!this.name
+	!this.pos = pos of $!this.name wrt/*
+	!this.ori = ori of $!this.name wrt/*
+	!this.stext = stext of $!this.name
+	!this.cheight = cheight of $!this.name
+	!this.function = function of $!this.name
+	!this.desc = desc of $!this.name
+endmethod
+
+define method .aidtext(!where is any, !aidtextpos is position, !ori is orientation, !stext is string, !cheight is real, !function is string, !desc is string) is boolean
+	!this.owner = name of $!where
+	!this.pos = !aidtextpos
+	!this.ori = !ori
+	!this.stext = !stext
+	!this.cheight = !cheight
+
+	if !function.trim() ne '' then
+		!this.function = !function.trim()
+	else
+		!this.function = ''
+		--!this.function = '其它'
+	endif
+	if !desc.trim() ne '' then
+		!this.desc = !desc.trim()
+	endif
+	return !this.create()
+endmethod
+
+define method .create() is boolean
+	$!this.owner
+	handle any
+		return false
+	endhandle
+
+	new aidtext
+	handle any
+		return false
+	endhandle
+
+	if !this.name.set() then
+		name $!this.name
+		handle any
+			return false
+		endhandle
+	else
+		!this.name = name
+	endif
+
+	position $!this.pos
+	cheight $!this.cheight
+	ori $!this.ori
+	stext '$!this.stext'
+	if !this.function.set() and !this.function.trim() ne '' then
+		function '$!this.function'
+	endif
+
+	if !this.desc.set() and !this.desc.trim() ne '' then
+		desc '$!this.desc'
+	endif
+	return true
+endmethod
+
+define method .json() is array
+	!aidtext = !this.name
+
+	!result = array()
+	!result.append(|{|)
+
+	!result.append(!!getNodeNames(!aidtext))
+	!result.append(|"type": "text",|)
+	--!result.append(|"function": "| + !this.function + |",|)
+
+	if !this.function ne '' then
+		!result.append(|"function": "| + !this.function + |",|)
+	else
+		!result.append(|"function": "| + |其它| + |",|)
+	endif
+
+	!result.append(|"textPosition": [|)
+	--!result.append(|"position": [|)	$*202309051659
+	!result.appendarray(!!postoArr(!this.pos))
+	!result.append(|],|)
+
+	!lframestring = '0'
+	!result.append(|"showEdge": "| + !lframestring + |",|)
+	!result.append(|"textcheight": "| + !this.cheight.string().upcase().before('MM').before('IN') + |",|)
+	--!result.append(|"text": "| + !this.stext + |",|)
+	!result.append(|"text": "| + !this.stext.replace(|\|,|\\|).replace(|"|,|\"|) + |",|)
+	!result.append(|"textOri": "| + !!oriToTplantAngle(!aidtext)[4] + |"|)
+	!result.append(|},|)
+
+	return !result
+endmethod
+
+

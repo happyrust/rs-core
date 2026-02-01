@@ -1,0 +1,20 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= September 22nd 2023
+--[Function]:
+------------------------------------------
+
+define function !!compareqa(!tubeqa is array, !tempqa is array) is real
+	!matchnum = !tubeqa[2].size()
+	do !x indices !tubeqa[2]
+		if !tubeqa[2][!x] ne !tempqa[2][!x] then
+			!matchnum = !x
+			break
+		endif
+	enddo
+	return !matchnum
+endfunction

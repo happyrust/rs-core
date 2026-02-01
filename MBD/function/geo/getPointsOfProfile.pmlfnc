@@ -1,0 +1,17 @@
+define function !!getPointsOfProfile(!profile is profile) is array
+	!points = array()
+	!edges = !profile.edges()
+	do !edge values !edges
+		if !edge.objecttype() eq 'LINE' then
+			!points.append(!edge.startposition)
+			!points.append(!edge.endposition)
+		elseif !edge.objecttype() eq 'ARC' then
+			!points.append(!edge.angleposition(!edge.startangle))
+			!points.append(!edge.angleposition((!edge.startangle + !edge.endangle) / 2))
+			!points.append(!edge.angleposition(!edge.endangle))
+		endif
+	enddo
+	!points.unique()
+	return !points
+endfunction
+œ

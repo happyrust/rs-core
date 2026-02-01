@@ -1,0 +1,246 @@
+ï»¿------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= May 10th 2023
+--[Function]:	merge angles
+--
+--[REV]
+--Revision		= 1.1
+--Date			= June 15th 2023
+--[Function]:	rewrite whole function
+--input  inputangles is array of array of two element(angle)
+------------------------------------------
+define function !!mergeangles(!inputangles is array) is array
+	if !inputangles.size() eq 0 then
+		return !inputangles
+	endif
+
+	!temparr = array()
+	!angles = array()
+	!startangles = array()
+	do !oneangles values !inputangles
+		!min1 = !!angleunique(!oneangles[1])
+		!max1 = !!angleunique(!oneangles[2])
+		if !min1 gt !max1 then
+			!temparr[1] = !min1
+			!temparr[2] = 360
+			!startangles.append(!min1)
+			!angles.append(!temparr)
+			!temparr[1] = 0
+			!temparr[2] = !max1
+			!startangles.append(0)
+			!angles.append(!temparr)
+		else
+			if !max1 ge !min1 + 360 then
+				!result = array()
+				!temparr[1] = 0
+				!temparr[2] = 360
+				!result.append(!temparr)
+				return !result
+			else
+				!temparr[1] = !min1
+				!temparr[2] = !max1
+				!startangles.append(!min1)
+				!angles.append(!temparr)
+			endif
+		endif
+	enddo
+
+
+
+
+	!indices = !startangles.sortedindices()
+
+	!angles.reindex(!indices)
+
+
+	!newangles = array()
+
+	!temparr[1] = !angles[1][1]
+	do !x from 1 to !angles.size() - 1
+
+		if !angles[!x][2] lt !angles[!x + 1][1] then
+			!temparr[2] = !angles[!x][2]
+			!newangles.append(!temparr)
+			!temparr[1] = !angles[!x + 1][1]
+			skip
+		else
+			!angles[!x + 1][2] = max(!angles[!x][2],!angles[!x + 1][2])
+		endif
+	enddo
+	!size = !angles.size()
+	!temparr[2] = !angles[!size][2]
+	!newangles.append(!temparr)
+
+
+	!newsize = !newangles.size()
+	if !newsize gt 1 then
+		if !newangles[1][1] eq 0 and !newangles.last()[2] eq 360 then
+
+			!newangles[1][1] = !newangles.last()[1]
+			!newangles[!newsize].delete()
+		endif
+	endif
+	return !newangles
+
+	$(
+	--202306151443
+	--define function !!mergeangles(!minMaxangles is array, !usedangle is array) is array
+	--$(
+	!result = array()
+	!min1 = !!angleunique(!minmaxangles[1])
+	!max1 = !!angleunique(!minmaxangles[2])
+	!min2 = !!angleunique(!usedangle[1])
+	!max2 = !!angleunique(!usedangle[2])
+
+
+
+	!temparr = array()
+	!angles = array()
+	!startangles = array()
+	if !min1 gt !max1 then
+		!temparr[1] = !min1
+		!temparr[2] = 360
+		!startangles.append(!min1)
+		!angles.append(!temparr)
+		!temparr[1] = 0
+		!temparr[2] = !max1
+		!startangles.append(0)
+		!angles.append(!temparr)
+	else
+		if !max1 ge !min1 + 360 then
+			!result = array()
+			!temparr[1] = 0
+			!temparr[2] = 360
+			!result.append(!temparr)
+			return !result
+		else
+			!temparr[1] = !min1
+			!temparr[2] = !max1
+			!startangles.append(!min1)
+			!angles.append(!temparr)
+		endif
+	endif
+
+
+
+	if !min2 gt !max2 then
+		!temparr[1] = !min2
+		!temparr[2] = 360
+		!startangles.append(!min2)
+		!angles.append(!temparr)
+		!temparr[1] = 0
+		!temparr[2] = !max2
+		!startangles.append(0)
+		!angles.append(!temparr)
+	else
+		if !max2 ge !min2 + 360 then
+			!result = array()
+			!temparr[1] = 0
+			!temparr[2] = 360
+			!result.append(!temparr)
+			return !result
+		else
+			!temparr[1] = !min2
+			!temparr[2] = !max2
+			!startangles.append(!min2)
+			!angles.append(!temparr)
+		endif
+	endif
+
+
+
+	!indices = !startangles.sortedindices()
+
+	!angles.reindex(!indices)
+
+
+	!newangles = array()
+	!temparr[1] = !angles[1][1]
+	do !x from 1 to !angles.size() - 1
+
+		if !angles[!x][2] lt !angles[!x + 1][1] then
+			!temparr[2] = !angles[!x][2]
+			!newangles.append(!temparr)
+			!temparr[1] = !angles[!x + 1][1]
+			skip
+		else
+			!angles[!x + 1][2] = max(!angles[!x][2],!angles[!x + 1][2])
+		endif
+	enddo
+	!size = !angles.size()
+	!temparr[2] = !angles[!size][2]
+	!newangles.append(!temparr)
+
+
+	!newsize = !newangles.size()
+	if !newsize gt 1 then
+		if !newangles[1][1] eq 0 and !newangles.last()[2] eq 360 then
+
+			!newangles[1][1] = !newangles.last()[1]
+			!newangles[!newsize].delete()
+		endif
+	endif
+	return !newangles
+	$)
+
+
+
+
+
+
+	--$)
+	$(
+	---old way, following situation would get wrong result 202306151431
+	--!minMaxangles[1] = 210
+	--!minMaxangles[2] = 30
+	--!usedangle[1] = 320
+	--!usedangle[2] = 280
+
+
+	!minAngle = !minMaxangles[1]
+	!maxangle = !minMaxangles[2]
+	!result = array()
+	!result.append(!usedangle)
+
+	!needmerge = true
+	!mininside1 = !!angleinangles(!minangle,!usedangle[1],!usedangle[2])
+	!maxinside1 = !!angleinangles(!maxangle,!usedangle[1],!usedangle[2])
+
+	if !mininside1.not() and !maxinside1.not() then
+		!mininside2 = !!angleinangles(!usedangle[1],!minangle,!maxangle)
+		if !mininside2 then
+			golabel /merge
+		else
+			!maxinside2 = !!angleinangles(!usedangle[2],!minangle,!maxangle)
+			if !maxinside2.not() then
+				!needmerge = false
+			endif
+		endif
+	endif
+
+
+	label /merge
+	if !needmerge.not() then
+		--$p asdfasf
+		!temparr = array()
+		!temparr.append(!minangle)
+		!temparr.append(!maxangle)
+		!result.append(!temparr)
+	elseif not(!mininside1 and !maxinside1) then	$* if (!mininside1 and !maxinside1) just need to keep result
+		--$p kkkk
+		if !mininside1.not() and !maxinside1.not() then
+			!result[1] = !minMaxangles
+		elseif !mininside1 then
+			!result[1][2] = !maxangle
+		elseif !maxinside1 then
+			!result[1][1] = !minangle
+		endif
+	endif
+	return !result
+	$)
+endfunction
+Ú

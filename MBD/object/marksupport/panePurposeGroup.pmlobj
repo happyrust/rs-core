@@ -1,0 +1,117 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= June 26th 2023
+--[Function]:	get a group of panes which maybe make of a sctn
+------------------------------------------
+
+--Method:
+--Public method:
+--panePurPoseGroup(!sp is supportPane)  											$* generate a group
+--add(!sp is supportPane) is boolean	$*if be within one SCTN, put in together   	$*check if possible be in this group, yes return true
+
+define object panePurposeGroup
+	member .dir1 is direction	$*possible direction 1
+	member .dir2 is direction	$* possible direction 2
+
+	member .lines1 is array
+	member .widths1 is array
+
+	member .lines2 is array
+	member .widths2 is array
+
+	member .sps is array
+endobject
+
+define method .panePurPoseGroup(!sp is supportPane)
+	!this.dir1 = !sp.dir1
+	!this.dir2 = !sp.dir2
+
+	!this.lines1.append(!sp.axis1)
+	!this.widths1.append(!sp.axis2.length())
+
+	!this.lines2.append(!sp.axis2)
+	!this.widths2.append(!sp.axis1.length())
+
+	!this.sps.append(!sp)
+endmethod
+
+define method .add(!sp is supportPane) is boolean	$*if be within one SCTN, put in together
+	!matchDirNums = array()
+
+	!temparr1 = array()
+	!temparr2 = array()
+	do !x from 1 to 2
+		!dir = !this.dir$!x
+		if !dir.unset() then
+			skip
+		endif
+		if !x eq 1 then
+			!lines = !this.lines1
+			!widths = !this.widths1
+		else
+			!lines = !this.lines2
+			!widths = !this.widths2
+		endif
+		do !y from 1 to 2
+			if !y eq 1 then
+				!temparr1[1] = !sp.axis1
+				!temparr1[2] = !sp.axis2.length()
+			else
+				!temparr1[1] = !sp.axis2
+				!temparr1[2] = !sp.axis1.length()
+			endif
+			!dirMatch = true
+			do !z indices !lines
+				!temparr2[1] = !lines[!z]
+				!temparr2[2] = !widths[!z]
+$(
+if !this.sps[1].ref eq '=17590/12450' and !sp.ref eq '=17590/12456' then
+
+
+
+endif
+$)
+				if !!checkAxisOk(!temparr1,!temparr2).not() then
+					!dirMatch = false
+					break
+				endif
+			enddo
+
+			if !dirMatch then
+				if !x eq 1 then
+					!this.lines1.append(!temparr1[1])
+					!this.widths1.append(!temparr1[2])
+				else
+					!this.lines2.append(!temparr1[1])
+					!this.widths2.append(!temparr1[2])
+				endif
+				!matchDirNums.append(!x)
+				break
+			endif
+		enddo
+	enddo
+
+	if !matchDirNums.set() then
+		!this.sps.append(!sp)
+		if !matchDirNums.size() eq 1 then
+			if !matchDirNums[1] eq 1 then
+				!this.dir2 = object direction()
+				!this.lines2 = array()
+				!this.widths2 = array()
+			else
+				!this.dir1 = object direction()
+				!this.lines1 = array()
+				!this.widths1 = array()
+			endif
+		endif
+		!result = true
+	else
+		!result = false
+	endif
+	return !result
+endmethod
+

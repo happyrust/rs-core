@@ -1,0 +1,14 @@
+﻿define function !!isoGetDimDir(!pipedir is direction,!dimdirs is array) is direction
+    if !dimDirs.unset() then
+        $p dimDirs unset in function isoGetDimDir
+        !dimdir = object direction()
+    else
+        !dimDir = !pipedir.orthogonal(!dimDirs[3])    $*优选前面两个方向
+        handle any
+            !dimDir = !pipedir.orthogonal(!dimDirs[2])    $*当当前方向与第三个方向平行时，优选第一个方向
+        endhandle
+        !dimDir = !!isogetBestDir(!dimDir,!dimDirs)
+    endif
+    return !dimdir
+endfunction
+�

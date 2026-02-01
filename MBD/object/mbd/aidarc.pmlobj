@@ -1,0 +1,162 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= April 14th 2023
+--[Function]:
+------------------------------------------
+
+--Method:
+--aidarc(!item is any)  													$*
+--aidarc(!owner is any, !pos is position, !ori is orientation, !radius is real, !stangle is real, !sweepangle is real, !function is string, !desc is string) is boolean 	$*
+--create() is boolean   													$*
+--json() is array   														$*
+
+
+define object aidarc
+	member .owner is string
+	member .name is string
+	member .pos is position
+	member .ori is orientation
+	member .radius is real
+
+	member .stangle is real
+	member .sweepAngle is real
+
+	member .function is string			$*function for
+	member .desc is string				$*nodenames
+endobject
+
+define method .aidarc(!item is any)
+	!this.name = name of aidarc of $!item
+	handle any
+		return
+	endhandle
+	!this.owner = name of owner of $!this.name
+	!this.pos = pos of $!this.name wrt/*
+	!this.ori = ori of $!this.name wrt/*
+
+	!this.radius = radius of $!this.name wrt/*
+	!this.stangle = stangle of $!this.name
+	!this.sweepAngle = sweepAngle of $!this.name
+
+	!this.function = function of $!this.name
+	!this.desc = desc of $!this.name
+endmethod
+define method .aidarc(!owner is any, !arc is arc, !function is string, !desc is string) is boolean
+	!this.owner = name of $!owner
+	!this.pos = !arc.position
+	!this.ori = !arc.orientation
+	!this.radius = !arc.radius
+	!this.stangle = !arc.startangle
+	!this.sweepangle = !arc.endangle - !arc.startangle
+
+
+	if !function.trim() ne '' then
+		!this.function = !function.trim()
+	else
+		!this.function = ''
+		--!this.function = 'ÆäËü'
+	endif
+	if !desc.trim() ne '' then
+		!this.desc = !desc.trim()
+	endif
+
+	return !this.create()
+endmethod
+define method .aidarc(!owner is any, !pos is position, !ori is orientation, !radius is real, !stangle is real, !sweepangle is real, !function is string, !desc is string) is boolean
+	!this.owner = name of $!owner
+	!this.pos = !pos
+	!this.ori = !ori
+	!this.radius = !radius
+	!this.stangle = !stangle
+	!this.sweepangle = !sweepAngle
+
+
+	if !function.trim() ne '' then
+		!this.function = !function.trim()
+	else
+		!this.function = ''
+		--!this.function = 'ÆäËü'
+	endif
+	if !desc.trim() ne '' then
+		!this.desc = !desc.trim()
+	endif
+
+	return !this.create()
+endmethod
+
+define method .create() is boolean
+	$!this.owner
+	handle any
+		return false
+	endhandle
+
+	new aidarc
+	handle any
+		return false
+	endhandle
+
+	if !this.name.set() then
+		name $!this.name
+		handle any
+			return false
+		endhandle
+	else
+		!this.name = name
+	endif
+
+	position $!this.pos
+	ori $!this.ori
+	radius $!this.radius
+	stangle $!this.stangle
+	sweepangle $!this.sweepangle
+
+	if !this.function.set() and !this.function.trim() ne '' then
+		function '$!this.function'
+	endif
+
+	if !this.desc.set() and !this.desc.trim() ne '' then
+		desc '$!this.desc'
+	endif
+	return true
+endmethod
+
+define method .json() is array
+	!aidarc = !this.name
+
+	--q var !this.name
+
+	!result = array()
+	!result.append(|{|)
+
+
+	!result.append(!!getNodeNames(!aidarc))
+	!result.append(|"type": "arc",|)
+
+	if !this.function ne '' then
+		!result.append(|"function": "| + !this.function + |",|)
+	else
+		!result.append(|"function": "| + |ÆäËü| + |",|)
+	endif
+
+	!result.append(|"position": [|)
+	!result.appendarray(!!postoArr(!this.pos))
+	!result.append(|],|)
+
+
+	!result.append(|"stangle": "| + !this.stangle.string().upcase().before('DEGREE') + |",|)
+	!result.append(|"sweepangle": "| + !this.sweepangle.string().upcase().before('DEGREE') + |",|)
+	!result.append(|"radius": "| + !this.radius.string().upcase().before('MM') + |",|)
+	!result.append(|"ori": "| + !!oriToTplantAngle(!aidarc)[4] + |"|)
+	!result.append(|},|)
+
+	--q var !result
+
+	return !result
+endmethod
+
+
+Ä

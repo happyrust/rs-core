@@ -1,0 +1,27 @@
+﻿------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= May 10th 2023
+--[Function]:
+--angle is 0 - 360, it is normal that startangle is larger than endangle
+------------------------------------------
+
+define function !!angleinangles(!inputangle is real, !inputstartangle is real, !inputendangle is real) is boolean
+	!angle = !!angleunique(!inputangle)
+	!startangle = !!angleunique(!inputstartangle)
+	!endangle = !!angleunique(!inputendangle)
+
+	if !endangle ge !startangle then
+		if !angle le !endangle and !angle ge !startangle then
+			return true
+		endif
+	else
+		if (!angle le !endangle and !angle ge 0) or (!angle le 360 and !angle ge !startangle) then
+			return true
+		endif
+	endif
+	return false
+endfunction

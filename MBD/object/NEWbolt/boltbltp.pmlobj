@@ -1,0 +1,54 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= August 28th 2023
+--[Function]:
+------------------------------------------
+
+--Method:
+--Public method:
+--boltBltp(!bltp is any)													$*
+
+--Private method:
+
+
+define object boltBltp
+	member .name is string
+	member .numb is real
+	member .bdia is real
+	member .btyp is string
+	member .bthk is string
+
+	member .used is boolean			$*is counted already or not
+endobject
+
+define method .boltBltp(!bltp is any)
+--$p 021
+	!this.name = name of $!bltp
+	!this.numb = number of $!bltp
+	--q var !this.name !this.numb
+	!bdiastring = bdiam of $!bltp
+    --q var !bdiastring
+	!this.bdia = !bdiastring.replace('(','').replace(')','').trim().real()
+    --q var !this.bdia
+	!this.bthk = bthk of $!bltp
+	!this.btyp = btype of $!bltp
+	!this.used = false
+endmethod
+
+define method .same(!bltp is boltbltp) is boolean
+--$p 456
+	if !this.bdia eq !bltp.bdia and !this.btyp eq !bltp.btyp and !bltp.bthk eq !bltp.bthk then
+		return true
+	else
+		return false
+	endif
+endmethod
+
+
+
+
+

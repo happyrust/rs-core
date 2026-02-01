@@ -1,0 +1,46 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= June 29th 2023
+--[Function]:
+------------------------------------------
+
+define object supportlayout
+	member .name is string
+	member .pos is position
+	member .orientation  is orientation
+
+	member .dirs is array
+	member .itemobjects is array	$* all things in supp,lindim and mlabel
+
+
+	member .dirplanes is array
+endobject
+
+define method .supportlayout(!itemobjects is array, !dirs is array)
+	!this.dirs = !dirs
+	!this.itemobjects = !itemobjects
+endmethod
+
+define method .getdata()
+	!temppos = e 0 n 0 u 0
+	!planes = array()
+	do !dir values !this.dirs
+		!plane = object plane(!temppos,object orientation('Z is $!dir'))
+		!planes.append(!plane)
+	enddo
+
+	do !object values !this.itemobjects
+		!objecttype = !object.objecttype()
+
+	enddo
+endmethod
+
+
+
+
+
+=

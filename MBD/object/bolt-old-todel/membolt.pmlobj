@@ -1,0 +1,318 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= April 17th 2023
+--[Function]:	get bolt data in which this element is involved
+------------------------------------------
+
+--Method:
+--Public:
+--membolt(!item is any) 													$*init method
+--membolt(!item is any, !unavailablePnums is any)   						$*init method with used pnums
+--getmaterial() is array													$*get bolt material
+--getusedmempnums() is array												$*get used mem and ppoint number for mem in bolt
+
+--Private:
+--getallflanPNums() is array												$*get all flan ppoint number
+--getBoltData(!pnums is array, !pitems is array, !bores is array, !btsedatas is array)  	$* get boltdatas
+--getbtsedata() is array													$*get all btsedata
+--getflancrfa() is array													$*get ppoint number in crfa
+--matchbtse(!pnums is array, !btsedatas is array) is array  				$*get relevant btse for available flan point according bore and bdiameter
+
+define object membolt
+	member .name is string
+
+	member .unavailablePNums is array		$* unnecessary to consider
+
+	member .boltdatas is array
+
+	--member .blrfarray is array		$* arrya of btse
+	--member .bores is array			$* all bores from p bore with flan
+
+	--member .flanPnums is array				$* unavailable and available
+	--member .flanItems is array
+	--member .allbtsedatas is array
+
+	--member .boltmemdatas is array 			$*array of boltmemdata
+	--member .materials is array				$*array of isomaterial
+
+	member .flanconn is string
+
+	--member .usedmems is array		$*array of mem list (xxx xxxx xxxx xxx) and
+	--member .usedmempnums is array	$* pnum list (all all all arrive)
+
+	member .bsel is string
+endobject
+
+define method .membolt(!item is any, !unavailablePnums is any)
+	if !unavailablePnums.objecttype() eq 'STRING' then
+		if !unavailablePnums.lowcase() eq 'all' then
+			return
+		else
+			if !unavailablePnums.lowcase() eq 'arrive' then
+				!pnum = arrive of $!item
+			elseif !unavailablePnums.lowcase() eq 'leave' then
+				!pnum = leave of $!item
+			else
+				!pnum = !unavailablePnums.real()
+			endif
+			!this.unavailablePnums.append(!pnum)
+		endif
+	elseif !unavailablePnums.objecttype() eq 'ARRAY' then
+		!this.unavailablePnums = !unavailablePnums
+	endif
+	!this.membolt(!item)
+endmethod
+
+define method .membolt(!item is any)
+	!this.flanconn = 'F*'
+	!this.name = name of $!item
+	handle any
+		return
+	endhandle
+	!btsedatas = !this.getbtsedata()
+	if !btsedatas.unset() then
+		return
+	endif
+
+	!this.bsel = bsel of $!item
+
+
+
+	!temparr = !this.getallflanPNums()					$* get all port data with flan
+	!pnums = !temparr[1]
+	!pitems = !temparr[2]
+	if !Pnums.unset() then
+		return
+	endif
+
+	!bores = !this.matchbtse(!pnums,!btsedatas)
+	if !bores.unset() then
+		return
+	endif
+
+	--$p safdsadf
+
+	!this.getboltdata(!pnums,!pitems,!bores,!btsedatas)						$* get bolt data with pnum not in unavailablepnums
+
+	--!this.getmaterial()						$* get material
+	--!this.getusedmempnums()					$* get members involved in these bolts
+endmethod
+
+define method .getbtsedata() is array
+---need to judge the bolt if belong to current mem
+---if all bolt belong to current mem
+	!result = array()
+	--!branSpec = name of spec of spref of $!this.name
+	--!boltSpec = name of bspec of $!branspec
+
+	!btses = blrfarray of catref of $!this.name
+	if !btses.unset() then
+		return !result
+	endif
+	!btses.unique()
+
+--$p $!this.name
+--q var !btses
+	!btsedatas = array()
+	!bdias = array()
+	do !x indices !btses
+		!btse = !btses[!x]
+	--do !btse values !btses
+		--!btsedata = object btsedata(!btse,!boltspec)
+--q var !btse
+		!btsedata = object btsedata(!btse)
+		if !btsedata.bltpsize.set() then
+			!btsedatas.append(!btsedata)
+			!bdias.append(!btsedata.bdiameter)
+		endif
+	enddo
+	!indices = !bdias.sortedindices()
+	--!btses.reindex(!indices)
+	!btsedatas.reindex(!indices)
+	return !btsedatas
+endmethod
+
+define method .getallflanPNums() is array
+	!temparr = !this.getflancrfa()
+	!flanpnums = !temparr[1]			$* array of ppoint number
+	!flanitems = !temparr[2]			$* array of connection name of ppoint
+	!aconn = aconn of $!this.name
+	if !aconn.matchwild(!this.flanconn) then
+		!arrive = arrive of $!this.name
+		!flanPnums.append(!arrive)
+		!flanitems.append('arrive')
+	endif
+
+	!lconn = lconn of $!this.name
+	if !lconn.matchwild(!this.flanconn) then
+		!leave = leave of $!this.name
+		!flanPnums.append(!leave)
+		!flanitems.append('leave')
+	endif
+	if !flanpnums.unset() then
+		$p no flan port, it is strange  $!this.name     in membolt.pmlobj
+	endif
+	!result = array()
+	!result.append(!flanpnums)
+	!result.append(!flanitems)
+	return !result
+endmethod
+
+define method .getflancrfa() is array
+	!nums = array()
+	!items = array()
+	!cref = name of cref of $!this.name
+	handle any
+		!crfa = crfa of $!name
+		handle any
+		elsehandle none
+			if !crfa.set() then
+				do !cnum indices !crfa
+					!conn = p$!cnum conn of $!this.name
+					if !conn.matchwild(!this.flanconn) then
+					--if !this.unavailablePnums.findfirst(!cnum).unset() then
+						!nums.append(!cnum)
+						!item = name of $!crfa[$!cnum]
+						!items.append(!item)
+					endif
+				enddo
+			endif
+		endhandle
+	elsehandle none
+		!nums.append(arrive of $!this.name)
+		!nums.append(leave of $!this.name)
+		!temparr = array()
+		!temparr.append(1)
+		!temparr.append(2)
+		!temparr.append(3)
+		!cnum = !temparr.difference(!nums)
+		!conn = p$!cnum conn of $!this.name
+		if !conn.matchwild(!this.flanconn) then
+		--if !this.unavailablePnums.findfirst(!cnum).unset() then
+			!nums.append(!cp)
+			!items.append(!cref)
+		endif
+	endhandle
+
+	!result = array()
+	!result.append(!nums)
+	!result.append(!items)
+	return !result
+endmethod
+
+
+define method .matchbtse(!pnums is array, !btsedatas is array) is array
+	!bores = array()
+	do !pnum values !pnums
+		!pbore = p$!pnum bore of $!this.name
+		!bores.append(!pbore)
+	enddo
+	!bores.unique()
+
+	if !bores.size() ne !btsedatas.size() then
+		$p the size of blrfarray is different from size of all bores from all p point with flan
+		!bsize = !btsedatas.size()
+		!psize = !bores.size()
+		$p blrfarray $!bsize     bores  $!psize
+		q var !bores
+		!bores = array()
+	else
+		!bores.sort()
+	endif
+	return !bores
+endmethod
+
+
+
+
+
+define method .getBoltData(!pnums is array, !pitems is array, !bores is array, !btsedatas is array)
+	do !x indices !Pnums
+		!pnum = !Pnums[!x]
+		if !this.unavailablePNums.findfirst(!pnum).set() then
+			skip
+		endif
+		!bore = p$!pnum bore of $!this.name
+		!index = !bores.findfirst(!bore)
+		!btsedata = !btsedatas[!index]
+		!numberOrItem = !pitems[!x]
+
+		if !numberOritem eq 'arrive' then
+			!boltdata = object boltdata(!this.name,true,!btsedata)
+			--!boltmemdata = object boltmemdata(!this.name,true)		$* bolt only at arrive point or leave point belongs to this branch
+		elseif !numberOritem eq 'leave' then
+			!boltdata = object boltdata(!this.name,false,!btsedata)
+			--!boltmemdata = object boltmemdata(!this.name,false)
+		--else
+			--!boltmemdata = object boltmemdata(!this.name,!pnum,!item)	$*unecessary
+		endif
+
+
+
+		if !boltdata.boltitem.set() then
+			!this.boltdatas.append(!boltdata)
+		endif
+
+
+
+
+		--if !boltmemdata.boltitem.set() then	$* there is a bolt set
+		--	!this.boltmemdatas.append(!boltmemdata)
+		--endif
+	enddo
+endmethod
+
+define method .getmaterial() is array
+	!materials = array()
+	do !boltdata values !this.boltdatas
+	--$p asfdasfd
+		!material = !boltdata.getmaterial()
+		if !material.set() then
+			!materials.append(!material)
+		endif
+	enddo
+
+	$(
+	!materials = array()
+	do !boltmemdata values !this.boltmemdatas
+		!pnum = !boltmemdata.pnum
+		!bore = p$!pnum bore of $!this.name
+		!index = !this.bores.findfirst(!bore)
+		!btsedata = !this.allbtsedatas[!index]
+		!flth1 = !!evalcata(!this.name,!btsedata.bthkness)
+		!flth2 = !!evalcata(!boltmemdata.theotheritem,!btsedata.bthkness)
+		!boltmaterial = object isomaterial(!btsedata,!boltmemdata.elethick + !flth1 + !flth2)
+		--!boltmaterial = !btsedata.getmaterial(!boltmemdata.elethick + !flth1 + !flth2)
+		--!this.materials.append(!boltmaterial)
+		!materials.append(!boltmaterial)
+	enddo
+	$)
+	return !materials
+endmethod
+
+define method .getusedmempnums() is array
+	!usedmems = array()
+	!usedmempnums = array()
+	$(
+	do !boltmemdata values !this.boltmemdatas
+		!usedmems.appendarray(!boltmemdata.allmems)
+		!usedmempnums.appendarray(!boltmemdata.allmempnums)
+	enddo
+	$)
+
+	do !boltdata values !this.boltdatas
+		!usedmems.appendarray(!boltdata.allmems)
+		!usedmempnums.appendarray(!boltdata.allmempnums)
+	enddo
+
+	!result = array()
+	!result.append(!usedmems)
+	!result.append(!usedmempnums)
+	return !result
+endmethod
+
+

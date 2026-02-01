@@ -1,0 +1,34 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= October 12nd 2023
+--[Function]:
+------------------------------------------
+
+define object suppconcrete
+	--member .fake is boolean			$*it is not real
+	member .markcivil is markcivil
+
+	member .mems is array
+
+	member .upstream is array		$*instore suppconnection of upstream
+	member .downstream is array		$*instore suppconnection of downstream
+
+	member .connections is array	$*instore rest suppconnection which is hard to say upstream or downstream
+endobject
+
+define method .suppconcrete(!item is any)
+	!type = type of $!item
+	!name = name of $!item
+	if !type inset ('WALL','GWALL','FLOOR','STWALL') then
+		!this.markcivil = object markcivil(!item)
+		!this.mems.append(!name)
+	else
+		$p This type is not considered yet suppconcrete
+	endif
+endmethod
+
+ò=

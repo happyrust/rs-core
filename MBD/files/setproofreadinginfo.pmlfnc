@@ -1,0 +1,40 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= March 7th 2024
+--[Function]:
+------------------------------------------
+
+define function !!setproofreadinginfo(!object is any, !name is string)
+	--!strings = split('sjry/compliation,jdry/proofreading,shry1/review1,shry2/review2,sdry/approval,pzry/authorization,hqry/countersignature',',')
+	!strings = split('sjry/compliation,jdry/proofreading,shry1/review1,shry2/review2,sdry1/approval1,sdry2/approval2,hqry/countersignature',',') $*20240506
+	do !string values !strings
+		!word = !string.before('/')
+		!att = !string.after('/')
+		!com = '!string = :ZD_' + !word + ' of $' + '!name'
+		$!com
+		handle any
+			!com = '!object.' + !att + | = ''|
+			$!com
+			!com = '!object.' + !att + |time = ''|
+			$!com
+		elsehandle none
+			!com = '!object.' + !att + | = !string.before(' ')|
+			$!com
+			!com = '!object.' + !att + |time = !string.after(' ')|
+			$!com
+		endhandle
+	enddo
+
+	--!emptyatts = split('chiefdesign ratify')
+	!emptyatts = split('ratify')
+	do !att values !emptyatts
+		!com = '!object.' + !att + | = ''|
+		$!com
+		!com = '!object.' + !att + |time = ''|
+		$!com
+	enddo
+endfunction

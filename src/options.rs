@@ -117,6 +117,22 @@ pub struct DbOption {
     /// 包含的数据库文件列表
     #[clap(skip)]
     pub included_db_files: Option<Vec<String>>,
+
+    // ========================
+    // Meilisearch（PDMS 检索索引）配置
+    // ========================
+    /// Meilisearch URL，例如 http://127.0.0.1:7700
+    #[clap(skip)]
+    pub meili_url: Option<String>,
+    /// Meilisearch API Key（可选）
+    #[clap(skip)]
+    pub meili_api_key: Option<String>,
+    /// PDMS 节点索引名（默认 pdms_nodes）
+    #[clap(skip)]
+    pub meili_pdms_index: Option<String>,
+    /// 解析期写入的 JSONL spool 目录（默认 output/meili_spool）
+    #[clap(skip)]
+    pub meili_spool_dir: Option<String>,
     /// MDB数据库名称
     #[clap(long)]
     pub mdb_name: String,

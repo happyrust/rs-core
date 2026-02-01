@@ -1,0 +1,129 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= April 16th 2024
+--[Function]:
+------------------------------------------
+
+define object manysort
+	member .allsortarrs is array	$*input
+
+	member .result is array		$*result
+
+	member .big is array			$*process variable
+endobject
+
+define method .manysort(!allsortarrs is array)
+	!this.allsortarrs = !allsortarrs
+	!this.sortorder1()
+	!this.sortorder2()
+endmethod
+
+define method .sortorder1()
+	!addarrs = array()
+	do !index indices !this.allsortarrs
+		!onesortarr = !this.allsortarrs[!index]
+		if !onesortarr.size() ge 3 then
+			do !x from 2 to !onesortarr.size()
+				!temparr = array()
+				!temparr.append(!onesortarr[!x - 1])
+				!temparr.append(!onesortarr[!x])
+				!addarrs.append(!temparr)
+			enddo
+			!this.allsortarrs[!index].delete()
+		endif
+	enddo
+	!this.allsortarrs.appendarray(!addarrs)
+	!this.allsortarrs.compress()
+endmethod
+
+define method .sortorder2()
+	!this.big = array()
+	!maxlevelsize = 0
+    --q var !this.allsortarrs
+	do !x indices !this.allsortarrs
+		!onesortarr = !this.allsortarrs[!x]
+        --q var !onesortarr
+		!ele1 = !onesortarr[1]
+		!ele2 = !onesortarr[2]
+		!level1 = !this.findelelevel(!ele1)
+		!level2 = !this.findelelevel(!ele2)
+		if !level1.unset() then
+			!level1 = 1
+		endif
+		if !level2.unset() then
+			!level2 = !level1 + 1
+		elseif !level2 gt !level1 then
+			--level2 is good
+		elseif !level2 eq !level1 then
+			!level2 = !this.moveeleafter(!ele2,1,!x.string())
+		elseif !level2 lt !level1 then
+			!indices1 = !this.big[!level1].find(!ele1)
+			!indices2 = !this.big[!level2].find(!ele2)
+			if !indices1.intersect(!indices2).set() then
+				$p $!ele2 after $!ele1 and $!ele1 after $!ele2 (already inside big)
+				skip
+			else
+				!level2 = !this.moveeleafter(!ele2,!level1 - !level2 + 1,!x.string())
+			endif
+		endif
+
+		!maxlevelsize = !maxlevelsize + 1
+		!this.big[!level1][!maxlevelsize] = !ele1
+		!this.big[!level2][!maxlevelsize] = !ele2
+	enddo
+
+	!eles = array()
+	do !level indices !this.big
+		!eles.appendarray(!this.big[!level])
+	enddo
+
+	!eles.unique()
+	!this.result = !eles
+endmethod
+
+define method .findelelevel(!ele is any) is real
+	do !level indices !this.big
+		if !this.big[!level].findfirst(!ele).set() then
+			return !level
+		endif
+	enddo
+	!level = object real()
+	return !level
+endmethod
+
+define method .moveeleafter(!ele is any, !step is real,!string is string) is real
+	!newstring = !string & ' ' & !ele
+	--$p $!newstring
+	--!this.wrongfile.writerecord(!newstring)
+	!level = !this.findelelevel(!ele)
+	if !string.split().findfirst(!ele.string()).set() then	$* invoid dead do
+		return !level
+	endif
+	!indices = !this.big[!level].find(!ele)
+    --Q VAR !this.big[!level]
+	do !index values !indices
+		do !x from 1 to !step
+			if defined(!this.big[!x + !level][!index]) then
+				!moveele = !this.big[!x + !level][!index]
+				!this.moveeleafter(!moveele,!step - !x + 1,!newstring)
+				break
+			endif
+		enddo
+		if undefined(!this.big[!level + !step]) then
+			!this.big[!level + !step] = array()
+		endif
+		!this.big[!level + !step][!index] = !ele
+		!this.big[!level][!index].delete()
+        handle any
+            -- modify by jyg 20240927
+            skip
+        endhandle
+	enddo
+	!newlevel = !level + !step
+	return !newlevel
+endmethod
+ýØ

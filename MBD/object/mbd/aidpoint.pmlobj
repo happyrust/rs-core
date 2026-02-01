@@ -1,0 +1,101 @@
+define object aidpoint
+	member .owner is string
+	member .name is string
+	member .pos is position
+
+	member .function is string			$*function for
+	member .desc is string				$*nodenames
+endobject
+
+define method .aidpoint(!item is any)
+	!this.name = name of aidpoint of $!item
+	handle any
+		return
+	endhandle
+	!this.owner = name of owner of $!this.name
+	!this.pos = pos of $!this.name wrt/*
+
+
+	!this.function = function of $!this.name
+	!this.desc = desc of $!this.name
+endmethod
+
+define method .aidpoint(!owner is any, !aidpointpos is position, !function is string, !desc is string) is boolean
+	!this.owner = name of $!owner
+	!this.pos = !aidpointpos
+
+	if !function.trim() ne '' then
+		!this.function = !function.trim()
+	else
+		!this.function = ''
+		--!this.function = 'ÆäËü'
+	endif
+	if !desc.trim() ne '' then
+		!this.desc = !desc.trim()
+	endif
+
+	return !this.create()
+endmethod
+
+define method .create() is boolean
+	$!this.owner
+	handle any
+		return false
+	endhandle
+
+	new aidpoint
+	handle any
+		return false
+	endhandle
+
+	if !this.name.set() then
+		name $!this.name
+		handle any
+			return false
+		endhandle
+	else
+		!this.name = name
+	endif
+
+	position $!this.pos
+
+	if !this.function.set() and !this.function.trim() ne '' then
+		function '$!this.function'
+	endif
+
+	if !this.desc.set() and !this.desc.trim() ne '' then
+		desc '$!this.desc'
+	endif
+
+	return true
+endmethod
+
+define method .json() is array
+	!aidpoint = !this.name
+
+	!result = array()
+	!result.append(|{|)
+
+	!result.append(!!getNodeNames(!aidpoint))
+	!result.append(|"type": "point",|)
+	--!result.append(|"function": "| + !this.function + |",|)
+
+	if !this.function ne '' then
+		!result.append(|"function": "| + !this.function + |",|)
+	else
+		!result.append(|"function": "| + |ÆäËü| + |",|)
+	endif
+
+	--!result.append(|"Position": [|)	$* sdk 4 cant read it 202309041109
+	!result.append(|"position": [|)
+	!result.appendarray(!!postoArr(!this.pos))
+	!result.append(|],|)
+
+	!result.append(|"diameter": "100"|)
+
+	!result.append(|},|)
+	return !result
+endmethod
+
+
+ 

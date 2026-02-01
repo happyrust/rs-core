@@ -1,0 +1,4 @@
+Materialattarr:order/序号,desc/材料描述,ns/N.S,itemcode/Item code,quantity/数量,perweight/单重,weight/重量
+Elematerialattarr:order/序号,cutnum/管段号,desc/描述,ns/N.S,itemcode/ITEMCODE,quantity/数量,perweight/单重,weight/重量,rev/版本,changetype/升版说明,remark/备注
+BranAttarr:Duty/介质,Pspec/管道等级,RCCM/RCCM,CLEAN/清洁度,TEMP/设计温度,ISPEC/保温,INSUTHICK/保温厚度,TSPEC/伴热,SWGD/室外,DRAWNUM/图号,REV/版本,status/状态
+cutpipelengthAttarr:tubinum/编号,quantity/长度,ns/管径,remark/备注

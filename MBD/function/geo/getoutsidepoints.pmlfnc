@@ -1,0 +1,70 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= December 1st 2023
+--[Function]:
+------------------------------------------
+
+define function !!getoutsidepoints(!points is array,!ori is orientation) is array
+	!xdiss = array()
+	!ydiss = array()
+
+	!maxdis1 = 0
+	!maxdis2 = 0
+	!maxdis3 = 0
+	!maxdis4 = 0
+
+	!cenpoint = !!getcenpoint(!points)
+
+	!xdir = !ori.xdir()
+	!ydir = !ori.ydir()
+	do !x indices !points
+		!point = !points[!x]
+		!xdis = !!suidirdis(!cenpoint,!xdir,!point)
+		!ydis = !!suidirdis(!cenpoint,!ydir,!point)
+		!dis = sqrt(power(!xdis,2) + power(!ydis,2))
+		if !xdis gt 0 and !ydis gt 0 then
+			if !dis gt !maxdis1 then
+				!maxdis1 = !dis
+				!max1 = !x
+			endif
+		elseif !xdis lt 0 and !ydis gt 0 then
+			if !dis gt !maxdis2 then
+				!maxdis2 = !dis
+				!max2 = !x
+			endif
+		elseif !xdis lt 0 and !ydis lt 0 then
+			if !dis gt !maxdis3 then
+				!maxdis3 = !dis
+				!max3 = !x
+			endif
+		elseif !xdis gt 0 and !ydis lt 0 then
+			if !dis gt !maxdis4 then
+				!maxdis4 = !dis
+				!max4 = !x
+			endif
+		endif
+		!xdiss.append(!xdis)
+		!ydiss.append(!ydis)
+
+	enddo
+	!xdiss.sort()
+	!ydiss.sort()
+
+	--!xlen = !xdiss.last() - !xdiss[1]
+	--!ylen = !ydiss.last() - !ydiss[1]
+
+	--!maxdis = 0
+	!outsidepoints = array()
+	do !x from 1 to 4
+		if defined(!max$!x) then
+			!outsidePoints.append(!points[!max$!x])
+			--!maxdis = max(!maxdis,!maxdis$!x)
+		endif
+	enddo
+	return !outsidepoints
+endfunction
+ä

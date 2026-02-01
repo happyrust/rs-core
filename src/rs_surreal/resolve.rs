@@ -20,6 +20,25 @@ use tokio::sync::RwLock;
 pub static HASH_PSEUDO_ATT_MAPS: Lazy<RwLock<HashMap<String, NamedAttrMap>>> =
     Lazy::new(|| RwLock::new(HashMap::new()));
 
+// 表达式求值错误去重：避免同一条错误在批量 BRAN/HANG 生成时刷屏，导致 I/O 拖慢整体生成。
+pub static EXPR_EVAL_ERROR_ONCE: Lazy<DashMap<String, ()>> = Lazy::new(DashMap::new);
+
+// 解析定位开关（读取一次环境变量，避免 eval 热路径反复读取 env）。
+static EXPR_TRACE_ALL: Lazy<bool> = Lazy::new(|| {
+    std::env::var("RS_EXPR_TRACE_ALL")
+        .ok()
+        .map(|v| v.trim().to_string())
+        .filter(|v| !v.is_empty() && v != "0")
+        .is_some()
+});
+static EXPR_TRACE_BT: Lazy<bool> = Lazy::new(|| {
+    std::env::var("RS_EXPR_TRACE_BT")
+        .ok()
+        .map(|v| v.trim().to_string())
+        .filter(|v| !v.is_empty() && v != "0")
+        .is_some()
+});
+
 static COMPATIBLE_UNIT_MAP: Lazy<HashMap<&'static str, HashSet<&'static str>>> = Lazy::new(|| {
     let mut m = HashMap::new();
     m.insert("INT", ["DIST"].into());
@@ -40,10 +59,10 @@ pub fn check_unit_compatible(unit_a: &str, unit_b: &str) -> bool {
             .unwrap_or(false)
 }
 
-pub const INTERNAL_PDMS_EXPRESS: [&'static str; 27] = [
-    "MAX", "MIN", "COS", "SIN", "LOG", "ABS", "POW", "SQR", "NOT", "AND", "OR", "ATAN", "ACOS",
-    "ATAN2", "ASIN", "INT", "OF", "MOD", "NEGATE", "SUM", "TANF", "TAN", "TIMES", "MULT", "DIV",
-    "ADD", "MINUS",
+pub const INTERNAL_PDMS_EXPRESS: [&'static str; 28] = [
+    "MAX", "MIN", "COS", "SIN", "LOG", "ABS", "POW", "SQR", "SQRT", "NOT", "AND", "OR", "ATAN",
+    "ACOS", "ATAN2", "ASIN", "INT", "OF", "MOD", "NEGATE", "SUM", "TANF", "TAN", "TIMES", "MULT",
+    "DIV", "ADD", "MINUS",
 ];
 
 /// 元件库表达式相关的参数
@@ -446,6 +465,66 @@ pub fn eval_str_to_f64(
     context: &CataContext,
     dtse_unit: &str,
 ) -> anyhow::Result<f64> {
+    // ---------------------------------------------------------------------
+    // 解析定位：缺右括号问题（例如 "( ATTRIB PARA[10 ] / 2"）
+    //
+    // 背景：在 dbnum=7999 的 BRAN 生成中，观测到传入 eval 的子表达式会缺失尾部 ')'
+    // （看起来像 take_until(')') 之类的抽取逻辑截断了字符串）。
+    //
+    // 这里做“最小侵入”的定位：
+    // - 仅在括号不平衡时输出一次（去重），避免刷屏
+    // - 默认只关注 PARA[10（可通过 RS_EXPR_TRACE_ALL=1 扩大范围）
+    // - 可通过 RS_EXPR_TRACE_BT=1 输出 Rust backtrace，用于定位调用栈
+    // ---------------------------------------------------------------------
+    {
+        // 默认仅跟踪 PARA[10；若要扩大范围，设置 RS_EXPR_TRACE_ALL=1。
+        let should_trace = *EXPR_TRACE_ALL || *EXPR_TRACE_BT || input_expr.contains("PARA[10");
+        if should_trace {
+            let left = input_expr.matches('(').count();
+            let right = input_expr.matches(')').count();
+            if left != right && (*EXPR_TRACE_ALL || input_expr.contains("PARA[10")) {
+            let des_refno_str: String = context.get("RS_DES_REFNO").unwrap_or_default();
+            let cata_refno_str: String = context.get("RS_CATR_REFNO").unwrap_or_default();
+            let geo_refno_str = context.debug_geo_refno.borrow().clone().unwrap_or_default();
+            let geo_type_str = context.debug_geo_type.borrow().clone().unwrap_or_default();
+            let attr_name_str = context.debug_attr_name.borrow().clone().unwrap_or_default();
+            let attr_index_str = context
+                .debug_attr_index
+                .borrow()
+                .map(|i| format!("[{}]", i))
+                .unwrap_or_default();
+
+            let dedup_key = format!(
+                "expr_trace_paren|{}|{}|{}|{}|{}",
+                des_refno_str, cata_refno_str, geo_refno_str, attr_name_str, input_expr
+            );
+            if EXPR_EVAL_ERROR_ONCE.insert(dedup_key, ()).is_none() {
+                eprintln!(
+                    "[expr_trace] paren_mismatch left={} right={} dtse_unit={} des={} cata={} geo={}({}) attr={}{} expr={}",
+                    left,
+                    right,
+                    dtse_unit,
+                    des_refno_str,
+                    cata_refno_str,
+                    geo_refno_str,
+                    geo_type_str,
+                    attr_name_str,
+                    attr_index_str,
+                    input_expr
+                );
+                if *EXPR_TRACE_BT {
+                    eprintln!(
+                        "[expr_trace] backtrace:\n{}",
+                        std::backtrace::Backtrace::force_capture()
+                    );
+                } else {
+                    eprintln!("[expr_trace] (set RS_EXPR_TRACE_BT=1 to print backtrace)");
+                }
+            }
+        }
+        }
+    }
+
     // 🔍 调试：记录输入的表达式（特别是包含 RPRO 的）
     if crate::debug_macros::is_debug_model_enabled()
         && (input_expr.contains("RPRO") || input_expr.contains("ATTRIB"))
@@ -501,6 +580,20 @@ pub fn eval_str_to_f64(
         .unwrap_or_default();
     //处理引用的情况 OF 的情况, 如果需要获取 att value，还是需要用数据库去获取值
     let rewritten_expr = rewrite_mat_trim_str_iftrue(input_expr);
+    // 兜底：对明显的“缺右括号”做温和修复，避免简单表达式（如 "( PARA[10]/2"）直接求值失败。
+    // 仅在：左括号更多、差值不大、且不含引号（避免破坏字符串函数）时补齐。
+    let rewritten_expr = {
+        let s = rewritten_expr.trim().to_string();
+        let left = s.matches('(').count();
+        let right = s.matches(')').count();
+        if left > right && (left - right) <= 4 && !s.contains('\'') && !s.contains('\"') {
+            let mut fixed = s;
+            fixed.push_str(&")".repeat(left - right));
+            fixed
+        } else {
+            s
+        }
+    };
     if crate::debug_macros::is_debug_model_enabled() && rewritten_expr != input_expr {
         crate::debug_model_debug!(
             "   MAT/TRIM/STR rewrite: {} -> {}",
@@ -649,8 +742,16 @@ pub fn eval_str_to_f64(
     const MAX_SUBSTITUTION_LOOPS: usize = 30;
     for loop_idx in 0..MAX_SUBSTITUTION_LOOPS {
         for caps in re.captures_iter(&new_exp) {
-            let s = caps[0].trim();
+            let Some(m0) = caps.get(0) else {
+                continue;
+            };
+            let s = m0.as_str().trim();
             if INTERNAL_PDMS_EXPRESS.contains(&s) {
+                continue;
+            }
+            // 兜底：若该 token 后面直接跟着 '('，更像函数调用而非属性引用。
+            // 这能避免“内置函数未入白名单”时被误替换（如 SQRT(...)）。
+            if new_exp[m0.end()..].trim_start().starts_with('(') {
                 continue;
             }
             // 捕获组: (1)冒号前缀 (2)属性名 (3)数组部分 (4)索引值
@@ -979,25 +1080,29 @@ pub fn eval_str_to_f64(
                     .map(|i| format!("[{}]", i))
                     .unwrap_or_default();
 
-                // 根据是否有调试信息，输出不同格式的错误
-                if !geo_refno_str.is_empty() && !attr_name_str.is_empty() {
-                    // 有完整调试信息
-                    println!(
-                        "处理{}时，元件库{}里的输入表达式有误:\n  几何体: {} ({})\n  属性: {}{}\n  表达式: {}",
-                        des_refno_str,
-                        cata_refno_str,
-                        geo_refno_str,
-                        geo_type_str,
-                        attr_name_str,
-                        attr_index_str,
-                        &input_expr
-                    );
-                } else {
-                    // 没有调试信息，使用原有格式
-                    println!(
-                        "处理{}时，{}元件库里的输入表达式有误 : {}",
-                        des_refno_str, cata_refno_str, &input_expr
-                    );
+                // 根据是否有调试信息，输出不同格式的错误（去重避免刷屏）
+                let dedup_key = format!("{}|{}|{}", des_refno_str, cata_refno_str, &input_expr);
+                let should_print = EXPR_EVAL_ERROR_ONCE.insert(dedup_key, ()).is_none();
+                if should_print {
+                    if !geo_refno_str.is_empty() && !attr_name_str.is_empty() {
+                        // 有完整调试信息
+                        println!(
+                            "处理{}时，元件库{}里的输入表达式有误:\n  几何体: {} ({})\n  属性: {}{}\n  表达式: {}",
+                            des_refno_str,
+                            cata_refno_str,
+                            geo_refno_str,
+                            geo_type_str,
+                            attr_name_str,
+                            attr_index_str,
+                            &input_expr
+                        );
+                    } else {
+                        // 没有调试信息，使用原有格式
+                        println!(
+                            "处理{}时，{}元件库里的输入表达式有误 : {}",
+                            des_refno_str, cata_refno_str, &input_expr
+                        );
+                    }
                 }
 
                 Err(anyhow::anyhow!(format!("求解失败 {}", &input_expr)))
@@ -1128,5 +1233,24 @@ mod tests {
 
         let v = eval_str_to_f64("RPRO TLEN", &context, "DIST").unwrap();
         assert_eq!(v, 50.0);
+    }
+
+    #[test]
+    fn test_eval_sqrt_is_treated_as_function_not_attr() {
+        // 复现 dbnum=7999 日志中高频表达式形态：
+        // ( ( SQRT( 3 ) * ATTRIB PARA[12 ] ) / 2 )
+        //
+        // 关键点：SQRT 必须被识别为内置函数（而不是被当作“裸属性名”替换成 0）。
+        let context = CataContext::default();
+        context.insert("PARA12", "4");
+
+        let v = eval_str_to_f64(
+            "( ( SQRT( 3 ) * ATTRIB PARA[12 ] ) / 2 )",
+            &context,
+            "DIST",
+        )
+        .unwrap();
+
+        assert!((v - 3.464).abs() < 1e-6, "v={}", v);
     }
 }

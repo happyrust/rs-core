@@ -1,0 +1,38 @@
+﻿------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= May 9th 2023
+--[Function]:	get good cheight for dimension
+------------------------------------------
+
+define function !!getgoodcheight(!points is array, !dir is direction, !bili is real) is real
+	!len = 0
+	do !x from 1 to !points.size() - 1
+		!dis = abs(!!suidirdis(!points[!x],!dir,!points[!x + 1]))	$*because only distance on dir is useful
+		--!dis = !points[!x].distance(!points[!x + 1])		$*202309041514 I dont know why to use above way
+		!string = !dis.string('D2').replace('.00','')	$* remove .00
+
+		!notindex = !string.match('.')
+		if !notindex ne 0 then
+			if !string.length() ge !notindex + 2 then
+				if !string.substring(!notindex + 2,1) eq '0' then
+					!string = !string.substring(1,!notindex + 1) & !string.substring(!notindex + 3)	  $*remove 0 when .x0
+				endif
+			endif
+		endif
+		!len = !len + !!mbdtextlen(!string)
+	enddo
+	if !len eq 0 then
+		return 0
+	endif
+	!dimlen = abs(!!suidirdis(!points[1],!dir,!points.last()))
+	--!dimlen = !points[1].distance(!points.last())
+
+	!cheight = !dimlen * !bili / !len
+	--!cheight = !dimlen * !bili / (!len * 0.75)
+	----!cheight = !dimlen * !bili / (!len * 0.8)
+	return !cheight
+endfunction

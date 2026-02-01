@@ -1,0 +1,151 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= September 12nd 2023
+--[Function]:
+------------------------------------------
+
+--define function !!branmaterial(!inputbran is any, !inputatts is array) is array
+--!needBranMaterial = true	$*material for each bran is needed
+--!needBranMaterial = false	$*material for each bran is not needed
+define function !!branmaterial(!inputbran is any, !inputatts is array, !needBranMaterial is boolean) is array
+	!rowarrs = array()
+	if !inputatts.unset() then
+		--!atts = split('order,desc,ns,quantity,itemcode,weight,rev',',')
+		!atts = split('order,desc,ns,quantity,itemcode,weight',',')
+	else
+		!atts = !inputatts
+		--test
+	endif
+
+
+	-----------------------------------------------------------------------------------
+	-----------------------------------------------------------------------------------Step 1: get brans
+	!brans = array()
+	if !inputbran.objecttype() eq 'ARRAY' then
+		do !item values !inputbran
+			var !brans append coll all bran for $!item
+		enddo
+	else
+		var !brans coll all bran for $!inputbran
+		if !brans.unset() then
+			!branname = name of bran of $!inputbran
+			!brans.append(!branname)
+		endif
+	endif
+
+
+	-----------------------------------------------------------------------------------
+	-----------------------------------------------------------------------------------Step 2:get and sum material for each bran
+	if !needBranMaterial then
+		!brannames = array()
+		!branmaterials = array()
+		!emptyarr = array()
+	endif
+	!wrongbrans = array()
+
+	!sumedMaterials = array()
+	!sumedUniquecodes = array()
+	!size = !brans.size()
+	!x = 0
+	do !bran values !brans
+		!isobran = object isobran(!bran)
+		!isobran.materials()
+		handle any
+			!wrongbrans.append(!isobran.branname)
+			skip
+		endhandle
+		!x = !x + 1
+		!!fmsys.setprogress(nint(!x / !size * 93))
+
+		if !needBranMaterial then
+			!temparr = !!sumMaterials(!emptyarr,!emptyarr,!isobran.materials)
+			--,true)
+			!onebranrowarr = !!materialtoarr(!temparr[1],!atts)
+			!brannames.append(!isobran.branname)
+			!branmaterials.append(!onebranrowarr)
+		endif
+
+
+
+		-----------------------------------------------------------------------------------
+		-----------------------------------------------------------------------------------Step 1: sum tube with angle lick pad lug
+		!angleIsomaterials = array()
+		!angleuniquecodes = array()
+		!angles = array()
+
+		!tempmaterials = !isobran.materials
+		do !x indices !tempmaterials
+			!isomaterial = !tempmaterials[!x]
+			if !isomaterial.ns.match('бу') ne 0 then
+				var !branname ref of bran of $!isomaterial.name
+				!uniquecode = !isomaterial.uniquecode
+
+				-----------------------
+				-----------------------no need to add branname, since all materials are from one bran
+				----& !branname	$*only sum angle pad and lug in same branch
+				!index = !angleuniquecodes.findfirst(!uniquecode)
+				if !index.unset() then
+					!isomaterial.ns = !isomaterial.ns.before(' x ')
+					!angleIsomaterials.append(!isomaterial)
+					!angleuniquecodes.append(!uniquecode)
+					!angles.append(!isomaterial.materialangle)
+				else
+					if !angles[!index] + !isomaterial.materialangle gt 360 then
+						!angleIsomaterials[!index].quantity = !angleIsomaterials[!index].quantity + !isomaterial.quantity
+						!angleIsomaterials[!index].weight = !angleIsomaterials[!index].weight + !isomaterial.weight
+						!angles[!index] = !isomaterial.materialangle
+					else
+						!angles[!index] = !angles[!index] + !isomaterial.materialangle
+					endif
+				endif
+				!tempmaterials[!x].delete()
+			endif
+		enddo
+		!tempmaterials.compress()
+		!tempmaterials.appendarray(!angleIsomaterials)
+		-----------------------------------------------------------------------------------
+		-----------------------------------------------------------------------------------Step 2:end
+
+		-----------------------------------------------------------------------------------
+		-----------------------------------------------------------------------------------sum
+
+		do !isomaterial values !tempmaterials
+			!index = !sumedUniquecodes.findfirst(!isomaterial.uniquecode)
+			if !index.unset() then
+				!sumedMaterials.append(!isomaterial)
+				!sumedUniquecodes.append(!isomaterial.uniquecode)
+			else
+				!sumedMaterials[!index].quantity = !sumedMaterials[!index].quantity + !isomaterial.quantity
+				!sumedMaterials[!index].weight = !sumedMaterials[!index].weight + !isomaterial.weight
+			endif
+		enddo
+	enddo
+
+	!isomaterials = !!classmaterial(!sumedmaterials)
+	--q var !sumedmaterials !isomaterials
+	do !x indices !isomaterials
+		!isomaterials[!x].order = !x
+	enddo
+	!rowarrs = !!materialtoarr(!isomaterials,!atts)
+
+	!!fmsys.setprogress(nint(!x / !size * 97))
+
+	!result = array()
+	--!result.append(!isomaterials)
+	!result.append(!rowarrs)
+	!result.append(!inputatts)
+	!result.append(!wrongbrans)
+	!result.append(!size)
+	if !needBranMaterial then
+		!result.append(!brannames)
+		!result.append(!branmaterials)
+	endif
+
+	!!fmsys.setprogress(0)
+	--q var !result
+	return !result
+endfunction

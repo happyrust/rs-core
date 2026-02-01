@@ -1,0 +1,15 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= April 16th 2024
+--[Function]:
+------------------------------------------
+
+define function !!manysort(!allsortarrs is array) is array
+	!manysort = object manysort(!allsortarrs)
+	!result = !manysort.result
+	return !result
+endfunction

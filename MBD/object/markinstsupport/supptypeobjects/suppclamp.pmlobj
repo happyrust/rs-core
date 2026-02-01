@@ -1,0 +1,60 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= October 12nd 2023
+--[Function]:
+------------------------------------------
+
+define object suppclamp
+	member .apos is position
+	member .lpos is position
+	member .adir  is direction
+	member .ldir is direction
+
+	member .mems is array
+
+	member .upstream is array		$*instore suppconnection of upstream
+	member .downstream is array		$*instore suppconnection of downstream
+
+	member .connections is array	$*instore rest suppconnection which is hard to say upstream or downstream
+
+	--member .pos is position
+endobject
+
+define method .suppclamp(!item is string)
+	!type = type of $!item
+	if !type eq 'ATTA' then
+		!this.apos = pos of $!item wrt/*
+		!this.adir = ldir of $!item wrt/*
+		!name = name of $!item
+		!this.mems = array()
+		!this.mems.append(!name)
+	elseif !type eq 'PCLA' then
+		!this.apos = p0 pos of $!item wrt/*
+		!this.adir = p0 dir of $!item wrt/*
+
+		$(
+		!this.lpos = p12 pos of $!item wrt/*
+		handle any
+		elsehandle none
+			!this.ldir = p12 dir of $!item wrt/*
+		endhandle
+		$)
+
+		--!this.apos = apos of $!item wrt/*
+		--!this.adir = adir of $!item wrt/*
+		--!this.lpos = lpos of $!item wrt/*
+		--!this.ldir = ldir of $!item wrt/*
+		!name = name of $!item
+		!this.mems = array()
+		!this.mems.append(!name)
+	else
+		$p This type for clamp is not considered yet   --object suppclamp
+	endif
+	--!this.pos = !this.apos
+endmethod
+
++Ã

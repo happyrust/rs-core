@@ -1,0 +1,33 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= May 12nd 2023
+--[Function]:
+------------------------------------------
+
+define object polarElement
+	member .name is string		$* optional
+	member .type is string		$* optional
+	member .startdis is real
+	member .enddis is real
+	member .startangle is real
+	member .endangle is real
+	member .startradius is real
+	member .endradius is real
+
+	member .basic is boolean	$* pipe or member, igore the leadline if basic is true
+
+	member .arc is arc			$* from polarsystem
+	member .line is line		$* from polarsystem
+endobject
+
+define method .polarelement()
+	!this.basic = false
+endmethod
+
+
+
+

@@ -1,0 +1,13 @@
+﻿define object suppWeldText
+    member .name is string
+    member .text is string
+    member .pos is position
+	member .type is string
+endobject
+
+define method .suppWeldText(!mem is string, !pos is position, !text is string, !type is string)
+    !this.name = !mem
+    !this.pos = !pos
+    !this.text = !text
+	!this.type = !type
+endmethod

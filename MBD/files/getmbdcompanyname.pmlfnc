@@ -1,0 +1,14 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= March 7th 2024
+--[Function]:
+------------------------------------------
+
+define function !!getmbdcompanyname() is string
+	return 'ÖÐ¹úºËµç¹¤³ÌÓÐÏÞ¹«Ë¾'
+endfunction
+õ;

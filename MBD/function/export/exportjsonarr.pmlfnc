@@ -1,0 +1,57 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= March 4th 2024
+--[Function]:
+------------------------------------------
+
+define function !!exportjsonarr(!inputname is any) is array
+	!name = name of $!inputname
+	!result = array()
+
+	!mbdstru = object mbdstru(!name)
+	if !mbdstru.checkifdimed().not() then
+		return !result
+	endif
+
+	!type = !!getmbdtype(!name)
+	if !type inset ('HVAC','ELEC','EQUI')then
+		!setformcom = |!form = | & |!!mark| & !type
+		!reloadcom = |pml reload form | & |!!mark| & !type
+		!hidecom = |hide | & |!!mark| & !type
+	else
+		!setformcom = |!form = | & |!!mark| & !type & |form|
+		!reloadcom = |pml reload form | & |!!mark| & !type & |form|
+		!hidecom = |hide | & |!!mark| & !type & |form|
+	endif
+    --q var !setformcom
+    --hjghj
+	$!setformcom
+	handle any
+		$!reloadcom
+		$!hidecom
+		$!setformcom
+		handle any
+			golabel /end
+		endhandle
+	endhandle
+	--q var !setformcom
+
+	!form.clearlist()
+	$!name
+
+	--$p Deal $!name
+	--$p add
+	!form.addce()
+	--if !form.functionlist.dtext.unset() then
+	--	golabel /end
+	--endif
+
+	!result = !form.getjsonarray()
+	--Q VAR !result
+	label /end
+	return !result
+endfunction

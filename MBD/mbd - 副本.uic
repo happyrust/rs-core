@@ -1,0 +1,261 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<UserInterfaceCustomization xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="www.aveva.com">
+  <Version>1.0</Version>
+  <FormsMetaData />
+  <Tools>
+    <ButtonTool Name="MARK PIPE">
+      <Command>
+        <Type>Macro</Type>
+        <Macro>show !!markpipeform</Macro>
+        <Key>Macro:57088b81-95f7-4bb5-a633-b29cd031de59</Key>
+        <Arguments />
+      </Command>
+      <Image />
+      <Caption>工艺管道</Caption>
+      <HelpContext />
+      <Tooltip />
+      <DisplayStyle>Default</DisplayStyle>
+    </ButtonTool>
+    <ButtonTool Name="MARK SUPP">
+      <Command>
+        <Type>Macro</Type>
+        <Macro>show !!marksuppform</Macro>
+        <Key>Macro:4a18f821-1fd5-4523-ab16-edff73700480</Key>
+        <Arguments />
+      </Command>
+      <Image />
+      <Caption>工艺支架</Caption>
+      <HelpContext />
+      <Tooltip />
+      <DisplayStyle>Default</DisplayStyle>
+    </ButtonTool>
+    <ButtonTool Name="MARK PIPE1">
+      <Command>
+        <Type>Macro</Type>
+        <Macro>show !!markinstpipeform</Macro>
+        <Key>Macro:aee9a854-3931-4273-af74-e9772d1ff3fd</Key>
+        <Arguments />
+      </Command>
+      <Image />
+      <Caption>仪表管道</Caption>
+      <HelpContext />
+      <Tooltip />
+      <DisplayStyle>Default</DisplayStyle>
+    </ButtonTool>
+    <ButtonTool Name="MARK PIPE SUPP">
+      <Command>
+        <Type>Macro</Type>
+        <Macro>show !!markinstpipesuppform</Macro>
+        <Key>Macro:41537576-93c7-4dae-8b6d-46629b80313b</Key>
+        <Arguments />
+      </Command>
+      <Image />
+      <Caption>仪表管支架</Caption>
+      <HelpContext />
+      <Tooltip />
+      <DisplayStyle>Default</DisplayStyle>
+    </ButtonTool>
+    <ButtonTool Name="MARK INST SUPP">
+      <Command>
+        <Type>Macro</Type>
+        <Macro>show !!markinstsuppform</Macro>
+        <Key>Macro:76f973cf-083d-43f6-8df3-c59377361774</Key>
+        <Arguments />
+      </Command>
+      <Image />
+      <Caption>仪表支架</Caption>
+      <HelpContext />
+      <Tooltip />
+      <DisplayStyle>Default</DisplayStyle>
+    </ButtonTool>
+    <ButtonTool Name="MARK EQUI">
+      <Command>
+        <Type>Macro</Type>
+        <Macro>show !!markequiform</Macro>
+        <Key>Macro:649a168b-0e19-4466-8a5a-339b3fa66286</Key>
+        <Arguments />
+      </Command>
+      <Image />
+      <Caption>设备</Caption>
+      <HelpContext />
+      <Tooltip />
+      <DisplayStyle>Default</DisplayStyle>
+    </ButtonTool>
+    <ButtonTool Name="MARK CIVIL">
+      <Command>
+        <Type>Macro</Type>
+        <Macro>show !!markcivilform</Macro>
+        <Key>Macro:434eae05-1a1b-40c9-afd9-559a9543c716</Key>
+        <Arguments />
+      </Command>
+      <Image />
+      <Caption>结构</Caption>
+      <HelpContext />
+      <Tooltip />
+      <DisplayStyle>Default</DisplayStyle>
+    </ButtonTool>
+    <ButtonTool Name="MARK ARCH">
+      <Command>
+        <Type>Macro</Type>
+        <Macro>show !!markarchform</Macro>
+        <Key>Macro:1f9abe7e-7253-43dd-a8e2-2473fafc7bb5</Key>
+        <Arguments />
+      </Command>
+      <Image />
+      <Caption>建筑</Caption>
+      <HelpContext />
+      <Tooltip />
+      <DisplayStyle>Default</DisplayStyle>
+    </ButtonTool>
+    <ButtonTool Name="mark em4 equi">
+      <Command>
+        <Type>Macro</Type>
+        <Macro>show !!markequiform</Macro>
+        <Key>Macro:6b0b02d4-ab21-4d7e-8b99-1c308e5e86d8</Key>
+        <Arguments />
+      </Command>
+      <Image />
+      <Caption>工艺设备</Caption>
+      <HelpContext />
+      <DisplayStyle>Default</DisplayStyle>
+    </ButtonTool>
+    <ButtonTool Name="mark inst equi form">
+      <Command>
+        <Type>Macro</Type>
+        <Macro>show !!markinstequiform</Macro>
+        <Key>Macro:60107f05-af72-4325-8e5a-d0ef627388fa</Key>
+        <Arguments />
+      </Command>
+      <Image />
+      <Caption>仪控设备</Caption>
+      <HelpContext />
+      <DisplayStyle>Default</DisplayStyle>
+    </ButtonTool>
+    <ButtonTool Name="set mbd format">
+      <Command>
+        <Type>Macro</Type>
+        <Macro>!!setmbdfmt()</Macro>
+        <Key>Macro:dbe46626-be94-42b8-899e-887daa3e8bc9</Key>
+        <Arguments />
+      </Command>
+      <Image />
+      <Caption>隐藏小数点和单位</Caption>
+      <HelpContext />
+      <DisplayStyle>Default</DisplayStyle>
+    </ButtonTool>
+    <ButtonTool Name="recover dp label">
+      <Command>
+        <Type>Macro</Type>
+        <Macro>!!recoverfmt()</Macro>
+        <Key>Macro:a14a8df0-05ab-4381-bca2-3be7e296e3ec</Key>
+        <Arguments />
+      </Command>
+      <Image />
+      <Caption>显示小数点和单位</Caption>
+      <HelpContext />
+      <DisplayStyle>Default</DisplayStyle>
+    </ButtonTool>
+    <ButtonTool Name="set mbd rev">
+      <Command>
+        <Type>Macro</Type>
+        <Macro>show !!tempmodrev</Macro>
+        <Key>Macro:修改mbd零部件版本</Key>
+        <Arguments />
+      </Command>
+      <Image />
+      <Caption>修改零部件版本</Caption>
+      <HelpContext />
+      <DisplayStyle>Default</DisplayStyle>
+    </ButtonTool>
+    <ButtonTool Name="update to tplant button">
+      <Command>
+        <Type>Macro</Type>
+        <Macro>show !!totplantform</Macro>
+        <Key>Macro:36486d1e-efa8-4ea2-bc3f-5a75a7970da1</Key>
+        <Arguments />
+      </Command>
+      <Image />
+      <Caption>选择文件夹</Caption>
+      <HelpContext />
+      <DisplayStyle>Default</DisplayStyle>
+    </ButtonTool>
+    <ButtonTool Name="MBDmenu.Button1">
+      <Command>
+        <Type>Macro</Type>
+        <Macro>show !!mbdlist</Macro>
+        <Key>Macro:bf76632e-1738-4e62-8da8-c97a3f8ee3b1</Key>
+        <Arguments />
+      </Command>
+      <Image />
+      <Caption>创建</Caption>
+      <HelpContext />
+      <DisplayStyle>Default</DisplayStyle>
+    </ButtonTool>
+  </Tools>
+  <InstanceTools />
+  <MenuBar />
+  <CommandBars />
+  <TaskPanes />
+  <ContextMenus />
+  <AreaLeftTools />
+  <AreaRightTools />
+  <FooterTools />
+  <NavigationMenuTools />
+  <QATTools />
+  <ContextualTabGroups />
+  <TabToolbarTools />
+  <Tabs>
+    <Tab Name="MBD">
+      <Caption>Easy Definition</Caption>
+      <ContextualTabGroup>
+        <Item>None</Item>
+      </ContextualTabGroup>
+      <Groups>
+        <Group Name="EM4">
+          <Tools>
+            <Tool Name="MARK PIPE" />
+            <Tool Name="MARK SUPP" />
+            <Tool Name="mark em4 equi" />
+          </Tools>
+          <Caption>EM4</Caption>
+        </Group>
+        <Group Name="EM9">
+          <Tools>
+            <Tool Name="MARK PIPE1" />
+            <Tool Name="MARK PIPE SUPP" />
+            <Tool Name="MARK INST SUPP" />
+            <Tool Name="mark inst equi form" />
+          </Tools>
+          <Caption>EM9</Caption>
+        </Group>
+        <Group Name="CIVIL">
+          <Tools>
+            <Tool Name="MARK CIVIL" />
+          </Tools>
+          <Caption>土建结构</Caption>
+        </Group>
+        <Group Name="ARCH">
+          <Tools>
+            <Tool Name="MARK ARCH" />
+          </Tools>
+          <Caption>建筑</Caption>
+        </Group>
+        <Group Name="MBD FORMAT">
+          <Tools>
+            <Tool Name="set mbd format" />
+            <Tool Name="recover dp label" />
+          </Tools>
+          <Caption>尺寸格式</Caption>
+        </Group>
+        <Group Name="MBD MODIFY">
+          <Tools>
+            <Tool Name="set mbd rev" />            
+          </Tools>
+          <Caption>零部件版本</Caption>
+        </Group>
+      </Groups>
+    </Tab>
+  </Tabs>
+  <MiniToolbarTools />
+  <Namespace>MBDmenu</Namespace>
+</UserInterfaceCustomization>

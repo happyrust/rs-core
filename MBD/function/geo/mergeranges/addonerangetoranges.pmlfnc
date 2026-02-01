@@ -1,0 +1,29 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= October 31st 2023
+--[Function]:
+------------------------------------------
+
+define function !!addonerangetoranges(!inputnewrange is array,!inputranges is array) is array
+	!newrange = !inputnewrange
+	!ranges = !inputranges
+	!newranges = array()
+
+	do !x indices !ranges
+		!range = !ranges[!x]
+		!tempranges = !!mergetworanges(!range,!newrange)
+
+		if !tempranges.size() eq 1 then
+			!newrange = !tempranges[1]
+		else
+			!newranges.append(!range)
+		endif
+	enddo
+	!newranges.append(!newrange)
+
+	return !newranges
+endfunction

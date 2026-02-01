@@ -1,0 +1,68 @@
+define function !!checkAxisOk(!arr1 is array, !arr2 is array) is boolean
+	!toleranceAngle = 1
+	!minRepeatBili = 0.95
+	--!minRepeatBili = 0.1	$* when drnstart or drnend is not vertical with axis, repeated part may be a little
+
+
+	!toleranceDisBili = 1.5
+
+
+	!line1 = !arr1[1]
+	!dis1 = !toleranceDisBili * !arr1[2]
+	!dir1 = !line1.direction()
+	!poss1[1] = !line1.startposition
+	!poss1[2] = !line1.endposition
+
+	!line2 = !arr2[1]
+	!dis2 = !toleranceDisBili * !arr2[2]
+	handle any
+		!dis2 = !dis1
+	endhandle
+	!dir2 = !line2.direction()
+	!poss2[1] = !line2.startposition
+	!poss2[2] = !line2.endposition
+
+	!angle = !dir1.angle(!dir2)
+	!angle = min(!angle,180 - !angle)
+
+
+
+
+
+
+	if !angle gt !toleranceAngle then									$* angle is same
+			return false
+	else
+
+
+--if !dis1 eq 187 and abs(!line1.distance(!poss2[1]) - 190) lt 0.2  then
+--	!line1.draw(1234,1,2)
+--	!line2.draw(1235,1,5)
+--	pin6 at $!poss2[1]
+--endif
+		if !line1.distance(!poss2[1]) gt !dis1 or !line1.distance(!poss2[2]) gt !dis1 then		$*two axis of both pane should not be too far
+			return false
+		elseif !line2.distance(!poss1[1]) gt !dis2 or !line2.distance(!poss1[2]) gt !dis2 then
+			return false
+		else
+
+			!tempdis1 = !!suidirdis(!poss1[1],!dir1,!poss2[1])
+			!tempdis2 = !!suidirdis(!poss1[1],!dir1,!poss2[2])
+			!repeatLen = min(!line1.length(),max(!tempdis1,!tempdis2)) - max(min(!tempdis1,!tempdis2),0)
+			!repeatBili = !repeatLen / max(!line1.length(),!line2.length())
+
+			if !repeatBili lt !minRepeatBili then							$* repeat part should be the most part of both line
+				return false
+			else
+			$(
+
+
+
+
+
+
+			$)
+				return true
+			endif
+	endif
+endfunction

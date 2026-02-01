@@ -1,0 +1,204 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= September 5th 2023
+--[Function]:
+------------------------------------------
+
+define object isoadjustweld
+	member .name is string
+	member .pos is position
+	member .dirup is boolean
+	member .aod is real
+	member .adjustlen is real
+	member .tubi is string
+endobject
+
+define method .isoadjustweld(!mem is string)
+    --q var !mem
+	!memtype = type of $!mem
+	handle any
+		return
+	endhandle
+	if !memtype ne 'WELD' then
+		return
+	endif
+	!dtxr = dtxr of $!mem
+	if !dtxr.match('ADJUST') eq 0 then
+		return
+	endif
+
+	!pos = pos of $!mem wrt/*
+	!this.pos = !pos
+
+	------------------------------------------------------
+	!pretube = ''
+	!nexttube = ''
+	var !mode mode
+	forward
+
+	!pretube = name of pre tubi of $!mem
+	handle any
+		!head = name of href of bran of $!mem
+		handle any
+		elsehandle none
+			if type of $!head eq 'BRAN' then
+				!pretube = name of last tubi of $!head
+				handle any
+				endhandle
+			endif
+		endhandle
+	endhandle
+	if !pretube ne '' then
+		!apos = apos of $!pretube wrt/*
+		!lpos = lpos of $!pretube wrt/*
+		if !apos.distance(!lpos) lt 1 or !lpos.distance(!pos) gt 1 then
+			!pretube = ''
+		endif
+	endif
+
+
+
+	!nexttube = name of next tubi of $!mem
+	handle any
+		!tail = name of tref of bran of $!mem
+		handle any
+		elsehandle none
+			if type of $!tail eq 'BRAN' then
+				!nexttube = name of first tubi of $!tail
+				handle any
+				endhandle
+			endif
+		endhandle
+	endhandle
+	$!mode
+
+	if !nexttube ne '' then
+		!apos = apos of $!nexttube wrt/*
+		!lpos = lpos of $!nexttube wrt/*
+		if !apos.distance(!lpos) lt 1 or !apos.distance(!pos) gt 1 then
+			!nexttube = ''
+		endif
+	endif
+
+	------------------------------------------------------
+
+	$(
+	!pretube = ''
+	!premem = !!getpremem(!mem)
+	--$p pre $!premem
+	if !premem ne '' then
+		!lpos = lpos of $!premem wrt/*
+		handle any
+			if type of $!premem eq 'NOZZ' then
+				!lpos = p1 pos of $!premem wrt/*
+			endif
+		endhandle
+		if !lpos.distance(!pos) gt 1 then
+			!tubi = name of ileave tube of $!premem
+			handle any
+				!tubi = ''
+			endhandle
+			!pretube = !tubi
+			!this.dirup = true
+		endif
+	endif
+
+	!nexttube = ''
+	!nextmem = !!getnextmem(!mem)
+	$p next $!nextmem
+	if !nextmem ne '' then
+		!apos = apos of $!nextmem wrt/*
+		handle any
+			if type of $!nextmem eq 'NOZZ' then
+				!apos = p1 pos of $!nextmem wrt/*
+			endif
+		endhandle
+
+		if !apos.distance(!pos) gt 1 then
+			--var !tubi ref of ileave tube of $!mem
+			!tubi = name of ileave tube of $!mem
+			handle any
+				!tubi = ''
+			endhandle
+			!nexttube = !tubi
+			!this.dirup = false
+		endif
+	endif
+	$)
+
+
+	if !pretube ne '' and !nexttube ne '' then
+		!prelen = itlen of $!pretube
+		!nextlen = itlen of $!nexttube
+		if !prelen ge !nextlen then
+			!this.dirup = false
+			!tubi = !nexttube
+		else
+			!this.dirup = true
+			!tubi = !pretube
+		endif
+
+	elseif !pretube ne '' then
+		!this.dirup = true
+		!tubi = !pretube
+	elseif !nexttube ne '' then
+		!this.dirup = false
+		!tubi = !nexttube
+	else
+		$p No tube for this adjustweld
+		return
+	endif
+
+	$(
+	if !this.dirup.unset() then
+		!nextmem = !!getnextmem(!mem)
+		if !nextmem ne '' then
+			!apos = apos of $!nextmem wrt/*
+			if !apos.distance(!pos) gt 1 then
+				var !tubi ref of ileave tube of $!mem
+				handle any
+					!tubi = ''
+				endhandle
+				!this.dirup = false
+			endif
+		endif
+	endif
+	$)
+
+	$(
+	--202404010927
+	if !this.dirup.unset() then
+		!this.dirup = true
+		var !tubi ref of ileave tube of $!premem
+		handle any
+			!tubi = ''
+		endhandle
+		-----------------------
+		-----------------------if cant get dir, let it direct upstream
+	endif
+	$)
+
+
+	!this.tubi = !tubi
+	!len = :PIPE-ADLONGTH of $!mem
+	if !len.unset() then
+		--!this.adjustlen = 100
+		!this.adjustlen = 50 $*202403261636
+	else
+		!this.adjustlen = !len.value()
+	endif
+	--!this.aod = aod of $!mem
+	--if !this.aod eq 0 then
+	--	!this.aod = aod of pre of $!mem
+	--endif
+	!this.aod = aod of $!this.tubi
+	!this.name = !mem
+endmethod
+
+
+
+

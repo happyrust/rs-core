@@ -1,0 +1,15 @@
+﻿------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= March 6th 2024
+--[Function]:
+------------------------------------------
+
+define function !!commonpath() is string
+	!string = 'commonpath.pmlfnc'
+	!path = !!pml.getpathname(!string).before(!string)
+	return !path
+endfunction

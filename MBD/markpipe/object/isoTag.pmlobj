@@ -1,0 +1,235 @@
+define object isoTag
+	member .branname is string
+	member .name is string
+	member .tagType is string
+	member .pos is position $* if tagType is 'pos'
+	member .ref is string   $* if tagtype is 'ref'
+	member .function is string
+	member .infoarr is array
+endobject
+
+define method .isoTag(!branname is string,!mem is string)           $*href tref tee olet atta el
+    !this.branname = !branname
+	!this.name = !mem
+	!this.infoarr = array()
+
+
+
+	if !mem eq 'Head' or !mem eq 'Tail' then
+		if !mem eq 'Head' then
+            !!mbdBranTail = false
+			!pos = hpos of $!this.branname wrt/*
+			!com = '!text = name of href of $' + '!this.branname'
+			--!this.function = 'HeadConnectionTag'
+		else
+			!pos = tpos of $!this.branname wrt/*
+			!com = '!text = name of tref of $' + '!this.branname'
+			--!this.function = 'TailConnectionTag'
+		endif
+        --q var !com
+
+		$!com
+		handle any
+		elsehandle none
+			--!this.infoarr.append('CONT.ON')
+			--!this.infoarr.append(!text)
+
+			if type of $!text eq 'NOZZ' then
+                !zoneName = name of zone of $!branname
+                if  not !zoneName.Matchwild('*ITUB*') OR !zoneName.Matchwild('*INST*') then
+                    !this.infoarr.append('½Ó ' & !text)
+                endif
+			else
+				if type of $!text eq 'BRAN' then
+					!bran = name of $!text
+				else
+					!bran = name of owner of $!text
+				endif
+
+                --modify by jyg 20250307 ½â¾öÒÇ±í¹Ü±ê×¢ÐÅÏ¢¹ý¶àµÄÇé¿ö£¬ÇåÀíÍ·Î²Á¬½Ó¹ØÏµ¼°×ø±êÐÅÏ¢¡£
+                !zoneName = name of zone of $!bran
+                --Èç¹ûÍ·Î²¹ØÁªµÄÊÇÒÇ±í¹Ü£¬Ôò²»¼ÇÂ¼posºÍÁ¬½ÓÐÅÏ¢£¬Ö±½ÓÌø¹ý¡£
+                if  !zoneName.Matchwild('*ITUB*') OR !zoneName.Matchwild('*INST*') then
+                    --modify by jyg 20250307 ½â¾öÒÇ±í¹Ü±ê×¢ÐÅÏ¢¹ý¶àµÄÇé¿ö£¬Èç¹ûÍ·²¿ÓÐ¹ØÁªÐÅÏ¢£¬²»±ê¼Ç£¬ÔòÎ²²¿Ò²²»±ê¼Ç×ø±êÐÅÏ¢¡£
+                    if !mem eq 'Head' then
+                        !!mbdBranTail = true
+                    endif
+                    return
+                else
+                    !brannamn = namn of $!bran
+                    !this.infoarr.append('½Ó ' & !brannamn)
+                    !nbbm = :ZD_NBBM of $!bran
+                    handle any
+                        !nbbm = ''
+                    endhandle
+                    if !nbbm.set() and !nbbm ne '' then
+                        !this.infoarr.append(!nbbm)
+                    endif
+                endif
+
+			endif
+		endhandle
+
+        if  !!mbdBranTail then
+            return
+        endif
+		!this.addpos(!pos)
+		!this.function = 'ConnectionTag'
+	else
+
+		!memtype = type of $!mem
+		--$p $!memtype   $!mem
+		!nums[1] = 1
+		!nums[2] = 2
+		!nums[3] = 3
+		if !memtype inset ('TEE','OLET') then
+			!alNums[1] = arrive of $!mem
+			!alNums[2] = leave of $!mem
+			!difNums = !nums.difference(!alNums)
+			!cnum = !difnums[1]
+			!pos = p$!cnum pos of $!mem wrt/*
+			handle any  $*Ä£ÐÍÓÐÎÊÌâ
+				return
+			endhandle
+			!text = name of cref of $!mem
+			handle any
+			elsehandle none
+				!this.infoarr = array()
+				--!this.infoarr.append('CONT.ON')
+				--!this.infoarr.append(!text)
+
+				--modify by jyg 20250307 ½â¾öÒÇ±í¹Ü±ê×¢ÐÅÏ¢¹ý¶àµÄÇé¿ö£¬ÇåÀíÍ·Î²Á¬½Ó¹ØÏµ¼°×ø±êÐÅÏ¢¡£
+                !zoneName = name of zone of $!text
+                if  !zoneName.Matchwild('*ITUB*') OR !zoneName.Matchwild('*INST*') then
+                    return
+                endif
+
+				if type of $!text eq 'NOZZ' then
+					!this.infoarr.append('½Ó ' & !text)
+				else
+					if type of $!text eq 'BRAN' then
+						!bran = name of $!text
+					else
+						!bran = name of owner of $!text
+					endif
+					!brannamn = namn of $!bran
+					!this.infoarr.append('½Ó ' & !brannamn)
+					!nbbm = :ZD_NBBM of $!bran
+					handle any
+						!nbbm = ''
+					endhandle
+					if !nbbm.set() and !nbbm ne '' then
+						!this.infoarr.append(!nbbm)
+					endif
+				endif
+			endhandle
+			!this.addpos(!pos)
+			if !memtype inset ('TEE','OLET') then
+				!instname = :YKSX of $!mem
+                --modify by jyg 20241205 ½â¾öoletÃ»ÓÐ´ø³öÒÇ¿ØÐÅÏ¢µÄÎÊÌâ
+				if not !instname.empty() then
+                    !instname = '½Ó ' & !instname
+					!this.infoarr.append(!instname)
+				endif
+			endif
+			--!this.function = 'TeeConnectionTag'
+			!this.function = 'ConnectionTag'
+		elseif !memtype eq 'ATTA' then
+        --$p 4567
+			!sitename = name of site of $!mem
+			if !sitename.match('INST') eq 0 then
+				!stext = stext of $!mem
+				--q var !stext
+				if !stext inset('','=0/0','unset','Nulref') then
+					--$p aaa $!stext aaa
+					return
+				else
+					!this.infoarr = array()
+					!this.infoarr.append(!stext)
+					!this.ref = !mem
+					!this.tagType = 'ref'
+				endif
+				--$p aaa $!stext aaa dsfasd
+				!this.function = 'AttaTag'
+			else
+				!nphsasr = :nphsasr of $!mem
+				handle any
+					return
+				endhandle
+				!supp = name of owner of $!nphsasr[1]
+				handle any
+					return
+				endhandle
+				!stext = :ZD_BZBM of $!supp
+				handle any
+					return
+				endhandle
+				!stext = !stext.replace(',','/')
+
+				if !stext inset('','=0/0','unset','Nulref') then
+					return
+				else
+					!this.infoarr = array()
+					!this.infoarr.append(!stext)
+					!this.ref = !mem
+					!this.tagType = 'ref'
+				endif
+				--$p aaa $!stext aaa dsfasd
+				!this.function = 'AttaTag'
+			endif
+            --$p 9874
+        elseif !memtype eq 'PCOM' then
+            --modify by jyg 20241217 ½â¾öpcomÃ»ÓÐ´ø³öÒÇ¿ØÐÅÏ¢µÄÎÊÌâ
+            !crfa  = crfa of $!mem
+            do  !x indices !crfa
+                if not !crfa[!x].unset() then
+                   !instname = namn of $!crfa[$!x]
+                   !instpos = hpos of $!crfa[$!x] wrt/*
+                   !instname = '½Ó ' & !instname
+                   !this.infoarr.append(!instname)
+                   !this.addpos(!instpos)
+                endif
+            enddo
+
+			!this.function = 'ConnectionTag'
+			$(
+		elseif !memtype eq 'ELBO' or !memtype eq 'BEND' then
+			!adir = adir of $!mem
+			!ldir = ldir of $!mem
+
+			!tempangle1 = abs(abs(!adir.angle(u) - 90) - 90)
+			!tempangle2 = abs(abs(!ldir.angle(u) - 90) - 90)
+
+			--if !tempangle1 ne 90 and !tempangle2 ne 90 then
+
+			--if abs(abs(!adir.angle(u) - 90) - 90) ne 0 or abs(abs(!ldir.angle(u) - 90) - 90) ne 0 then
+
+				!pos = pos of $!mem wrt/*
+				!text = 'PE ' + !pos.up.string('D1').upcase().before('MM').before('IN').before('.0')
+				!this.infoarr = array()
+				!this.infoarr.append(!text)
+				!this.ref = !mem
+				!this.tagType = 'ref'
+			--endif
+			!this.function = 'ElevationTag'
+			$)
+		endif
+	endif
+	--q var !this.function
+endmethod
+
+define method .addpos(!pos is position)
+	--!etext = !pos.east.string('d1').upcase().before('MM').before('IN').before('.0')
+	--!ntext = !pos.north.string('d1').upcase().before('MM').before('IN').before('.0')
+	--!utext = !pos.up.string('d1').upcase().before('MM').before('IN').before('.0')
+	!etext = !pos.east.string('d0').upcase().before('MM').before('IN')
+	!ntext = !pos.north.string('d0').upcase().before('MM').before('IN')
+	!utext = !pos.up.string('d0').upcase().before('MM').before('IN')
+	!this.infoarr.append('X ' + !etext)
+	!this.infoarr.append('Y ' + !ntext)
+	!this.infoarr.append('PE ' + !utext)
+	!this.pos = !pos
+	!this.tagType = 'pos'
+endmethod
+
+Ï

@@ -1,0 +1,113 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= November 24th 2023
+--[Function]:
+------------------------------------------
+
+define function !!getattatagtext(!attadatas is array) is array
+	!size = !attadatas.size()
+	!object = !attadatas[1]
+
+	!spref = !object.nsAndSpref[2]
+	!pspec = name of spec of $!spref
+	!itemcode = !spref.after(!pspec).substring(2).before(':')
+
+
+	!ot = !object.objecttype()
+
+	if !ot eq 'ISOPAD' or !ot eq 'ISOLEG' then
+		!SCH = !!mbdmaterialdata.getdata(!itemcode,'PIPE','压力(壁厚)')
+		!in = !!mbdmaterialdata.getdata(!itemcode,'PIPE','公称直径')
+	endif
+
+
+
+	--$P SCH $!SCH IN $!IN
+	if !ot eq 'ISOPAD' then
+		!tubeinfo = !size & '护板 ф' & !in & | Sch| & !SCH
+	elseif !ot eq 'ISOLUG' then
+		!pipeitemcode = ''
+		!premem = !!getpremem(!name)
+		if !premem ne '' then
+			!tube = name of ileave tube of $!premem
+			handle any
+			elsehandle none
+				!spref = name of spref of $!tube
+				!pspec = name of spec of $!spref
+				!pipeitemcode = !spref.after(!pspec).substring(2).before(':')
+			endhandle
+		endif
+
+
+		if !pipeitemcode eq '' then
+			!tubeinfo = ''
+		else
+			!pipeSCH = !!mbdmaterialdata.getdata(!pipeitemcode,'PIPE','压力(壁厚)')
+			!pipein = !!mbdmaterialdata.getdata(!pipeitemcode,'PIPE','公称直径')
+
+			------------------------------------------------------
+			!tempposs = array()
+			do !tempobject values !attadatas
+				!attapos = !tempobject.attapos
+				!find = false
+				do !temppos values !tempposs
+					if !temppos.distance(!attapos) lt 1 then
+						!find = true
+						break
+					endif
+				enddo
+				if !find.not() then
+					!tempposs.append(!attapos)
+				endif
+			enddo
+			!groupsize = !tempposs.size()
+			------------------------------------------------------
+
+			do !x from 1 to 4
+				if abs(!object.height - 25 * !x) lt 1 then
+					!shapetype = !x & '型'
+					break
+				endif
+			enddo
+
+			--need to confirm
+			!spref = name of spref of $!object.name
+			!usepart = !spref.part(-1,'/')
+			!lugtype = !usepart.substring(1,2)
+			!in = !usepart.substring(3,4) + |"|
+			!sch = !usepart.substring(5)
+
+			$(
+			if !sch.substring(-1,1).upcase() eq 'S' then
+				!lugtype = 'TD'
+			else
+				!lugtype = 'TC'
+			endif
+			$)
+			!tubeinfo = !groupsize & ' ' & !lugtype & ' ф' & !pipein & | Sch| & !pipeSCH & ' ' & !shapetype
+		endif
+	elseif !ot eq 'ISOLEG' then
+		if !size eq 1 then
+			!tubeinfo = '管支撑 ф' & !in & | Sch| & !SCH
+		else
+			!tubeinfo = !size & '管支撑 ф' & !in & | Sch| & !SCH
+		endif
+	endif
+
+	if !ot eq 'ISOPAD' then
+		!selfinfo = 'L=' & !object.height & 'mm  ' & 'α='& !object.angle
+	elseif !ot eq 'ISOLUG' then
+		!selfinfo = !size & '挡块 ф' & !in & | Sch| & !SCH & '   L=' & !object.height & 'mm'
+	elseif !ot eq 'ISOLEG' then
+		!selfinfo = 'L=' & !object.height & 'mm'
+	endif
+
+	!result = array()
+	!result.append(!tubeinfo)
+	!result.append(!selfinfo)
+	return !result
+endfunction

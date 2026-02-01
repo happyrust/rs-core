@@ -1,0 +1,1118 @@
+kill !!markinstPipesuppform
+setup form !!markinstPipesuppform resize
+	title 'EM9 仪表管支架'
+	!framePos = 'at x0 y0 width 32 height 10'
+	member .instoreStrings is array
+	frame .Tabset TABSET 'tabset' at x0.3 y0.15 width 37 anchor all
+		frame .tab1 | 支架列表 | $!framePos
+			list .list '支架属性' call|!this.selectsupp()| AT X1 Y0 anchor l + t + b  MULTIPLE Width 50 LEN 15
+			path right
+			Button .Additem '添加CE' AT x 1  ymax + 0.5  anchor l + b tooltip |Add CE|  width 5  callback '!this.AddCE()'
+			Button .Addlist '添加List' anchor l + b tooltip |Add 列表|  width 5  callback '!this.Addlist()'
+			Button .Remitem '移除CE'  anchor l + b  tooltip |Remove select|  width 6  callback '!this.RemoveCE()'
+			Button .clearlist '清除' anchor l + b   tooltip |Clear list| width 4  call'!this.clearList()'
+
+			button .drawall '标注' at xmax + 3 ymin anchor l + b callback |!this.drawall()| width 4
+			----button .alljson '生成JSON' at xmax + 0.5 ymin anchor l + b callback |!this.json(false)| width 8
+			--button .alljson '生成JSON' at xmax + 0.5 ymin anchor l + b callback |!this.json()| width 8
+			--button .ToTplant '上传至Tplant' at xmax + 0.5 ymin anchor l + b callback |!this.totplant()| width 8
+
+			combobox .colcombobox '' tagwidth 0  at xmax + 2 ymin anchor l + b call|!this.instoreset(false)| width 4
+			!this.colcombobox.dtext = split('blue red green yellow grey')
+			!this.colcombobox.select('dtext','blue')
+			!this.instoreStrings.append('colcombobox')
+
+			toggle .enhancered '颜色' at xmax + 0.1 ymin anchor l + b tagwidth 4 callback|!this.setred()|
+			!this.instoreStrings.append('enhancered')
+
+			list .functionlist '类别'  AT Xmax.list + 2 Y 0 anchor l + t + r + b MULTIPLE Width 10 LEN 14
+			button .remfunction '隐藏' call |!this.dealfunction('rem')| at xmin + 1 ymax + 0.2 anchor b width 3
+			button .addfunction '显示' call |!this.dealfunction('add')| at xmax + 2 ymin  anchor b width 3
+
+			button .clearMark '删除全部'  callback |!this.markClear()| at xmin.remfunction ymax + 0.2  anchor b width 9
+			member .functiondata is array
+		exit
+
+		frame .tab2 | 汇总材料 | $!framePos
+			list .list2 '汇总材料' at x1 y0 anchor all MULTIPLE width 60 len 12
+			--list .list2 'Material List' at x1 y0 anchor L + R + T MULTIPLE width 60 len 12
+
+			--list .list3 'Weld List' at x1 ymax + 0.2 anchor all MULTIPLE width 60 len 2
+		exit
+		frame .tab3 | 零部件材料 | $!framePos
+			list .list4 '零部件材料清单' call|!this.selectmaterial()| at x1 y 0 anchor all MULTIPLE width 60 len 12
+		exit
+		frame .tab6 | 图纸属性 | $!framePos
+			!tempfile = object file(!!commonpath() + 'framedrawingatt.txt')
+			!lines = !tempfile.readfile()
+			do !line values !lines
+				if !line.trim().trim('	') ne '' then
+					$!line
+				endif
+			enddo
+		exit
+
+		frame .tab7 | 校审 | $!framePos
+			!tempfile = object file(!!commonpath() + 'frameproofreading.txt')
+			!lines = !tempfile.readfile()
+			do !line values !lines
+				if !line.trim().trim('	') ne '' then
+					$!line
+				endif
+			enddo
+		exit
+		frame .tab5 | 设置 | $!framePos
+			!comboboxlen = 25
+			combobox .cheightbili '文字比例' tagwidth $!comboboxlen call|!this.instoreset(false)| at x 1 y 0.5 width 4
+			!this.cheightbili.dtext = split('0.05 0.08 0.1 0.12 0.15 0.2 0.25 0.3 0.4 0.5 0.6 0.7 0.8')
+			!this.cheightbili.select('dtext','0.2')
+			!this.instoreStrings.append('cheightbili')
+			path down
+
+			combobox .autocheight '自动调整尺寸标注文字高度' tagwidth $!comboboxlen call|!this.instoreset(false)| width 4
+			!this.autocheight.dtext = split('true false')
+			!this.autocheight.select('dtext','true')
+			!this.instoreStrings.append('autocheight')
+
+			combobox .autocheightbili '文字自动调整大小最小比例' tagwidth $!comboboxlen call|!this.instoreset(false)| width 4
+			!this.autocheightbili.dtext = split('无限制 0.1 0.2 0.3 0.5 0.7')
+			!this.autocheightbili.select('dtext','无限制')
+			!this.instoreStrings.append('autocheightbili')
+
+			combobox .sepSmallDim '文字调整至最小仍布置不了，分层处理' tagwidth $!comboboxlen call|!this.instoreset(false)| width 4
+			!this.sepSmallDim.dtext = split('true false')
+			!this.sepSmallDim.select('dtext','true')
+			!this.instoreStrings.append('sepSmallDim')
+
+			combobox .ignoreline '空间布局时忽略线段的影响' tagwidth $!comboboxlen call|!this.instoreset(false)| width 4
+			!this.ignoreline.dtext = split('true false')
+			!this.ignoreline.select('dtext','true')
+			!this.instoreStrings.append('ignoreline')
+
+			combobox .generatejson '标注后生成文件' tagwidth $!comboboxlen call|!this.instoreset(false)| width 4
+			!this.generatejson.dtext = split('true false')
+			!this.generatejson.select('dtext','false')
+			!this.instoreStrings.append('generatejson')
+
+			text .filepath '存储文件夹' tagwidth 12 call|!this.inputpath()| width 20 scroll 100 is string
+			!this.filepath.val = 'D:\'
+			!this.instoreStrings.append('filepath')
+		exit
+		frame .versioninfo | 版本信息 | $!framePos
+			textpane .versioncontext   anchor T + R + L + B width 37 height 15
+			!session = current session
+			if !session.login ne 'pdms-bj-c103-03' then
+				!this.versioncontext.setEditable(false)
+			else
+				button.updateversion 'Update' call '!!writembdversion(!this)' width 8 at xmax - 10 ymax - 1 anchor R + B
+			endif
+		exit
+	exit
+
+	member .firstDimTimes is real
+	!this.firstdimtimes = 0.5
+	member .secondDimTimes is real
+	!this.seconddimtimes = 1.7
+
+	member .suppdatas is array
+
+	member .suppAtts is array
+	member .suppAttShow is array
+
+	member .MaterialAtts is array
+	member .MaterialAttShow is array
+
+	member .EleMaterialAtts is array
+	member .EleMaterialAttShow is array
+
+	--member .parttypes is array
+
+	--member .suppdata is array
+	--member .sctndata is array
+
+	--member .materialdata is array
+	--member .itemcodes is array
+
+	member .materialColumnNames is array
+exit
+define method .markinstPipesuppform()
+	!!updatembdfiles()
+	!!setmbdfmt()
+	!!setmbdformtitle(!this)
+	handle any
+		q var !!error
+	endhandle
+	if !!checkmbdproject().not() then
+		--!formname = !this.fullname()
+		--hide $!formname
+		!this.AddItem.active = false
+		!this.remItem.active = false
+		!this.clearlist.active = false
+		!this.drawAll.active = false
+		!!alert.warning('此项目尚不能使用MBD')
+	endif
+	!this.cancelcall = '!this.hideform()'
+	------set MaterialAtts MaterialAttShow suppAtts suppAttShow
+	!result = !!getattlist('instpipesupp')
+	do !x indices !result[1]
+		!com = '!this.' + !result[2][!x] + ' = !result[1][!x]'
+		$!com
+	enddo
+	!this.recoversetting()
+
+	--!!getmbdmaterialdata('SCTN SUPP PIPE')
+	--!this.readdata()
+endmethod
+
+$(
+define method .readdata()
+	!alldata = array()
+	!strings = split('SCTN SUPP PIPE')
+	do !string values !strings
+		--!path = !!pml.getpathname(!this.name().lowcase() + '.pmlfrm').before(!this.name().lowcase() + '.pmlfrm') + 'inputdata\SCTN.pmldat'
+		--!path = !!pml.getpathname(!this.name().lowcase() + '.pmlfrm').before(!this.name().lowcase() + '.pmlfrm') + 'inputdata\SCTN.xlsx'
+		!path = !!pml.getpathname(!this.name().lowcase() + '.pmlfrm').before(!this.name().lowcase() + '.pmlfrm') + 'inputdata\' + !string + '.csv'
+		!file = object file(!path)
+		!data = !file.readfile(100000)
+		handle any
+		elsehandle none
+			!alldata.appendarray(!data)
+		endhandle
+	enddo
+	--q var !alldata.size()
+	--q var !alldata[1] !alldata[2]
+	!itemcodes = array()
+	!materialdata = array()
+	do !x indices !alldata
+		!fl = !alldata[!x].substring(1,1)
+		handle any
+			skip
+		endhandle
+		if !fl eq '' then
+			skip
+		elseif !this.materialColumnNames.unset() and !fl eq '编' then
+			--q var !alldata[!x]
+			!this.materialColumnNames = !alldata[!x].split(',')
+			--q var !this.materialColumnNames
+		else
+			!temparr = !alldata[!x].split(',')
+			!materialdata.append(!temparr)
+			!itemcodes.append(!temparr[1])
+		endif
+	enddo
+	!this.itemcodes = !itemcodes
+	!this.materialdata = !materialdata
+endmethod
+$)
+define method .hideform()
+	!this.recoversetting()
+	HIDE !!markinstpipeform
+endmethod
+
+define method .getjsonarray() is array
+	!result = !this.suppdatas[1].getjsonarray()
+	handle any
+		!result = array()
+	endhandle
+	return !result
+endmethod
+
+define method .instoreset(!refresh is boolean)
+	!this.settotplant()
+	!result = array()
+	--!strings = split('cheightbili jsonmerge')
+	--!strings = split('cheightbili autocheight sepSmallDim ignoreline enhancered colcombobox autocheightbili')
+	!strings = !this.instoreStrings
+	do !string values !strings
+		!com = '!this.' + !string + '.refresh()'
+		$!com
+
+		!com = '!dtext = !this.' + !string + '.dtext'
+		$!com
+		handle any
+			!com = '!val = !this.' + !string + '.val.string()'
+		elsehandle none
+			!com = '!val = !this.' + !string + '.displaytext()'
+		endhandle
+		$(
+		if !string eq 'enhancered' then
+			!com = '!val = !this.' + !string + '.val.string()'
+		else
+			!com = '!val = !this.' + !string + '.displaytext()'
+		endif
+		$)
+		$!com
+		!line = !string & ':' & !val
+		!result.append(!line)
+	enddo
+	--q var !result
+	!path = !!pml.getpathname(!this.name().lowcase() + '.pmlfrm').before(!this.name().lowcase() + '.pmlfrm') + 'setting\markinstPipesuppformSetting.txt'
+	!file = object file(!path)
+	!file.writefile('overwrite',!result)
+
+
+	!this.refreshdata(!refresh)
+	--!this.mark('ALL')
+
+	!this.red()
+endmethod
+
+define method .refreshdata(!refresh is boolean)
+	if !refresh.not() then
+		return
+	endif
+	!suppnames = array()
+	do !x indices !this.suppdatas
+		!suppnames.append(!this.suppdatas[!x].suppname)
+	enddo
+
+	!this.clearList()
+	do !suppname values !suppnames
+		$!suppname
+		!this.addonece()
+	enddo
+endmethod
+$(
+define method .instoreset()
+	--HIDE !!markinstPipesuppform
+	--SHOW !!markinstPipesuppform
+	!result = array()
+	--!strings = split('cheightbili jsonmerge')
+	!strings = split('cheightbili autocheight sepSmallDim ignoreline')
+
+	do !string values !strings
+		!com = '!this.' + !string + '.refresh()'
+		$!com
+		if !string eq 'enhancered' then
+			!com = '!val = !this.' + !string + '.val.string()'
+		else
+			!com = '!val = !this.' + !string + '.displaytext()'
+		endif
+		$!com
+		!line = !string + ':' + !val
+		!result.append(!line)
+	enddo
+	!path = !!pml.getpathname(!this.name().lowcase() + '.pmlfrm').before(!this.name().lowcase() + '.pmlfrm') + 'setting\markinstPipesuppformSetting.txt'
+	!file = object file(!path)
+	!file.writefile('overwrite',!result)
+endmethod
+$)
+define method .recoversetting()
+	!path = !!pml.getpathname(!this.name().lowcase() + '.pmlfrm').before(!this.name().lowcase() + '.pmlfrm') + 'setting\markinstPipesuppformSetting.txt'
+	!file = object file(!path)
+	!lines = !file.readfile()
+	handle any
+		return
+	elsehandle none
+	--q var !lines
+		do !line values !lines
+			!name = !line.before(':')
+			!val = !line.after(':')
+
+			!com = '!dtext = !this.' + !name + '.dtext'
+			$!com
+			handle any
+			--if !name eq 'enhancered' or !name eq 'filepath' then
+				!com = '!this.' + !name + '.val = ' & !val
+			elsehandle none
+				!com = '!this.' + !name + '.select(|dtext|,|' + !val + '|)'
+			endhandle
+			--q var !com
+			$!com
+			handle any
+				!com = '!this.' + !name + '.val = |' &!val & '|'
+				$!com
+				handle any
+				endhandle
+			endhandle
+		enddo
+	endhandle
+	!this.settotplant()
+endmethod
+
+define method .settotplant()
+	return
+	if !this.generatejson.selection('dtext').boolean() then
+		!this.ToTplant.active = true
+	else
+		!this.ToTplant.active = false
+	endif
+endmethod
+
+define method .inputpath()
+    !string = !this.filepath.val.trim()
+	if !string eq '' then
+		!this.filepath.val = 'D:\'
+        golabel /end
+	endif
+    !folder = object file(!string)
+    if !folder.exists().not() then
+        !ans = !!alert.confirm('路径不存在,是否新建？')
+        if !ans ne 'YES' then
+            !this.filepath.val = 'D:\'
+            golabel /end
+        else
+            syscom |mkdir $!folder|
+        endif
+    endif
+    if !string.substring(-1,1) ne '/' and !string.substring(-1,1) ne '\' then
+        !string = !string + '\'
+    endif
+    !this.filepath.val = !string
+
+    label /end
+    !this.instoreset(false)
+endmethod
+
+define method .addlist()
+	!!updatembdfiles()
+	--!arr = !!mbdlist.list.dtext
+
+	!list = object LISTINTERFACE()
+	!arr = !list.getCurrentListAsStrings()
+	handle any
+		$p 请先设置列表
+		return
+	endhandle
+	if !arr.unset() then
+		$p 请先设置列表
+		return
+	endif
+	do !item values !arr
+		$!item
+		!this.addonece()
+	enddo
+endmethod
+define method .addce()
+	!!updatembdfiles()
+	!this.addonece()
+endmethod
+
+define method .addonece()
+	:supp
+	handle any
+		suppo
+		handle any
+			stru
+			handle any
+				rest
+				handle any
+					supc
+					handle any
+						var !srs coll all (stru rest supc) with(not(matchwild(name,'*-MBD'))) for ce
+						if !srs.unset() then
+							return error 1 'Select Supp pls 1'
+						else
+							!srs.unique()
+						endif
+					elsehandle none
+						!srs[1] = name
+					endhandle
+				elsehandle none
+					!srs[1] = name
+				endhandle
+			elsehandle none
+				!struname = name
+				if !struname.matchwild('*-MBD') then
+					return
+				endif
+				!srs[1] = name
+			endhandle
+		elsehandle none
+			!srs[1] = name
+		endhandle
+	elsehandle none
+		!srs[1] = name
+	endhandle
+
+
+
+	!names = array()
+	do !sr values !srs
+		!temparr = !!getsuppname(!sr)
+		if !temparr.set() then
+			!names.append(!temparr[1])
+		endif
+	enddo
+	if !names.unset() then
+		return error 1 'Select Supp pls'
+	else
+		!names.unique()
+	endif
+
+	!dtext = !this.list.dtext
+	!Rtext = !this.list.Rtext
+
+	!headings = !this.suppAttShow
+	!this.list.setheadings(!headings)
+
+	!errors = array()
+
+	!size = !names.size()
+	!x = 0
+	do !name values !names
+		$p $!name
+		!x = !x + 1
+		if !rtext.findfirst(!name).unset() then
+			--!supp = object instsupport(!name,'INSTPIPESUPP')
+			!supp = object instsupport(!name)
+			handle any
+				q var !!error
+				!errors.append(!name + ' 对象化失败')
+				!errors.appendarray(!!geterrorinfo())
+				skip
+			endhandle
+
+			if !supp.suppname.unset() then
+				!errors.append(!name + ' 对象化失败 没找到supp')
+				!errors.appendarray(!!geterrorinfo())
+				skip
+			endif
+
+
+
+			!supp.addtoview()
+
+			!this.suppdatas.append(!supp)
+
+
+
+
+			!rowarr = !supp.getsuppAttArr(!this.suppAtts)
+			handle any
+				!errors.append(!name + ' Failed to get attribution list of this supp')
+				!errors.appendarray(!!geterrorinfo())
+				skip
+			endhandle
+			!oneline = ''
+			do !string values !rowarr
+				if !oneline eq '' then
+					!oneline = !string.string()
+				else
+					!oneline = !oneline + '	' + !string.string()
+				endif
+			enddo
+
+			$(
+			!oneline = !supp.suppname
+			!functionstring = ''
+			do !function values !supp.functions
+				if !functionstring eq '' then
+					!functionstring = !function
+				else
+					!functionstring = !functionstring + '/' + !function
+				endif
+			enddo
+			!oneline = !supp.suppname + '	' + !functionstring
+			$)
+
+			!Rtext.append(!name)
+			!Dtext.append(!oneline)
+
+			!mbdstru = !supp.mbdstru
+		else
+			!mbdstru = object mbdstru(!name)
+		endif
+		!mbdstru.addstru()
+		add $!name
+		!percent = nint(100 * !x / !size)
+		!!fmsys.setProgress(!percent)
+	enddo
+	--!lastname = !names.last()
+	--auto $!lastname
+
+	--return
+	!supp = !this.suppdatas.last()
+	handle any
+	elsehandle none
+		$!supp.suppname
+		handle any
+			$!supp.struname
+			handle any
+				$!supp.restname
+			endhandle
+		endhandle
+		auto ce
+		handle any
+		endhandle
+		!this.list.dtext = !dtext
+		!this.list.Rtext = !Rtext
+
+		!this.setOtherList()
+
+		!this.setfunctionlist()
+	endhandle
+
+
+	--q var !errors
+	!this.red()
+	!this.writeerror(!errors)
+	!!fmsys.setProgress(0)
+
+	--!supp.getparts()
+
+endmethod
+
+define method .writeerror(!errors is array)
+	if !errors.set() then
+		!dt = object datetime()
+		!errors.insert(1,!dt.string())
+		!errors.insert(1,'')
+		!path = !!pml.getpathname(!this.name().lowcase() + '.pmlfrm').before(!this.name().lowcase() + '.pmlfrm') + 'instPipeSuppError.txt'
+		!file = object file(!path)
+		!lines = !file.readfile(100000)
+		handle any
+			!lines = array()
+			!file.writefile('overwrite',!lines)
+		endhandle
+		$(
+		if !lines.size() gt 10000 then
+			!lines = !lines.from(!lines.size() - 1000)
+			!lines.appendarray(!errors)
+			!file.writefile('overwrite',!lines)
+		else
+			!file.writefile('append',!errors)
+		endif
+		$)
+
+		if !lines.size() gt 10000 then
+			!lines = !lines.from(9000)
+		endif
+
+		!lines.insertarray(1,!errors)
+		!file.writefile('overwrite',!lines)
+		syscom 'start $!file &'
+	endif
+endmethod
+
+define method .RemoveCE()
+	!arrIndex = !this.list.val
+	!arrTemp = !this.list.dtext
+	!arrTempRtext = !this.list.rtext
+	do !val values !arrIndex
+		!this.suppdatas[!val].delete()
+		!arrTemp[!val].delete()
+		!arrTempRtext[!val].delete()
+	enddo
+	!this.suppdatas.compress()
+	!arrTemp.compress()
+	!this.list.dtext = !arrTemp
+	!arrTempRtext.compress()
+	!this.list.rtext = !arrTempRtext
+
+	!this.setfunctionlist()
+endmethod
+
+define method .setfunctionlist()
+	!strus = array()
+	do !x indices !this.suppdatas
+		!strus.append(!this.suppdatas[!x].mbdstru.mbdstru)
+	enddo
+	!result = !!getstrudata(!strus)
+	!this.functionlist.dtext = !result[1]
+	!this.functiondata = !result
+endmethod
+
+define method .dealfunction(!type is string)
+	--!!setmbdfmt()
+	!functions = !this.functionlist.selection('dtext')
+	if !functions.unset() then
+		!functions = !this.functionlist.dtext
+	endif
+	do !function values !functions
+		!index = !this.functiondata[1].findfirst(!function)
+		do !item values !this.functiondata[2][!index]
+			if !type eq 'add' then
+				add only $!item
+			else
+				remove only $!item
+			endif
+		enddo
+	enddo
+	!this.red()
+endmethod
+
+define method .checkfilepath() is boolean
+	if !this.generatejson.selection('dtext').boolean() then
+		if !this.filepath.val ne '' then
+			!file = object file(!this.filepath.val)
+			if !file.exists().not() then
+				return false
+			else
+				return true
+			endif
+		else
+			return false
+		endif
+	else
+		return true
+	endif
+endmethod
+
+define method .drawall()
+	--clock init
+	$p
+	if !this.checkfilepath().not() then
+		!!alert.warning('如果需要生成文件，请在setting设置好存储文件夹')
+		return
+	endif
+	--!!setmbdfmt()
+	!errors = array()
+	do !x indices !this.suppdatas
+		!this.suppdatas[!x].cheightbili = !this.cheightbili.selection('dtext').real()
+		!this.suppdatas[!x].changecheightauto = !this.autocheight.selection('dtext').boolean()
+
+		!bilistring = !this.autocheightbili.selection('dtext')
+		if !bilistring eq '无限制' then
+			!this.suppdatas[!x].changecheightautobili = 0
+		else
+			!this.suppdatas[!x].changecheightautobili =	!bilistring.real()
+		endif
+
+		!this.suppdatas[!x].sepSmallDim = !this.sepSmallDim.selection('dtext').boolean()
+		!this.suppdatas[!x].ignoreline = !this.ignoreline.selection('dtext').boolean()
+
+		!this.suppdatas[!x].generatejson = !this.generatejson.selection('dtext').boolean()
+		!this.suppdatas[!x].filepath = !this.filepath.val.trim()
+	enddo
+	!size = !this.suppdatas.size()
+
+	do !x indices !this.suppdatas
+		$p $!this.suppdatas[$!x].suppname
+		!this.suppdatas[!x].draw()
+		handle any
+			q var !!error
+			!errors.append('$!this.suppdatas[$!x].suppname failed to draw')
+			!errors.appendarray(!!geterrorinfo())
+		endhandle
+
+		!percent = nint(100 * !x / !size)
+		!!fmsys.setProgress(!percent)
+	enddo
+
+	!this.setfunctionlist()
+	!this.writeerror(!errors)
+
+	!!fmsys.setProgress(0)
+	--clock read elapsed
+	!this.red()
+endmethod
+
+
+define method .markClear()
+	if (!!alert.confirm('Delete DIM and AID of branch in list') eq 'YES' ) then
+		do !x indices !this.suppdatas
+			!this.suppdatas[!x].deletestru()
+			--it it necessary to rebuilt suisupport again? 202306271118, in this case, when support are many, the speed is very slow
+			--!this.suppdatas[!x] = object suisupport(!this.suppdatas[!x].suppname)
+		enddo
+		!this.setfunctionlist()
+	endif
+endmethod
+
+define method .clearList()
+	!this.suppdatas.clear()
+	!this.list.clear()
+	!this.list2.clear()
+    !this.list4.clear()
+
+	!this.setfunctionlist()
+endmethod
+
+define method .selectsupp()
+	!indices = !this.list.val
+	!index = !indices[1]
+	!supp = !this.suppdatas[!index]
+	$!supp.suppname
+	handle any
+		$!supp.struname
+		handle any
+			$!supp.restname
+		endhandle
+	endhandle
+	auto ce
+	handle any
+	endhandle
+
+	!supp.addtoview()
+
+	--add ce auto ce
+	--handle any
+	--endhandle
+	!this.setOtherList()
+endmethod
+
+define method .setOtherList()
+	!val = !this.getJsonIndex()
+	if !val eq 0 then
+		return
+	endif
+
+	!this.setlist2(!val)
+	--return
+	--!this.setlist3(!val)
+	!this.setlist4(!val)
+	--!this.setlist5(!val)
+
+	!this.setlist6(!val)
+	!this.setlist7(!val)
+endmethod
+
+define method .setred()
+	!this.instoreset(false)
+	!this.red()
+endmethod
+define method .red()
+	!vals = !this.list.val
+	if !vals.unset() then
+		!vals = !this.list.dtext.indices()
+	endif
+
+	!col = !this.colcombobox.displaytext()
+	do !val values !vals
+		!mbdstru = !this.suppdatas[!val].mbdstru.mbdstru
+		-----------------------
+		-----------------------sometimes only part of mbdstru are enhanced when unenhance are not used
+		unenhance $!mbdstru
+		handle any
+		elsehandle none
+			if !this.enhancered.val then
+				--enhance $!mbdstru col red
+				--enhance $!mbdstru col blue
+				enhance $!mbdstru col $!col
+			endif
+		endhandle
+	enddo
+endmethod
+
+define method .getJsonIndex() is real
+	!vals = !this.list.val
+	!val = !vals[1]
+	handle any
+		if !this.list.dtext.size() eq 1 then
+			!val = 1
+		else
+			--$p Choose One bran
+			return 0
+		endif
+	endhandle
+	return !val
+endmethod
+
+define method .setlist2(!val is real)
+	!this.list2.setheadings(!this.materialAttShow)
+	!rows = !this.suppdatas[!val].sumMaterials(!this.materialAttS)
+	!newrows = array()
+	do !x indices !rows
+		do !y indices !rows[!x]
+			!newrows[!x][!y] = !rows[!x][!y].string()					$* to string
+		enddo
+	enddo
+	!this.list2.setrows(!newrows)
+endmethod
+
+define method .setlist3(!val is real)
+	!maxnum = 16
+	!arrs = !this.suppdatas[!val].getweldlist()
+	!rows = array()
+	do !arr values !arrs
+		!temparr = array()
+		do !x indices !arr
+			!temparr.append(!arr[!x])
+			if !x / !maxnum eq int(!x / !maxnum) then
+				!rows.append(!temparr)
+				!temparr = array()
+			elseif !x eq !arr.size() then
+				!rows.append(!temparr)
+			endif
+		enddo
+	enddo
+
+	do !x indices !rows
+		do !y from 1 to !maxnum - !rows[!x].size()
+			!rows[!x].append('')
+		enddo
+	enddo
+
+	!this.list3.setrows(!rows)
+endmethod
+
+define method .setlist4(!val is real)
+	!this.list4.setheadings(!this.elematerialAttShow)
+	!rows = !this.suppdatas[!val].getspecialMaterials(!this.elematerialAttS)
+	!newrows = array()
+	do !x indices !rows
+		do !y indices !rows[!x]
+			!newrows[!x][!y] = !rows[!x][!y].string()					$* to string
+		enddo
+	enddo
+	!this.list4.setrows(!newrows)
+endmethod
+
+define method .setlist6(!val is real)
+	!object = !this.suppdatas[!val]
+	!tempfile = object file(!!commonpath() + 'functionsetdrawinfo.txt')
+	!lines = !tempfile.readfile()
+	do !line values !lines
+		if !line.trim().trim('	') ne '' then
+			$!line
+		endif
+	enddo
+endmethod
+
+define method .setlist7(!val is real)
+	!object = !this.suppdatas[!val]
+	!tempfile = object file(!!commonpath() + 'functionsetproofreading.txt')
+	!lines = !tempfile.readfile()
+	do !line values !lines
+		if !line.trim().trim('	') ne '' then
+			$!line
+		endif
+	enddo
+endmethod
+
+define method .selectmaterial()	$*navigate to item according to material
+	!vals = !this.list4.val
+	if !vals.set() then
+		!suppindex = !this.getJsonIndex()
+		!materials = !this.suppdatas[!suppindex].materials
+		!specialnums = array()
+		!mems = array()
+		do !x indices !materials
+			!specialnums.append(!materials[!x].specialnum)
+			!mems.append(!materials[!x].name)
+		enddo
+		!dtext = !this.list4.dtext
+		!items = array()
+		do !val values !vals
+			!row = !dtext[!val]
+			!specialnum = !row.split('	')[1]
+			!index = !specialnums.findfirst(!specialnum)
+			!items.append(!mems[!index])
+		enddo
+		--unenhance all
+		--do !item values !items
+		--	enhance $!item col red
+		--enddo
+
+		$!items[1]
+	endif
+endmethod
+
+define method .generatefiles() is array
+	if !this.checkfilepath().not() then
+		return
+	endif
+	!filepath = !this.filepath.displaytext().trim()
+	!resultpaths = array()
+	do !supp values !this.suppdatas
+		!supp.generatejson = true
+		!supp.filepath = !filepath
+		!paths = !supp.generatejsonattrvm()
+		!resultpaths.appendarray(!paths)
+	enddo
+	return !resultpaths
+endmethod
+
+define method .Json()	$* save json file
+	if !this.generatefiles().set() then
+		!filepath = !this.filepath.displaytext().trim()
+		!folder = object file(!filepath)
+		Syscom 'start $!folder &'
+	else
+		$p No Files generated
+	endif
+	return
+
+--define method .Json(!onlyselection is boolean)
+	if !this.checkfilepath().not() then
+		return
+	endif
+	!filepath = !this.filepath.displaytext().trim()
+	do !supp values !this.suppdatas
+		!supp.generatejson = true
+		!supp.filepath = !filepath
+		!supp.generatejsonattrvm()
+	enddo
+	!folder = object file(!filepath)
+	Syscom 'start $!folder &'
+return
+
+	import 'PMLFileBrowser'
+	Handle Any
+	Endhandle
+	var !banner banner
+	if !banner.matchwild('*PDMS*') then
+		using namespace 'Aveva.PDMS.Presentation'
+	else
+		using namespace 'Aveva.Core.Presentation'
+	endif
+	!browser = object pmlfolderbrowser()
+	!browser.show('Choose Folder',true)	$*true代表有新建文件夹选项
+	!path = !browser.selectedpath()
+	if !path eq '' then
+		return
+	endif
+
+	if !onlyselection then
+		!vals = !this.list.val
+		if !vals.unset() then
+			if !this.list.dtext.size() eq 1 then
+				!vals[1] = 1
+			else
+				return
+			endif
+		endif
+	else
+		!vals = !this.list.dtext.indices()
+		if !vals.unset() then
+			return
+		endif
+	endif
+
+	do !val values !vals
+		!filename = !this.suppdatas[!val].suppName.replace('=','_').replace('/','_').replace('\','_')
+		!result = !this.suppdatas[!val].getjsondata(!this.materialAttS, !this.materialAttShow,!this.elematerialAttS, !this.elematerialAttShow, !this.suppAtts ,!this.suppAttShow)
+		!this.instore(!result,!filename,!path)
+	enddo
+	!folder = object file(!path)
+	Syscom 'start $!folder &'
+endmethod
+
+define method .toTplant()		$* for test
+	if !this.checkfilepath().not() then
+		return
+	endif
+	!filepath = !this.filepath.displaytext().trim()
+	do !supp values !this.suppdatas
+		!supp.generatejson = true
+		!supp.filepath = !filepath
+		!supp.totplant()
+	enddo
+	!folder = object file(!filepath)
+	Syscom 'start $!folder &'
+return
+
+	!vals = !this.list.dtext.indices()
+	if !vals.unset() then
+		return
+	endif
+
+	!items = array()
+	do !val values !vals
+		!items.append(!this.suppdatas[!val].suppName)
+	enddo
+	!a = !!jsontotplant(!items,'','','','','','','em9pipesupp')
+endmethod
+
+define method .instore(!result is array,!filename is string,!path is string)
+	!goodpath = !path
+	if !goodpath.matchwild('*\').not() or !goodpath.matchwild('*/').not() then
+		!goodpath = !goodpath + '\'
+	endif
+	!file = object file(!goodpath + !filename + '.json')
+	!file.writefile('overwrite',!result)
+endmethod
+
+$(
+define method .addPick()
+
+	var !ref ref
+	if type of $!ref eq 'ATTA' then
+		if !this.suisupport.struName.set() then
+			--!this.attas.append(!ref)
+			!this.suisupport.attas.append(!ref)
+			!this.suisupport.getLineData()
+			!this.suisupport.getCenPos()
+			!this.setCheight()
+			!this.suisupport.updateDim()
+		else
+			!!alert.message('Add support first please')
+			return
+		endif
+	else
+		!ss = object suisupport(!ref)
+		handle any
+		elsehandle none
+			!this.suisupport = !ss
+		endhandle
+	endif
+	!this.showList()
+	!this.enhance()
+
+endmethod
+
+define method .showList()
+	!dtext = array()
+	!struName = !this.suiSupport.struName
+	if !struName.set() then
+		!dtext.append('STRU ' + !struname)
+		!restName = !this.suiSupport.restName
+		!dtext.append('REST ' + !restName)
+		do !atta values !this.suisupport.attas
+			!attaname = name of $!atta
+			if type of $!atta eq 'ATTA' then
+				!dtext.append('ATTA ' + !attaname)
+			elseif type of $!atta eq 'PCLA' then
+				!dtext.append('PCLA ' + !attaname)
+			endif
+		enddo
+	endif
+	!this.markItems.dtext = !dtext
+endmethod
+
+define method .enhance()
+	unenhance all
+	if !this.suiSupport.struName.set() then
+		enhance $!this.suiSupport.suppName col red
+		handle any
+		endhandle
+		enhance $!this.suiSupport.struName col red
+		handle any
+		endhandle
+		enhance $!this.suiSupport.restName col red
+		handle any
+		endhandle
+		do !atta values !this.suisupport.attas
+			enhance $!atta col red
+		enddo
+	endif
+endmethod
+
+
+define method .drawall()
+
+	!this.setCheight()
+	--!this.suisupport.delete()
+
+	!this.suisupport.draw()
+
+endmethod
+
+
+define method .drawmain()
+	!this.setCheight()
+	--!this.suisupport.delete()
+	!this.suisupport.drawmain()
+
+endmethod
+
+define method .drawSub()
+	!this.setCheight()
+	--!this.suisupport.delete()
+	!this.suisupport.drawsub()
+
+endmethod
+
+
+define method .setCheight()
+	!this.suisupport.cheightbili = !this.cheightbili.displaytext().trim().real()
+	--!this.suisupport.cheight = !this.cheight.displaytext().trim().real()
+endmethod
+
+define method .deleteDim()
+	!this.suisupport.deleteDim()
+endmethod
+$)
+
+R

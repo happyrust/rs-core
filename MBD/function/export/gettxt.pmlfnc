@@ -1,0 +1,53 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= April 25th 2023
+--[Function]:	instore txt of items into files and return string or merged path of txt file
+------------------------------------------
+--define function !!gettxt(!items is array, !remitems is array, !txtname1 is string) is string
+define function !!gettxt(!items is array, !txtname1 is string) is string
+	!cename = name
+	--q var !items
+	if !txtname1.unset() or !txtname1 eq '' then
+		!txtName = 'd:\temptxt.txt'
+	else
+		!txtname = !txtname1
+	endif
+
+
+	----------------------
+	----------------------Step x:from siqiang
+	!!deliveryModelMigration.WriteToTxt(!items,!txtname)
+	handle any
+	elsehandle none
+		return !txtname
+	endhandle
+
+
+
+	--q var !items
+	ALPHA FILE "$!txtname" over
+	do !item values !items
+		--skip if (!remitems.findfirst(!item).set())
+
+		--output only (ZONE) ce
+		--OUTPUT LOCATE CE
+		--OUTPUT REPLACE CE
+
+		output $!item
+	enddo
+	--do !remmodel values !remitems
+    --    output exclude $!remmodel
+    --enddo
+	ALPHA FILE end
+	$!cename
+
+	!file = object file(!txtname)
+	!file.close()
+
+	return !txtname
+endfunction
+¨O

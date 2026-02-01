@@ -1,0 +1,66 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= April 10th 2023
+--[Function]:
+------------------------------------------
+
+define function !!getnextmem(!cename is any) is string
+	var !mode mode
+	forwards
+	!nextone = name of $!cename
+	label /nextone
+	!tempstring = '%$%'
+    --q var !cename
+	if type of $!nextone ne 'BRAN' then
+		--!nextone =name of next of $!nextone
+		!com = '!nextone = name of next of ' + !tempstring.substring(2,1) + '!nextone'
+	else
+		--!nextone = name of first mem of $!bran
+		!com = '!nextone = name of first mem of ' + !tempstring.substring(2,1) + '!nextone'
+	endif
+	$!com
+	label /nextoneok
+	handle any
+        --$p 11
+		if type of $!nextone ne 'BRAN' then
+			!bran = name of bran of $!nextone
+			handle any
+				$!mode
+				return ''
+			endhandle
+		else
+			!bran = !nextone
+		endif
+		label /nextbran
+		!bran = name of tref of $!bran
+		handle any
+			$!mode
+			return ''
+		elsehandle none
+			if type of $!bran ne 'BRAN' then
+				$!mode
+				return !bran
+			else
+				!nextone = name of first mem of $!bran
+				handle any
+					golabel /nextbran
+				elsehandle none
+					golabel /nextoneok
+				endhandle
+			endif
+		endhandle
+	elsehandle none
+        --$p 22
+		!type = type of $!nextone
+		if !type eq 'ATTA' then
+			golabel /nextone
+		else
+			$!mode
+			return !nextone
+		endif
+	endhandle
+endfunction

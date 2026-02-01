@@ -1,0 +1,62 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= April 25th 2023
+--[Function]:
+------------------------------------------
+
+define function !!adddrawlist(!view is gadget)
+	do !i indices !!gphdrawlists.drawlists
+		if (!!gphdrawlists.drawlists[!i].views().findFirst(!view).set()) then
+			--$p $!i
+			--$p drawlist exists
+			return $*the drawlist for the view is already in !!gphdrawlists
+		endif
+	enddo
+	----!!gphviews.add(!view)
+	-- Add view/form to system
+	if (!!gphviews.views.find(!view).unset()) then
+		!!gphviews.views.append(!view)
+	endif
+
+	-- Update control form if exists and shown
+	if(defined(!!gphControl)) then
+		if(!!gphControl.shown()) then
+			!!gphControl.initialise()
+		endif
+	endif
+
+	-- Make sure view settings is removed before the new view is created
+	-- otherwise show form will crash
+	if(defined(!!viewSettings)) then
+		if(!!viewSettings.shown()) then
+			!!viewSettings.hide()
+		endif
+	endif
+	--if !show then
+	-- show new 3D view form
+	!view.owner().show('AT', 0, 0)  $*this line must run, or the view would not show anything
+	--endif
+	-- If form is an "design" form, then add to edg system
+	--q var !view.owner().type
+	if(defined(!view.owner().type)) then
+		if(!view.owner().type.set()) then
+			if(!view.owner().type.upcase() eq 'DESIGN') then
+				-- Is the EDG system load
+				if(undefined(!!edgCntrl)) then
+					!edgCntrl = object EDGCNTRL()
+					!edgCntrl.globalInstance()
+				endif
+
+				-- Add into edg system
+				!!edgCntrl.addView(!view)
+			endif
+		endif
+	endif
+	!drawlist = !!gphdrawlists.createdrawlist()
+	!!gphdrawlists.attachview(!drawlist,!view)
+endfunction
+ô

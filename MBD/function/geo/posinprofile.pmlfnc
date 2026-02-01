@@ -1,0 +1,40 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= December 21st 2023
+--[Function]:
+------------------------------------------
+
+define function !!posinprofile(!pos is position,!profile is profile) is boolean
+	if !profile.isclosed().not()then
+		!profile.close()
+	endif
+	!plane = !profile.plane()
+	!point = !plane.near(!pos)
+--$P A
+
+	!a = !profile.iswithin(!point)
+	handle any
+	--$P B
+	elsehandle none
+	--$P C
+		if !a then
+			return true
+		endif
+	endhandle
+	!b = !profile.iswithout(!point)
+	handle any
+		return false
+	elsehandle none
+		if !b.not() then
+			return true
+		else
+			return false
+		endif
+	endhandle
+
+endfunction
+T

@@ -1,0 +1,46 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= April 10th 2024
+--[Function]:
+------------------------------------------
+
+define function !!getlocalmbdpath() is string
+	var !pmllibstring evar pmllib
+	--$p $!pmllibstring
+	!pmllibs = !pmllibstring.split(';')
+	do !pmllib values !pmllibs
+		!lowstring = !pmllib.lowcase()
+		--$p $!lowstring
+		if !lowstring.matchwild('c:*myproj*') or !lowstring.matchwild('d:*myproj*') then
+			!topath = !lowstring
+			break
+		elseif !lowstring.matchwild('c:*aveva*pmllib*') or !lowstring.matchwild('d:*aveva*pmllib*') then
+			!topath = !lowstring
+			--break
+		endif
+	enddo
+	!file = object file(!topath)
+	if undefined(!topath) then
+		$p 没找到可以存放的地方
+		--$p Cant find a good place to copy MBD files
+		return ''
+	else
+	--q var !file.fullname()
+		!tempstring = !topath.substring(-1,1)
+		if !topath.match('myproj') eq 0 then
+			if !tempstring ne '\' and !tempstring ne '/' then
+				!topath = !topath + '\'
+			endif
+			!topath = !topath & 'myprojects'
+		else
+			if !tempstring eq '\' or !tempstring eq '/' then
+				!topath = !topath.substring(1,!topath.length() - 1)
+			endif
+		endif
+	endif
+	return !topath
+endfunction

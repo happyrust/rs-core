@@ -1,0 +1,3 @@
+civilAttarr:civilName/名称,owner/归属,Purpose/Purpose,thick/厚度,strongclass/强度等级,level/楼板标高
+memattarr:order/序号,memtype/预埋件类型,code/预埋件编号,spec/规格,axdis/A面定位1,aydis/A面定位2,bxdis/B面定位1,bydis/B面定位2,angle/转角,remark/备注
+roomattarr:order/序号,name/房间号

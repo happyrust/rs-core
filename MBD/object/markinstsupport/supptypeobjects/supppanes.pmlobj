@@ -1,0 +1,687 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= October 12nd 2023
+--[Function]:
+------------------------------------------
+
+define object supppanes
+--$(
+	member .name is string
+	member .type is string
+
+	member .poss is array
+	member .dir is direction
+	member .height is real
+	member .mems is array
+
+	member .len is real
+
+	member .thick is real
+	member .profiles is array
+
+	member .upstream is array		$*instore suppconnection of upstream
+	member .downstream is array		$*instore suppconnection of downstream
+
+	member .connections is array	$*instore rest suppconnection which is hard to say upstream or downstream
+	--$)
+endobject
+
+define method .supppanes(!item is any)
+	!type = type of $!item
+	!name = name of $!item
+	!this.type = !type
+	!this.name = !name
+	if !type eq 'SCTN' then
+		!this.getsctndata(!item)
+		!this.getprofiles()
+		!this.getlen()
+	elseif !type eq 'HELE' then
+		!this.getboxdata(!item)
+    elseif !type eq 'PCLA' then
+		!this.getboxdata(!item)
+	else
+		$p This type is not considered yet
+	endif
+	!this.mems.append(!name)
+endmethod
+
+define method .supppanes(!item is string, !mem is string)
+	!type = type of $!item
+	!name = name of $!item
+	!this.type = !type
+	!this.name = !name
+	!this.getmemdata(!item,!mem)
+	!this.mems.append(!name)
+endmethod
+
+define method .getlen()
+	!len = 0
+	do !profile values !this.profiles
+		!edges = !profile.edges()
+		do !edge values !edges
+			!angle = !edge.direction().angle(!this.dir)
+			if !angle gt 10 and !angle lt 170 then
+				!len = !edge.length() + !len
+				break
+			endif
+		enddo
+	enddo
+	!this.len = !len
+endmethod
+
+define method .getprofiles()
+	!lines = array()
+	!mindis = 10000
+	do !x indices !this.poss
+		if !x eq !this.poss.size() then
+			!y = 1
+		else
+			!y = !x + 1
+		endif
+		!line = !this.poss[!x].line(!this.poss[!y])
+		!mindis = min(!mindis,!line.length())
+		!lines.append(!line)
+	enddo
+	!this.thick = !mindis
+
+
+	!vertlines = array()
+	do !x from 1 to !lines.size() - 1
+		!line1 = !lines[!x]
+		!dir1 = !line1.direction()
+		!midpos = !line1.startposition.midpoint(!line1.endposition)
+		do !y from !x + 1 to !lines.size()
+			!line2 = !lines[!y]
+			!dir2 = !line2.direction()
+			!angle = !dir1.angle(!dir2)
+			if !angle gt 1 and !angle lt 179 then
+				skip
+			elseif !line2.onprojected(!midpos).not() then
+				skip
+			elseif !line1.distance(!line2) gt 2 * !mindis then
+				skip
+			else
+				!linepos = !midpos.midpoint(!line2.near(!midpos))
+				!vertline = !linepos.line(!linepos.offset(!dir1,1000))
+				!vertlines.append(!vertline)
+			endif
+		enddo
+	enddo
+
+	!midlines = array()
+
+	do !vertline values !vertlines
+		!positivedis = 100000
+		!negativedis = -100000
+		!vertpos1 = !vertline.startposition
+		!vertpos2 = !vertline.startposition
+		do !line values !lines
+			!interpos = !vertline.intersection(!line)
+			handle any
+			elsehandle none
+				if !line.onprojected(!interpos) then
+					!dis = !!suidirdis(!vertline.startposition,!vertline.direction(),!interpos)
+					if !dis gt 0 then
+						if !dis lt !positivedis then
+							!positivedis = !dis
+							!vertpos2 = !interpos
+						endif
+					else
+						if !dis gt !negativedis then
+							!negativedis = !dis
+							!vertpos1 = !interpos
+						endif
+					endif
+				endif
+			endhandle
+		enddo
+		if !vertpos1.distance(!vertpos2) gt 1 then
+			!midlines.append(!vertpos1.line(!vertpos2))
+		endif
+	enddo
+
+	!this.profiles = array()
+	do !midline values !midlines
+		!poss = array()
+		!poss.append(!midline.startposition)
+		!poss.append(!midline.endposition)
+		!poss.append(!midline.endposition.offset(!this.dir,!this.height))
+		!poss.append(!midline.startposition.offset(!this.dir,!this.height))
+		!zdir = !midline.direction().orthogonal(!this.dir)
+		!ori = y is $!this.dir and z is $!zdir
+		!cenpos = !!getcenpoint(!poss)
+		!profile = object profile(!cenpos,!ori,!poss)
+		!profile.close()
+		!this.profiles.append(!profile)
+	enddo
+endmethod
+
+define method .getcatadirection(!item is any) is array
+	!type = type of $!item
+	var !posstring pos ppli na prop 0 of $!item wrt/*
+	!pos = !posstring.position()
+	var !posstring1 pos ppli na prop 1 of $!item wrt/*
+	!pos1 = !posstring1.position()
+	!this.height = !pos.distance(!pos1)
+	!this.dir = !pos.direction(!pos1)
+	if !type eq 'SCTN' then
+		!ori = ori of $!item wrt/*
+	elseif !type eq 'GENSEC' then
+		!spine = name of first spine of $!item
+		handle any
+			!ori = ori of $!item wrt/*
+			golabel /oriend
+		endhandle
+
+
+		!mems = member of $!spine
+		var !mode mode
+		if !mode eq 'Backwards' then
+			!mems.invert()
+		endif
+		!pos1 = pos of $!mems[1] wrt/*
+		handle any
+			!ori = ori of $!item wrt/*
+			golabel /oriend
+		endhandle
+
+		!pos2 = pos of $!mems[2] wrt/*
+		handle any
+			!ori = ori of $!item wrt/*
+			golabel /oriend
+		endhandle
+
+		!zdir = !pos1.direction(!pos2)
+		-----------------------
+		-----------------------tempydir maybe not the right ydir. e.g. zdir is u and tempdir is n 30 u
+		!tempydir = ydir of $!spine wrt/*
+
+		!xdir = !tempydir.orthogonal(!zdir)
+		!ori = x is $!xdir and z is $!zdir
+		label /oriend
+	endif
+
+	var !plins coll all plin with(pkey eq 'NA') for pstref of catref of $!item
+	!naplin = !plins[1]
+	!nadirstring = plax of $!naplin
+	!nadirstring = !nadirstring.trim()
+	if !nadirstring eq 'Y' then
+		!xdir = !ori.xdir()
+		!ydir = !ori.ydir()
+		!zdir = !ori.zdir()
+	else
+		--nadirstring maybe like X,- X, Y , - Y, X 123 Y, -X 123 Y, X 123 - Y, - X 123 - Y
+		!nadirstring = !nadirstring.replace('X',' E ').replace('Y',' N ').replace('- X','W').replace('- Y','S').replace('-X','W').replace('-Y','S')
+		!temppos = e 0 n 0 u 0
+		!tempori = x is n and z is u
+		!temparc = object arc(!temppos,!tempori,0,360,1000,true)
+
+		!tempdir = object direction(!nadirstring)
+		!temppos = !temppos.offset(!tempdir,1000)
+		!angle = !temparc.near(!temppos)
+
+		--q var !angle
+
+		!tempxdir = !ori.ydir()
+		!tempzdir = !ori.zdir().opposite()
+		!tempori = x is $!tempxdir and z is $!tempzdir
+
+		!temparc = object arc(!temppos,!tempori,0,360,1000,true)
+		!ydir = !temparc.angledirection(!angle)
+		!zdir = !ori.zdir()
+		!xdir = !ydir.orthogonal(!zdir)
+	endif
+
+	!cataxdir = !xdir
+	!cataydir = !ydir
+
+	--q var !xdir !ydir
+
+	!px = px of $!naplin
+	!py = py of $!naplin
+
+	!pxdis = !!evalcata(!item,!px)
+	!pydis = !!evalcata(!item,!py)
+	!catapos = !pos.offset(!cataxdir,!pxdis).offset(!cataydir,!pydis)
+
+	!result = array()
+	!result.append(!catapos)
+	!result.append(!cataxdir)
+	!result.append(!cataydir)
+	return !result
+endmethod
+
+define method .getsctndata(!item is any)
+    --$p 123
+    --Q VAR !item
+	!gm = name of gstref of catref of $!item
+	handle any
+		!gm = name of gmre of catref of $!item
+		handle any
+			return
+		endhandle
+	endhandle
+
+	!cataarr = !this.getcatadirection(!item)
+	!catapos = !cataarr[1]
+	!cataxdir = !cataarr[2]
+	!cataydir = !cataarr[3]
+
+	!ori = ori of $!item wrt/*
+
+	!considertypes = split('SPRO')
+
+	!mems = mem of $!gm
+	do !onemem values !mems
+		!mem = name of $!onemem
+		!memtype = type of $!mem
+
+		if !considertypes.findfirst(!memtype).unset() then
+			skip
+		endif
+
+
+		!level = level of $!mem
+		if !level[1] gt 6 or !level[2] lt 6 then
+			skip
+		endif
+		!obst = obstruction of $!mem
+		if !obst ne 2 and !obst ne 0 then
+			skip
+		endif
+
+		if !memtype eq 'SPRO' then
+			!plaxi = plaxi of $!mem
+			!dirpos1 = !!evalcata(!item,!plaxi)
+
+			if !dirpos1.objecttype() eq 'ARRAY' then
+				!ydir = !dirpos1[1]
+			else
+				!ydir = !dirpos1
+			endif
+			!zdir = !ori.zdir()
+			!ori = y is $!ydir and z is $!zdir
+			!xdir = !ori.xdir()
+
+
+			!onelooppoints = array()
+			!oneloopradiuss =array()
+			!dpoints = array()
+			!dradiuss = array()
+			var !spves coll all spve for $!mem
+			do !spve values !spves
+				var !pxstring px of $!spve
+				var !pystring py of $!spve
+				var !pradstring prad of $!spve
+				var !dxstring dx of $!spve
+				var !dystring dy of $!spve
+				var !dradstring drad of $!spve
+				!px = !!evalcata(!item,!pxstring)
+				!py = !!evalcata(!item,!pystring)
+				!radius = !!evalcata(!item,!pradstring)
+
+
+				!point = !catapos.offset(!cataxdir,!px).offset(!cataydir,!py)
+				!onelooppoints.append(!point)
+				!oneloopradiuss.append(!radius)
+			enddo
+			!this.poss = !!mergepoints(!onelooppoints)
+			--!ori = !ori
+
+
+			$(
+			!loop = !!mergePointsradiuss(!onelooppoints,!oneloopradiuss)
+
+			if !loop.unset() or !loop[1].unset() then
+				return
+			else
+				!this.poss = !loop[1]
+			endif
+			$)
+		else
+			skip
+		endif
+
+		return
+	enddo
+endmethod
+
+define method .getboxdata(!item is any)
+	!gm = name of gstref of catref of $!item
+	handle any
+		!gm = name of gmre of catref of $!item
+		handle any
+			return
+		endhandle
+	endhandle
+
+	!ori = ori of $!item wrt/*
+	!pos = pos of $!item wrt/*
+
+	!mems = mem of $!gm
+	--$P 11
+	!dir1s = array()
+	!dir2s = array()
+	!len1s = array()
+	!len2s = array()
+	!thicks = array()
+	!poss = array()
+	do !onemem values !mems
+		!mem = name of $!onemem
+		!memtype = type of $!mem
+
+		!level = level of $!mem
+		if !level[1] gt 6 or !level[2] lt 6 then
+			skip
+		endif
+		!obst = obstruction of $!mem
+		if !obst ne 2 and !obst ne 0 then
+			skip
+		endif
+
+		if !memtype eq 'SBOX' then
+			!px = px of $!mem
+			!py = py of $!mem
+			!pz = pz of $!mem
+			!pxlen = pxlen of $!mem
+			!pylen = pylen of $!mem
+			!pzlen = pzlen of $!mem
+			!xdir = !ori.xdir()
+			!ydir = !ori.ydir()
+			!zdir = !ori.zdir()
+			!boxpos = !pos.offset(!xdir,!!evalcata(!item,!px)).offset(!ydir,!!evalcata(!item,!py)).offset(!zdir,!!evalcata(!item,!pz))
+			!xlen = !!evalcata(!item,!pxlen)
+			!ylen = !!evalcata(!item,!pylen)
+			!zlen = !!evalcata(!item,!pzlen)
+
+			if !zlen le !xlen and !zlen le !ylen then
+				!dir1 = !xdir
+				!dir2 = !ydir
+				!len1 = !xlen
+				!len2 = !ylen
+				!thick = !zlen
+			elseif !ylen le !xlen and !ylen le !zlen then
+				!dir1 = !xdir
+				!dir2 = !zdir
+				!len1 = !xlen
+				!len2 = !zlen
+				!thick = !ylen
+			else
+				!dir1 = !ydir
+				!dir2 = !zdir
+				!len1 = !ylen
+				!len2 = !zlen
+				!thick = !xlen
+			endif
+			!dir1s.append(!dir1)
+			!dir2s.append(!dir2)
+			!len1s.append(!len1)
+			!len2s.append(!len2)
+			!thicks.append(!thick)
+			!poss.append(!boxpos)
+		else
+			skip
+		endif
+	enddo
+	--q var !poss !dir1s !dir2s !len1s !len2s !thicks
+	!this.dealboxdata(!poss,!dir1s,!dir2s,!len1s,!len2s,!thicks)
+endmethod
+
+define method .dealboxdata(!poss is array, !dir1s is array, !dir2s is array, !len1s is array, !len2s is array, !thicks is array)
+    --$p 000
+    !this.setdirthick(!dir1s,!dir2s,!thicks)
+    --$p 111
+	!this.setxydirheight(!dir1s,!dir2s,!len1s,!len2s)
+
+	--$p 111
+	!temparr = !this.getxposs(!poss,!dir1s,!len1s)
+    --q var !temparr[1] !temparr[2][1] !temparr[2][2] !temparr[3]
+	!sortedpartnums = !temparr[1]
+	!allxposs = !temparr[2]
+	!poss = !temparr[3]
+
+	--$p 2
+	!this.getboxprofiles(!poss,!allxposs)
+	--$p 3
+	!this.getposslen(!poss,!allxposs)
+endmethod
+
+define method .getposslen(!poss is array,!allxposs is array)
+    --$p 123
+    --Q VAR !poss !allxposs
+	!ydir = !this.dir
+
+	!lines = array()
+	!pos1s = array()
+	!pos2s = array()
+
+	!invertlines = array()
+	!invertpos1s = array()
+	!invertpos2s = array()
+	do !x indices !allxposs
+		!xposs = !allxposs[!x]
+		!xdir = !xposs[1].direction(!xposs[2])
+		!zdir = !xdir.orthogonal(!ydir)
+
+		!pos1 = !xposs[1].offset(!ydir, - !this.height / 2).offset(!zdir, - !this.thick / 2)
+		!pos2 = !xposs[2].offset(!ydir, - !this.height / 2).offset(!zdir, - !this.thick / 2)
+		!line = !pos1.line(!pos2)
+
+		!lines.append(!line)
+		!pos1s.append(!pos1)
+		!pos2s.append(!pos2)
+
+
+		!pos2 = !xposs[1].offset(!ydir, - !this.height / 2).offset(!zdir, !this.thick / 2)
+		!pos1 = !xposs[2].offset(!ydir, - !this.height / 2).offset(!zdir, !this.thick / 2)
+		!line = !pos1.line(!pos2)
+
+		!invertlines.append(!line)
+		!invertpos1s.append(!pos1)
+		!invertpos2s.append(!pos2)
+
+	enddo
+
+	!len = 0
+	do !line values !lines
+		!len = !len + !line.length()
+	enddo
+    --q var !len
+    --modify by jyg 20240829
+    if !this.type inset('HELE')then
+        !this.len = 1
+    elseif !this.type inset('PCLA')then
+        --modify by jyg 20250228 ‘Ÿ¥Œ¥¶¿Ì÷ßº‹√ª”–±Í◊¢≥ﬂ¥Á–≈œ¢µƒŒ Ã‚£¨Ω‚æˆsupppanes(º»R¿‡–Õ)
+        --!dtxr = dtxr of $!<this.name>
+		--handle any
+		--	!dtxr = ''
+		--endhandle
+        --if  !dtxr.match('R') ne 0 then
+            !this.len = 1
+        --else
+        --    !this.len = !len
+        --endif
+    else
+        !this.len = !len
+    endif
+
+	--!lines.appendarray(!invertlines.invert())
+	--!pos1s.appendarray(!invertpos1s.invert())
+	--!pos2s.appendarray(!invertpos2s.invert())
+
+	!invertlines.invert()
+	!invertpos1s.invert()
+	!invertpos2s.invert()
+
+	!newposs = array()
+	!newposs.append(!pos1s[1])
+	!size = !lines.size()
+	do !x from 1 to !size - 1
+		!y = !x + 1
+		!interpoint = !lines[!x].intersection(!lines[!y])
+		!newposs.append(!interpoint)
+	enddo
+	!newposs.append(!pos2s.last())
+
+	!newposs.append(!invertpos1s[1])
+	!size = !invertlines.size()
+	do !x from 1 to !size - 1
+		!y = !x + 1
+		!interpoint = !invertlines[!x].intersection(!invertlines[!y])
+		!newposs.append(!interpoint)
+	enddo
+	!newposs.append(!invertpos2s.last())
+	--Q VAR !newposs
+    --$P 148965
+	!this.poss = !newposs
+endmethod
+
+define method .getboxprofiles(!poss is array,!allxposs is array)
+	!ydir = !this.dir
+	do !index indices !allxposs
+		!xposs = !allxposs[!index]
+		!xdir = !xposs[1].direction(!xposs[2])
+		!ori = x is $!xdir and y is $!ydir
+		!profileposs = array()
+		!profileposs.append(!xposs[1].offset(!ydir,!this.height / 2))
+		!profileposs.append(!xposs[2].offset(!ydir,!this.height / 2))
+		!profileposs.append(!xposs[2].offset(!ydir, - !this.height / 2))
+		!profileposs.append(!xposs[1].offset(!ydir, - !this.height / 2))
+		!profile = object profile(!poss[!index],!ori,!profileposs)
+		!profile.close()
+		!this.profiles.append(!profile)
+	enddo
+endmethod
+
+define method .getxposs(!poss is array, !dir1s is array, !len1s is array) is array
+	!xposs = array()
+	!partnums = array()
+	!matchindices = array()
+	do !x indices !poss
+		!pos1 = !poss[!x].offset(!dir1s[!x], - !len1s[!x] / 2)
+		!pos2 = !poss[!x].offset(!dir1s[!x],!len1s[!x] / 2)
+		!xposs.append(!pos1)
+		!xposs.append(!pos2)
+		!partnums.append(!x)
+		!partnums.append(!x)
+	enddo
+
+	!size = !xposs.size()
+	!considers = array()
+	do !x from 1 to !size - 1
+		if !considers.findfirst(!x).set() then
+			skip
+		endif
+		do !y from !x + 1 to !size
+			if !considers.findfirst(!y).set() then
+				skip
+			endif
+			!dis = !xposs[!x].distance(!xposs[!y])
+			if !dis lt !this.thick * 2 then
+				!matchindices[!x] = !y
+				!matchindices[!y] = !x
+				!considers.append(!x)
+				!considers.append(!y)
+			endif
+		enddo
+	enddo
+
+	do !x from 1 to !matchindices.size() + 2
+		if undefined(!matchindices[!x]) then
+			!startx = !x
+			break
+		endif
+	enddo
+
+	!allxposs = array()
+	!newpartnums = array()
+	!index = !startx
+	do
+		!partnum = !partnums[!index]
+		!newpartnums.append(!partnum)
+		!allxposs[!partnum] = array()
+		!allxposs[!partnum].append(!xposs[!index])
+		if int(!index / 2) * 2 eq !index then
+			!index = !index - 1
+		else
+			!index = !index + 1
+		endif
+		!allxposs[!partnum].append(!xposs[!index])
+
+
+		!index = !matchindices[!index]
+		handle any
+			break
+		endhandle
+	enddo
+
+	!poss.reindex(!newpartnums)
+	!allxposs.reindex(!newpartnums)
+
+	!result = array()
+	!result.append(!newpartnums)
+	!result.append(!allxposs)
+	!result.append(!poss)
+	return !result
+endmethod
+
+define method .setxydirheight(!dir1s is array, !dir2s is array, !len1s is array, !len2s is array)
+
+	do !x indices !dir1s
+		!angle = !dir1s[!x].angle(!this.dir)
+
+		if !angle lt 1 or !angle gt 179 then
+			!tempdir = !dir1s[!x]
+			!dir1s[!x] = !dir2s[!x]
+			!dir2s[!x] = !tempdir
+
+			!len = !len1s[!x]
+			!len1s[!x] = !len2s[!x]
+			!len2s[!x] = !len
+		endif
+	enddo
+
+	!this.height = !len2s[1]
+endmethod
+
+define method .setdirthick(!dir1s is array, !dir2s is array, !thicks is array)
+	--$p 236
+	!tempdirs = !dir1s
+	!tempdirs.appendarray(!dir2s)
+
+    --$p 156
+
+	!dirs = array()
+	!dirtimes = array()
+	do !x indices !tempdirs
+		!dir1 = !tempdirs[!x]
+		!find = false
+		do !y indices !dirs
+			!angle = !dirs[!y].angle(!dir1)
+			if !angle lt 1 or !angle gt 179 then
+				!find = true
+				!dirtimes[!y] = !dirtimes[!y] + 1
+				break
+			endif
+		enddo
+		if !find.not() then
+			!dirs.append(!dir1)
+			!dirtimes.append(1)
+		endif
+	enddo
+
+
+
+	!indices = !dirtimes.sortedindices().invert()
+	!dirs.reindex(!indices)
+
+	!this.dir = !dirs[1]
+	!this.thick = !thicks[1]
+	--q  var !this.dir !this.thick
+endmethod
+
+·

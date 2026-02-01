@@ -1,0 +1,10 @@
+define function !!gettime() is string
+	!datetime = object datetime()
+	!time = !datetime.year() & '-' & after(string(!datetime.month().real() / 100,'D2'),'.') $
+		& '-' & after(string(!datetime.date().real() / 100,'D2'),'.') $
+		& '_' & after(string(!datetime.hour().real() / 100,'D2'),'.') $
+		& '-' & after(string(!datetime.minute().real() / 100,'D2'),'.') $
+		& '-' & after(string(!datetime.second().real() / 100,'D2'),'.')
+	return !time
+endfunction
+Ü

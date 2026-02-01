@@ -1,0 +1,95 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= February 29th 2024
+--[Function]:
+------------------------------------------
+
+define function !!getmbdtype(!item is any) is string
+	!site = name of site of $!item
+
+    !zone = name of zone of $!item
+    handle any
+	elsehandle none
+        if !zone.match('MTGD') ne 0 then
+			!type = 'EQUI'
+		elseif !zone.match('COMM') ne 0 then
+			!type = 'EQUI'
+		elseif !zone.match('CASE') ne 0 then
+			!type = 'EQUI'
+		elseif !zone.match('LIGHT') ne 0 then
+			!type = 'EQUI'
+        else
+            golabel /typeNotOk
+		endif
+
+		golabel /typeok
+	endhandle
+
+    label /typeNotOk
+	!bran = name of bran of $!item
+	handle any
+	elsehandle none
+		if !site.match('INST') ne 0 then
+			!type = 'INSTPIPE'
+		elseif !site.match('PIPE') ne 0 then
+			!type = 'PIPE'
+		elseif !site.match('HVAC') ne 0 then
+			!type = 'HVAC'
+		elseif !site.match('ELEC') ne 0 then
+			!type = 'ELEC'
+		endif
+		golabel /typeok
+	endhandle
+
+	!supp = name of :supp of $!item
+	handle any
+	elsehandle none
+		if !site.match('INST') ne 0 then
+			!zone = name of owner of $!supp
+			if !zone.match('RACK') ne 0 then
+				!type = 'INSTSUPP'
+			else
+				!type = 'INSTPIPESUPP'
+			endif
+		else
+			!type = 'SUPP'
+		endif
+		golabel /typeok
+	endhandle
+
+	!equi = name of equi of $!item
+	handle any
+	elsehandle none
+		if !site.match('INST') ne 0 then
+			!type = 'INSTEQUI'
+		elseif !site.match('PIPE') ne 0 then
+			!type = 'EQUI'
+		elseif !site.match('HVAC') ne 0 then
+			!type = 'HVACEQUI'
+		elseif !site.match('ELECPIPE') ne 0 then
+			!type = 'ELECEQUI'
+		endif
+
+		golabel /typeok
+	endhandle
+
+	-- if !site.match('CIVI') ne 0 then
+		-- !type = 'CIVIL'
+	-- elseif !site.match('ARCH') ne 0 then
+		-- !type = 'ARCH'
+	-- elseif !site.match('HVAC') ne 0 then
+		-- !type = 'HVAC'
+	-- elseif !site.match('ELEC') ne 0 then
+		-- !type = 'ELEC'
+	-- else
+		-- !type = ''
+	-- endif
+
+	label /typeok
+	return !type
+endfunction
+`

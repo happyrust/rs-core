@@ -1,0 +1,570 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= April 19th 2023
+--[Function]:	get good points and raiduss (delete useless/wrong points/radiuss)
+------------------------------------------
+
+define function !!mergePointsradiuss(!inputpoints is array, !inputradiuss is array) is array
+	!points = !inputPoints
+	!radiuss = !inputradiuss
+	!points.compress()
+	!radiuss.compress()
+
+
+
+
+	-----------------------------------------------------------------------------------
+	-----------------------------------------------------------------------------------Step 1: remove repeated point
+	----------------------------------------------------------------------------------------------------------------------remove the repeated point s
+	do !x indices !points
+		if !x eq 1 then
+			!px = !points.size()
+		endif
+		if !points[!x].distance(!points[!px]) lt 0.1 then
+		--and abs(!radiuss[!x] - !radiuss[!px]) lt 0.01 then	$*202308241248 corrdinates are same but radius not same, error happens after
+			!points[!x].delete()
+			!radiuss[!x].delete()
+		else
+			!px = !x
+		endif
+	enddo
+	!points.compress()
+	!radiuss.compress()
+
+	$(
+	!size = !points.size()
+	!oldpoint = !points[1]
+	!oldradius = !radiuss[1]
+	do !x from 2 to !size
+		if !points[!x].distance(!oldpoint) lt 0.1 and abs(!radiuss[!x] - !oldradius) lt 0.01 then		$* remove repeated point when index is not size
+			!points[!x].delete()
+			!radiuss[!x].delete()
+			skip
+		else
+			!oldpoint = !points[!x]
+			!oldradius = !points[!x]
+		endif
+		if !x eq !size then
+			if !points[!x].distance(!points[1]) lt 0.1 and abs(!radiuss[!x] - !radiuss[1]) lt 0.01 then		$* remove repeated point when index is size
+				!points[!x].delete()
+				!radiuss[!x].delete()
+			endif
+		endif
+	enddo
+	!points.compress()
+	!radiuss.compress()
+	$)
+
+	----------------------------------------------------------------------------------------------------------------------remove the repeated point e
+
+	$(
+	do
+		!size = !points.size()
+		if !size ge 3 then
+			do !x from 1 to !size
+				if !x eq 1 then
+					!xx = !size - 1
+				elseif !x eq 2 then
+					!xx = !size
+				else
+					!xx = !x - 2
+				endif
+				if !points[!x].distance(!points[!xx]) lt 0.1 then
+					!points[!x].delete()
+					!points[!xx].delete()
+				endif
+			enddo
+		endif
+		!points.compress()
+	enddo
+	$)
+
+	----------if a point is on the line between the previous point and the next point, delete it, and if the pre one and next one is same, then delete one of them s
+	!size = !points.size()
+	!dirs = array()
+
+	do !x indices !points
+		if !x gt 1 then
+			!dirs.append(!points[!x - 1].direction(!points[!x]))
+		else
+			!dirs.append(!points[!size].direction(!points[!x]))
+		endif
+	enddo
+
+	!cx = 1
+	!px = !size
+	!nx = 2
+
+	!delxs = array()
+	do !x indices !dirs
+		!angle = !dirs[!cx].angle(!dirs[!nx])
+
+		if !angle lt 0.1 or !angle gt 179.9 then
+			!points[!cx].delete()								$* remove point goes on same line
+			!radiuss[!cx].delete()
+			!delxs.append(!cx)
+			if !points[!px].distance(!points[!nx]) lt 0.1 then
+				!points[!px].delete()							$* remove point which same with previous 2 point
+				!radiuss[!px].delete()
+				!delxs.append(!px)
+			endif
+		endif
+
+		if !delxs.size() ge !size - 2 then
+			break
+		endif
+
+
+		do
+			!cx = !cx + 1
+			if !cx gt !size then
+				!cx = 1
+			endif
+			if !delxs.findfirst(!cx).unset() then
+				break
+			endif
+		enddo
+
+		!px = !cx
+		do
+			!px = !px - 1
+			if !px eq 0 then
+				!px = !size
+			endif
+			if !delxs.findfirst(!px).unset() then
+				break
+			endif
+		enddo
+
+		!nx = !cx
+		do
+			!nx = !nx + 1
+			if !nx gt !size then
+				!nx = 1
+			endif
+			if !delxs.findfirst(!nx).unset() then
+				break
+			endif
+		enddo
+	enddo
+
+	$(
+	do !x indices !dirs
+		if !x ne 1 then
+			!pre = !x - 1
+		else
+			!pre = !size
+		endif
+		if !x ne !size then
+			!next = !x + 1
+		else
+			!next = 1
+		endif
+		!angle = !dirs[!x].angle(!dirs[!xx])
+		if !angle lt 0.1 or !angle gt 179.9 then
+			!points[!x].delete()
+			if !points[!next].distance(!points[!pre]) lt 0.1 then
+				!points[!pre].delete()
+			endif
+		endif
+	enddo
+	$)
+	!points.compress()
+	!radiuss.compress()
+	----------if a point is on the line between the previous point and the next point, delete it, and if the pre one and next one is same, then delete one of them e
+
+
+	------------------------------------------remove intersection points s			,actually one ploo could include more than 1 piece of block
+	$(
+	!size = !points.size()
+
+
+	!lines = array()
+	do !x indices !points
+		if !x ne !size then
+			!line = !points[!x].line(!points[!x + 1])
+		else
+			!line = !points[!x].line(!points[1])
+		endif
+		!lines.append(!line)
+	enddo
+
+	$)
+
+	!linearcs = !!getlinesandarcsfortwoarrays(!points,!radiuss)
+	!size = !linearcs.size()
+
+	do !x from 1 to !size - 1
+		if undefined(!linearcs[!x]) then
+			skip
+		endif
+		!ob1.delete()
+		handle any
+		endhandle
+
+		!ob1 = !linearcs[!x]
+		!obtype1 = !ob1.objecttype()
+		do !y from !x + 1 to !size
+			if undefined(!linearcs[!y]) then
+				skip
+			endif
+			!ob2.delete()
+			handle any
+			endhandle
+			!ob2 = !linearcs[!y]
+			!obtype2 = !ob2.objecttype()
+			if !obtype1 eq 'LINE' then
+
+				if !obtype2 eq 'LINE' then		$* LINE LINE
+
+					if !y eq !x + 1 or (!x eq 1 and !y eq !size) then
+						skip
+					else
+						!interpos = !ob1.intersection(!ob2)
+						handle any
+							skip
+						elsehandle none
+							if !ob1.onprojected(!interpos).not() or !ob2.onprojected(!interpos).not() then
+								skip
+							else
+
+								!linearcs[!x] = !ob1.to(!interpos)
+								if !linearcs[!x].length() lt 0.001 then
+									!linearcs[!x].delete()
+								endif
+
+								do !z from !x + 1 to !y - 1
+
+									!linearcs[!z].delete()
+									handle any
+									endhandle
+								enddo
+								!linearcs[!y] = !linearcs[!y].from(!interpos)
+							endif
+						endhandle
+					endif
+				else							$* LINE ARC
+
+					!points = !ob1.intersections(!ob2)
+					!mindis = !ob1.length()
+					!find = false
+					do !point values !points
+						if !ob1.onprojected(!point) and !ob2.onprojected(!point) then
+							!tempdis = !ob1.startposition.distance(!ob1.near(!point))
+							if !y eq !x + 1 and !tempdis gt !ob1.length() - 0.01 then
+								skip
+							elseif (!x eq 1 and !y eq !size) and !tempdis lt 0.01 then
+								skip
+							else
+								if !tempdis le !mindis then
+									!mindis = !tempdis
+									!interpos = !point
+									!find = true
+								endif
+							endif
+						endif
+					enddo
+					if !find.not() then
+						skip
+					else
+						!linearcs[!x] = !ob1.to(!ob1.near(!interpos))
+						if !linearcs[!x].length() lt 0.001 then
+							!linearcs[!x].delete()
+						endif
+						do !z from !x + 1 to !y - 1
+							!linearcs[!z].delete()
+							handle any
+							endhandle
+						enddo
+						!linearcs[!y] = !linearcs[!y].startposition(!interpos)
+						if !linearcs[!y].startangle gt !linearcs[!y].endangle - 0.01 then
+							!linearcs[!y].delete()
+						endif
+					endif
+				endif
+			else
+
+				if !obtype2 eq 'LINE' then				$* ARC LINE
+
+					!angles = !ob1.intersections(!ob2)
+					!find = false
+					!minangle = 10000
+					do !angle values !angles
+						if !angle lt !minangle and !angle ge !ob1.startangle and !angle le !ob1.endangle then
+							if !y eq !x + 1 and !angle gt !ob1.endangle - 0.01 then
+								skip
+							elseif (!x eq 1 and !y eq !size) and !angle lt !ob1.startangle + 0.01 then
+								skip
+							else
+							--$p $!x $!y
+								!temppos = !ob1.angleposition(!angle)
+							--q var !temppos
+								if !ob2.onprojected(!temppos) then
+									!minangle = !angle
+									!interpos = !temppos
+									!find = true
+								endif
+							--$p $!x $!y
+							endif
+						endif
+					enddo
+
+					if !find.not() then
+						skip
+					else
+
+						!linearcs[!x] = !ob1.endposition(!interpos)
+						if !linearcs[!x].startangle gt !linearcs[!x].endangle - 0.01 then
+
+							!linearcs[!x].delete()
+						endif
+						do !z from !x + 1 to !y - 1
+							!linearcs[!z].delete()
+							handle any
+							endhandle
+						enddo
+						!linearcs[!y] = !ob2.from(!ob2.near(!interpos))
+						if !linearcs[!y].length() lt 0.001 then
+							!linearcs[!y].delete()
+
+						endif
+					endif
+				else								$* ARC ARC
+
+					!angles = !ob1.intersections(!ob2)
+					!find = false
+					!minangle = 10000
+					do !angle values !angles
+						if !y eq !x + 1 and !angle gt !ob1.endangle - 0.01 then
+							skip
+						elseif (!x eq 1 and !y eq !size) and !angle lt !ob1.startangle + 0.01 then
+							skip
+						else
+							!temppos = !ob1.angleposition(!angle)
+							--if !x eq 2 and !y eq 5 then
+							--if !x eq 1 and !y eq 4 then
+
+
+							--endif
+							if !angle lt !minangle and !angle ge !ob1.startangle and !angle le !ob1.endangle and !ob2.onprojected(!temppos) then
+								!minangle = !angle
+								!interpos = !temppos
+								!find = true
+							endif
+						endif
+					enddo
+
+					if !find.not() then
+						skip
+					else
+
+
+						!linearcs[!x] = !ob1.endposition(!interpos)
+						if !linearcs[!x].startangle gt !linearcs[!x].endangle - 0.01 then
+							!linearcs[!x].delete()
+						endif
+						do !z from !x + 1 to !y - 1
+							!linearcs[!z].delete()
+							handle any
+							endhandle
+						enddo
+
+						!linearcs[!y].startangle = !ob2.near(!interpos)
+						if !linearcs[!y].startangle gt !linearcs[!y].endangle - 0.01 then
+							!linearcs[!y].delete()
+						endif
+					endif
+				endif
+			endif
+
+		enddo
+	enddo
+
+
+
+
+	!linearcs.compress()
+	------------------------------------------------------------------------------------------------- s
+	!lineandarcs = !linearcs
+
+	!tolerance = 0.1
+	!temparr = array()
+	!posradiuss = array()
+	do !linearc values !lineandarcs
+		if !linearc.objecttype() eq 'LINE' then
+			!temparr[1] = !linearc.startposition
+			!temparr[2] = 0
+			if !posradiuss.set() then
+				if !posradiuss.last()[1].distance(!temparr[1]) gt !tolerance or abs(!posradiuss.last()[2] - !temparr[2]) gt !tolerance then
+					!posradiuss.append(!temparr)
+				endif
+			else
+				!posradiuss.append(!temparr)
+			endif
+
+			!temparr[1] = !linearc.endposition
+			!temparr[2] = 0
+			!posradiuss.append(!temparr)
+		else
+			--!temparr[1] = !linearc.angleposition(0)
+			!temparr[1] = !linearc.angleposition(!linearc.startangle)	$*202304201648
+			!temparr[2] = 0
+			if !posradiuss.set() then
+				if !posradiuss.last()[1].distance(!temparr[1]) gt !tolerance or abs(!posradiuss.last()[2] - !temparr[2]) gt !tolerance then
+					!posradiuss.append(!temparr)
+				endif
+			else
+				!posradiuss.append(!temparr)
+			endif
+			!temparr[1] = !linearc.pole()
+			handle any
+				!angle = !linearc.endangle - !linearc.startangle
+				if !angle gt 179 then
+					q var !linearc
+					$p $!angle is greater than or equal to 180		mergePointsRadiuss
+					!posradiuss = array()
+					golabel /end
+				else
+					!halfangle = (!linearc.startangle + !linearc.endangle) / 2
+					!tempdir = !linearc.angledirection(!halfangle)
+					--!offdis = !halfangle.tangent() * !linearc.radius
+					!offdis = !linearc.radius / cosine(!halfangle)
+					!temparr[1] = !linearc.position.offset(!tempdir,!offdis)
+					$(
+					!temppos1 = !linearc.angleposition(!linearc.startangle)
+					!tempdir1 = !linearc.starttangent()
+
+					!temppos2 = !linearc.angleposition(!linearc.endangle)
+					!tempdir2 = !linearc.endtangent()
+
+					!templine1 = !temppos1.line(!temppos1.offset(!tempdir1,1000))
+					!templine2 = !temppos2.line(!temppos2.offset(!tempdir2,1000))
+					!temparr[1] = !templine1.intersection(!templine2)
+					handle any	$*parallel
+						q var !linearc
+						$p $!angle too small		mergePointsRadiuss
+						!posradiuss = array()
+						golabel /end
+					endhandle
+					$)
+				endif
+				--q var !linearc
+				--$p $!angle is greater than or equal to 180		mergePointsRadiuss
+				--!posradiuss = array()
+				--golabel /end
+			endhandle
+			!temparr[2] = !linearc.radius
+			!posradiuss.append(!temparr)
+			!temparr[1] = !linearc.angleposition(!linearc.endangle)
+			!temparr[2] = 0
+			!posradiuss.append(!temparr)
+		endif
+	enddo
+	if !posradiuss.set() then
+		if !posradiuss.last()[1].distance(!posradiuss[1][1]) lt !tolerance and abs(!posradiuss.last()[2] - !posradiuss[1][2]) lt !tolerance then
+			!posradiuss[!posradiuss.size()].delete()
+			!posradiuss.compress()
+		endif
+	endif
+
+	label /end
+	!points = array()
+	!radiuss = array()
+	do !x indices !posradiuss
+		!points.append(!posradiuss[!x][1])
+		!radiuss.append(!posradiuss[!x][2])
+	enddo
+
+
+	-------------------------------------------------------------------------------------------------- e
+
+
+
+
+
+
+
+	!points.compress()
+	!radiuss.compress()
+
+
+	------------------------------------------remove intersection points e
+
+	$(
+	-----old 202304201636
+	------------------------------------------remove intersection points s			,actually one ploo could include more than 1 piece os block
+	!size = !points.size()
+	!lines = array()
+	do !x indices !points
+		if !x ne !size then
+			!line = !points[!x].line(!points[!x + 1])
+		else
+			!line = !points[!x].line(!points[1])
+		endif
+		!lines.append(!line)
+	enddo
+
+
+	do !x from 1 to !size - 2
+		if undefined(!points[!x]) then
+			skip
+		endif
+		do !y from !x + 2 to !size
+			if !x eq 1 and !y eq !size then
+				skip
+			endif
+			if undefined(!points[!y]) then
+				skip
+			endif
+			!interpos = !lines[!x].intersection(!lines[!y])
+			handle any
+				skip
+			elsehandle none
+				if !lines[!x].onprojected(!interpos) and !lines[!y].onprojected(!interpos) then
+					--$p $!x $!y
+					do !z from !x + 2 to !y
+						!points[!z].delete()
+						handle any
+						elsehandle none
+							!radiuss[!z].delete()
+
+							!lines[!z - 1].delete()
+						endhandle
+
+
+					enddo
+					!lines[!x] = !lines[!x].to(!interpos)
+					!lines[!y] = !lines[!y].from(!interpos)
+
+					--!points.deletefrom(!x + 1,!y - !x)
+					!points[!x + 1] = !interpos
+					!radiuss[!x + 1] = 0
+
+				endif
+			endhandle
+		enddo
+	enddo
+
+
+
+
+
+	!points.compress()
+	!radiuss.compress()
+
+
+	------------------------------------------remove intersection points e
+	$)
+
+	!result = array()
+	!result.append(!points)
+	!result.append(!radiuss)
+	return !result
+
+	--return !points
+endfunction
+êü

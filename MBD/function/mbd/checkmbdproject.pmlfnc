@@ -1,0 +1,32 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= February 7th 2024
+--[Function]:	
+------------------------------------------
+
+define function !!checkmbdproject() is boolean
+	var !projectnumber project number
+	--!path = !!pml.getpathname('mbdinputdata.pmlobj').before('object/mbdinputdata/') + 'inputdata/' + !projectnumber
+    if  !projectnumber eq 'JDY' then
+        !projectnumber = '2410'
+    endif
+    !path = !!pml.getpathname('mbdinputdata.pmlobj').before('object/mbdinputdata/') + 'inputdata/' + !projectnumber
+    --q var !path
+	--!path = !!pml.getpathname('mbdinputdata.pmlobj').before('object/mbdinputdata/') + 'inputdata/2016'
+	!dir = object file(!path)
+	if !dir.exists() then
+		return true
+	else
+        !path = !!pml.getpathname('mbdinputdata.pmlobj').replace('\\','\').before('object\mbdinputdata\') + 'inputdata/' + !projectnumber
+        !dir = object file(!path)
+        if !dir.exists() then
+            return true
+        else
+            return false
+        endif
+	endif
+endfunction

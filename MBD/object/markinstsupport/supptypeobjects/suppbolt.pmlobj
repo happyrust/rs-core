@@ -1,0 +1,48 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= October 12nd 2023
+--[Function]:
+------------------------------------------
+
+define object suppbolt
+	member .pos is position
+	member .dir is direction
+	member .apos is position
+	member .lpos is position
+	member .axis is line
+	member .mems is array
+
+	member .upstream is array		$*instore suppconnection of upstream
+	member .downstream is array		$*instore suppconnection of downstream
+
+	member .connections is array	$*instore rest suppconnection which is hard to say upstream or downstream
+endobject
+
+define method .suppbolt(!item is any)
+	!type = type of $!item
+	if !type eq 'PJOI' then
+		!this.pos = pos of $!item wrt/*
+		!p4pos = p4 pos of $!item wrt/*
+		!p5pos = p5 pos of $!item wrt/*
+		!this.apos = !p4pos
+		!this.lpos = !p5pos
+		!this.dir = !this.apos.direction(!this.lpos)
+	elseif !type eq 'HELE' then
+		!this.pos = pos of $!item wrt/*
+		!this.apos = apos of $!item wrt/*
+		!this.lpos = lpos of $!item wrt/*
+		!this.dir = !this.apos.direction(!this.lpos)
+	else
+		$p This type is not considered yet
+		return
+	endif
+	!this.axis = !this.apos.line(!this.lpos)
+	!name = name of $!item
+	!this.mems.append(!name)
+endmethod
+
+'

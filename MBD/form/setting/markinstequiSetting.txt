@@ -1,0 +1,13 @@
+﻿colcombobox:blue
+enhancered:TRUE
+textoffsetdis:5
+dimcheight:70
+Civilcheight:350
+Roomcheight:350
+elThickCheight:70
+equicheight:350
+waytogetwall:自动
+indrawlist:False
+generatejson:False
+filepath:D:\MBD\EM9EQUI\
+autoupdatejson:False

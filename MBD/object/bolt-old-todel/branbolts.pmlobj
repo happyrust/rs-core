@@ -1,0 +1,84 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= April 17th 2023
+--[Function]:
+------------------------------------------
+
+--Method:
+--Public:
+--branbolts(!item is any)   												$*init method
+--getmaterial() is array													$*get bolt material(array of isomaterial)
+
+--Private:
+--getbolts()																$*
+
+define object branbolts
+	member .branname is string
+	--member .bolts is array			$* array of object suibolt
+	--member .membolts is array		$* array of membolt
+	member .boltdatas is array
+	--member .materials is array		$* array of isomaterial
+endobject
+
+define method .branbolts(!item is any)
+	!this.branname = name of bran of $!item
+	handle any
+		return
+	endhandle
+
+	var !mode mode
+	forwards
+	!allmems = member of $!this.branname
+	!mems = !allmems.evaluate(object block('!allmems[!evalindex].name'))
+
+	!allusedmempnums = array()
+	!allusedmems = array()
+
+	do !mem values !mems
+		!index = !allusedmems.findfirst(!mem)
+		if !index.set() then			$* valv will be used twice, so this is not good
+			if !allusedmempnums[!index].objecttype().string() eq 'STRING' and !allusedmempnums[!index].lowcase() eq 'all' then
+				skip
+			else
+				!membolt = object membolt(!mem,!allusedmempnums[!index])
+			endif
+		else
+			!membolt = object membolt(!mem)
+		endif
+
+
+		if !membolt.boltdatas.set() then
+			!inbran = false
+			do !boltdata values !membolt.boltdatas
+				if !mems.findfirst(!boltdata.boltitem).set() then
+				-----------------------
+				-----------------------only add bolt when boltitem is in this bran
+					!this.boltdatas.append(!boltdata)
+					!inbran = true
+				endif
+			enddo
+			if !inbran then
+				!result = !membolt.getusedmempnums()
+				!allusedmems.appendarray(!result[1])
+				!allusedmempnums.appendarray(!result[2])
+			endif
+		endif
+	enddo
+	$!mode
+endmethod
+
+define method .getmaterial() is array
+	!materials = array()
+	do !boltdata values !this.boltdatas
+		!material = !boltdata.getmaterial()
+		if !material.set() then
+			!materials.append(!material)
+		endif
+	enddo
+	return !materials
+endmethod
+

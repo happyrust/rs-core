@@ -1,0 +1,209 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= August 2nd 2023
+--[Function]:
+------------------------------------------
+
+define function !!mergePoints(!inputpoints is array) is array
+	!points = !inputPoints
+
+	!radiuss = array()
+	do !x indices !points
+		!radiuss[!x] = 0
+	enddo
+
+	!twoarr = !!mergePointsRadiuss(!points,!radiuss)
+	return !twoarr[1]
+
+
+	--------------------------------old way 202304251507
+	!points = !inputPoints
+	!points.compress()
+
+	!size = !points.size()
+	!oldpoint = !points[1]
+
+	----------------------------------------------------------------------------------------------------------------------remove the repeated point s
+	do !x from 2 to !size
+		if !points[!x].distance(!oldpoint) lt 0.1 then		$* remove repeated point when index is not size
+			!points[!x].delete()
+			skip
+		else
+			!oldpoint = !points[!x]
+		endif
+		if !x eq !size then
+			if !points[!x].distance(!points[1]) lt 0.1 then		$* remove repeated point when index is size
+				!points[!x].delete()
+			endif
+		endif
+	enddo
+	!points.compress()
+	----------------------------------------------------------------------------------------------------------------------remove the repeated point e
+
+	$(
+	do
+		!size = !points.size()
+		if !size ge 3 then
+			do !x from 1 to !size
+				if !x eq 1 then
+					!xx = !size - 1
+				elseif !x eq 2 then
+					!xx = !size
+				else
+					!xx = !x - 2
+				endif
+				if !points[!x].distance(!points[!xx]) lt 0.1 then
+					!points[!x].delete()
+					!points[!xx].delete()
+				endif
+			enddo
+		endif
+		!points.compress()
+	enddo
+	$)
+
+	----------repeated the point one the line of previous point and next point, and if the pre one and next one are same, then delete one of them s
+	!size = !points.size()
+	!dirs = array()
+	do !x indices !points
+		if !x gt 1 then
+			!dirs.append(!points[!x - 1].direction(!points[!x]))
+		else
+			!dirs.append(!points[!size].direction(!points[!x]))
+		endif
+	enddo
+
+	!cx = 1
+	!px = !size
+	!nx = 2
+
+	!delxs = array()
+	do !x indices !dirs
+		!angle = !dirs[!cx].angle(!dirs[!nx])
+
+		if !angle lt 0.1 or !angle gt 179.9 then
+			!points[!cx].delete()								$* remove point goes on same line
+			!delxs.append(!cx)
+			if !points[!px].distance(!points[!nx]) lt 0.1 then
+				!points[!px].delete()							$* remove point which same with previous 2 point
+				!delxs.append(!px)
+			endif
+		endif
+
+		if !delxs.size() ge !size - 2 then
+			break
+		endif
+
+
+		do
+			!cx = !cx + 1
+			if !cx gt !size then
+				!cx = 1
+			endif
+			if !delxs.findfirst(!cx).unset() then
+				break
+			endif
+		enddo
+
+		!px = !cx
+		do
+			!px = !px - 1
+			if !px eq 0 then
+				!px = !size
+			endif
+			if !delxs.findfirst(!px).unset() then
+				break
+			endif
+		enddo
+
+		!nx = !cx
+		do
+			!nx = !nx + 1
+			if !nx gt !size then
+				!nx = 1
+			endif
+			if !delxs.findfirst(!nx).unset() then
+				break
+			endif
+		enddo
+	enddo
+
+	$(
+	do !x indices !dirs
+		if !x ne 1 then
+			!pre = !x - 1
+		else
+			!pre = !size
+		endif
+		if !x ne !size then
+			!next = !x + 1
+		else
+			!next = 1
+		endif
+		!angle = !dirs[!x].angle(!dirs[!xx])
+		if !angle lt 0.1 or !angle gt 179.9 then
+			!points[!x].delete()
+			if !points[!next].distance(!points[!pre]) lt 0.1 then
+				!points[!pre].delete()
+			endif
+		endif
+	enddo
+	$)
+	!points.compress()
+	----------repeated the point one the line of previous point and next point, and if the pre one and next one is same, then delete one of them s
+
+
+	------------------------------------------remove intersection points s			,actually one ploo could include more than 1 piece os block
+	!size = !points.size()
+	!lines = array()
+	do !x indices !points
+		if !x ne !size then
+			!line = !points[!x].line(!points[!x + 1])
+		else
+			!line = !points[!x].line(!points[1])
+		endif
+		!lines.append(!line)
+	enddo
+	do !x from 1 to !size - 2
+		if undefined(!points[!x]) then
+			skip
+		endif
+		do !y from !x + 2 to !size
+			if !x eq 1 and !y eq !size then
+				skip
+			endif
+			if undefined(!points[!y]) then
+				skip
+			endif
+			!interpos = !lines[!x].intersection(!lines[!y])
+			handle any
+				skip
+			elsehandle none
+				if !lines[!x].onprojected(!interpos) and !lines[!y].onprojected(!interpos) then
+--$p $!x $!y
+					do !z from !x + 2 to !y
+						!points[!z].delete()
+						handle any
+						endhandle
+					enddo
+					--!points.deletefrom(!x + 1,!y - !x)
+					!points[!x + 1] = !interpos
+				endif
+			endhandle
+		enddo
+	enddo
+
+
+	!points.compress()
+
+	------------------------------------------remove intersection points e
+
+
+
+	return !points
+endfunction
+«Ÿ

@@ -1,0 +1,96 @@
+ï»¿------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= May 10th 2023
+--[Function]:	get max diameter of element in pipe or support element(such as hele)
+--
+--[REV]
+--Revision		= 1.1
+--Date			= May 15th 2023
+--[Function]:	delete sdsh				$* because the dish may not be the part of dimension. e.g. dish at the top of valv
+------------------------------------------
+
+define function !!getPipeMaxdia(!item is any) is real
+	!dbref = object dbref(!item)
+	!maxdis = 0
+	!gmss = gmref of catref of $!item
+	handle any
+		!gmss = gstref of catref of $!item
+		handle any
+			return 0
+		endhandle
+	endhandle
+	--$p $!item
+
+	!mems = mem of $!gmss
+	handle any
+		return 0
+	endhandle
+	--!goodtypes = split('LCYL SSCY SCYL sdsh')
+	--!goodtypes = split('LCYL SSCY SCYL LSNO')	$*when ptdiam is same with pbdiam, lsno is like cyli
+	!goodtypes = split('LCYL SSCY SCYL')	$*when ptdiam is same with pbdiam, lsno is like cyli
+	do !x indices !mems
+		!mem = !mems[!x]
+		!memtype = type of $!mem
+
+		if !goodtypes.findfirst(!memtype).set() then
+			!level = level of $!mem
+			if !level[1] gt 6 or !level[2] lt 6 then
+				skip
+			endif
+
+			!tuflag = tuflag of $!mem
+			handle any
+			elsehandle none
+				if !tuflag.not() then
+					skip
+				endif
+			endhandle
+
+			--!obst = obst of $!mem
+			--q var !obst
+			--if !obst eq 2 then
+			--	skip
+			--endif
+
+			if !memtype eq 'LSNO' then
+				!tdiastring = ptdiam of $!mem
+
+				!tdia = !!evalCata(!dbref,!tdiaString)
+
+				!bdiastring = pbdiam of $!mem
+
+				!bdia = !!evalCata(!dbref,!bdiaString)
+
+				if !tdia eq !bdia then
+					!dia = !tdia
+				else
+					skip
+				endif
+			else
+				!diastring = pdiam of $!mem
+				--!dia = !dbref.evaluate(object block(!diastring))
+				!dia = !!evalCata(!dbref,!diaString)
+			endif
+
+			!ipara = ipara of $!item
+			handle any
+			elsehandle none
+				!dia = !dia - !ipara[1]
+				handle any
+				endhandle
+			endhandle
+			--!obst = obstruction of $!mem
+			--if !obst ne 2 and !obst ne 0 then
+			--	skip
+			--endif
+
+			!maxdis = max(!maxdis,!dia)
+		endif
+	enddo
+	return !maxdis
+endfunction
+¿

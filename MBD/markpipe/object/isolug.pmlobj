@@ -1,0 +1,47 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= September 15th 2023
+--[Function]:
+------------------------------------------
+
+define object isolug
+	member .name is string
+	member .attapos is position
+
+	member .pos is position
+	member .ori  is orientation
+	member .rinside is real
+	member .routside is real
+	member .angle is real
+	member .height is real
+	member .dir is direction
+	member .onpad is boolean
+
+	member .nsAndSpref is array	$*instore ns and spref
+
+	member .itemcode is string
+
+	member .touchitemradius is real
+endobject
+
+define method .isolug(!name is string,!pos is position,!ori is orientation,!rinside is real,!routside is real,!angle is real,!height is real,!dir is direction)
+	!this.name = !name
+	!this.attapos = pos of $!this.name wrt/*
+	!this.pos = !pos
+	!this.ori = !ori
+	!this.rinside = !rinside
+	!this.routside = !routside
+	!this.angle = !angle
+	!this.height = !height
+	!this.dir = !dir
+
+	!this.itemcode = :itemcode of $!name
+endmethod
+
+
+
+Œ

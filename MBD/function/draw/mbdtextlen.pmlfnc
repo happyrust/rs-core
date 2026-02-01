@@ -1,0 +1,50 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= May 9th 2023
+--[Function]:
+------------------------------------------
+define function !!mbdtextlen(!text is string) is real
+--$(
+	!letters = split(|1 2 3 4 5 6 7 8 9 0 a b c d e f g h i j k l m n o p q r s t u v w s y z A B C D E F G H I J K L M N O P Q R S T U V W S Y Z ~ ` ! @ # $ % ^ & * ( ) - _ = + { [ } ] \ ; : ' " , < . > / ? ~ ¡¤ £¡ @ # £¤ % ¡­ ¡­ & * £¨ £© ¡ª ¡ª - + = { ¡¾ } ¡¿ ¡¢ £º £» ¡° ¡¯ ¡¶ £¬ ¡· ¡£ £¿ ¡¢|)
+	!lens = split(|0.5741 0.5762 0.5761 0.5764 0.5762 0.5761 0.5761 0.5761 0.5761 0.5761 0.5762 0.5759 0.5204 0.5759 0.5762 0.2989 0.5760 0.5757 0.2417 0.2428 0.5201 0.2417 0.8526 0.5756 0.5763 0.5759 0.5759 0.3533 0.5201 0.2984 0.5756 0.5206 0.7429 0.5201 0.5206 0.5204 0.6878 0.6866 0.7421 0.7417 0.6865 0.6304 0.7975 0.7414 0.2968 0.5198 0.6871 0.5759 0.8523 0.7414 0.7977 0.6866 0.7979 0.7421 0.6869 0.6312 0.7414 0.6877 0.9645 0.6869 0.6877 0.6312 0.6040 0.3523 0.2970 1.0351 0.5768 0.2981 0.9086 0.4895 0.6872 0.4093 0.3529 0.3529 0.3532 0.5210 0.6037 0.6037 0.3543 0.2978 0.3543 0.2978 0.2987 0.2969 0.2969 0.1154 0.3750 0.2969 0.6037 0.2969 0.6037 0.2987 0.5760 0.6040 0.2969 1.0119 1.0351 0.5768 1.0164 0.9086 1.0185 1.0185 0.6872 0.4093 1.0132 1.0132 1.0210 1.0210 0.3532 0.6037 0.6037 0.3543 1.0137 0.3543 1.0137 1.0133 1.0118 1.0119 0.3531 0.2418 1.0153 1.0119 1.0153 1.0137 1.0155 1.0133|)
+	!letters.append('|')
+	!lens.append('0.2788')
+	!letters.append(' ')
+	!lens.append('0.2987')
+
+
+
+	!alllen = 0
+	!textsize = !text.length()
+	do !x from 1 to !textsize
+		!letter = !text.substring(!x,1)
+		!index = !letters.findfirst(!letter)
+		if !index.set() then
+			!alllen = !alllen + !lens[!index].real()
+		else
+			!alllen = !alllen + 1.02
+		endif
+	enddo
+
+	return !alllen
+--$)
+
+
+
+
+
+--define function !!mbdtextlen(!text is string, !cheight is real) is real
+	!len = !text.length()
+	if !len gt 2 then
+		--!len = (!len - 2) * 0.8 + 2 * 1.1	$* for Fx/Gx/Bxx
+		!len = (!len - 2) * 0.75 + 2 * 1.1	$* for Fx/Gx/Bxx
+	elseif !len eq 2 then
+		!len = !len * 1.05		$* for(Gx)
+	endif
+	--!len = !len * !cheight * 0.75
+	return !len
+endfunction

@@ -1,0 +1,19 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= May 17th 2023
+--[Function]:
+------------------------------------------
+
+define function !!checkanglesinter(!angles1 is array, !angles2 is array) is boolean
+	if !!angleinangles(!angles1[1],!angles2[1],!angles2[2]) or !!angleinangles(!angles1[2],!angles2[1],!angles2[2]) then
+		return true
+	endif
+	if !!angleinangles(!angles2[1],!angles1[1],!angles1[2]) or !!angleinangles(!angles2[2],!angles1[1],!angles1[2]) then
+		return true
+	endif
+	return false
+endfunction

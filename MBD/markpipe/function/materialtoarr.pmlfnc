@@ -1,0 +1,60 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= September 22nd 2023
+--[Function]:
+------------------------------------------
+
+define function !!materialtoarr(!materials is array, !atts is array) is array	$*atts must include 'quantity' ('weight' is unnecessary)
+	!rowarrs = array()
+	do !isomaterial values !materials
+		!rowarr = array()
+		do !x indices !atts
+			!att = !atts[!x]
+			!com = '!rowarr[!x] = !isomaterial.' + !att + '.string()'
+			$!com
+			handle any
+				!rowarr[!x] = ''
+				$p No att: $!att in Material object
+			elsehandle none
+				if !isomaterial.unit.upcase() eq 'M' then
+					if !att.lowcase() eq 'perweight' then
+						if !rowarr[!x].real() ne 0 then
+							!rowarr[!x] = string(!rowarr[!x].real() * 1000,'D3')
+						else
+							--!rowarr[!x] = '²»Ïê'
+							!rowarr[!x] = '/'
+						endif
+					elseif !att.lowcase() eq 'quantity' then
+						!tempreal = !rowarr[!x].real().value() / 1000
+						!rowarr[!x] = !tempreal.string('d3') + 'm'
+					endif
+				else
+					if !att.lowcase() eq 'perweight' then
+						if !rowarr[!x].real() ne 0 then
+							!rowarr[!x] = string(!rowarr[!x].real(),'D3')
+						else
+							--!rowarr[!x] = '²»Ïê'
+							!rowarr[!x] = '/'
+						endif
+					endif
+				endif
+				if !att.lowcase() eq 'weight' then
+					if !rowarr[!x].real() ne 0 then
+						!rowarr[!x] = !rowarr[!x].real().string('d3')
+					else
+						--!rowarr[!x] = '²»Ïê'
+						!rowarr[!x] = '/'
+					endif
+				endif
+			endhandle
+		enddo
+        --q var !rowarr
+		!rowarrs.append(!rowarr)
+	enddo
+	return !rowarrs
+endfunction
+

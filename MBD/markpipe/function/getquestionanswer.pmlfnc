@@ -1,0 +1,46 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= September 22nd 2023
+--[Function]:
+------------------------------------------
+
+define function !!getquestionanswer(!spco is string) is array
+	!result = array()
+	!spref = name of $!spco
+
+	!result[1] = array()
+	!result[2] = array()
+	!ce = !spref
+	do !x from 1 to 100
+		!ans = true
+		var !tanswer tanswer of $!ce
+		handle any
+			!ans = false
+		elsehandle none
+			if !tanswer eq 'unset' or !tanswer eq '' then
+				var !tanswer answer of $!ce
+			endif
+			!result[2].append(!tanswer)
+		endhandle
+
+		var !question question of $!ce
+		handle any
+			if not(!ans) then
+				break
+			endif
+		elsehandle none
+			!result[1].append(!question)
+		endhandle
+		!ce = name of owner of $!ce
+	enddo
+	!result[1].invert()
+	!result[2].invert()
+
+	label /end
+	return !result
+endfunction
+/¡

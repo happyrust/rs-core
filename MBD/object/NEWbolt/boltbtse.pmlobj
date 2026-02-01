@@ -1,0 +1,68 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= August 31st 2023
+--[Function]:
+------------------------------------------
+
+--Method:
+--Public method:
+--boltBtse(!btse is any)													$*
+
+--Private method:
+
+define object boltBtse
+	member .name is string
+
+	member .bltps is array
+	--member .bltpsize is real
+	member .same is boolean
+
+	-----------------------
+	-----------------------following attributes are useless normally
+	member .noff is real
+	member .btyp is string
+	member .bdia is real
+endobject
+
+define method .boltBtse(!btse is any)
+    --$p 123456
+	if type of $!btse ne 'BTSE' then
+		return
+	endif
+	!this.name = name of $!btse
+    --q var !this.name
+	var !bltps coll all bltp for $!btse
+	if !bltps.unset() then
+		return
+	endif
+
+	!this.btyp = btype of $!btse
+	!this.noff = noff of $!btse
+
+	--!this.bltpsize = !bltps.size()
+	!bdia = 0
+	!bthkness = ''
+	!btype = ''
+	!this.same = true
+	do !bltp values !bltps
+		!bltpdata = object boltbltp(!bltp)
+		!this.bltps.append(!bltpdata)
+		if !this.same then
+			if !bdia eq 0 then
+				!bdia = !bltpdata.bdia
+				!bthkness = !bltpdata.bthk
+				!btype = !bltpdata.btyp
+			elseif !bltpdata.bdia ne !bdia or !bltpdata.bthk ne !bthkness or !bltpdata.btyp ne !btype then
+				!this.same = false
+			endif
+		endif
+	enddo
+
+	!bdiastring = bdiam of $!btse
+	!this.bdia = !bdiastring.replace('(','').replace(')','').trim().real()
+endmethod
+K

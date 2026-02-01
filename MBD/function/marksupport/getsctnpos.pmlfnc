@@ -1,0 +1,41 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= March 5th 2024
+--[Function]:
+------------------------------------------
+
+define function !!getsctnpos(!sctn is any) is position
+	if !sctn.objecttype() eq 'DBREF' then
+		!dbref = !sctn
+	else
+		!dbref = object dbref(!sctn.string())
+	endif
+	!pos = pos of $!sctn wrt/*
+	!ori = ori of $!sctn wrt/*
+	!jus = jus of $!sctn
+    !allJus = plna of $!sctn
+	if !jus.unset() or !jus eq '' then
+		!jus = 'NA'
+    else
+        if  !allJus.Findfirst(!jus).unset() then
+            !jus = 'NA'
+        endif
+	endif
+	--q var !jus !sctn
+	var !plins coll all plin with(pkey eq !jus) for pstref of catref of $!sctn
+	!jusplin = !plins[1]
+	!px = px of $!jusplin
+
+	!xdis = !!evalCata(!dbref,!px)
+	!onepos = !pos.offset(!ori.xdir().opposite(),!xdis)
+
+	!py = py of $!jusplin
+	!ydis = !!evalCata(!dbref,!py)
+	!onepos = !onepos.offset(!ori.ydir().opposite(),!ydis)
+	return !onepos
+endfunction
+–

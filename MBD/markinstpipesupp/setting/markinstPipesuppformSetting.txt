@@ -1,0 +1,9 @@
+﻿colcombobox:blue
+enhancered:TRUE
+cheightbili:0.4
+autocheight:true
+autocheightbili:0.5
+sepSmallDim:true
+ignoreline:true
+generatejson:false
+filepath:D:\MBD\EM9PIPESUPP\

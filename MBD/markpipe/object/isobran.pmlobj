@@ -1,0 +1,6442 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= April 3rd 2023
+--[Function]:	deal lindim/mlabel/data of material/data of attribution for bran in project MBD
+--
+--[REV]
+--Revision		= 1.1
+--Date			= September 22nd 2023
+--[Function]:	lazy load
+------------------------------------------
+
+--Method:
+--Public method:
+--isobran(!bran is any, !minslope is real, !maxslope is real, !usegooddirs is boolean, !dimdirs is array, !chardirs is array,!cheight is real)  	$*init
+--deletestru()  															$*delete all dim mlabel aid of this bran
+--deleteType(!type is string)   											$*delete one type
+--draw(!type is string) 													$*draw one type
+--draw()																	$*draw all
+
+--getBranAttArr(!BranAtts is array) is array								$*get attrubition of branch		for list1 in markpipeform
+--sumMaterials(!atts is array) is array    $*atts must include 'quantity' and 'weight'  	$*get materials		for list2 in markpipeform
+--getweldlist() is array													$*get weld for list2 in markpipeform
+--getSpecialMaterials(!atts is array) is array  							$*get materials without summarizing		for list4 in markpipeform
+--getcuttubi(!atts is array) is array   									$*get cut pipe length		for list5 in markpipeform
+--getJsonData(!materialAttS is array, !materialAttShow is array, !BranAtts is array ,!branAttShow is array ,!cutpipelengthatts is array, !cutpipelengthattshow is array, !merge is boolean) is array	$*
+-------------get json
+
+
+
+--Private method:
+--addDmfMemUsedDir(!mem is any , !dir is direction) 						$*add used dir of dmf mem
+--drawdmf() 																$*draw dmf
+
+-------------get data of bran
+--split()		$* get all objects   										$*
+--getspecialnum()   														$*useless
+--getatts() 																$*
+--getdmfarrs()  															$*
+--getisolines()		$* 按直管段分   										$*
+--getBoltdatas()															$*
+--getmaterials()															$*
+--setMaterialElementNumber()												$*
+--settubinum()  															$*
+--getSlopes()   															$*
+--gettags()        $*tee olet href tref atta elbo   						$*
+--getwelds()																$*
+
+
+----------put data into isoline
+--putIntoIsoLine()  														$*
+--dealaccordingboltdata(!isoline is isoline,!object is any)					$*mark sure the bolt format is like this F8/G9/B10
+
+--------------get json data
+--weldJson() is array   													$*
+--materialsJson(!materialAttS is array, !materialAttShow is array ) is array	$*
+--specialmaterialsJson(!materialAttS is array, !materialAttShow is array ) is array 	$*
+--branAttJson(!BranAtts is array, !branAttShow is array) is array   		$*
+--getDimJson() is array 													$*
+--cutpipelengthJson(!cutpipelengthAttS is array, !cutpipelengthAttShow is array ) is array  	$*
+
+
+
+
+
+--只需要名字就可以得到branch的相关数据，后续需要处理时直接调用就可以
+define object isobran
+	--$(
+	member .branname is string
+	member .isinstpipe is boolean
+	member .isolines is array           $* array of isoline	分段处理，段之间的空间也会相互影响，在数据处理过程中会有相关处理过程
+
+	member .mbdstru is mbdstru
+
+	member .cheight is real		$*文字高度，会影响到整个标注画面
+	member .changeCheightAuto is boolean
+	member .changeCheightAutobili is real
+	member .sepSmallDim is boolean
+
+	member .plusstringcheightbili is real
+
+	member .cheightbili is real
+	member .maxSlope is real		$*最大坡度，再大，就用斜管标注了
+	member .minSlope is real		$*最小坡度，再小就不算坡度了
+
+
+	--member .dimDirs is array		$*尺寸标注优先选择的方向（三个）
+	--member .charDirs is array		$*文字优先选择的方向（三个）
+
+	--member .useGooddirs is boolean		$*true就用给出的dimdirs来计算方位，false的话就按某些算法（比如：与几何中心点的相对方位）自行计算方位
+
+
+	member .firstDimTimes is real		$*离管子最近的尺寸标注距管外壁的距离
+	member .secondDimTimes is real		$*离管子第二近的尺寸标注距管外壁的距离
+
+
+	member .branmems is array		$*branch member,包括tubi
+
+	member .objects is array			$*所有标注出来的东西都单为object。比如一个尺寸标注，一个材料号
+
+	--$)
+	member .pipeatta is pipeatta
+	member .getattadata is boolean		$* for atta
+	--member .attadatas is array			$* for atta
+	--member .AttaClass is array			$* for atta
+	member .adjustwelds is array		$* for adjustweld
+	member .checkadjust is boolean		$* if checked adjust welds
+
+	member .isombdangles is array
+	member .isoslopes is array
+	member .tags is array
+	member .materials is array		$*材料信息
+	member .summaterials is array
+
+	member .summaterialsnodestrings is array
+	member .cuttubinodestrings is array
+	member .materialsnodestrings is array
+
+	member .cutparts is array
+	member .branmlabel is isotag	$*管道名称加管径
+	member .weldobjects is array
+	member .welds is array			$*焊点信息
+	member .zyjc is array
+	member .dmfarrs is array
+	member .benchmarks is array		$*这个还没用上
+
+
+	member .duty is string			$*branch 属性
+	member .pspec is string
+	member .rccm is string
+	member .clean is string
+	--member .temp is real
+    --modify by jyg 20240902
+    member .temp is string
+	member .press is real
+	member .ispec is string
+	--member .insuthick is real
+	member .insuthick is string		$* because sometimes it should be blank (accordding to pipe team in SJZ)
+	member .tspec is string
+	member .powercal is string
+	member .swgd is string
+
+	member .fluid is string
+	member .azbz is string
+	member .protectgroup is string
+	------------------------------------------------------
+
+
+	--for polarsystem
+	member .usepolarsystem is boolean
+	member .ignoreline is boolean
+	member .considerprenextdir is boolean
+	member .lookangle is real
+	member .fromltor is boolean				$*the view is like the flow direction  is from left to right
+
+	member .branlookdirection is direction
+
+	member .wronglines is array
+
+	member .generatejson is boolean
+	member .filepath is string
+
+	member .drawtype is string					$* EM4 EM9
+
+
+	--for modelatt drawing and proofreading
+	!tempstrings = split('membermodelatt memberdrawinginfo memberproofreading')
+	do !string values !tempstrings
+		!tempfile = object file(!!commonpath() + !string + '.txt')
+		!lines = !tempfile.readfile()
+		do !line values !lines
+			if !line.trim().trim('	') ne '' then
+				$!line
+			endif
+		enddo
+	enddo
+endobject
+
+define method .isobran()
+	!this.checkadjust = false
+	!this.getattadata = false
+endmethod
+define method .isobran(!bran is any)
+	!this.branname = name of bran of $!bran
+	!this.setisinstpipe()
+	!this.getatts()
+	$(
+	!minslope = 0.001
+	!maxslope = 0.1
+	!this.isobran(!bran,!minslope,!maxslope)
+
+	!this.usepolarsystem = true
+	!this.ignoreline = false
+	$)
+endmethod
+
+
+define method .isobran(!bran is any, !minslope is real, !maxslope is real, !considerprenextdir is boolean, !lookangle is real,!drawtype is string)
+	!this.considerprenextdir = !considerprenextdir
+	!this.lookangle = !lookangle
+	!this.drawtype = !drawtype.trim().upcase()
+	!this.isobran(!bran,!minslope,!maxslope)
+endmethod
+
+define method .isobran(!bran is any, !minslope is real, !maxslope is real)
+	!this.branname = name of $!bran
+	!this.setisinstpipe()
+	!this.minslope = !minslope
+	!this.maxslope = !maxslope
+
+	!this.usepolarsystem = true
+	--!this.usepolarsystem = false
+
+	--!this.getspecialnum()
+
+	!this.getatts()
+	!this.firstdimtimes = 0.5
+	!this.seconddimtimes = 1.7
+	!this.mbdstru = object mbdstru(!this.branname)
+	return
+endmethod
+
+define method .setisinstpipe()
+	!sitename = name of site of $!this.branname
+	--q var !sitename
+	if !sitename.upcase().match('INST') ne 0 then
+		!this.isinstpipe = true
+	else
+		!this.isinstpipe = false
+	endif
+endmethod
+
+define method .getbranmems()
+	if !this.branmems.unset() then
+		var !mode mode
+		forwards
+		var !temparr coll all(bran mem) for $!this.branname
+		!this.branMems = !temparr
+		$!mode
+		!this.branmems.insert(1,'Head')
+		!this.branmems.append('Tail')
+	endif
+endmethod
+
+define method .clearcontent()
+	!this.objects = array()
+
+	!this.isolines = array()
+
+	!this.pipeatta = object pipeatta()
+	--!this.attadatas = array()
+	--!this.AttaClass = array()
+
+	!this.adjustwelds = array()
+	!this.checkadjust = false
+	!this.isombdangles = array()
+	!this.isoslopes = array()
+	!this.materials = array()
+	!this.summaterials = array()
+	!this.tags = array()
+	!this.welds = array()
+	!this.weldobjects = array()
+	!this.zyjc = array()
+	--!this.cutparts = array()
+	!this.benchmarks = array()
+	!this.dmfarrs = array()
+
+	!this.wronglines = array()
+endmethod
+
+$(
+define method .getlabelInfo()	$*useless
+	!this.clearcontent()
+	!this.getattadatas()
+	-----------------------the adjustweld and slope will be insert to first place in method putintoisoline,
+	-----------------------the slope would be in the front of adjustweld after inserting
+	!this.getadjustwelds()	$* must be first	the priority is higher than other object except slope/isombdangle
+	!this.getinstallationangles()	$* must be second the priority is higher than other object  except slope
+	!this.getslopes()	$* must be third	the priority is higher than all other object
+	!this.getmaterials()
+
+	!this.gettags()
+	!this.getwelds()
+	!this.getcutparts()
+	!this.getdmfarrs()
+endmethod
+$)
+
+
+-----------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------return materials for this bran
+define method .materials() is array
+	if !this.materials.unset() then
+		--if !this.summaterials.unset() then
+		$(
+		if !this.branmems.unset() then
+			var !mode mode
+			forwards
+			var !temparr coll all(bran mem) for $!this.branname
+			!this.branMems = !temparr
+			$!mode
+		endif
+
+
+		!this.getattadatas()
+		!this.getadjustwelds()	$* must be first	the priority is higher than other object except slope/isombdangle
+		$)
+		!this.getelementmaterials()
+
+		--!emptyarr = array()
+		--!temparr = !!sumMaterials(!emptyarr,!emptyarr,!this.materials)
+		--!this.summaterials = !temparr[1]
+	endif
+	return !this.materials
+	--return !this.summaterials
+endmethod
+
+define method .getattadatas()
+	if !this.getattadata.set() and !this.getattadata then
+		return
+	else
+		!this.getattadata = true
+	endif
+	!this.getbranmems()
+	!attas = array()
+	do !mem values !this.branmems
+		--$P $!MEM in getattadatas
+		if !mem eq 'Head' or !mem eq 'Tail' then
+			skip
+		endif
+		if type of $!mem eq 'ATTA' then
+			!attas.append(!mem)
+		endif
+	enddo
+	--q var !attas
+	!this.pipeatta = object pipeatta(!attas)
+    --q var !this.pipeatta
+	if !this.pipeatta.errors.set() then
+		!this.wronglines.appendarray(!this.pipeatta.errors)
+	endif
+
+    --q var !this.pipeatta
+	--!this.attadatas = !pipeatta.attaobjects
+	--!this.attaclass = !pipeatta.attaclass
+
+	return
+
+	$(
+	-----------------------------------------------------------------------------------
+	-----------------------------------------------------------------------------------Step 1:get attadatas which instores geometry data of atta
+	--!this.attadatas[1] = array()
+	--!this.attadatas[2] = array()
+	!padvolumes = array()
+	!attadatas = array()
+	do !mem values !this.branmems
+		--$P $!MEM in getattadatas
+		if !mem eq 'Head' or !mem eq 'Tail' then
+			skip
+		endif
+		if type of $!mem eq 'ATTA' then
+			!attadata = !this.getattageo(!mem)
+			if !attadata.set() then
+				!attadatas.appendarray(!attadata)
+				if !attadata[1].objecttype() eq 'ISOPAD' then
+					!ob = !attadata[1]
+					!padline = !ob.attapos.offset(!ob.ori.zdir(),!ob.height / 2).line(!ob.pos.offset(!ob.ori.zdir(), - !ob.height / 2))
+
+					!exists = false
+					do !x indices !padvolumes
+						if !padline.startposition.distance(!padvolumes[!x][1].startposition) lt 1 and !padline.endposition.distance(!padvolumes[!x][1].endposition) lt 1 $
+							and abs(!ob.routside - !padvolumes[!x][2]) lt 1 then
+							!exists = true
+							break
+						endif
+					enddo
+					if !exists.not() then
+						!onearr = array()
+						!onearr[1] = !padline
+						!onearr[2] = !ob.routside
+
+						!padvolumes.append(!onearr)
+					endif
+				endif
+				--!this.attadatas[1].append(!mem)
+				--!this.attadatas[2].append(!attadata)
+			endif
+		endif
+	enddo
+	--$P ASDFAFSD
+
+	-----------------------------------------------------------------------------------
+	-----------------------------------------------------------------------------------Step 2: set attribute: onpad
+	!onpadattas = array()
+	!onpadnums = array()
+
+	!attaPadNums = array()
+	do !x indices !attadatas
+		--$P $!X
+		if !attadatas[!x].objecttype() inset ('ISOLUG','ISOLEG') then
+			!atta = !attadatas[!x].name
+			!tempindex = !onpadattas.findfirst(!atta)
+			if !tempindex.set() then
+
+				!attaPadNums[!x] = !onpadnums[!tempindex]
+				!onpad = true
+			else
+				--!attapos = pos of $!atta wrt/*
+				!attapos = !attadatas[!x].attapos
+				!onpad = false
+				do !padindex indices !padvolumes
+					!padvolume = !padvolumes[!padindex]
+					if !padvolume[1].onprojected(!attapos) and !padvolume[1].distance(!attapos) lt !padvolume[2] then
+						!onpadattas.append(!atta)
+						!onpadnums.append(!padindex)
+
+						!onpad = true
+						!attaPadNums[!x] = !padindex
+						break
+					endif
+				enddo
+			endif
+			!attadatas[!x].onpad = !onpad
+		endif
+	enddo
+	!this.attadatas = !attadatas
+	--$P GOTATTADATAS
+	!this.classattadatas(!attaPadNums)
+	$)
+endmethod
+
+$(
+define method .classAttadatas(!attaPadNums is array)
+	!attadatas = !this.attadatas
+	!padposs = array()
+	!padangles = array()
+	!padheights = array()
+	!padradius = array()
+	!paditemcodes = array()
+	!padindices = array()
+
+
+	-----------------------
+	-----------------------no need to check onpad, since radius is checked
+	!lugposs = array()
+	--!lugPadNums = array()
+	!lugangles = array()
+	!lugheights = array()
+	!lugradius = array()
+	!lugitemcodes = array()
+	!lugindices = array()
+
+
+	!legposs = array()
+	--!legPadNums = array()	$* not sure about leg if padnum is needed
+	!legheights = array()
+	!legdias = array()
+	!legitemcodes = array()
+	!legonpads = array()
+	!legindices = array()
+
+
+	do !index indices !attadatas
+		--$P INDEX $!INDEX
+		--!attadata = !attadatas[!index]
+		--do !attadata values !attadatas
+		if !attadatas[!index].objecttype() eq 'ISOPAD' then
+			!pos = !attadatas[!index].attapos
+			!angle = !attadatas[!index].angle
+			!height = !attadatas[!index].height
+			!radius = !attadatas[!index].rinside
+			!itemcode = !attadatas[!index].itemcode
+
+			!find = false
+			do !x indices !padposs
+				if !paditemcodes[!x] eq !itemcode and !padposs[!x].distance(!pos) lt 1 and abs(!padangles[!x] - !angle) lt 0.1 and abs(!padheights[!x] - !height) lt 0.1 then	$*sometimes radius is not same . K104.002/ATTA-03
+					--if !paditemcodes[!x] eq !itemcode and !padposs[!x].distance(!pos) lt 1 and abs(!padangles[!x] - !angle) lt 0.1 and abs(!padheights[!x] - !height) lt 0.1 and abs(!padradius[!x] - !radius) lt 0.1 then
+					!padindices[!x].append(!index)
+					!find = true
+					break
+				endif
+			enddo
+			if !find.not() then
+				!padposs.append(!pos)
+				!padangles.append(!angle)
+				!padheights.append(!height)
+				!padradius.append(!radius)
+				!paditemcodes.append(!itemcode)
+
+				!temparr = array()
+				!temparr.append(!index)
+				!padindices.append(!temparr)
+			endif
+		elseif !attadatas[!index].objecttype() eq 'ISOLUG' then
+			!pos = !attadatas[!index].attapos
+			--!onpadnum =
+			!angle = !attadatas[!index].angle
+			!height = !attadatas[!index].height
+			!radius = !attadatas[!index].rinside
+			!itemcode = !attadatas[!index].itemcode
+
+			--!padnum = !attaPadNums[!index]
+			--handle any
+			--	!padnum = 0
+			--endhandle
+
+			!find = false
+			do !x indices !lugposs
+				if !lugitemcodes[!x] eq !itemcode and !lugposs[!x].distance(!pos) lt 1 and abs(!lugangles[!x] - !angle) lt 0.1 and abs(!lugheights[!x] - !height) lt 0.1 and abs(!lugradius[!x] - !radius) lt 0.1 then
+					--if !lugitemcodes[!x] eq !itemcode and (!lugposs[!x].distance(!pos) lt 1 or (!padnum eq ne 0 and !padnum eq !lugpadnums[!x])) and abs(!lugangles[!x] - !angle) lt 0.1 and abs(!lugheights[!x] - !height) lt 0.1 and abs(!lugradius[!x] - !radius) lt 0.1 then
+					!lugindices[!x].append(!index)
+					!find = true
+					break
+				endif
+			enddo
+			if !find.not() then
+				!lugposs.append(!pos)
+				!lugangles.append(!angle)
+				!lugheights.append(!height)
+				!lugradius.append(!radius)
+				!lugitemcodes.append(!itemcode)
+				--!lugpadnums.append(!padnum)
+
+
+				!temparr = array()
+				!temparr.append(!index)
+				!lugindices.append(!temparr)
+			endif
+		elseif !attadatas[!index].objecttype() eq 'ISOLEG' then
+			!pos = !attadatas[!index].attapos
+			!height = !attadatas[!index].height
+			!dia = !attadatas[!index].india
+			!onpad = !attadatas[!index].onpad
+			!itemcode = !attadatas[!index].itemcode
+
+			--!padnum = !attaPadNums[!index]
+			--handle any
+			--	!padnum = 0
+			--endhandle
+
+			!find = false
+			do !x indices !legposs
+				if !legitemcodes[!x] eq !itemcode and !legposs[!x].distance(!pos) lt 1 and abs(!legheights[!x] - !height) lt 0.1 and abs(!legdias[!x] - !dia) lt 0.1 and !legonpads[!x ] eq !onpad then
+					--if !legitemcodes[!x] eq !itemcode and (!legposs[!x].distance(!pos) lt 1 or (!padnum eq ne 0 and !padnum eq !legpadnums[!x])) and abs(!legheights[!x] - !height) lt 0.1 and abs(!legdias[!x] - !dia) lt 0.1 and !legonpads[!x ] eq !onpad then
+					!legindices[!x].append(!index)
+					!find = true
+					break
+				endif
+			enddo
+			if !find.not() then
+				!legposs.append(!pos)
+				!legheights.append(!height)
+				!legdias.append(!dia)
+				!legonpads.append(!onpad)
+				!legitemcodes.append(!itemcode)
+				--!legpadnums.append(!padnum)
+
+				!temparr = array()
+				!temparr.append(!index)
+				!legindices.append(!temparr)
+			endif
+		endif
+	enddo
+
+	!this.attaClass = array()
+	if !padindices.set() then
+		!this.attaclass.appendarray(!padindices)
+	endif
+	if !lugindices.set() then
+		-----------------------------------------------------------------------------------
+		-----------------------------------------------------------------------------------Step 1:use pad number first
+		-----------------------
+		-----------------------find groups with same pad number
+		!padnums = array()
+		!groupnums = array()
+		do !x indices !lugindices
+			!padnum = !attapadnums[!lugindices[!x][1]]
+			handle any
+			elsehandle none
+				!tempindex = !padnums.findfirst(!padnum)
+				if !tempindex.unset() then
+					!padnums.append(!padnum)
+					!groupnums[!padnums.size()] = array()
+					!groupnums[!padnums.size()].append(!x)
+				else
+					!groupnums[!tempindex].append(!x)
+				endif
+			endhandle
+		enddo
+
+
+		-----------------------
+		-----------------------merge groups with same pad number
+		!consideredIndices = array()
+		do !x indices !padnums
+			if !groupnums[!x].size() ge 2 then
+				do !y from 2 to !groupnums[!x].size()
+					!lugindices[!groupnums[!x][1]].appendarray(!lugindices[!groupnums[!x][!y]])
+					!lugindices[!groupnums[!x][!y]].delete()
+					!consideredIndices.append(!groupnums[!x][1])
+				enddo
+			endif
+		enddo
+
+		!indices = !lugindices.indices()
+		!difindices = !indices.difference(!consideredIndices)
+		-----------------------
+		-----------------------difindices is indices of rest groups which without same pad number with other groups
+
+
+
+		-----------------------------------------------------------------------------------
+		-----------------------------------------------------------------------------------Step 2:use dir,bore and distance
+		-----------------------
+		-----------------------get dir bore and line for each group
+		!lines = array()
+		!bores = array()
+		!poss = array()
+		!dirs = array()
+
+		!tolerancetimes = 2.5
+		do !index values !difindices
+			!object = !attadatas[!lugindices[!index][1]]
+			!attapos = !object.attapos
+			!atta = !object.name
+
+			--!bore = abore of pre tubi of $!atta
+			--!dn = !bore.real().value()
+			--!dir = dir of pre tubi of $!atta
+			!temparr = !this.getattatube(!atta)
+			!dn = !temparr[1]
+			!dir = !temparr[2]
+			!line = !attapos.offset(!dir, !tolerancetimes * !dn).line(!attapos.offset(!dir, - !tolerancetimes * !dn))
+			!lines.append(!line)
+			!bores.append(!dn)
+			!poss.append(!attapos)
+			!dirs.append(!dir)
+		enddo
+
+
+		-----------------------
+		-----------------------find group with same dir bore and distance is near than tolerance distance
+		!groups = array()
+		do !x from 1 to !difindices.size() - 1
+			if !groups.findfirst(!x).set() then
+				skip
+			endif
+			do !y from !x + 1 to !difindices.size()
+				if !groups.findfirst(!y).set() then
+					skip
+				endif
+				if !bores[!x] eq !bores[!y] and abs(!dirs[!x].angle(!dirs[!y]) - 90) gt 89.9 and !lines[!x].distance(!poss[!y]) lt !bores[!x] / 3 and !lines[!x].onprojected(!poss[!y]) then
+					!groups.append(!x)
+					!groups.append(!y)
+					break
+				endif
+			enddo
+		enddo
+
+		-----------------------
+		-----------------------merge groups
+		do !x from 1 to !groups.size() by 2
+			!lugindices[!difindices[!groups[!x]]].appendarray(!lugindices[!difindices[!groups[!x + 1]]])
+			!lugindices[!difindices[!groups[!x + 1]]].delete()
+		enddo
+
+
+
+		!lugindices.compress()
+		!this.attaclass.appendarray(!lugindices)
+	endif
+	if !legindices.set() then
+		!this.attaclass.appendarray(!legindices)
+	endif
+endmethod
+
+define method .getattageo(!atta is string) is array
+
+	!gm = name of gstref of catref of $!atta
+	handle any
+		!gm = name of gmre of catref of $!atta
+		handle any
+			!result = array()
+			return !result
+		endhandle
+	endhandle
+
+
+	!considertypes = split('SRTO LCYL SCYL SSCY')
+	!allarrs = array()
+	--!aod = aod of $!atta
+
+	!nsandsprefs = array()
+	!nss = array()
+	!mems = mem of $!gm
+
+	!partlegs = array()
+	!aod = !this.getattaaod(!atta)
+	do !onemem values !mems
+		--$p $!onemem
+		!mem = name of $!onemem
+		!memtype = type of $!mem
+
+		if !considertypes.findfirst(!memtype).unset() then
+			skip
+		endif
+
+		!tuflag = tuflag of $!mem
+		handle any
+			skip
+		elsehandle none
+			if !tuflag.not() then
+				skip
+			endif
+		endhandle
+
+		!level = level of $!mem
+		if !level[1] gt 6 or !level[2] lt 6 then
+			skip
+		endif
+		!obst = obstruction of $!mem
+		if !obst ne 2 and !obst ne 0 then
+			skip
+		endif
+
+
+		!object = !this.getcatamemdata(!mem,!atta)
+
+		if !object.objecttype() ne 'ARRAY' then
+			if !object.objecttype() eq 'ISOLEG' then
+				!dia = !object.outdia
+			else
+				!dia = !object.rinside * 2
+			endif
+			!tempindex = !nss.findfirst(!dia)
+			if !tempindex.unset() then
+
+				!nsAndSpref = !!gettubespco(!dia,!atta)
+
+				!nsandsprefs.append(!nsandspref)
+				!nss.append(!dia)
+			else
+				!nsAndSpref = !nsAndSprefs[!tempindex]
+			endif
+			!object.nsAndSpref = !nsAndSpref
+			if !object.objecttype() eq 'ISOLEG' and !dia gt !aod + 1 then
+				!partlegs.append(!object)
+			else
+				!allarrs.append(!object)
+			endif
+		endif
+	enddo
+
+
+	------------------------------------------------------for big leg that pipe go through it
+	if !partlegs.size() eq 2 then
+		!leg1 = !partlegs[1]
+		!leg2 = !partlegs[2]
+		if !leg1.attapos.distance(!leg2.attapos) lt 1 and abs(!leg1.outdia - !leg2.outdia) lt 1 and abs(!leg1.india - !leg2.india) lt 1 then
+			if !leg1.attapos.direction(!leg1.pos).angle(!leg2.attapos.direction(!leg2.pos)) gt 179 then
+				!newleg = !leg1
+				!newleg.pos = !leg1.pos.midpoint(!leg2.pos)
+				!newleg.height = !leg1.height + !leg2.height
+				!allarrs.append(!newleg)
+				golabel /nopartlegs
+			endif
+		endif
+	endif
+
+
+	!allarrs.appendarray(!partlegs)
+	label /nopartlegs
+	return !allarrs
+endmethod
+
+
+define method .getattatube(!atta is string) is array
+	!abore = abore of $!atta
+	handle any
+	endhandle
+	!aod = aod of $!atta
+	handle any
+		!aod = 0
+	endhandle
+
+	if undefined(!bore) or !bore.unset() or !aod.unset() or !bore eq 0 or !aod eq 0 then
+		var !mode mode
+		if !mode eq 'Forwards' then
+			!tube = pre tubi of $!atta
+			handle any
+			elsehandle none
+				golabel /gottube
+			endhandle
+		else
+			!tube = next tubi of $!atta
+			handle any
+			elsehandle none
+				golabel /gottube
+			endhandle
+		endif
+
+		!tube = !!getpremem(!atta)
+		if !tube eq '' then
+			!tube = !!getnextmem(!atta)
+		endif
+
+		label /gottube
+		!bore = abore of $!tube
+		--!dir = ldir of $!tube
+		!aod = aod of $!tube
+	endif
+	!dir = ldir of $!atta
+
+	!dn = !bore.real().value()
+	!result = array()
+	!result.append(!dn)
+	!result.append(!dir)
+	!result.append(!aod)
+	--!result
+	return !result
+endmethod
+$)
+
+$(
+define method .getcatamemdata(!mem is string, !atta is string) is any
+	!result = array()
+	!attapos = pos of $!atta wrt/*
+	--!aod = aod of $!atta
+	!temparr = !this.getattatube(!atta)
+	!aod = !temparr[3]
+	!memtype = type of $!mem
+	if !memtype eq 'SRTO' then
+		!atts = split('paax pbax pdia phei')
+	else
+		if !memtype eq 'LCYL' or !memtype eq 'NLCY' then
+			!atts = split('paxi pdia pbdi ptdi')
+		elseif !memtype eq 'SCYL' or !memtype eq 'NSCY' then
+			!atts = split('paxi phei pdia pdis')
+		elseif !memtype eq 'SSCY' or !memtype eq 'NSSC' then
+			!atts = split('paxi phei pdia pdis')
+		else
+			return !result
+		endif
+	endif
+	do !x indices !atts
+		!att = !atts[!x]
+		!com = '!string = ' + !att + ' of $' + '!mem'
+		$!com
+		handle any
+			return !result
+		elsehandle none
+			!values[!x] = !!evalCata(!atta,!string)
+			handle any
+				return !result
+			endhandle
+		endhandle
+	enddo
+
+	if !memtype eq 'SRTO' then
+		!dirpos1 = !values[!atts.findfirst('paax')]
+		!dir1 = !dirpos1[1]
+		!pos1 = !dirpos1[2]
+
+		!dirpos2 = !values[!atts.findfirst('pbax')]
+		!dir2 = !dirpos2[1]
+		!pos2 = !dirpos2[2]
+
+		!diameter = !values[!atts.findfirst('pdia')]
+
+		!angle = 180 - !dir1.angle(!dir2)
+		!zdir = !dir1.orthogonal(!dir2)
+		handle any
+			!zdir = !dir1.orthogonal(!pos1.direction(!pos2))
+		endhandle
+
+		!tocendir1 = !zdir.orthogonal(!dir1)
+		!tocendir2 = !dir2.orthogonal(!zdir)
+
+		!radiusline1 = !pos1.line(!pos1.offset(!tocendir1,1000))
+		!radiusline2 = !pos2.line(!pos2.offset(!tocendir2,1000))
+
+		!pos = !radiusline1.intersection(!radiusline2)
+		handle any
+			!pos = !pos1.midpoint(!pos2)
+		endhandle
+		!radius = !pos1.distance(!pos)
+
+		!rinside = !radius - !diameter / 2
+		!routside = !radius + !diameter / 2
+
+		!xdir = !pos.direction(!pos2)
+		!ori = x is $!xdir and z is $!zdir
+
+		!arc = object arc(!pos,!ori,0,!angle / 2,!routside,true)
+		!dir = !arc.angledirection(!arc.endangle)
+
+		!height = !values[!atts.findfirst('phei')]
+		if !height eq 0 or !angle eq 0 or $!routside eq 0 or !rinside eq !routside then
+			return !result
+		endif
+
+		if !routside gt !aod / 2 then
+			!object = object isopad(!atta,!pos,!ori,!rinside,!routside,!angle,!height,!dir)
+		else
+			!object = object isolug(!atta,!pos,!ori,!rinside,!routside,!angle,!height,!dir)
+		endif
+	else
+		if !memtype eq 'LCYL' or !memtype eq 'NLCY' then
+			!dirpos = !values[!atts.findfirst('paxi')]
+			if !dirpos.objecttype() eq 'ARRAY' then
+				!dir = !dirpos[1]
+				!ppos = !dirpos[2]
+			else
+				!dir = !dirpos
+				!ppos = !attapos
+			endif
+
+			!theight = !values[!atts.findfirst('ptdi')]
+			!bheight = !values[!atts.findfirst('pbdi')]
+			!height = abs(!theight - !bheight)
+			!diameter = !values[!atts.findfirst('pdia')]
+			!pos = !ppos.offset(!dir,(!bheight + !theight) / 2)
+			!ori = z is $!dir
+		elseif !memtype eq 'SCYL' or !memtype eq 'NSCY' then
+			!dirpos = !values[!atts.findfirst('paxi')]
+			if !dirpos.objecttype() eq 'ARRAY' then
+				!dir = !dirpos[1]
+				!ppos = !dirpos[2]
+			else
+				!dir = !dirpos
+				!ppos = !attapos
+			endif
+			!bdis = !values[!atts.findfirst('pdis')]
+			!height = abs(!values[!atts.findfirst('phei')])
+			!diameter = !values[!atts.findfirst('pdia')]
+			!pos = !ppos.offset(!dir,!bdis + !height / 2)
+			!ori = z is $!dir
+			if !height lt 0 then
+				!height = - !height
+			endif
+		elseif !memtype eq 'SSCY' or !memtype eq 'NSSC' then
+			!dirpos = !values[!atts.findfirst('paxi')]
+			if !dirpos.objecttype() eq 'ARRAY' then
+				!dir = !dirpos[1]
+				!ppos = !dirpos[2]
+			else
+				!dir = !dirpos
+				!ppos = !attapos
+			endif
+			!bdis = !values[!atts.findfirst('pdis')]
+			!height = !values[!atts.findfirst('phei')]
+			!diameter = !values[!atts.findfirst('pdia')]
+			!pos = !ppos.offset(!dir,!bdis + !height / 2)
+			!ori = z is $!dir
+		else
+			return !result
+		endif
+		if !height eq 0 or !diameter eq 0 then
+			return !result
+		endif
+
+		--$P $!mem $!atta
+		!memtype = type of $!mem
+		if not(!memtype inset ('NLCY','NSCY','NSSL')) then
+			var !nmems coll all (nlcy nscy nssl) for $!mem
+		else
+			!nmems = array()
+		endif
+		if !nmems.set() then
+			do !nmem values !nmems
+				--$p $!nmem $!atta nmem
+				!leg = !this.getcatamemdata(!nmem,!atta)
+				handle any
+					skip
+				endhandle
+
+				if !leg.objecttype() ne 'ISOLEG' then
+					skip
+				endif
+
+				!tempangle = !leg.ori.zdir().angle(!ori.zdir())
+				if !tempangle lt 1 or !tempangle gt 179 then
+					!india = !leg.outdia
+				else
+
+					----unnecessary to consider part which is inside of pipe
+					--if !aod lt !diameter then		$*it means the atta is large than pipe
+					--	skip
+					--else
+					--	!cutlen = sqrt(!aod.power(2) / 4 - !diameter.power(2) / 4)	$*inside part should not be counted
+					--	!tempdir = !leg.pos.direction(!pos)
+					--	if !tempdir.angle(!ori.zdir()) lt 90 then
+					--		!offdir = !ori.zdir()
+					--	else
+					--		!offdir = !ori.zdir().opposite()
+					--	endif
+					--	!pos = !pos.offset(!offdir,!cutlen / 2)
+					--	!height = !height - !cutlen
+					--	--q var !height
+					--endif
+
+				endif
+				!leg.delete()
+			enddo
+		else
+			!line = !pos.offset(!ori.zdir(),!height / 2).line(!pos.offset(!ori.zdir(), - !height / 2))
+
+
+
+
+			--!attadir = adir of $!atta
+			--!tempangle = !ori.zdir().angle(!attadir)
+			--if !tempangle lt 1 or !tempangle gt 179 then
+			--	return !result
+			--endif
+
+
+			if !memtype.substring(1,1) ne 'N' and !line.onprojected(!attapos) then
+				--if  !line.onprojected(!attapos) then
+				-----------------------------------------------------------------------------------
+				-----------------------------------------------------------------------------------remove normal ATTA which is like X
+				return !result
+			endif
+
+		endif
+		if undefined(!india) then
+			!india = 0
+		endif
+		!object = object isoleg(!atta,!pos,!ori,!height,!india,!diameter)
+	endif
+	return !object
+endmethod
+$)
+
+$(
+define method .getspecialnum()
+	--!this.specialnum = 'xxxxxxxxxxxx'
+
+	!this.specialnum = :zd_nbbm of $!this.branname
+	handle any
+		!this.specialnum = ''
+	endhandle
+endmethod
+$)
+
+
+define method .getBranAttArr(!BranAtts is array) is array
+	if !this.pspec.unset() then
+		!this.getatts()
+	endif
+
+	!row = array()
+	do !x indices !branatts
+		!att = !branAtts[!x]
+		!com = |!row[!x] = !this.| + !att
+        --$P $!com
+		$!com
+		handle any
+			!rows[!x] = ''
+			$p No Branatt: $!att for Bran $!this.branname
+		endhandle
+	enddo
+	return !row
+endmethod
+
+
+define method .split() is boolean		$* get all objects
+	if !this.getisolines().not() then
+		return false
+	endif
+	--$p got isolines
+	$(
+	!this.getmaterials()
+	!this.getslopes()
+	!this.gettags()
+	!this.getwelds()
+
+	!this.getcutparts()
+	--!this.getinstallationangles()
+
+	!this.getdmfarrs()
+	$)
+
+	!this.putIntoIsoline()
+	if !this.wronglines.set() then
+		return false
+	endif
+
+	return true
+endmethod
+
+define method .getobjects()
+	!this.getattadatas()
+	if !this.wronglines.set() then
+		return
+	endif
+
+	--$p got atta
+	!this.getadjustwelds()	$* must be first	the priority is higher than other object except slope/isombdangle
+	--$p aw
+	!this.getinstallationangles()	$* must be second the priority is higher than other object  except slope
+	--$p angle
+	!this.getslopes()	$* must be third	the priority is higher than all other object
+	--$p slope
+	!this.getmaterials()
+	--$p mate
+
+	!this.gettags()
+	--$p tag
+
+	!this.getwelds()
+	--$p weld
+
+	if !this.isinstpipe.not() then
+		!this.getbranmlabel()	$*must be infront of cutparts, the pos of branmlabel would be used in getcutparts
+		!this.getcutparts()
+	endif
+
+	!this.getdmfarrs()
+	--$p dmf
+
+	!this.objects = array()
+	if !this.isinstpipe.not() then
+		do !object values !this.pipeatta.attaobjects
+			if !object.objecttype() eq 'ISOLEG' then
+				!this.objects.append(!object)
+			endif
+		enddo
+	endif
+	!this.objects.appendarray(!this.adjustwelds)
+	!this.objects.appendarray(!this.isombdangles)
+	!this.objects.appendarray(!this.isoslopes)
+	!this.objects.appendarray(!this.materials)
+	!this.objects.appendarray(!this.tags)
+	!this.objects.appendarray(!this.weldobjects)
+	if !this.isinstpipe.not() then
+		!this.objects.appendarray(!this.cutparts)
+		!this.objects.append(!this.branmlabel)
+	endif
+endmethod
+
+define method .putIntoIsoLine()
+	!this.getobjects()
+	if !this.wronglines.set() then
+		return
+	endif
+
+	--$p got objects
+	--return
+	--return
+	do !object values !this.objects
+
+		!possibleIsolineIndices = array()
+		if !object.name.unset() or (!object.objecttype() eq 'ISOLEG' and !object.elboname.set()) then
+			-----------------------
+			-----------------------for cutpipe
+			!tempdiss = array()
+			!isolinenums = array()
+			do !x indices !this.isolines
+				if !object.objecttype() ne 'ISOLEG' or !object.elboname.unset() then
+					if !this.isolines[!x].line.onprojected(!object.pos) then
+						!tempdiss.append(!this.isolines[!x].line.distance(!object.pos))
+						!isolinenums.append(!x)
+					endif
+				else
+				-----elbo isoleg
+					!angle = !this.isolines[!x].pipedir.angle(!object.ori.zdir())
+					if !angle gt 90 then
+						!angle = 180 - !angle
+					endif
+					--$p $!angle
+					if !angle lt 1 and !this.isolines[!x].line.onprojected(!object.attapos) then
+
+						!tempdiss.append(!this.isolines[!x].line.distance(!object.attapos))
+						!isolinenums.append(!x)
+					endif
+				endif
+				$(
+				if !this.isolines[!x].line.onprojected(!object.pos) and !this.isolines[!x].line.distance(!object.pos) lt 1 then
+					!this.isolines[!x].objects.append(!object)
+					break
+				endif
+				$)
+			enddo
+            --q var !isolinenums
+			if !isolinenums.set() then
+				!isolinenums.reindex(!tempdiss.sortedindices())
+				!possibleIsolineIndices.append(!isolinenums[1])
+				--golabel /possibleIsolineIndicesok
+				--!this.isolines[!isolinenums[1]].objects.append(!object)
+			else
+				--return
+				$p Cant find good isoline for following object   1111      in object isobran.pmlobj method putintoisoline
+				$p Please check if anything wrong at $!object.name  1111
+				skip
+			endif
+
+		else
+
+			!name = !object.name
+
+
+			!samedirs = true
+			if !name.upcase() ne 'HEAD' and !name.upcase() ne 'TAIL' then
+				!adir = adir of $!name wrt/*
+				handle any
+				elsehandle none
+					!ldir = ldir of $!name wrt/*
+					if !adir.angle(!ldir) lt 179 then
+						!samedirs = false
+					endif
+				endhandle
+			endif
+			if !object.objecttype() eq 'ISOWELDTEXT' and type of $!object.name eq 'ATTA' then 	$* for elbopad elboleg
+				do !x indices !this.isolines
+					!isoline = !this.isolines[!x]
+					if !isoline.line.onprojected(!object.pos) then
+						!possibleIsolineIndices.append(!x)
+					endif
+				enddo
+			else
+				do !x indices !this.isolines
+					!isoline = !this.isolines[!x]
+					if !isoline.mems.findfirst(!name).set() or !isoline.mems.findfirst(!object.name.dbref().string()).set() then
+						!possibleIsolineIndices.append(!x)
+						if !samedirs then
+							break
+						endif
+					endif
+				enddo
+			endif
+		endif
+		--q var !possibleIsolineIndices
+		--if !object.objecttype() eq 'ISOWELDTEXT' then
+		--if !object.text eq 'A9' then
+
+		--endif
+		--endif
+		label /possibleIsolineIndicesok
+		if !possibleIsoLineIndices.unset() then
+			q var !object
+			$p $!name
+			aid text number 1234 '1' at $!object.pos
+			handle any
+				!temppos = pos of $!object.name
+				aid text number 1234 '1' at $!temppos
+			endhandle
+			$p Cant find good isoline for following object       in object isobran.pmlobj method putintoisoline
+			$p Please check if anything wrong at $!object.name
+
+			--!this.isolines[!tempindices.reindex(!tempdiss.sortedindices())[1]].objects.append(!object)
+		else
+			if !possibleIsoLineIndices.size() eq 1 then
+
+				!goodx = !possibleIsoLineIndices[1]
+			else
+				!reals = array()
+				if !object.objecttype() eq 'ISOWELDTEXT' then
+					do !x values !possibleIsoLineIndices
+						!tempdis = !this.isolines[!x].line.distance(!object.pos)
+						!reals.append(!tempdis)
+						--if !object.text eq 'A9' then
+
+						--endif
+					enddo
+				else
+					do !x values !possibleIsoLineIndices
+						!oneangle = abs(!this.isolines[!x].pipedir.angle(U) - 90)
+						!oneangle = min(!oneangle,180 - !oneangle)
+						!reals.append(!oneangle)
+					enddo
+				endif
+				!indices = !reals.sortedindices()
+				!goodx = !possibleIsoLineIndices[!indices[1]]
+			endif
+			if !object.objecttype() eq 'ISOWELDTEXT' then
+				if !object.movedis ne 0 then
+					if !object.movedir.angle(!this.isolines[!goodx].polarsystem.showdir) gt 90 then
+						!movedir = !object.movedir.opposite()
+					else
+						!movedir = !object.movedir
+					endif
+					!object.pos = !object.pos.offset(!movedir,!object.movedis)
+				endif
+			endif
+			if !object.objecttype() eq 'ISOSLOPE' or !object.objecttype() eq 'ISOADJUSTWELD' or !object.objecttype() eq 'ISOMBDANGLE' then
+				!this.isolines[!goodx].objects.insert(1,!object)          $*slope需要包括标注在内的给它让步
+			elseif !object.objecttype() eq 'ISOMATERIAL' then
+				--!this.isolines[!goodx] = !this.dealaccordingboltdata(!this.isolines[!goodx],!object)
+				!this.isolines[!goodx].objects.append(!object)
+			else
+				!this.isolines[!goodx].objects.append(!object)
+			endif
+            --q var !this.isolines
+		endif
+	enddo
+	$(
+	return
+	--old way 202305231601 cant put the material and pe xxx of elbo into good isoline
+	--q var !this.branmems
+	--q var !this.isolines
+	--do !isoline values !this.isolines
+	--q var !isoline
+	--!isoline.line.draw(1234,1,2)
+	--enddo
+	do !object values !this.objects
+		!name = !object.name
+		!find = false
+		!tempdiss = array()
+		!tempindices = array()
+
+		!x = 0
+		do !isoline values !this.isolines
+			!x = !x + 1
+			if !isoline.mems.findfirst(!name).set() then
+				if !object.objecttype() eq 'ISOSLOPE' then
+					!isoline.objects.insert(1,!object)          $*slope需要包括标注在内的给它让步
+				elseif !object.objecttype() eq 'ISOWELDTEXT' then
+					!tempdis = !isoline.line.distance(!object.pos)
+					if !tempdis gt 5 then
+						--!isoline.line.draw(1234,1,2)
+						!tempdiss.append(!tempdis)
+						!tempindices.append(!x)
+						skip
+					else
+						!isoline.objects.append(!object)
+					endif
+				elseif !object.objecttype() eq 'ISOMATERIAL' then
+					!isoline = !this.dealaccordingboltdata(!isoline,!object)
+					--!isoline.objects.append(!object)
+				else
+					!isoline.objects.append(!object)
+				endif
+
+
+				!find = true
+				break
+			endif
+		enddo
+		if !find.not() then
+			!this.isolines[!tempindices.reindex(!tempdiss.sortedindices())[1]].objects.append(!object)
+
+			--$p $!name
+			--aid text number 1234 '1' at $!object.pos
+			--$p Cant find good isoline for following object       in object isobran.pmlobj method putintoisoline
+			--$p Please check if anything wrong at $!object.name
+			--q var !object
+		endif
+	enddo
+	$)
+endmethod
+
+
+$(
+define method .dealaccordingboltdata(!isoline is isoline,!object is any) is isoline
+
+	if not(!object.type inset ('GASK','FLAN') or !object.type.matchwild('BOLT*')) then
+		!isoline.objects.append(!object)
+		return !isoline
+	endif
+	--$p $!object.type
+	--$p $!object.name
+	do !boltdata values !this.boltdatas
+		if !boltdata.allmems.findfirst(!object.name).set() then
+			!goodboltdata = !boltdata
+			break
+		endif
+	enddo
+	--q var !goodboltdata
+
+
+
+	if undefined(!goodboltdata) then	$* not involved in one bolt
+		!isoline.objects.append(!object)
+		return !isoline
+	endif
+
+	if !goodboltdata.showitem.split().size() ge 6 then
+		!object.boltshowpos = !goodboltdata.showitem.position()
+		!isoline.objects.append(!object)
+		return !isoline
+	endif
+
+	if !object.type eq 'BOLT' then	$*if bolt has showitem, it would be shown in text of showitem
+		return !isoline
+	endif
+	if !goodboltdata.showitem eq !object.name or !goodboltdata.boltitem eq !object.name then
+		if !goodboltdata.showitem eq !object.name then
+			do !x indices !goodboltdata.brans
+				if !goodboltdata.brans[!x] eq !this.branname then
+					!branmems = !goodboltdata.branmems[!x]
+					break
+				endif
+			enddo
+			!flan = ''
+			!gask = ''
+			!tempindex = !branmems.findfirst(!object.name)
+			if !object.type eq 'FLAN' or !object.type eq 'FBLI' then
+				!flan = !object.name
+				!preele = !branmems[!tempindex - 1]
+				handle any
+				elsehandle none
+					if type of $!preele eq 'GASK' then
+						!gask = !preele
+					endif
+				endhandle
+
+				if !gask eq '' then
+					!nextele = !branmems[!tempindex + 1]
+					handle any
+					elsehandle none
+						if type of $!nextele eq 'GASK' then
+							!gask = !nextele
+						endif
+					endhandle
+				endif
+			elseif !object.type eq 'GASK' then
+				!gask = !object.name
+			endif
+
+
+
+
+
+			do !material values !this.materials
+				if !material.type eq 'BOLT' then
+					if !material.name eq !goodboltdata.boltitem then
+						!bolttext = 'B' + !material.order.string()			$* get bolt order
+					endif
+				elseif !gask ne '' and !material.name eq !gask then
+					!gasktext = 'G' + !material.order.string()				$* get gask order
+				elseif !flan ne '' and !material.name eq !flan then
+					!flantext = 'F' + !material.order.string()				$* get flan order
+				endif
+			enddo
+
+
+
+			!string = ''
+			if defined(!flantext) then
+				!string = !flantext
+			endif
+			if defined(!gasktext) then
+				if !string ne '' then
+					!string = !string + '/' + !gasktext
+				else
+					!string = !gasktext
+				endif
+			endif
+			if !string ne '' then
+				!string = !string + '/' + !bolttext
+			else
+				!string = !bolttext
+			endif
+
+
+
+			!object.isotext = !string
+			!isoline.objects.append(!object)
+		endif
+	else
+		!isoline.objects.append(!object)
+	endif
+	return !isoline
+endmethod
+$)
+
+define method .getisolines() is boolean		$* 按直管段分
+	var !mode mode
+	forwards
+	!allarr = array()  $*记录分段物项信息
+	!ldirs = array() $*记录拐点朝向信息
+	!poss = array()  $*记录拐点坐标信息
+	!this.getbranmems()
+    --Q VAR !this.branMems
+
+	do !mem values !this.branMems
+        --q var !mem
+		if !mem eq 'Head' then
+        --$p 11
+            !onearr = array()
+			!onearr.append('Head')
+            --if !this.branMems.size() gt 1 and !this.branMems[2].Dbref().type eq 'PCOM' and !this.branMems[2].Dbref().name.Matchwild('*JH') then
+            --    !ldir = hdir of $!this.branname wrt/*
+            --    !P2 = p2pos of $!this.branMems[2] wrt/*
+            --    !P3 = p3pos of $!this.branMems[2] wrt/*
+            --    !pos = !P2.midpoint(!P3)
+            --    pin1 at $!pos
+            --    $p 111
+            --else
+            !ldir = hdir of $!this.branname wrt/*
+            !pos = hpos of $!this.branname wrt/*
+            --endif
+            --pin 1 at $!pos
+			!poss.append(!pos)
+			!ldirs.append(!ldir)
+		elseif !mem eq 'Tail' then
+        --$p 22
+			!onearr.append(!mem)
+			!allarr.append(!onearr)
+
+			--!pos = tpos of $!this.branname wrt/*
+			--!poss.append(!pos)
+		else
+        --$p 33
+			!dir = ldir of $!mem wrt/*
+			!memtype = type of $!mem
+			!onearr.append(!mem)
+
+			if !memtype inset ('ATTA','TUBI','OLET','WELD') then
+            --$p 44
+			--if !memtype eq 'ATTA' or !memtype eq 'TUBI' or !memtype eq 'OLET' then
+				skip
+			elseif !!isrjpcom(!mem) then  $*判断是否是pcom,pcom进入该判断
+            --$p 55
+				!arrivepoint = arrive of $!mem
+				if !arrivepoint eq 2 then
+					!this.wronglines.append('此Bran方向建反了')
+					return false
+				endif
+				!p1pos = p1 pos of $!mem wrt/*
+				!p9pos = p9 pos of $!mem wrt/*
+
+				!p1dir = p1 dir of $!mem wrt/*
+				if abs(!p1dir.angle(u) - 90) lt 10 then   $*pcom水平布置
+					!adir = adir of $!mem wrt/*
+					!templine = !p1pos.line(!p1pos.offset(!adir,-10000))
+					!pos = !templine.near(!p9pos)
+
+
+					!allarr.append(!onearr)
+					--!ldir = !dir.opposite()
+					!poss.append(!pos)
+					!ldir = u
+					!onearr = array()
+					!onearr.append(!mem)
+					!ldirs.append(!ldir)
+				else $*pcom垂直布置
+					!p0pos = p0 pos of $!mem wrt/*
+					!p3pos = p3 pos of $!mem wrt/*
+					!ldir = !p0pos.direction(!p3pos)
+
+					if !p1pos.distance(!poss.last()) gt 1 then
+						!allarr.append(!onearr)
+
+						!poss.append(!p1pos)
+
+						!onearr = array()
+						!onearr.append(!mem)
+						!ldirs.append(!ldir)
+					else
+						!onearr = array()
+						!onearr.append(!mem)
+						!poss[!poss.size()] = !p1pos
+						!ldirs[!ldirs.size()] = !ldir
+					endif
+
+
+
+					!templine = !p1pos.line(!p1pos.offset(!ldir,10000))
+					!pos = !templine.near(!p9pos)
+
+
+					!allarr.append(!onearr)
+					!poss.append(!pos)
+					!ldir = u
+					!onearr = array()
+					!onearr.append(!mem)
+					!ldirs.append(!ldir)
+				endif
+			elseif !dir.angle(!ldir) gt 0.01 then
+            --$p 66
+                --q var !dir !ldir
+                --q var !mem
+				!adir = adir of $!mem wrt/*
+				!apos = apos of $!mem wrt/*
+				!lpos = lpos of $!mem wrt/*
+				!memldir = ldir of $!mem wrt/*
+				--$(
+				if !adir.angle(!memldir) gt 179.99 and !adir.angle(!ldir) gt 179 then	$*避免头部有点小误差
+                --$p aa
+					if !poss.set() then
+						if !apos.distance(!poss.last()) lt 1 then
+							!ldir = !adir.opposite()
+							!ldirs[!ldirs.size()] = !ldir
+						endif
+					endif
+					skip
+				endif
+				--$)
+
+				if !apos.distance(!lpos) gt 1 or !dir.angle(!ldir) gt 10 then			$*Bend /1WSS0361
+					--$p $!dir    $!ldir $!mem
+					--!tempangle = !dir.angle(!ldir)
+					--q var !tempangle
+					--!lpos = lpos of $!mem wrt/*
+					--$p bb
+					--if !apos.distance(!poss.last()) lt 0.1 then
+					if !lpos.distance(!poss.last()) lt 0.1 then
+						!ldirs[!ldirs.size()] = ldir of $!mem wrt/*
+					else
+						!pos = pos of $!mem wrt/*
+						!poss.append(!pos)
+						--q var !onearr
+						!allarr.append(!onearr)
+						!ldir = !dir
+						!onearr = array()
+						!onearr.append(!mem)					$*elbo is the last member in previous isoline and first mem in next isoline
+						!ldirs.append(!ldir)
+					endif
+					--elseif type of $!mem eq 'BEND' then
+					--	!lpos = lpos of $!mem wrt/*
+					--	if !lpos.distance(!poss.last()) lt 1 then
+					--		!ldirs[!ldirs.size()] = ldir of $!mem wrt/*
+					--	endif
+				endif
+
+                --modify by jyg 20241231 解决弯管处没有拆成isoline的情况
+                if !adir.angle(!memldir) gt 100 then
+                    !pos = pos of $!mem wrt/*
+					!poss.append(!pos)
+					--q var !onearr
+					!allarr.append(!onearr)
+					!ldir = !dir
+					!onearr = array()
+					!onearr.append(!mem)
+					!ldirs.append(!ldir)
+                endif
+
+			else
+            --$p 77
+				if !!ispipespecialelement(!mem) then	 $* special element
+                --$p 88
+                    if  !mem.Dbref().type eq 'PCOM' and !mem.Dbref().name.Matchwild('*JH') then
+                        !P2 = p2pos of $!mem wrt/*
+                        !P3 = p3pos of $!mem wrt/*
+                        !apos = !P2.midpoint(!P3)
+                        --pin 1 at $!apos
+                        --$p 569
+                    else
+                      !apos = apos of $!mem wrt/*
+                    endif
+                    !adir = adir of $!mem wrt/*
+                    !line = !apos.line(!apos.offset(!adir,1000))
+                    !lpos = lpos of $!mem wrt/*
+					if !line.distance(!lpos) gt 0.1 then
+                    --$p 99
+						!pos = pos of $!mem wrt/*
+						!nearpos1 = !line.near(!pos)
+						!poss.append(!nearpos1)
+						!allarr.append(!onearr)
+
+
+						------------------------------------------------------for special element
+						!line2 = !lpos.line(!lpos.offset(!ldir,1000))
+						!nearpos2 = !line2.near(!pos)
+
+						!ldir = !nearpos1.direction(!nearpos2)
+						!onearr = array()
+						!onearr.append(!mem)
+						!ldirs.append(!ldir)
+						!poss.append(!nearpos2)
+						!allarr.append(!onearr)
+						------------------------------------------------------
+
+
+						!ldir = !dir
+						!onearr = array()
+						!onearr.append(!mem)
+						!ldirs.append(!ldir)
+					endif
+				endif
+			endif
+		endif
+	enddo
+    --q var !poss
+    --q var !ldirs
+	--q var !allarr[1] !allarr[2] !allarr[3] !allarr[4] !allarr[5] !allarr[6]
+	!this.getfromltor()
+
+	--q var !allarr
+	!this.isolines = array()
+    --q var !allarr[3]
+	do !x indices !allarr
+		--Q VAR !allarr[!x]
+		--q var !this.usepolarsystem
+		--q var !this.isinstpipe
+		--if !this.isinstpipe.not() then
+		if !x eq 1 then
+			!prehoridir = object direction()
+		else
+			!prehoridir = !this.isolines[!x - 1].polarsystem.horidir
+		endif
+        --q var !prehoridir
+        --q var !this.fromltor
+		if !this.fromltor.set() then
+			--!oneisoline = object isoline(!this.branname,!allarr[!x],!ldirs[!x],!this.minslope,!this.maxslope,!this.usepolarsystem,!this.considerprenextdir,!this.lookangle,!this.fromltor)
+			!oneisoline = object isoline(!this.branname,!allarr[!x],!ldirs[!x],!this.minslope,!this.maxslope,!this.considerprenextdir,!this.lookangle,!this.fromltor,!this.isinstpipe,!prehoridir)
+		else
+			!oneisoline = object isoline(!this.branname,!allarr[!x],!ldirs[!x],!this.minslope,!this.maxslope,!this.considerprenextdir,!this.lookangle,!this.branlookdirection,!this.isinstpipe,!prehoridir)
+		endif
+
+		if !oneisoline.wronglines.set() then
+			!this.wronglines.appendarray(!oneisoline.wronglines)
+			return false
+		endif
+        --q var !this.isolines
+        --q var !oneisoline
+        --q var !x
+		if !x gt 1 then
+			if !this.usepolarsystem.not() then
+
+				--!oneisoline = object isoline(!this.branname,!allarr[!x],!ldirs[!x],!this.minslope,!this.maxslope,!this.isolines[!x - 1].pipedir,!this.isolines[!x - 1].od)
+
+				!isoUsedDir = object isoUsedDir('PreIsoLine',!this.isolines[!x - 1].pipedir.opposite(),- !this.isolines[!x - 1].od / 2,!this.isolines[!x - 1].od / 2,'')
+				!oneisoline.usedDirs.append(!isoUsedDir)		$*前后段会对当前段的空间有影响
+				--前段对当前段的空间的影响 202305061422
+
+				!templine = !poss[!x - 1].line(!poss[!x - 1].offset(!ldirs[!x - 1],1000))
+				!dis = !templine.near(!poss[!x]).distance(!poss[!x - 1])
+				!isoUsedDir = object isoUsedDir('NextIsoLine',!oneisoline.pipedir,!dis - !oneisoline.od / 2,!dis + !oneisoline.od / 2,'')
+				!this.isolines[!x - 1].usedDirs.append(!isoUsedDir)		$*前后段会对当前段的空间有影响
+				--当前段对前段的空间的影响 202305061422
+			else
+				--$(
+				----no need to add, because it will be added when the next isoline is drawed
+				!prepipedir = !this.isolines[!x - 1].pipedir.opposite()
+                --Q VAR !this.isolines !this.isolines[!x - 1]  !this.isolines[!x - 1].mems !prepipedir
+				--!polarcyli = object polarcyli(!oneisoline.pos.offset(!prepipedir,!this.isolines[!x - 1].line.length() / 2),object orientation('z is $!prepipedir'),!this.isolines[!x - 1].od,!this.isolines[!x - 1].line.length())
+				!polarcyli = object polarcyli(!this.isolines[!x - 1].obstline.startposition.midpoint(!this.isolines[!x - 1].obstline.endposition),object orientation('z is $!prepipedir'),!this.isolines[!x - 1].od,!this.isolines[!x - 1].obstline.length())
+				--q var !polarcyli !polarcyli.height.string()
+                if !polarcyli.diameter lt 0.01 or !polarcyli.height.Distance().real() lt 0.01 then
+					q var !this.isolines[!x - 1].obstline
+					!this.isolines[!x - 1].obstline.draw(1234,1,2)
+
+					$p pre isoline is bad , check bore and length
+					return false
+				endif
+				!oneisoline.polarsystem.add(!polarcyli,true)
+
+
+				!nextpipedir = !oneisoline.pipedir
+				--!polarcyli = object polarcyli(!oneisoline.pos.offset(!nextpipedir,!oneisoline.line.length() / 2),object orientation('z is $!nextpipedir'),!oneisoline.od,!oneisoline.line.length())
+				!currentpolarcyli = object polarcyli(!oneisoline.obstline.startposition.midpoint(!oneisoline.obstline.endposition),object orientation('z is $!nextpipedir'),!oneisoline.od,!oneisoline.obstline.length())
+				if !currentpolarcyli.height gt 1 then	$*olet at cap
+					!this.isolines[!x - 1].polarsystem.add(!currentpolarcyli,true)
+				endif
+				--$)
+
+				if !x gt 2 then
+					!prepipedir = !this.isolines[!x - 2].pipedir
+					!angle = !nextpipedir.angle(!prepipedir)
+
+					!dis = !this.isolines[!x - 2].line.distance(!oneisoline.line)
+
+
+
+					if !angle gt 160 then
+						if !dis lt !oneisoline.od * 15 then
+							!polarcyli = object polarcyli(!this.isolines[!x - 2].obstline.startposition.midpoint(!this.isolines[!x - 2].obstline.endposition),object orientation('z is $!prepipedir'),!this.isolines[!x - 2].od * 1.5,!this.isolines[!x - 2].obstline.length())
+							if !polarcyli.diameter lt 0.01 or !polarcyli.height lt 0.01 then
+								--q var !this.isolines[!x - 2].obstline
+								!this.isolines[!x - 2].obstline.draw(1234,1,2)
+
+								$p pre isoline is bad , check bore and length
+								return false
+							endif
+							!oneisoline.polarsystem.add(!polarcyli,true)
+						endif
+
+						if !dis lt !this.isolines[!x - 2].od * 15 then
+							!currentpolarcyli = object polarcyli(!oneisoline.obstline.startposition.midpoint(!oneisoline.obstline.endposition),object orientation('z is $!nextpipedir'),!oneisoline.od * 1.5,!oneisoline.obstline.length())
+							if !currentpolarcyli.height gt 1 then	$*olet at cap
+								!this.isolines[!x - 2].polarsystem.add(!currentpolarcyli,true)
+							endif
+						endif
+					endif
+				endif
+			endif
+		endif
+		!oneisoline.firstdimtimes = 0.5
+		!oneisoline.seconddimtimes = 1.7
+
+		!this.isolines.append(!oneisoline)
+	enddo
+    --q var !this.isolines
+    --q  var !this.isolines[1].mems  !this.isolines[2].mems  !this.isolines[3].mems
+	$!mode
+	return true
+endmethod
+
+define method .getfromltor()
+	--if !this.isinstpipe then
+
+	--!useFromltor = false
+	!useFromltor = true
+
+	label /again
+	if !useFromLtoR.not() then
+		if !this.branlookdirection.set() then
+			return
+		endif
+		!this.getbranmems()
+		!poss = array()
+		do !mem values !this.branMems
+			if !mem eq 'Head' then
+				!pos = hpos of $!this.branname wrt/*
+				!poss.append(!pos)
+			elseif !mem eq 'Tail' then
+				!pos = tpos of $!this.branname wrt/*
+				!poss.append(!pos)
+			else
+				!memtype = type of $!mem
+				if !memtype eq 'ATTA' or !memtype eq 'TUBI' then
+					skip
+				else
+                    --Q VAR !mem
+					!adir = adir of $!mem
+                    handle any
+                        --个别焊缝没有进口朝向
+                        skip
+                    endhandle
+					!ldir = ldir of $!mem
+                    handle any
+                        skip
+                    endhandle
+					if !adir.angle(!ldir) lt 177 then			$*Bend
+						!pos = pos of $!mem wrt/*
+						!poss.append(!pos)
+					endif
+				endif
+			endif
+		enddo
+		--q var !poss
+
+		!templen = 0
+		do !times from 1 to 2
+			if !times eq 1 then
+				!dir = e 45 n
+			else
+				!dir = e 45 s
+			endif
+			!mindis = 0
+			!maxdis = 0
+			do !pos values !poss
+				!dis = !!suidirdis(!poss[1],!dir,!pos)
+				!mindis = min(!mindis,!dis)
+				!maxdis = max(!maxdis,!dis)
+			enddo
+			!onelen = !maxdis - !mindis
+			--q var !onelen
+			if !onelen ge !templen then
+				!templen = !onelen
+				!gooddir = !dir
+			endif
+		enddo
+
+		!gooddir = !gooddir.orthogonal(u)
+
+		var !volume volume $!this.branname
+		!pos1 = !volume.before(' to ').position().wrt(world)
+		!pos2 = !volume.after(' to ').position().wrt(world)
+		!cenpos = !pos1.midpoint(!pos2)
+		!znum = 0
+		!fnum = 0
+		do !x from 1 to !poss.size() - 1
+			!midpoint = !poss[!x].midpoint(!poss[!x + 1])
+			!dir = !midpoint.direction(!cenpos)
+			handle any
+				skip
+			endhandle
+			if !dir.angle(!gooddir) lt 0 then
+				!znum = !znum + 1
+			else
+				!fnum = !fnum + 1
+			endif
+		enddo
+		if !znum ge !fnum then
+			!this.branlookdirection = !gooddir
+		else
+			!this.branlookdirection = !gooddir.opposite()
+		endif
+		--q var !this.branlookdirection
+
+	else
+		if !this.fromltor.set() then
+			return
+		endif
+		!ldirs = array()
+		!this.getbranmems()
+		!poss = array()
+		do !mem values !this.branMems
+			if !mem eq 'Head' then
+				!ldir = hdir of $!this.branname wrt/*
+				!ldirs.append(!ldir)
+				!pos = hpos of $!this.branname wrt/*
+				!poss.append(!pos)
+			elseif !mem eq 'Tail' then
+				!pos = tpos of $!this.branname wrt/*
+				!poss.append(!pos)
+			else
+				!dir = ldir of $!mem wrt/*
+				!memtype = type of $!mem
+				if !memtype eq 'ATTA' or !memtype eq 'TUBI' then
+					skip
+				elseif !dir.angle(!ldir) gt 3 then			$*Bend
+					!ldir = !dir
+					!ldirs.append(!ldir)
+
+					!pos = pos of $!mem wrt/*
+					!poss.append(!pos)
+				elseif type of $!mem eq 'BEND' then
+					!ldirs[!ldirs.size()] = ldir of $!mem wrt/*
+				endif
+			endif
+		enddo
+
+		var !volume volume $!this.branname
+		!pos1 = !volume.before(' to ').position().wrt(world)
+		!pos2 = !volume.after(' to ').position().wrt(world)
+		!cenpos = !pos1.midpoint(!pos2)
+		!znum = 0
+		!fnum = 0
+		do !xx indices !ldirs
+			!tempdir = !ldirs[!xx]
+			!dir1 = !tempdir.orthogonal(d)
+			handle any
+				skip
+			endhandle
+			!midpoint = !poss[!xx].midpoint(!poss[!xx + 1])
+			!cendir = !midpoint.direction(!cenpos)
+			handle any
+				skip
+			endhandle
+
+			if !dir1.angle(!cendir) lt 90 then
+				!znum = !znum + 1
+			else
+				!fnum  = !fnum + 1
+			endif
+		enddo
+		--$p asdfasdf
+		--q var !znum !fnum
+		if abs(!znum - !fnum) gt (!znum + !fnum) / 3 then
+			if !znum ge !fnum then
+				!this.fromltor = true
+			else
+				!this.fromltor = false
+			endif
+		else
+			!usefromltor = false
+			golabel /again
+		endif
+	endif
+	--q var !this.fromltor !this.branlookdirection
+endmethod
+
+define method .getdmfarrs()
+	if !this.dmfarrs.set() then
+		return
+	endif
+
+	!this.getbranmems()
+
+	!dmfarrs = array()
+	do !mem values !this.branmems
+		!dmfarr = dmfarr of $!mem
+		handle any
+			skip
+		endhandle
+		if !dmfarr.set() then
+			!temparr = array()
+			!temparr.append(!mem)
+			!temparr.append(!dmfarr)
+			!dmfarrs.append(!temparr)
+		endif
+	enddo
+    --q var !dmfarrs
+	!this.dmfarrs = !dmfarrs
+endmethod
+
+define method .gettags()        $*tee olet href tref atta elbo
+	if !this.tags.set() then
+		return
+	endif
+
+
+	!this.getbranmems()
+
+	--!geoattas = array()
+	--do !x indices !this.attadatas
+	--	!geoattas.append(!this.attadatas[!x].name)
+	--enddo
+	!instname = ''
+	!geoattas = !this.pipeatta.geoattas
+
+	do !mem values !this.branmems
+		if !mem eq 'Head' or !mem eq 'Tail' then
+			!isoTag = object isotag(!this.branname,!mem)
+			if !isotag.tagType.set() then
+				if !mem eq 'Tail' and !instname ne '' then
+					!isotag.infoarr.append(!instname)
+				endif
+				!this.tags.append(!isotag)
+			endif
+			skip
+		endif
+		!memtype = type of $!mem
+		if !memtype eq 'ATTA' then
+			if !geoattas.findfirst(!mem).set() then
+				skip	$* deal it after this circle
+			endif
+		endif
+
+		if !memtype inset( 'TEE','OLET','ATTA','PCOM') then
+			!isoTag = object isotag(!this.branname,!mem)
+			if !isotag.tagType.set() then
+				if !memtype eq 'ATTA' then
+					!ldir = ldir of $!mem wrt/*
+					handle any
+						$p No ldir for $!memtype $!mem
+					endhandle
+					!adir = adir of $!mem wrt/*
+					!angle1 = !adir.angle(!ldir)
+					!angle2 = !ldir.angle(u)
+					if (!angle1 gt 1 and !angle1 lt 179) or (!angle2 gt 87 and !angle2 lt 93) then
+					else
+						!pos = pos of $!mem wrt/*
+						!spref = name of spref of $!mem
+						if !spref.match('FLOR') ne 0 then
+							!up = !pos.up / 1000
+							if !up ge 0 then
+								!text = 'EL +' + !up.string('D3').upcase().before('MM').before('IN') + 'm'
+							else
+								!text = 'EL ' + !up.string('D3').upcase().before('MM').before('IN') + 'm'
+							endif
+						else
+							if !pos.up ge 0 then
+								!text = 'PE +' + !pos.up.string('D0').upcase().before('MM').before('IN')
+								--!text = 'PE +' + !pos.up.string('D1').upcase().before('MM').before('IN').before('.0')
+							else
+								!text = 'PE ' + !pos.up.string('D0').upcase().before('MM').before('IN')
+								--!text = 'PE ' + !pos.up.string('D1').upcase().before('MM').before('IN').before('.0')
+							endif
+						endif
+						!isotag.infoarr.append(!text)
+					endif
+				endif
+				!this.tags.append(!isotag)
+			endif
+			$(
+		elseif !memtype eq 'ATTA' then
+			if !this.isinstpipe then
+				if !this.isinstpipe then
+					!nphsasr = :nphsasr of $!atta
+				endif
+			else
+				!isoTag = object isotag(!this.branname,!mem)
+				if !isotag.tagType.set() then
+					!this.tags.append(!isotag)
+				endif
+			endif
+			$)
+		endif
+
+
+		!isotag = object isotag()
+		!isotag.branname = !this.branname
+		!isotag.name = !mem
+		!isotag.ref = !mem
+		!isotag.infoarr = array()
+		!isotag.tagType = 'ref'
+
+		-----------------------
+		-----------------------in isotag, only elevationTag for BEND and connectionTag for TEE
+		if !memtype inset( 'TEE','BEND','ELBO') then
+			if !memtype eq 'BEND' then
+				!bendangle = angle of $!mem
+				--if !bendangle ne 90 then
+				!isotag = object isotag()
+				!isotag.branname = !this.branname
+				!isotag.name = !mem
+				!pos = pos of $!mem wrt/*
+				!text = !bendangle.string('D2').replace('degree','°').replace('.00','')
+				if !text.match('.') ne 0 then
+					!text = !text.replace('0°','°')
+				endif
+                --Q VAR !mem !text
+				!isotag.infoarr.append(!text)
+
+				!bendpos1 = p1 pos of $!mem wrt/*
+				!bendpos = pos of $!mem wrt/*
+				!bendpos2 = p2 pos of $!mem wrt/*
+				if !this.isinstpipe.not() and  !bendpos1.distance(!bendpos2) gt 1 then
+					!benddir1 = !bendpos.direction(!bendpos1)
+					!benddir2 = !bendpos.direction(!bendpos2)
+					!bendzdir = !benddir1.orthogonal(!benddir2)
+					!radiusdir1 = !benddir1.orthogonal(!bendzdir)
+					!radiusdir2 = !benddir2.orthogonal(!bendzdir)
+					!line1 = !bendpos1.line(!bendpos1.offset(!radiusdir1,1000))
+					!line2 = !bendpos2.line(!bendpos2.offset(!radiusdir2,1000))
+					!bendcenpos = !line1.intersection(!line2)
+					!radius = !bendcenpos.distance(!bendpos1)
+					!nint = !radius.nint()
+					if abs(!radius - !nint) lt 0.01 then
+						!radiusstring = '弯曲半径:' & !nint.string()
+					else
+						!radiusstring = '弯曲半径:' & !radius.string('D2').replace('.00','')
+						if !text.match('.') ne 0 then
+							!radiusstring = !radiusstring.replace('0mm','mm')
+						endif
+					endif
+
+					!isotag.infoarr.append(!radiusstring)
+				elseif !bendpos1.distance(!bendpos2) lt 1 then
+					skip
+				endif
+
+				!isotag.function = 'BendInformation'
+				--!this.tags.append(!isotag)
+			elseif !memtype eq 'ELBO' then
+				!angle = angle of $!mem
+				if !angle ne 90 and !angle ne 45 then
+					--!isotag = object isotag()
+					--!isotag.branname = !this.branname
+					--!isotag.name = !mem
+					--!pos = pos of $!mem wrt/*
+					!text = !angle.string('D2').replace('degree','°').replace('.00','')
+					if !text.match('.') ne 0 then
+						!text = !text.replace('0°','°')
+					endif
+					--!isotag.infoarr = array()
+					!isotag.infoarr.append(!text)
+					--!isotag.ref = !mem
+					--!isotag.tagType = 'ref'
+					--!isotag.function = 'ElboAngle'
+
+					--!this.tags.append(!isotag)
+				endif
+				!isotag.function = 'ElboInformation'
+			elseif !memtype eq 'TEE' then
+				$(
+				!adir = adir of $!mem
+				!ldir = ldir of $!mem
+				!angle = !adir.angle(!ldir)
+				if !angle gt 1 and !angle lt 179 then
+					!isotag = object isotag()
+					!isotag.branname = !this.branname
+					!isotag.name = !mem
+					!pos = pos of $!mem wrt/*
+					!text = 'PE ' + !pos.up.string('D1').upcase().before('MM').before('IN').before('.0')
+					!isotag.infoarr = array()
+					!isotag.infoarr.append(!text)
+					!isotag.ref = !mem
+					!isotag.tagType = 'ref'
+					!isotag.function = 'ElevationTag'
+					!this.tags.append(!isotag)
+				endif
+				$)
+				!isotag.function = 'ElevationTag'
+			endif
+
+			if !this.isinstpipe.not() then	$* according to EM9 20240326
+				!adir = adir of $!mem
+				!ldir = ldir of $!mem
+				!angle = !adir.angle(!ldir)
+				if !angle gt 1 and !angle lt 179 then
+					!pos = pos of $!mem wrt/*
+					$(
+					if !pos.up ge 0 then
+						!text = 'PE +' + !pos.up.string('D1').upcase().before('MM').before('IN').before('.0')
+					else
+						!text = 'PE ' + !pos.up.string('D1').upcase().before('MM').before('IN').before('.0')
+					endif
+					$)
+					if !pos.up ge 0 then
+						!text = 'PE +' + !pos.up.string('D0').upcase().before('MM').before('IN')
+					else
+						!text = 'PE ' + !pos.up.string('D0').upcase().before('MM').before('IN')
+					endif
+
+					!isotag.infoarr.append(!text)
+				elseif !memtype eq 'TEE' then
+					skip
+				endif
+			endif
+			if !isotag.infoarr.set() then
+				!this.tags.append(!isotag)
+			endif
+		elseif !memtype ne 'TUBI' and !memtype ne 'ATTA' and !memtype ne 'WELD' then
+			!memname = name of $!mem
+			if !memname.substring(1,1) eq '/' then
+				if !memname.matchwild('*KD-02') or !memname.matchwild('*KD-2') then
+					skip
+				endif
+
+				!isotag.infoarr.append('  ')	$* for material order number
+
+				if !memname.matchwild('*KD-*') then
+					!isotag.infoarr.append(!memname.after('/').before('KD-') & 'KD')
+				else
+					!isotag.infoarr.append(!memname.after('/'))
+				endif
+				!isotag.function = 'ElementName'
+
+				if !instname eq '' then
+					if !memtype eq 'VALV' then
+						!oneinstname = :YKSX of $!mem
+						handle any
+						elsehandle none
+							if !oneinstname.set() and !oneinstname ne '' and !oneinstname.upcase() ne 'UNSET' then
+								!instname = !oneinstname
+							endif
+						endhandle
+					endif
+				endif
+
+				!this.tags.append(!isotag)
+			endif
+		endif
+	enddo
+
+	--return
+	!this.tags.appendarray(!this.pipeatta.tags)
+	$(
+	do !temparr values !this.attaclass
+		--!size = !temparr.size()
+		!object = !this.attadatas[!temparr[1]]
+		if !object.objecttype() inset ('ISOLUG','ISOLEG') and !object.onpad then	$*  unnecessary if leg or lug is on pad
+			!object.delete()
+			skip
+		endif
+
+		if !object.objecttype() inset ('ISOLUG','ISOPAD') then
+			!p3dir = !object.dir
+		else
+			!p3dir = !object.attapos.direction(!object.pos)
+			handle any
+				!p3dir = !object.ori.zdir()	$*for big leg that pipe go through it
+			endhandle
+		endif
+
+
+		!isotag = object isotag()
+
+		!isotag.branname = !this.branname
+		!isotag.name = !object.name
+		!isotag.tagType = 'pos'
+
+		if !object.objecttype() inset ('ISOPAD','ISOLUG') then
+			!pos = !object.pos.offset(!object.dir,!object.routside)
+			--.offset(!object.ori.zdir(),!object.height / 2)
+		else
+			!pos = !object.pos
+		endif
+		!isotag.pos = !pos
+		!isotag.ref = ''
+		--!isotag.function = 'AttaTag'
+		!isotag.function = 'AttaMaterialTag'
+
+		!infoarr = !this.getattatagtext(!temparr)
+		--!infoarr = array()
+		--!infoarr.append(!size & 'xxxxxxx')
+		!isotag.infoarr = !infoarr
+
+		--!this.objects.append(!isotag)
+		!this.tags.append(!isotag)
+
+
+
+		!object.delete()
+	enddo
+	$)
+	--q var !this.isinstpipe
+	if !this.isinstpipe.not() then
+		!this.geteltag()
+	endif
+endmethod
+
+define method .geteltag()
+	!poss = array()
+	!hpos = hpos of $!this.branname wrt/*
+	!tpos = tpos of $!this.branname wrt/*
+	!poss.append(!hpos)
+	!poss.append(!tpos)
+	--!geoattas = !this.pipeatta.geoattas
+	do !mem values !this.branmems
+        --q var !mem
+		if !mem eq 'Head' or !mem eq 'Tail' then
+			skip
+		endif
+		!memtype = type of $!mem
+		if !memtype inset ('TUBI','FTUB','ELBO','WELD','ATTA') then
+			skip
+		endif
+
+		$(
+		if !memtype eq 'ATTA' then
+			if !geoattas.findfirst(!mem).set() then
+				skip
+			endif
+		endif
+		$)
+
+		!ldir = ldir of $!mem wrt/*
+		handle any
+			$p No ldir for $!memtype $!mem
+			skip
+		endhandle
+		!adir = adir of $!mem wrt/*
+        handle any
+            --modify by jyg 20240925
+            !adir = !ldir.opposite()
+        endhandle
+		!angle = !adir.angle(!ldir)
+		if !angle gt 1 and !angle lt 179 then
+			skip
+		endif
+
+		!angle = !ldir.angle(u)
+		if !angle gt 87 and !angle lt 93 then
+			skip
+		endif
+
+		!pos = pos of $!mem wrt/*
+		!add = true
+		do !temppos values !poss
+			if !pos.distance(!temppos) lt 1 then
+				!add = false
+				break
+			endif
+		enddo
+
+
+		if !memtype inset ('TEE','OLET') then
+			!nums[1] = 1
+			!nums[2] = 2
+			!nums[3] = 3
+			!alNums[1] = arrive of $!mem
+			!alNums[2] = leave of $!mem
+			!difNums = !nums.difference(!alNums)
+			!cnum = !difnums[1]
+			!cpos = p$!cnum pos of $!mem wrt/*
+			if abs(!cpos.up - !pos.up) lt 0.1 then
+				skip
+			endif
+		endif
+
+		if !add then
+			!poss.append(!pos)
+			!isotag = object isoTag()
+			!isotag.branname = !this.branname
+			!isotag.name = !mem
+			!isotag.tagType = 'ref'
+			!isotag.ref = 'ref'
+			!isotag.function = '标高'
+			$(
+			if !pos.up ge 0 then
+				!text = 'PE +' + !pos.up.string('D1').upcase().before('MM').before('IN').before('.0')
+			else
+				!text = 'PE ' + !pos.up.string('D1').upcase().before('MM').before('IN').before('.0')
+			endif
+			$)
+			if !pos.up ge 0 then
+				!text = 'PE +' + !pos.up.string('D0').upcase().before('MM').before('IN')
+			else
+				!text = 'PE ' + !pos.up.string('D0').upcase().before('MM').before('IN')
+			endif
+
+			!isotag.infoarr.append(!text)
+
+			!this.tags.append(!isotag)
+		endif
+	enddo
+endmethod
+$(
+define method .findattaorder(!inputname is string) is real
+	!name = name of $!inputname
+	do !index indices !this.materials
+		!materialname = !meterial.name
+		!materialname = name of $!meterialname
+		handle any
+			skip
+		elsehandle none
+			if !materialname eq !name then
+				return !index
+			endif
+		endhandle
+	enddo
+endmethod
+$)
+--define method .getAttaTagText(!temparr is array) is array
+--	!attadatas = array()
+--	do !index values !temparr
+--		!attadatas.append(!this.attadatas[!index])
+--	enddo
+--	return !!getattatagtext(!attadatas)
+
+$(
+!size = !temparr.size()
+!object = !this.attadatas[!temparr[1]]
+
+!spref = !object.nsAndSpref[2]
+!pspec = name of spec of $!spref
+!itemcode = !spref.after(!pspec).substring(2).before(':')
+
+
+--!materialorder = !this.findattaorder(!object.name)
+!ot = !object.objecttype()
+
+!SCH = !!mbdmaterialdata.getmaterialinonetype(!itemcode,'PIPE','压力(壁厚)')
+!in = !!mbdmaterialdata.getmaterialinonetype(!itemcode,'PIPE','公称直径')
+if !ot eq 'ISOPAD' then
+	!tubeinfo = !size & '护板 ф' & !in & |" Sch| & !SCH
+elseif !ot eq 'ISOLUG' then
+	!pipeitemcode = !this.gettubeinthick(!object.name)
+	if !pipeitemcode eq '' then
+		!tubeinfo = ''
+	else
+		!pipeSCH = !!mbdmaterialdata.getmaterialinonetype(!pipeitemcode,'PIPE','压力(壁厚)')
+		!pipein = !!mbdmaterialdata.getmaterialinonetype(!pipeitemcode,'PIPE','公称直径')
+
+		------------------------------------------------------
+		!tempposs = array()
+		do !index values !temparr
+			!tempobject = !this.attadatas[!index]
+			!attapos = !tempobject.attapos
+			!find = false
+			do !temppos values !tempposs
+				if !temppos.distance(!attapos) lt 1 then
+					!find = true
+					break
+				endif
+			enddo
+			if !find.not() then
+				!tempposs.append(!attapos)
+			endif
+		enddo
+		!groupsize = !tempposs.size()
+		------------------------------------------------------
+
+		do !x from 1 to 4
+			if abs(!object.height - 25 * !x) lt 1 then
+				!shapetype = !x & '型'
+				break
+			endif
+		enddo
+
+		--need to confirm
+
+		!tubeinfo = !groupsize & ' TD ф' & !pipein & |" Sch| & !pipeSCH & ' ' & !shapetype
+	endif
+elseif !ot eq 'ISOLEG' then
+	if !size eq 1 then
+		!tubeinfo = '管支撑 ф' & !in & |" Sch| & !SCH
+	else
+		!tubeinfo = !size & '管支撑 ф' & !in & |" Sch| & !SCH
+	endif
+endif
+
+
+if !ot eq 'ISOPAD' then
+	!selfinfo = 'L=' & !object.height & 'mm  ' & 'α='& !object.angle
+elseif !ot eq 'ISOLUG' then
+	--q var !object.nsAndSpref
+	!in = !!changemmtoin(!object.nsAndSpref[1])
+	!selfinfo = !size & '挡块 ф' & !in & |" Sch| & !SCH & '   L=' & !object.height & 'mm'
+elseif !ot eq 'ISOLEG' then
+	!selfinfo = 'L=' & !object.height & 'mm'
+endif
+
+!result = array()
+!result.append(!tubeinfo)
+!result.append(!selfinfo)
+return !result
+$)
+--endmethod
+
+$(
+define method .gettubeinthick(!name is string) is string
+	!premem = !!getpremem(!name)
+	if !premem eq '' then
+		return ''
+	else
+		!tube = name of ileave tube of $!premem
+		handle any
+			return ''
+		elsehandle none
+			!spref = name of spref of $!tube
+			!pspec = name of spec of $!spref
+			!itemcode = !spref.after(!pspec).substring(2).before(':')
+			return !itemcode
+
+
+			------------------------------------------------------useless start
+			!abore = abore of $!tube
+			!dtxr = dtxr of $!tube
+			if !dtxr.match('SCH') ne 0 then
+				!thickstring = !dtxr.after('SCH').before(' ')
+			else
+				if !ot eq 'ISOLEG' then
+					!thick = (!object.outdia - !object.india) / 2
+				elseif !ot eq 'ISOPAD' or !ot eq 'ISOLUG' then
+					!thick = !routside - !rinside
+				endif
+				!tempnum = !thick / 5
+				!nint = nint(!tempnum)
+				if !nint ne !tempnum then
+					!nint = !nint + 1
+				endif
+				!thickstring = string(!nint * 5)
+			endif
+			!in = !!changemmtoin(!abore.real())
+			------------------------------------------------------useless end
+		endhandle
+	endif
+endmethod
+$)
+
+define method .getSlopes()
+	if !this.isoslopes.set() then
+		return
+	endif
+	!this.getbranmems()
+	do !mem values !this.branmems
+		!isoSlope = object isoSlope(!mem,!this.minslope,!this.maxslope)
+		if !isoslope.lines.set() then
+			--!this.objects.append(!isoSlope)
+			!this.isoslopes.append(!isoslope)
+		endif
+	enddo
+endmethod
+
+define method .getadjustwelds()
+	if !this.checkadjust.set() and !this.checkadjust then
+		return
+	endif
+	!this.getbranmems()
+	!this.checkadjust = true
+	!this.adjustwelds = array()
+	do !mem values !this.branmems
+		if type of $!mem ne 'WELD' then
+			skip
+		endif
+		!dtxr = dtxr of $!mem
+		if !dtxr.match('ADJUST') eq 0 then
+			skip
+		endif
+
+		!isoadjustweld = object isoadjustweld(!mem)
+		if !isoadjustweld.dirup.set() then
+			--if !isoadjustweld.tubi eq '' then
+			--	$p $!isoadjustweld.name has no tube
+			--endif
+			--!this.objects.append(!isoadjustweld)
+			!this.adjustwelds.append(!isoadjustweld)
+		endif
+	enddo
+endmethod
+
+define method .getinstallationangles()
+	if !this.isombdangles.set() then
+		return
+		--else
+		--	!this.isombdangles = array()
+	endif
+
+	!this.getbranmems()
+	do !mem values !this.branmems
+		if !mem eq 'Head' or !mem eq 'Tail' then
+			skip
+		endif
+		!memtype = type of $!mem
+		if not(!memtype inset ('ATTA','ELBO','BEND')) then
+		--if type of $!mem ne 'ATTA' then
+			--!isatta = false
+			!arrive = arrive of $!mem
+			!leave = leave of $!mem
+			if !arrive eq 3 or !leave eq 3 then
+				-----------------------
+				-----------------------if 3 is on the line of pipe, the angle would be show by slope or dim
+				skip
+			endif
+
+			!p3dir = p3 dir of $!mem wrt/*
+			handle any
+				skip
+			elsehandle none
+				!p1pos = p1 pos of $!mem wrt/*
+				!p1dir = p1 dir of $!mem wrt/*
+				!p3pos = p3 pos of $!mem wrt/*
+				!templine = !p1pos.line(!p1pos.offset(!p1dir,1000))
+				if !templine.distance(!p3pos) lt 1 then
+					--!checkbore = true
+					!p3bore = p3 bore of $!mem
+					if !p3bore.unset() or !p3bore eq 0 then
+						skip
+					endif
+				else
+					-----------------------
+					-----------------------in case that p3dir is opposite to the direction which is needed
+					!tempdir = !templine.near(!p3pos).direction(!p3pos)
+					if !tempdir.angle(!p3dir) gt 90 then
+						!p3dir = !tempdir
+					endif
+				endif
+			endhandle
+			!this.getmemp3dirangle(!mem,!p3dir)
+		endif
+	enddo
+
+
+
+	do !object values !this.pipeatta.attaobjects
+		--if !object.objecttype() inset ('ISOLUG','ISOLEG') and !object.onpad then	$*  unnecessary if leg or lug is on pad
+		--	skip
+		--endif
+		if !object.objecttype() eq 'ISOELBOPAD' then
+			skip
+		elseif !object.objecttype() inset ('ISOLUG','ISOPAD') then
+			!p3dir = !object.dir
+		else
+			!p3dir = !object.attapos.direction(!object.pos)
+			handle any
+				!p3dir = !object.ori.zdir()	$*for big leg that pipe go through it
+			endhandle
+		endif
+		!this.getmemp3dirangle(!object.name,!p3dir)
+	enddo
+	--q var !this.isombdangles
+endmethod
+
+define method .getmemP3dirangle(!mem is string,!p3dir is direction)
+	!toleranceangle = 0.1
+	!padir = adir of $!mem wrt/*
+	handle any  $*There are some ATTA without apos adir lpos, and ldir is not good to use
+		!ori = ori of $!mem wrt /*
+		!padir = !ori.ydir()
+		!p1dir = !padir
+	elsehandle none
+		!p1dir = p1 dir of $!mem wrt/*
+	endhandle
+	!xdir = !padir.orthogonal(u)
+	handle any
+		!ori = x is e and z is u
+	elsehandle none
+		!ori = x is $!xdir and z is $!padir
+	endhandle
+	!xdir = !ori.xdir()
+	!ydir = !ori.ydir()
+	!mempos = pos of $!mem wrt/*
+	!plane = object plane(!mempos,!ori)
+
+	--!aod = aod of $!mem
+
+
+	--do !dirindex indices !p3dirs
+	--	!p3dir = !p3dirs[!dirindex]
+	!lineangle = !p1dir.angle(!p3dir)
+	if abs(!lineangle - 90) gt !toleranceangle and abs(!lineangle - 90) lt (90 - !toleranceangle) then
+		if !lineangle gt 90 then
+			!p2pos = p2 pos of $!mem wrt/*
+			handle any  $*There are some ATTA without apos adir lpos, and ldir is not good to use
+			elsehandle none
+				!p1dir = p2 dir of $!mem wrt/*
+			endhandle
+			if !p1dir.angle(!p3dir) le !toleranceangle then
+				golabel /dissatisfy
+			endif
+		endif
+		--if !isatta.not() then
+		if type of $!mem ne 'ATTA' then
+			!isombdangle = object isombdangle(!mem,!p1dir,!p3dir)
+		else
+			do !x indices !this.pipeatta.attaobjects
+				if !mem eq !this.pipeatta.attaobjects[!x].name then
+					!attadata = !this.pipeatta.attaobjects[!x]
+					break
+				endif
+			enddo
+			if !attadata.objecttype() eq 'ISOLEG' then
+				!isombdangle = object isombdangle(!mem,!p1dir,!p3dir)
+			else
+				!realaod = 2 * (!mempos.distance(!attadata.pos) + !attadata.routside)
+				!isombdangle = object isombdangle(!mem,!p1dir,!p3dir,!realaod)
+			endif
+		endif
+		!this.isombdangles.append(!isombdangle)
+		--!this.objects.append(!isombdangle)
+		label /dissatisfy
+	endif
+
+
+
+
+	!projecteddir = !p3dir.projected(!plane)
+	handle any
+		return
+	endhandle
+
+
+
+	!tempangles = array()
+	!tempdirs = array()
+	do !x from 1 to 4
+		if !x eq 1 then
+			!tempdir = !xdir
+		elseif !x eq 2 then
+			!tempdir = !ydir
+		elseif !x eq 3 then
+			!tempdir = !xdir.opposite()
+		elseif !x eq 4 then
+			!tempdir = !ydir.opposite()
+		endif
+		!tempangle = !projecteddir.angle(!tempdir)
+		!tempangles.append(!tempangle)
+		!tempdirs.append(!tempdir)
+	enddo
+	!indices = !tempangles.sortedindices()
+	!tempangles.reindex(!indices)
+	!tempdirs.reindex(!indices)
+
+	if !tempangles[1] gt !toleranceangle then
+		if !tempangles[1] ge 30 then
+			!dir1 = !tempdirs[1]
+		else
+			-----------------------
+			-----------------------invoid too narrow to put text
+			!dir1 = !tempdirs[2]
+		endif
+		--!tempangle = !dir1.angle(!projecteddir)
+		--if !isatta.not() then
+		if type of $!mem ne 'ATTA' then
+			!isombdangle = object isombdangle(!mem,!dir1,!projecteddir)
+		else
+			if undefined(!attadata) then
+				do !x indices !this.pipeatta.attaobjects
+					if !mem eq !this.pipeatta.attaobjects[!x].name then
+						!attadata = !this.pipeatta.attaobjects[!x]
+						break
+					endif
+				enddo
+			endif
+			if !attadata.objecttype() eq 'ISOLEG' then
+				!isombdangle = object isombdangle(!mem,!dir1,!projecteddir)
+			else
+				!realaod = 2 * (!mempos.distance(!attadata.pos) + !attadata.routside)
+				!isombdangle = object isombdangle(!mem,!dir1,!projecteddir,!realaod)
+			endif
+		endif
+		!this.isombdangles.append(!isombdangle)
+		--!this.objects.append(!isombdangle)
+	endif
+	--enddo
+endmethod
+
+define method .deletestru()
+	!this.mbdstru.deletestru()
+
+endmethod
+
+define method .getatts()
+
+	--!this.pspec = name of pspec of $!this.branname
+    --modify by jyg 20241024
+    if  !this.isinstpipe then
+        !this.pspec = name of pspec of $!this.branname
+    else
+        !this.pspec = name of pspec of $!this.branname
+        if  !this.pspec.set() then
+            !this.pspec = !this.pspec.After('/')
+            !lastNum = !this.pspec.substring(-1,1)
+            if  !lastNum.isdigits() then
+                !this.pspec = substring(!this.pspec,-2)
+            endif
+        endif
+    endif
+
+	!this.rccm = :ZD_SPCL of $!this.branname
+	handle any
+		!this.rccm = 'NA'
+	endhandle
+
+	!this.CLEAN = :zd_clean of $!this.branname
+	handle any
+		!this.clean = 'NA'
+	endhandle
+
+	if !this.isinstpipe.not() then
+		!this.room = :ROOM_NO of $!this.branname
+		handle any
+			!this.room = ''
+		endhandle
+	else
+		!this.room = !this.branname.part(-2,'-')
+		handle any
+			!this.room = ''
+		endhandle
+	endif
+
+	!temp = temperature of $!this.branname
+    --modify by jyg 20240902
+	!this.temp = !temp.string().replace('degC','℃')
+
+
+	!press = press of $!this.branname
+	!this.press = !press
+
+	--!this.ispec = name of ispec of $!this.branname
+	--handle any
+	--	!this.ispec = 'N'
+	--endhandle
+
+	$(
+	!this.tspec = name of tspec of $!this.branname
+	handle any
+		!this.tspec = 'N'
+	endhandle
+	$)
+
+	!this.powercal = :ZD_LXBG of $!this.branname
+	handle any
+		!this.PowerCal = 'NA'
+	endhandle
+
+
+	!insuthickreal = :zd_bwhd of $!this.branname
+	handle any
+		!this.insuthick = ''
+		!this.ispec = 'N'
+	elsehandle none
+		if !insuthickreal eq 0 or !insuthickreal.unset() then
+			!this.insuthick = ''
+			!this.ispec = 'N'
+		else
+			!this.insuthick = !insuthickreal.string()
+			!this.ispec = 'Y'
+		endif
+	endhandle
+	--var !insustring insu of $!this.branname
+	--!this.insuthick = !insustring.real().value()
+
+
+
+
+	!pipename = name of pipe of $!this.branname
+	!this.protectgroup = !pipename.part(-1,'-')
+	handle any
+		!this.protectgroup = ''
+	endhandle
+	!sw = :ZD_SWGD of $!this.branname
+	handle any
+		!this.swgd = '否'
+	elsehandle none
+		--if !sw.unset() or !sw eq '' then
+        --modify by jyg 20240812
+        if !sw.empty() then
+			!this.swgd = '否'
+		else
+        --modify by jyg 20240812
+            !this.swgd = '是'
+			--!this.swgd = '否'
+		endif
+	endhandle
+
+	!!setattvalue(!this,!this.branname,split('duty/:zd_fluid,tspec/:ZD_GDBR,drawnum/:zd_nbbm',','))
+	!!setattvalue(!this,!this.branname,split('fluid/:zd_fluid,azbz/:zd_azbz',','))
+	!!setattvalue(!this,!this.branname,split('tssm/:zd_tssm,wjbm/:zd_wjbm,nbbm/:zd_nbbm,status/:zd_status,rev/:zd_rev',','))
+	!this.getdrawinfo()
+	!!setproofreadinginfo(!this,!this.branname)
+    --q var !this.rev
+    --modify by jyg 20240812
+	--!this.rev = 'A' $*4月30日前
+endmethod
+
+define method .drawdmf()
+	!this.deleteType('ISODMF')
+	if !this.mbdstru.todim().not() or !this.mbdstru.toaid().not() then
+		!!alert.warning('此账号没有SITE(MBD)的读写权限 3')
+		return
+	endif
+    --q var !this.dmfarrs
+	do !memarr values !this.dmfarrs
+		!mem = !memarr[1]
+		!mempos = pos of $!mem wrt/*
+		!dmfarr = !memarr[2]
+		do !con values !dmfarr
+			!name = name of $!con
+			!civil = object markcivil(!name)
+			handle any
+				$p $!name cant get object markcivil   in drawdmf in isobran.pmlobj
+				skip
+			elsehandle none
+				if !civil.profiles.unset() then
+					$p $!name cant get object markcivil   in drawdmf in isobran.pmlobj
+					skip
+				else
+					!mindis = 1000000
+					do !px from 1 to 2
+						!profile = !civil.profiles[!px]
+						!nearpos = !profile.plane().near(!mempos)
+						--if !profile.iswithout(!nearpos) then
+						--	skip
+						--endif
+						!dis = !mempos.distance(!nearpos)
+						if !dis lt !mindis then
+							!mindis = !dis
+							!nearpoint = !nearpos
+						endif
+					enddo
+
+					if !mindis ne 1000000 then
+						!xdir = !mempos.direction(!nearpoint)
+						handle any
+							skip
+						endhandle
+						!ori = object orientation('x is $!xdir and z is u')
+						!midpoint = !mempos.midpoint(!nearpoint)
+						!poss = array()
+						!poss.append(!mempos)
+						!poss.append(!nearpoint)
+
+						!cheight = 35
+						do !isoline values !this.isolines
+							if !isoline.mems.findfirst(!mem).set() then
+								--$p adsfsaf
+								!cheight =int(!isoline.od * !this.cheightBili)
+								--!cheight = !isoline.getcheight(!this.cheightbili)
+								break
+							endif
+						enddo
+						--q var !cheight
+						--if !cheight.unset() then
+						--	!cheight = 35
+						--endif
+						--$p 123
+						!linedim = object lindim(!this.mbdstru.dimgro,!midpoint, !ori, !poss, !cheight,'ISODMF','node:' + !this.branname)
+						--!aidline = object mbdaidline(!this.mbdstru.aidgro,!mempos,!nearpoint,'ISODMF','node:' + !this.branname)
+                        if !this.usepolarsystem then
+							!this.addDmfMemPolarSystem(!mem,!poss[1].line(!poss.last()))
+						else
+							!this.addDmfMemUsedDir(!mem, !xdir)
+						endif
+
+						!this.addcivilname(!nearpoint,!civil)
+						--!civil.addConInfo()
+					endif
+				endif
+			endhandle
+		enddo
+	enddo
+endmethod
+
+define method .addcivilname(!nearpoint is position,!civil is markcivil)
+	--.markCivilSelf() from civil
+	add $!civil.civilname
+	!ownername = name of owner of $!civil.civilname
+	!markString = !ownerName.part(-2,'-')
+	!textLen = !markstring.length() * !civil.civilcheight
+	do !x from 1 to 2
+		if !nearpoint.distance(!civil.profiles[!x].plane()) lt 1 then
+			!ori = !civil.profiles[!x].orientation
+			!mlabelpoint = !nearpoint.offset(!civil.profiles[!x].orientation.zdir(),!civil.textOffsetDis).offset(!ori.xdir(), - !textLen / 3)
+			!mlabel = object mlabel(!this.mbdstru.dimgro,!mlabelpoint,!civil.profiles[!x].orientation,!markString,!civil.civilcheight,false,'定位墙体','','node:' + !this.branname)
+			break
+		endif
+	enddo
+endmethod
+
+define method .addDmfMemPolarSystem(!mem is any, !line is line)
+	do !x indices !this.isolines
+		if !this.isolines[!x].mems.findfirst(!mem).set() then
+			!this.isolines[!x].polarsystem.add(!line)
+		endif
+	enddo
+endmethod
+
+define method .addDmfMemUsedDir(!mem is any , !dir is direction)
+	!mempos = pos of $!mem wrt/*
+	do !x indices !this.isolines
+		if !this.isolines[!x].mems.findfirst(!mem).set() then
+			!angle = !this.isolines[!x].line.direction().angle(!dir)
+			if !angle gt 170 or !angle lt 10 then
+				skip
+			endif
+
+			!dis = !this.isolines[!x].line.near(!mempos).distance(!this.isolines[!x].pos)
+			!mindis = !dis
+			!maxdis = !dis
+			!isoUsedDir = object isoUsedDir('DmfDim',!dir,!mindis,!maxdis,'ISODIM')
+			!this.isolines[!x].usedDirs.append(!isoUsedDir)
+		endif
+	enddo
+endmethod
+
+
+define method .draw() is boolean
+	--if !this.materials.unset() then
+	--!this.getmaterial()
+	--endif
+	--!this.getlabelinfo()
+	--!this.wronglines = array()
+	!this.wronglines.unique()
+	!this.setprogress(1)
+	if !this.split().not() then
+		return false
+	endif
+
+	--return true
+	!this.setprogress(8)
+
+	--$p $!asdfasdf
+	if !this.mbdstru.deletedim().not() or !this.mbdstru.deleteaid().not() then
+		!!alert.warning('此账号没有SITE(MBD)的读写权限 1')
+		return false
+	endif
+
+	if !this.mbdstru.todim().not() or !this.mbdstru.toaid().not() then
+		!!alert.warning('此账号没有SITE(MBD)的读写权限 2')
+		return false
+	endif
+
+	if !this.usepolarsystem then
+		do !isoline values !this.isolines
+			do !index indices !isoline.polarsystem.elements
+				if !isoline.polarsystem.elements[!index].basic.not() then
+					!isoline.polarsystem.elements[!index].delete()
+					!isoline.polarsystem.objects[!index].delete()
+					handle any
+					endhandle
+				endif
+			enddo
+		enddo
+	endif
+
+
+	--return true
+
+	--return false
+	-----------------------
+	-----------------------location of elbo
+	!this.drawdmf()
+
+	--!this.createGros(true)
+	--return
+	$!this.branname
+	!x = 0
+	--clock init
+	!isolinesize = !this.isolines.size()
+
+	--return true
+    --q var !this.isolines
+	do !isoline values !this.isolines
+		!x = !x + 1
+		--$p $!x isoline in isobran
+		--if !x ne 1 then
+		--	skip
+		--endif
+
+
+		!isoline.mbdstru = !this.mbdstru
+		--!isoline.dimdirs = !this.dimdirs
+		--!isoline.chardirs = !this.chardirs
+		--!isoline.useGoodDirs = !this.useGoodDirs
+
+		!isoline.cheightbili = !this.cheightbili
+		!isoline.changecheightauto = !this.changecheightauto
+		!isoline.changecheightautobili = !this.changecheightautobili
+		!isoline.plusstringcheightbili = !this.plusstringcheightbili
+		!isoline.sepSmallDim = !this.sepSmallDim
+		!isoline.ignoreline = !this.ignoreline
+
+		!isoline.tspec = !this.tspec
+
+		--!isoline.cheight = !this.cheight
+        --q var !isoline
+		!isoline.draw()
+		!this.wronglines.appendarray(!isoline.wronglines)
+
+		--return
+
+		if !this.usepolarsystem then
+			--!this.addtopreornextpolarsystem(!x,!isoline,'pre')		$*useless
+
+			!this.addtopreornextpolarsystem(!x,!isoline,'next')
+
+		else
+			!this.addUsedDirToPre(!x, !isoline)
+			!this.addUsedDirToNext(!x, !isoline)
+		endif
+		--return
+		--if !x eq 1 then
+
+		--endif
+		--break
+		--$p $!x
+		--clock read elapsed
+		!this.setprogress(8 + 0.9 * nint(100 * !x / !isolinesize))
+	enddo
+
+	if !this.generatejson then
+		!this.generatejsonattrvm()
+	endif
+	return true
+endmethod
+
+define method .setprogress(!persent is real)
+--q var !persent !this.isinstpipe
+--return
+	if !this.isinstpipe then
+		if !!markinstpipeform.brandatas.size() eq 1 then
+			!!fmsys.setProgress(!persent)
+		endif
+	else
+		if !!markpipeform.brandatas.size() eq 1 then
+			!!fmsys.setProgress(!persent)
+		endif
+	endif
+endmethod
+
+define method .getjsonarray() is array
+	if !this.drawtype eq 'EM4' then
+		!result = !this.getjsondata(!!markpipeform.materialAttS, !!markpipeform.materialAttShow,!!markpipeform.elematerialAttS, !!markpipeform.elematerialAttShow, !!markpipeform.BranAtts ,!!markpipeform.branAttShow , !!markpipeform.cutpipelengthatts, !!markpipeform.cutpipelengthattshow)
+		--!!markpipeform.instore(!result,!filename,'D:\')
+		--!!markpipeform.instore(!result,!filename,!filepath)
+	else
+		!result = !this.getjsondata(!!markinstpipeform.materialAttS, !!markinstpipeform.materialAttShow,!!markinstpipeform.elematerialAttS, !!markinstpipeform.elematerialAttShow, !!markinstpipeform.BranAtts ,!!markinstpipeform.branAttShow , !!markinstpipeform.cutpipelengthatts, !!markinstpipeform.cutpipelengthattshow)
+		--!result = !this.getjsondata(!!markinstpipeform.materialAttS, !!markinstpipeform.materialAttShow, !!markinstpipeform.BranAtts ,!!markinstpipeform.branAttShow , !!markinstpipeform.cutpipelengthatts, !!markinstpipeform.cutpipelengthattshow)
+		--!!markinstpipeform.instore(!result,!filename,!filepath)
+	endif
+	return !result
+endmethod
+
+define method .generatejsonattrvm() is array
+	!filepaths = array()
+	!filepath = !this.filepath
+	!folder = object file(!filepath)
+	if !folder.exists().not() then
+		$p 存储路径不对 $!filepath
+		return !filepaths
+	endif
+
+	!filename = !!getmbdfilename(!this.branname)
+	--!filename = !this.branName.replace('=','_').replace('/','_').replace('\','_')
+	--q var !filename
+	!result = !this.getjsonarray()
+    --q var !result
+    --q var !this.drawtype
+	if !this.drawtype eq 'EM4' then
+		--!result = !this.getjsondata(!!markpipeform.materialAttS, !!markpipeform.materialAttShow,!!markpipeform.elematerialAttS, !!markpipeform.elematerialAttShow, !!markpipeform.BranAtts ,!!markpipeform.branAttShow , !!markpipeform.cutpipelengthatts, !!markpipeform.cutpipelengthattshow)
+		--!!markpipeform.instore(!result,!filename,'D:\')
+		!!markpipeform.instore(!result,!filename,!filepath)
+	else
+		--!result = !this.getjsondata(!!markinstpipeform.materialAttS, !!markinstpipeform.materialAttShow,!!markinstpipeform.elematerialAttS, !!markinstpipeform.elematerialAttShow, !!markinstpipeform.BranAtts ,!!markinstpipeform.branAttShow , !!markinstpipeform.cutpipelengthatts, !!markinstpipeform.cutpipelengthattshow)
+		--!result = !this.getjsondata(!!markinstpipeform.materialAttS, !!markinstpipeform.materialAttShow, !!markinstpipeform.BranAtts ,!!markinstpipeform.branAttShow , !!markinstpipeform.cutpipelengthatts, !!markinstpipeform.cutpipelengthattshow)
+		!!markinstpipeform.instore(!result,!filename,!filepath)
+	endif
+
+	!newitems = array()
+	!remitems = array()
+	!newitems.append(!this.branName)
+	--!!getrvm(!newitems,!remitems,'D:\' & !filename & '.rvm')
+	--!!getatt(!newitems,!remitems,'D:\' & !filename & '.att')
+
+	!!getrvm(!newitems,!remitems,!filepath & !filename & '.rvm')
+	!!getatt(!newitems,!remitems,!filepath & !filename & '.att')
+	!!gettxt(!newitems,!filepath & !filename & '.txt')
+
+
+	!filepaths.append(!filepath & !filename & '.json')
+	!filepaths.append(!filepath & !filename & '.rvm')
+	!filepaths.append(!filepath & !filename & '.att')
+	!filepaths.append(!filepath & !filename & '.txt')
+	return !filepaths
+endmethod
+
+define method .totplant()
+	!filepaths = !this.generatejsonattrvm()
+	!up = object updatefiles(!filepaths,'MBD-' & !this.drawtype & 'PIPE')
+endmethod
+
+define method .addtopreornextpolarsystem(!x is real, !isoline is isoline, !preornext is string)
+	if !preornext eq 'pre' then
+		if !x gt 1 then
+			do !index indices !isoline.polarsystem.objects
+				if !isoline.polarsystem.elements[!index].basic then
+					--!this.isolines[!x - 1].polarsystem.add(!isoline.polarsystem.objects[!index],true)
+				else
+					!this.isolines[!x - 1].polarsystem.add(!isoline.polarsystem.objects[!index])
+				endif
+			enddo
+			--do !object values !isoline.polarsystem.objects
+			--	!this.isolines[!x - 1].polarsystem.add(!object)
+			--enddo
+
+			$(
+			do !object values !isoline.objects
+				do !item values !object.drawitems
+					!this.isolines[!x - 1].polarsystem.add(!item)
+				enddo
+			enddo
+			$)
+		endif
+	else
+		if !x lt !this.isolines.size() then
+			do !index indices !isoline.polarsystem.objects
+
+				if !isoline.polarsystem.elements[!index].basic then
+					--!this.isolines[!x + 1].polarsystem.add(!isoline.polarsystem.objects[!index],true)
+				else
+					!this.isolines[!x + 1].polarsystem.add(!isoline.polarsystem.objects[!index])
+				endif
+			enddo
+
+
+
+
+			if !x lt !this.isolines.size() - 1 then
+					!nextpipedir = !this.isolines[!x + 2].pipedir
+					!angle = !isoline.pipedir.angle(!nextpipedir)
+
+					!dis = !this.isolines[!x + 2].line.distance(!isoline.line)
+
+					if !angle gt 160 then
+						if !dis lt !this.isolines[!x + 2].od * 15 then
+							do !index indices !isoline.polarsystem.objects
+								if !isoline.polarsystem.elements[!index].basic.not() then
+									!this.isolines[!x + 2].polarsystem.add(!isoline.polarsystem.objects[!index])
+								endif
+							enddo
+						endif
+					endif
+				endif
+		endif
+	endif
+endmethod
+
+
+define method .addUsedDirToPre(!x is real, !isoline is isoline)
+	if !x gt 1 then     $*加上一个去好像没什么用，上一个已经处理完了
+		if !isoline.dimdir.unset() then
+			return
+		endif
+
+		if abs(!isoline.dimdir.angle(!this.isolines[!x - 1].pipedir) - 90) gt 85 then	$*dir of dim is almost parallel with pre pipe tube
+			return
+		endif
+
+
+		--return
+		if !!isofindIsouseddir(!this.isolines[!x - 1].usedDirs,'NextIsoLineDim').name.unset() then
+			!dis = !this.isolines[!x - 1].line.near(!isoline.pos).distance(!this.isolines[!x - 1].pos)
+			!mindis = !dis - !this.isolines[!x - 1].od / 2
+			!maxdis = !dis + !this.isolines[!x - 1].od / 2
+			--$p $!x
+			--if !x ne 3 then
+			!middir = !isoline.dimdir.bisect(!isoline.pipedir)										$*202305111444
+			!isoUsedDir = object isoUsedDir('PreIsoLineDim',!middir,!mindis,!maxdis,'ISODIM',90)
+			!this.isolines[!x - 1].usedDirs.append(!isoUsedDir)
+
+			--else
+			--$p safasfdsaf
+			--!isoUsedDir = object isoUsedDir('NextIsoLineDim',!isoline.dimdir,!mindis,!maxdis,'ISODIM')
+			--!this.isolines[!x - 1].usedDirs.append(!isoUsedDir)
+			$(
+			--when the angle between the pre pipe dir and the next pipe dir is gt 90, it would spend a lot of time to merge angles
+			!tempdir = !this.isolines[!x - 1].pipedir.orthogonal(!this.isolines[!x].pipedir)
+			!tempdir2 = !this.isolines[!x - 1].pipedir
+			!ori = x is $!tempdir and z is $!tempdir2
+			!arc = object arc(!this.isolines[!x].pos,!ori,0,360,1000,true)
+			!angle1 = !arc.near(!this.isolines[!x].pos.offset(!isoline.dimdir,1000))
+			!angle2 = !arc.near(!this.isolines[!x].pos.offset(!isoline.pipedir,1000))
+			!tempangle1 = min(!angle1,!angle2)
+			!tempangle2 = max(!angle1,!angle2)
+			do !angle from !tempangle1 to !tempangle2 by 5
+				!tempdir = !arc.angledirection(!angle)
+				!isoUsedDir = object isoUsedDir('NextIsoLineDim',!tempdir,!mindis,!maxdis,'ISODIM')
+				!this.isolines[!x - 1].usedDirs.append(!isoUsedDir)
+			enddo
+			$)
+			--endif
+		endif
+	endif
+endmethod
+
+define method .addUsedDirToNext(!x is real, !isoline is isoline)
+	if !x ne !this.isolines.size() then
+		if !isoline.dimdir.unset() then
+			return
+		endif
+		if abs(!isoline.dimdir.angle(!this.isolines[!x + 1].pipedir) - 90) gt 85 then	$*dir of dim is almost parallel with next pipe tube
+			return
+		endif
+
+		--return
+		if !!isofindIsoUseddir(!this.isolines[!x + 1].usedDirs,'PreIsoLineDim').name.unset() then
+			!mindis = - !this.isolines[!x + 1].od / 2
+			!maxdis = !this.isolines[!x + 1].od / 2
+
+			--if !x ne 1 then
+			!middir = !isoline.dimdir.bisect(!isoline.pipedir.opposite())	$*202305111444
+			!isoUsedDir = object isoUsedDir('PreIsoLineDim',!middir,!mindis,!maxdis,'ISODIM',90)
+			!this.isolines[!x + 1].usedDirs.append(!isoUsedDir)
+
+			--else
+			$(
+			--when the angle between the pre pipe dir and the next pipe dir is gt 90, it would spend a lot of time to merge angles
+			--!isoUsedDir = object isoUsedDir('PreIsoLineDim',!isoline.dimdir,!mindis,!maxdis,'ISODIM')
+			--!this.isolines[!x + 1].usedDirs.append(!isoUsedDir)
+
+			!tempdir = !this.isolines[!x + 1].pipedir.orthogonal(!this.isolines[!x].pipedir)
+			!tempdir2 = !this.isolines[!x + 1].pipedir
+			!ori = x is $!tempdir and z is $!tempdir2
+			!arc = object arc(!this.isolines[!x + 1].pos,!ori,0,360,1000,true)
+
+			!angle1 = !arc.near(!this.isolines[!x + 1].pos.offset(!isoline.dimdir,1000))
+			!angle2 = !arc.near(!this.isolines[!x].pos)
+
+			!tempangle1 = min(!angle1,!angle2)
+			!tempangle2 = max(!angle1,!angle2)
+
+			do !angle from !tempangle1 to !tempangle2 by 5
+				!tempdir = !arc.angledirection(!angle)
+				--!line = !this.isolines[!x + 1].pos.line(!this.isolines[!x + 1].pos.offset(!tempdir,1000))
+				--q var !line
+				--!line.draw(1243,1,2)
+				!isoUsedDir = object isoUsedDir('PreIsoLineDim',!tempdir,!mindis,!maxdis,'ISODIM')
+				!this.isolines[!x + 1].usedDirs.append(!isoUsedDir)
+			enddo
+			$)
+			--endif
+		endif
+	endif
+endmethod
+
+define method .deleteType(!type is string)
+	!words = array()
+	if !type eq 'ISOSLOPE' then
+		!words.append('Slope')
+	elseif !type eq 'ISODIM' then
+		!words.append('Dimension')
+		!words.append('SkewDim')
+	elseif !type eq 'ISOTAG' then
+		!words.append('ElevationTag')
+		!words.append('AttaTag')
+		!words.append('AttaMaterialTag')
+		!words.append('ConnectionTag')
+	elseif !type eq 'ISOMATERIALTEXT' then
+		!words.append('MaterialText')
+		!words.append('MaterialTextFrame')
+	elseif !type eq 'ISOWELDTEXT' then
+		!words.append('WeldText')
+	elseif !type eq 'ISODMF' then
+		!words.append('ISODMF')
+	endif
+	!this.mbdstru.deletefunction('all',!words)
+endmethod
+
+$(
+
+define method .draw(!type is string)
+	if !type eq 'ISODMF' then
+		!this.drawdmf()
+		return
+	endif
+	--q var !this.mbdstru.toaid()
+
+	--!this.createGros(false)
+	!this.deleteType(!type)
+
+	if !this.mbdstru.todim().not() or !this.mbdstru.toaid().not() then
+		!!alert.warning('No right to create element')
+		return
+	endif
+
+
+	$!this.branname
+
+
+	--do !x indices !this.isolines
+	--!isoline = !this.isolines[!x]
+	!x = 0
+	do !isoline values !this.isolines
+		!x = !x + 1
+		!isoline.dimdirs = !this.dimdirs
+		!isoline.chardirs = !this.chardirs
+		!isoline.useGoodDirs = !this.useGoodDirs
+
+		!isoline.cheightbili = !this.cheightbili
+		--!isoline.cheight = !this.cheight
+
+		!isoline.draw(!type)
+
+		if !type eq 'ISODIM' then
+			if !x gt 1 then     $*这个是有用的，因为上一个isoline可能还有些东西没处理完
+				if !!isofindIsouseddir(!this.isolines[!x - 1].usedDirs,'NextIsoLineDim').name.unset() then
+					!dis = !this.isolines[!x - 1].line.near(!isoline.pos).distance(!this.isolines[!x - 1].pos)
+					!mindis = !dis - !this.isolines[!x - 1].od
+					!maxdis = !dis + !this.isolines[!x - 1].od
+					--!isoUsedDir = object isoUsedDir('NextIsoLineDim',!isoline.dimdir,!mindis,!maxdis,'ISODIM')
+					--!this.isolines[!x - 1].usedDirs.append(!isoUsedDir)
+
+					!tempdir = !this.isolines[!x - 1].pipedir.orthogonal(!this.isolines[!x].pipedir)
+					!tempdir2 = !this.isolines[!x - 1].pipedir
+					!ori = x is $!tempdir and z is $!tempdir2
+					!arc = object arc(!this.isolines[!x].pos,!ori,0,360,1000,true)
+					!angle1 = !arc.near(!this.isolines[!x].pos.offset(!isoline.dimdir,1000))
+					!angle2 = !arc.near(!this.isolines[!x].pos.offset(!isoline.pipedir,1000))
+					!tempangle1 = min(!angle1,!angle2)
+					!tempangle2 = max(!angle1,!angle2)
+					do !angle from !tempangle1 to !tempangle2 by 5
+						!tempdir = !arc.angledirection(!angle)
+						!isoUsedDir = object isoUsedDir('NextIsoLineDim',!tempdir,!mindis,!maxdis,'ISODIM')
+						!this.isolines[!x - 1].usedDirs.append(!isoUsedDir)
+					enddo
+				endif
+			endif
+			if !x ne !this.isolines.size() then
+				if !!isofindIsouseddir(!this.isolines[!x + 1].usedDirs,'PreIsoLineDim').name.unset() then
+					!mindis = - !this.isolines[!x + 1].od
+					!maxdis = !this.isolines[!x + 1].od
+					--!isoUsedDir = object isoUsedDir('PreIsoLineDim',!isoline.dimdir,!mindis,!maxdis,'ISODIM')
+					--!this.isolines[!x + 1].usedDirs.append(!isoUsedDir)
+
+					!tempdir = !this.isolines[!x + 1].pipedir.orthogonal(!this.isolines[!x].pipedir)
+					!tempdir2 = !this.isolines[!x + 1].pipedir
+					!ori = x is $!tempdir and z is $!tempdir2
+					!arc = object arc(!this.isolines[!x + 1].pos,!ori,0,360,1000,true)
+					!angle1 = !arc.near(!this.isolines[!x + 1].pos.offset(!isoline.dimdir,1000))
+					!angle2 = !arc.near(!this.isolines[!x].pos)
+					!tempangle1 = min(!angle1,!angle2)
+					!tempangle2 = max(!angle1,!angle2)
+					do !angle from !tempangle1 to !tempangle2 by 5
+						!tempdir = !arc.angledirection(!angle)
+						!isoUsedDir = object isoUsedDir('PreIsoLineDim',!tempdir,!mindis,!maxdis,'ISODIM')
+						!this.isolines[!x + 1].usedDirs.append(!isoUsedDir)
+					enddo
+				endif
+			endif
+		endif
+	enddo
+endmethod
+$)
+
+
+define method .getelementmaterials()
+	-----------------------
+	-----------------------one adjust weld adds 100 tube
+	if !this.materials.set() then
+		return
+	endif
+	--if !this.checkadjust.unset() or !this.checkadjust.not() then
+	!this.getadjustwelds()
+	--endif
+	!adjustobjects = !this.adjustwelds
+
+	--if !this.branmems.unset() then
+	--	!this.getbranmems()
+	--endif
+	--$p aa
+	!this.getattadatas()
+	if !this.wronglines.set() then
+		return
+	endif
+	--$p bb
+	-----------------------------------------------------------------------------------
+	-----------------------------------------------------------------------------------Step 1: for normal element except ATTA and WELD
+	--q var !this.branmems
+    !allTubeMaterial = array()
+    !logTubes = array()
+    do !mem values !this.branmems
+		if !mem eq 'Head' then
+			skip
+		endif
+        if !mem eq 'Tail' then
+            if  !allTubeMaterial.size() ge 1 then
+                --!tubePerweight = 0
+                !tubeQuantity = 0
+                !tubeWeight = 0
+                do  !tubeMaterial values !allTubeMaterial
+                    --!tubePerweight = !tubeMaterial.Perweight.value() + !tubePerweight
+                    !tubeQuantity = !tubeMaterial.Quantity + !tubeQuantity
+                    !tubeWeight = !tubeMaterial.Weight + !tubeWeight
+                enddo
+                --!allTubeMaterial[1].Perweight = !tubePerweight
+                !allTubeMaterial[1].Quantity = !tubeQuantity
+                !allTubeMaterial[1].Weight = !tubeWeight
+                !this.materials.append(!allTubeMaterial[1])
+            endif
+            if  !logTubes.size() ge 1 then
+                do  !logTube values !logTubes
+                    !this.materials.append(!logTube)
+                enddo
+            endif
+            --q var !this.materials
+            skip
+        endif
+		!memtype = type of $!mem
+
+		if !memtype eq 'PCOM' then
+			!memname = name of $!mem
+			if !memname.matchwild('*KD-02') or !memname.matchwild('*KD-2') then
+				skip
+			endif
+		endif
+
+        --modify by jyg 20250108  处理圆形焊点将直管段拆分为两个管段号1、2的问题
+        if  !memtype eq 'WELD' then
+            --if !objects[!x].text.substring(1,1) eq 'M' or matchwild(DTXR of $!objects[$!x].name,'*FIELD*') then 从其他地方粘贴过来的条件，参考使用
+            !memdtxr = dtxr of $!mem
+            if  !memdtxr.matchwild('*FIELD*') then
+                if  !allTubeMaterial.size() ge 1 then
+                    --!tubePerweight = 0
+                    !tubeQuantity = 0
+                    !tubeWeight = 0
+                    do  !tubeMaterial values !allTubeMaterial
+                        --!tubePerweight = !tubeMaterial.Perweight.value() + !tubePerweight
+                        !tubeQuantity = !tubeMaterial.Quantity + !tubeQuantity
+                        !tubeWeight = !tubeMaterial.Weight + !tubeWeight
+                    enddo
+                    --!allTubeMaterial[1].Perweight = !tubePerweight
+                    !allTubeMaterial[1].Quantity = !tubeQuantity
+                    !allTubeMaterial[1].Weight = !tubeWeight
+                    !this.materials.append(!allTubeMaterial[1])
+                    !allTubeMaterial = array()
+                endif
+            endif
+        endif
+
+
+		if !memtype ne 'ATTA' and !memtype ne 'WELD' then
+            --q var !memtype
+			if !memtype inset ('TEE','OLET') then
+				!p1pos = p1pos of $!mem wrt/*
+				!p2pos = p2pos of $!mem wrt/*
+
+				if !p1pos.distance(!p2pos) lt 1 then
+					!p3pos = p3 pos of $!mem wrt/*
+					handle any
+						skip
+					elsehandle none
+						if !p3pos.distance(!p1pos) lt 1 then
+							skip
+						endif
+					endhandle
+				endif
+			endif
+
+			!onematerial = object isomaterial(!mem)
+
+			if !memtype eq 'PCOM' then
+				!memname = name of $!mem
+				if !memname.matchwild('*KD-01') then
+					!onematerial.desc = !onematerial.desc.before('KD-01') & 'KD'
+				elseif !memname.matchwild('*KD-1') then
+					!onematerial.desc = !onematerial.desc.before('KD-1') & 'KD'
+				endif
+			endif
+			if type of $!mem eq 'TUBI' then
+                --q var !onematerial
+				var !tubi ref of $!mem
+				!len = itlength of $!mem wrt/*
+				do !y indices !adjustobjects
+					var !adjusttubi ref of $!mem
+					if !adjusttubi eq !tubi then
+						--q var  !adjustobjects[!y].tubi !tubi !mem
+						--if !adjustobjects[!y].tubi eq !tubi then
+						-----------------------------------------------------------------------------------
+						-----------------------------------------------------------------------------------Step 1:one adjust weld adds 100 tube
+						!onematerial.quantity = real(STRING(!len + !adjustobjects[!y].adjustlen, 'D0'))
+						!onematerial.weight = !onematerial.weight * (!len + !adjustobjects[!y].adjustlen) / !len
+						!adjustobjects[!y].delete()
+						!adjustobjects.compress()	$*there maybe more than 1 adjustweld on this tubi
+						--break
+					endif
+				enddo
+			endif
+            --q var !onematerial
+            --modify by jyg 20241212  合并管道、弯管、接管座数据(olet两边的直管段要合并)。
+            if type of $!mem inset ('TUBI','OLET','BEND') then
+                --olet前后的直管段要合并，所以先把直管段合并计算，然后把olet加入materials数组中。
+                if  type of $!mem inset ('OLET') then
+                    --q var !onematerial
+                    !logTubes.append(!onematerial)
+                    skip
+                else
+                    !allTubeMaterial.append(!onematerial)
+                    skip
+                endif
+            else
+                if  !allTubeMaterial.size() ge 1 then
+                    --!tubePerweight = 0
+                    !tubeQuantity = 0
+                    !tubeWeight = 0
+                    do  !tubeMaterial values !allTubeMaterial
+                        --!tubePerweight = !tubeMaterial.Perweight.value() + !tubePerweight
+                        !tubeQuantity = !tubeMaterial.Quantity + !tubeQuantity
+                        !tubeWeight = !tubeMaterial.Weight + !tubeWeight
+                    enddo
+
+                    --modify by jyg 20250219 解决0度弯管显示的问题
+                    do  !tubeMaterial values !allTubeMaterial
+                        --q var !tubeMaterial
+                        if  !tubeMaterial.desc.matchwild('*0长度弯管*') then
+                            skip
+                        else
+                            --!tubeMaterial.Perweight = !tubePerweight
+                            !tubeMaterial.Quantity = !tubeQuantity
+                            !tubeMaterial.Weight = !tubeWeight
+                            !this.materials.append(!tubeMaterial)
+                            break
+                        endif
+                    enddo
+                    !allTubeMaterial = array()
+                endif
+
+                if  !logTubes.size() ge 1 then
+                    do  !logTube values !logTubes
+                        !this.materials.append(!logTube)
+                    enddo
+                    !logTubes = array()
+                endif
+
+                !this.materials.append(!onematerial)
+            endif
+            --q var !onematerial
+            --$p 1
+			--!this.materials.append(!onematerial)
+		endif
+	enddo
+    --q var !this.materials[26]
+	--$p cc
+	-----------------------
+	-----------------------check if all adjust weld have been dealed
+	if !adjustobjects.size() ne 0 then
+		do !adjustobject values !adjustobjects
+			$p $!adjustobject.name cant find any tube attached to this FIELD AND ADJUST WELD
+		enddo
+	endif
+
+	-----------------------------------------------------------------------------------
+	-----------------------------------------------------------------------------------Step 2: Add PAD LEG LUG
+    --$p dd
+    !attaInfo = array()
+    --q var !this.pipeatta.attaobjects
+	do !object values !this.pipeatta.attaobjects
+		--if !object.objecttype() inset ('ISOLUG','ISOLEG') and !object.onpad then	$* all atta belong to pipe according to new rule
+		--	skip
+		--else
+
+        --modify by jyg 20241211 用来计算护板和挡块，去除重复项，保留一个直管段信息信息即可
+        --q var !object
+        !objectType =  !object.objecttype()
+        --!objectName =  !object.name
+        !objectItemcode =  !object.itemcode
+        !objectAttaPos =  !object.attapos.string()
+        --modify by jyg 20241220 解决list列表为空的问题，因为isoelbopad(object类型)和isopad的mem数量不一样，导致mem取值有问题，所以添加了判断条件
+        if  !objectType eq 'ISOELBOPAD' then
+        else
+            !objectHeight =  !object.height.string()
+            !info = !objectType + !objectItemcode + !objectAttaPos + !objectHeight
+            if  !attaInfo.Findfirst(!info).set() then
+                skip
+            else
+                !attaInfo.append(!info)
+                !onematerial = object isomaterial(!object)
+            endif
+        endif
+        --q var !objectType  !objectItemcode  !objectAttaPos  !objectHeight
+
+        !this.materials.append(!onematerial)
+	enddo
+	--q var !this.materials[1]
+	--!oldmaterials = !this.materials
+	-----------------------------------------------------------------------------------
+	-----------------------------------------------------------------------------------Step 3:Bolt
+    --$p ee
+	!this.getboltdatas()
+	handle any
+		!this.wronglines.append('$!this.branname 请检查模型，有螺栓等紧固件材料生成不了（有但不限于缺少垫片）')
+		return
+        --!this.materials = !oldmaterials
+        --q var !!error
+	endhandle
+	--q var !this.materials
+	---------------------------bolt
+endmethod
+
+
+define method .getmaterials()
+    --$p 11
+	--$p asdfadsf------------------------------
+	if !this.materials.set() then
+		return
+	endif
+    --$p 22
+
+
+	!this.getelementmaterials()
+	if !this.wronglines.set() then
+		return
+	endif
+--$p 33
+	-----------------------
+	-----------------------set tubi number
+	!this.settubinum()
+--$p 44
+	-----------------------
+	-----------------------set element number
+	!this.setMaterialElementNumber()
+
+--$p 55
+	--it seems unnecessary
+	-----------------------
+	-----------------------class material
+    --q var !!classmaterial(!this.materials)
+    --$p 3
+    --q var !this.materials[1]
+
+	!this.materials = !!classmaterial(!this.materials)
+    --q var !this.materials[1] !this.materials[2]
+--$p 66
+	!this.setmaterialorder()
+--$p 77
+	!this.setsummaterials()
+--$p 88
+
+endmethod
+
+define method .setsummaterials()
+	-----get sum materails from order
+	!tempmaterials = !this.sumattamaterial()
+    --q var !tempmaterials
+	!allorders = array()
+	do !isomaterial values !tempmaterials
+		!allorders.append(!isomaterial.order)
+	enddo
+	!orders = !allorders
+	!orders.unique().sort()
+	--$p ggg
+	!isomaterials = array()
+	!nodestrings = array()			$* for nodenames
+	do !x indices !orders
+		!orderarr = !allorders.find(!x)
+		do !y values !orderarr
+			!isomaterial = !tempmaterials[!y]
+			--!nodenames = !!getnodenamesforele(!isomaterial.name)
+			if undefined(!isomaterials[!x]) then
+				!isomaterials[!x] = !isomaterial
+				!nodestrings[!x] = !isomaterial.nodenames
+			else
+				!isomaterials[!x].quantity = !isomaterials[!x].quantity + !isomaterial.quantity
+				!isomaterials[!x].weight = !isomaterials[!x].weight + !isomaterial.weight
+				if !nodestrings[!x].match(!isomaterial.name) eq 0 then
+                    --q var !nodestrings[!x] !isomaterial.nodenames
+					!nodestrings[!x] = !nodestrings[!x] & '^' & !isomaterial.nodenames
+				endif
+			endif
+		enddo
+	enddo
+	!this.summaterials = !isomaterials
+	!this.summaterialsnodestrings = !nodestrings
+    --q var !this.summaterials[1]
+	--return !nodestrings
+
+	return
+
+
+	$(
+	!tempmaterials = !this.sumattamaterial()
+	--because the atta materials were put at the end of array, so the order maybe wrong
+	!isomaterials = array()
+	!uniquecodes = array()
+	do !isomaterial values !tempmaterials
+		!index = !uniquecodes.findfirst(!isomaterial.uniquecode)
+		if !index.unset() then
+			!isomaterials.append(!isomaterial)
+			!uniquecodes.append(!isomaterial.uniquecode)
+		else
+			!isomaterials[!index].quantity = !isomaterials[!index].quantity + !isomaterial.quantity
+			!isomaterials[!index].weight = !isomaterials[!index].weight + !isomaterial.weight
+		endif
+	enddo
+	!this.summaterials = !isomaterials
+	$)
+endmethod
+
+define method .sumattamaterial() is array
+	------------------------------------------------------deal angle material s 202311141745
+	!angleIsomaterials = array()
+	!angleuniquecodes = array()
+	!angles = array()
+
+	!tempmaterials = !this.materials
+	do !x indices !tempmaterials
+		!isomaterial = !tempmaterials[!x]
+		if !isomaterial.ns.match('°') ne 0 then
+			--var !branname ref of bran of $!isomaterial.name
+			!uniquecode = !isomaterial.uniquecode
+			!index = !angleuniquecodes.findfirst(!uniquecode)
+			if !index.unset() then
+				!isomaterial.ns = !isomaterial.ns.before(' x ')
+				!angleIsomaterials.append(!isomaterial)
+				!angleuniquecodes.append(!uniquecode)
+				!angles.append(!isomaterial.materialangle)
+			else
+				if !angles[!index] + !isomaterial.materialangle gt 360 then
+					!angleIsomaterials[!index].quantity = !angleIsomaterials[!index].quantity + !isomaterial.quantity
+					!angleIsomaterials[!index].weight = !angleIsomaterials[!index].weight + !isomaterial.weight
+					!angles[!index] = !isomaterial.materialangle
+				else
+					!angles[!index] = !angles[!index] + !isomaterial.materialangle
+				endif
+			endif
+			!tempmaterials[!x].delete()
+		endif
+	enddo
+	!tempmaterials.compress()
+	!tempmaterials.appendarray(!angleIsomaterials)		$* put atta materials at the end of array
+	------------------------------------------------------deal angle material e 202311141745
+	-----------------------------------------------------------------------------------
+	-----------------------------------------------------------------------------------Step 1:end
+    --q var !tempmaterials[1]
+	return !tempmaterials
+endmethod
+
+define method .setmaterialorder()
+    --$p 123
+	!uniquecodes = array()
+	!cindex = 0
+
+	!nodestrings = array()
+	do !x indices !this.materials
+		!isomaterial = !this.materials[!x]
+
+		--do !isomaterial values !this.materials
+		!index = !uniquecodes.findfirst(!isomaterial.uniquecode)
+		if !index.unset() then
+			!uniquecodes.append(!isomaterial.uniquecode)
+			!index = !cindex + 1
+		endif
+        --q var !index
+		!this.materials[!x].order = !index
+		--!isomaterial.order = !index
+		--!this.objects.append(!isoMaterial)
+		!cindex = max(!index,!cindex)
+	enddo
+	--q var !uniquecodes
+endmethod
+
+
+define method .getBoltdatas()
+	!boltbran = object boltbran(!this.branname)
+    handle any
+        --modify by jyg 20240926 需完善
+        --临时处理1916项目螺栓无法提取的问题
+    endhandle
+    --q var !boltbran
+    --q var !boltbran.materials
+    --$p 4
+	!this.materials.appendarray(!boltbran.materials)
+endmethod
+
+
+define method .setMaterialElementNumber()
+	!specialstring = !this.drawnum
+	!num = 0
+	do !index indices !this.materials
+		!num = !num + 1
+		!this.materials[!index].specialnum = !num.string()
+	enddo
+endmethod
+
+define method .settubinum()
+	!pretype = ''
+	!tubinum = 0
+    --q var !this.materials[1]
+	do !index indices !this.materials
+		if !this.materials[!index].type eq 'TUBI' then
+			if !pretype ne 'TUBI' then
+				!tubinum = !tubinum + 1
+			endif
+			!pretype = 'TUBI'
+			!this.materials[!index].tubinum = !tubinum
+		elseif not(!this.materials[!index].type inset ('ATTA', 'OLET', 'BOLT')) then
+			!pretype = !this.materials[!index].type
+		elseif !this.materials[!index].type eq 'OLET' then
+			!pretype = 'TUBI'
+		endif
+        --q var !tubinum
+	enddo
+endmethod
+
+define method .getcuttubi(!atts is array) is array
+	if !this.materials.unset() then
+		!this.getmaterials()
+		if !this.wronglines.set() then
+			return
+		endif
+	endif
+	!indexs = array()
+	!rowarrs = array()
+	!nodestrings = array()
+	do !isomaterial values !this.materials
+		if !isomaterial.tubinum.set() then
+			!tempx = !indexs.findfirst(!isomaterial.tubinum)
+			if !tempx.set() then	$*sum tubis which seperated by some elements with zero length such as olet
+				do !x indices !atts
+					if !atts[!x] ne 'quantity' then
+						skip
+					endif
+					!com = '!onequantity = !isomaterial.quantity'
+					$!com
+					handle any
+						$p No att: $!att in Material object
+					elsehandle none
+						--q var !rowarrs[!tempx]
+
+						!rowarrs[!tempx][!x] = !rowarrs[!tempx][!x] + !onequantity
+
+						!nodestrings[!tempx] = !nodestrings[!tempx] & '^' & !isomaterial.nodenames
+					endhandle
+				enddo
+			else
+				!indexs.append(!isomaterial.tubinum)
+				!rowarr = array()
+				do !x indices !atts
+					!att = !atts[!x]
+					!com = '!rowarr[!x] = !isomaterial.' + !att
+					$!com
+					handle any
+						!rowarr[!x] = ''
+						$p No att: $!att in Material object
+					endhandle
+				enddo
+				!rowarrs.append(!rowarr)
+				!nodestrings.append(!isomaterial.nodenames)
+			endif
+		endif
+	enddo
+	!indices = !indexs.sortedindices()
+	!rowarrs.reindex(!indices)
+	!nodestrings.reindex(!indices)
+	!this.cuttubinodestrings = !nodestrings
+	return !rowarrs
+
+	$(
+	!result = array()
+	!result.append(!rowarrs)
+	!result.append(!nodestrings)
+	return !result
+	$)
+endmethod
+
+define method .settemprev()
+	!path = !!tempmodrev.path.val
+	handle any
+		pml reload form !!tempmodrev
+		!path = !!tempmodrev.path.val
+        handle any
+            return
+        endhandle
+	endhandle
+
+	!file = object file(!path & !this.branname & 'rev.txt')
+	if !file.exists() then
+		!lines = !file.readfile()
+		if !lines.size() ne !this.materials.size() then
+			!!alert.warning('日志数据与现模型材料对不上。请重新标注')
+			!ans = !!alert.confirm('为了避免当前错误日志数据的影响，建议删除日志数据，是否删除?')
+			if !ans eq 'YES' then
+				!file.deletefile()
+			endif
+			return
+		endif
+
+		!nums = array()
+		!revs = array()
+		do !line values !lines
+			!arr = !line.split()
+			!nums.append(!arr[1].real())
+			!revs.append(!arr[2])
+		enddo
+		!indices = !nums.sortedindices()
+		!revs.reindex(!indices)
+		!nums.reindex(!indices)
+
+		do !isomaterial values !this.materials
+            --q var !isomaterial
+			if !isomaterial.specialnum.match('_') ne 0 then
+				!snum = !isomaterial.specialnum.after('_').real()
+			else
+				!snum = !isomaterial.specialnum.real()
+			endif
+
+			!index = !nums.findfirst(!snum)
+			if !index.set() then
+				!isomaterial.rev = !revs[!index]
+			endif
+		enddo
+	endif
+    handle any
+        return
+    endhandle
+endmethod
+
+define method .getSpecialMaterials(!atts is array) is array
+    --!atts  表头列表
+    --q var !atts
+	if !this.materials.unset() then
+		!this.getmaterials()
+		if !this.wronglines.set() then
+			return
+		endif
+	endif
+    --q var  !this.materials[1]
+
+	!this.getcutparts()	$* set cut num
+
+	------------------------------------------------------202407041757 临时设置新版本流程中恢复日志版本的程序，不用时直接去掉，其它不会受影响
+	--modify by jyg 20240730
+    !this.settemprev()
+
+	------------------------------------------------------
+	!indexs = array()
+	!rowarrs = array()
+	!nodestrings = array()
+    --q var !this.materials[1]
+	do !isomaterial values !this.materials
+        --q var !isomaterial
+		if !isomaterial.specialnum.match('_') ne 0 then
+			!indexs.append(!isomaterial.specialnum.after('_').real())
+		else
+			!indexs.append(!isomaterial.specialnum.real())
+		endif
+		!nodestrings.append(!isomaterial.nodenames)
+		!rowarr = array()
+		do !x indices !atts
+			!att = !atts[!x]
+			if !att eq 'order' then
+				!com = '!rowarr[!x] = !isomaterial.specialnum'
+			else
+				!com = '!rowarr[!x] = !isomaterial.' + !att + '.string()'
+			endif
+
+			--!com = '!rowarr[!x] = !isomaterial.' + !att
+			$!com
+			handle any
+				!rowarr[!x] = ''
+				$p No att: $!att in Material object
+			elsehandle none
+				if !isomaterial.unit.upcase() eq 'M' then
+					if !att.lowcase() eq 'perweight' then
+						if !rowarr[!x].real() ne 0 then
+                            --q var !rowarr[!x].real()
+							!rowarr[!x] = string(!rowarr[!x].real() * 1000,'D3')
+						else
+							--!rowarr[!x] = '不详'
+							!rowarr[!x] = '/'
+						endif
+					elseif !att.lowcase() eq 'quantity' then
+						!tempreal = !rowarr[!x].real().value() / 1000
+						!rowarr[!x] = !tempreal.string('d3') + 'm'
+					endif
+				else
+					if !att.lowcase() eq 'perweight' then
+						if !rowarr[!x].real() ne 0 then
+							!rowarr[!x] = string(!rowarr[!x].real(),'D3')
+						else
+							--!rowarr[!x] = '不详'
+							!rowarr[!x] = '/'
+						endif
+					endif
+				endif
+				if !att.lowcase() eq 'weight' then
+					if !rowarr[!x].real() ne 0 then
+						!rowarr[!x] = !rowarr[!x].real().string('d3')
+					else
+						--!rowarr[!x] = '不详'
+						!rowarr[!x] = '/'
+					endif
+				endif
+			endhandle
+		enddo
+		!rowarrs.append(!rowarr)
+	enddo
+    --$p 4
+	!indices = !indexs.sortedindices()
+	!rowarrs.reindex(!indices)
+	!nodestrings.reindex(!indices)
+	!this.materialsnodestrings = !nodestrings
+	--q var !rowarrs[6]
+	return !rowarrs
+
+	$(
+	!result = array()
+	!result.append(!rowarrs)
+	!result.append(!nodestrings)
+	return !result
+	$)
+endmethod
+
+define method .sumMaterials(!atts is array) is array    $*atts must include 'quantity' and 'weight'
+	if !this.materials.unset() then
+		!this.getmaterials()
+		if !this.wronglines.set() then
+			return
+		endif
+	endif
+
+	--$p 1
+	return !!materialtoarr(!this.summaterials,!atts)
+	--$p 2
+	!emptyarr = array()
+	--!setorder = false
+	!temparr = !!sumMaterials(!emptyarr,!emptyarr,!this.materials)
+	--,!setorder)
+
+	!onebranrowarr = !!materialtoarr(!temparr[1],!atts)
+	return !onebranrowarr
+
+
+
+	!rowarrs = array()
+	!quantityindex = !atts.findfirst('quantity')
+	!weightindex = !atts.findfirst('weight')
+	!uniquecodes = array()
+	do !isomaterial values !this.materials
+		!index = !uniquecodes.findfirst(!isomaterial.uniquecode)
+		if !index.unset() then
+			!uniquecodes.append(!isomaterial.uniquecode)
+			!rowarr = array()
+			do !x indices !atts
+				!att = !atts[!x]
+				!com = '!rowarr[!x] = !isomaterial.' + !att
+				$!com
+				handle any
+					!rowarr[!x] = ''
+					$p No att: $!att in Material object
+				endhandle
+			enddo
+			!rowarrs.append(!rowarr)
+		else
+			if !quantityindex.set() and !weightindex.set() then
+				!rowarrs[!index][!quantityindex] = !rowarrs[!index][!quantityindex] + !isomaterial.quantity
+				!rowarrs[!index][!weightindex] = !rowarrs[!index][!weightindex]  +  !isomaterial.weight
+			endif
+		endif
+	enddo
+
+	do !index indices !rowarrs
+		!rowarrs[!index][!weightindex] = !rowarrs[!index][!weightindex].string('D1').real()
+	enddo
+	return !rowarrs
+endmethod
+
+
+define method .getwelds()
+	if !this.welds.set() and !this.weldobjects.set() then
+		return
+	else
+		!this.welds = array()
+		!this.weldobjects = array()
+	endif
+	!weldPoss = array()
+	!weldShops = array()
+	!weldmems = array()
+
+	--!weldnums = array()
+
+	--!this.getbranmems()
+
+
+	!validMems = array()
+	do !mem values !this.branmems
+		--if !mem eq 'Head' or !mem eq 'Tail' then
+		--	skip
+		--endif
+		!memtype = type of $!mem
+		if !memtype inset ('BEND') then
+			--if !memtype inset ('OLET','ATTA','BEND') then
+			skip
+		endif
+		!validMems.append(!mem)
+
+		$(
+		if !memtype ne 'WELD' and !memtype ne 'OLET' and !memtype ne 'TEE' then
+			!apos = apos of $!mem wrt/*
+			!lpos = lpos of $!mem wrt/*
+			if !apos.distance(!lpos) lt 1 then
+				skip
+			endif
+		endif
+		!validMems.append(!mem)
+		$)
+	enddo
+
+	-----------------------
+	-----------------------used weld to compare
+
+	!weldPoss = array()
+	!weldShops = array()
+	!weldmems = array()
+	do !x indices !validMems
+		!mem = !validMems[!x]
+		!memtype = type of $!mem
+		if !memtype eq 'WELD' then
+			!pos = pos of $!mem wrt/*
+			!rtext = dtxr of $!mem wrt/*
+			if !rtext.match('SHOP') ne 0 then
+				!shop = true
+			else
+				!shop = false
+			endif
+			!weldposs.append(!pos)
+			!weldShops.append(!shop)
+			!weldmems.append(!mem)
+
+			$(
+			!weldnum = :ZD_WLDN of $!mem
+			if !weldnum.set() then
+				!weldnums.append(!weldnum)
+			else
+				!weldnums.append('')
+			endif
+			$)
+		endif
+	enddo
+
+	--q var !validMems
+	do !x indices !validMems
+		!mem = !validMems[!x]
+		if !mem eq 'Head' then
+			if !this.isinstpipe then
+				!hpos = hpos of $!this.branname wrt/*
+				!newweld = true
+				do !z indices !weldposs
+
+					if !weldposs[!z].distance(!hpos) lt 5 then
+						!newWeld = false
+						break
+					endif
+				enddo
+				if !newWeld then
+					!weldposs.append(!hpos)
+					!weldshops.append(false)
+					!weldmems.append('Head')
+					--!weldnums.append('')
+				endif
+			endif
+		elseif !mem eq 'Tail' then
+			if !this.isinstpipe then
+				!tpos = tpos of $!this.branname wrt/*
+				!newweld = true
+				do !z indices !weldposs
+
+					if !weldposs[!z].distance(!hpos) lt 5 then
+						!newWeld = false
+						break
+					endif
+				enddo
+				if !newWeld then
+					!weldposs.append(!tpos)
+					!weldshops.append(false)
+					!weldmems.append('Tail')
+					--!weldnums.append('')
+				endif
+			endif
+		else
+			!memtype = type of $!mem
+			if !memtype eq 'WELD' then
+				skip
+				$(
+				!pos = pos of $!mem wrt/*
+				!rtext = dtxr of $!mem wrt/*
+				if !rtext.match('SHOP') ne 0 then
+					!shop = true
+				else
+					!shop = false
+				endif
+				!weldposs.append(!pos)
+				!weldShops.append(!shop)
+				!weldmems.append(!mem)
+				$)
+			elseif !memtype eq 'TUBI' then
+				skip	$* no need any more
+
+				if !x ne 1 and !x ne !validMems.size() then		$*no need to consider since two ends of other members have been considered
+					skip
+				endif
+				!shop = false
+				if !x eq 1 then
+					!href = name of href of $!mem wrt/*
+					handle any
+						skip
+					elsehandle none
+						!hreftype = type of $!href
+						if !hreftype eq 'BRAN' then
+							var !mode mode
+							forwards
+							var !mems coll all (bran mem) with (type ne 'ATTA') for $!href
+							mode $!mode
+							!lastmem = !mems.last()
+							if type of $!lastmem eq 'WELD' then
+								skip
+							endif
+						endif
+					endhandle
+					!pos = hpos of bran of $!mem wrt/*
+				else
+					!tref = name of tref of $!mem wrt/*
+					handle any
+						skip
+					elsehandle none
+						!treftype = type of $!tref
+						if !treftype eq 'BRAN' then
+							-----------------------
+							-----------------------只要有下游，那就由下游负责
+							skip
+							$(
+							var !mode mode
+							forwards
+							var !mems coll all (bran mem) with (type ne 'ATTA') for $!tref
+							mode $!mode
+							!firstmem = !mems[1]
+							if type of $!firstmem eq 'WELD' then
+								skip
+							endif
+							$)
+						endif
+					endhandle
+					!pos = tpos of bran of $!mem wrt/*
+				endif
+				!weldposs.append(!pos)
+				!weldShops.append(!shop)
+				!weldmems.append(!mem)
+				--!weldnums.append('')
+			else
+
+				!apos = apos of $!mem wrt/*
+				handle any
+					!apos = pos of $!mem wrt/*
+				endhandle
+				!lpos = lpos of $!mem wrt/*
+				handle any
+					!lpos = pos of $!mem wrt/*
+				endhandle
+				if !apos.distance(!lpos) lt 1 then
+					if !memtype eq 'OLET' or !memtype eq 'TEE' then
+						if !this.isinstpipe then	$*EM4 use weld only
+							!p3pos = p3 pos of $!mem wrt/*
+							!aod = aod of $!mem wrt/*
+							!cenpos = pos of $!mem wrt/*
+							!shop = true
+
+							!tempdir = !cenpos.direction(!p3pos)
+							handle any
+								!tempdir = p3 dir of $!mem wrt/*
+							endhandle
+
+							!newWeld = true
+							!weldindex = 0
+							do !z indices !weldposs
+								--if !weldposs[!z].distance(!cenpos) lt 1 then	$* because some
+								if !weldposs[!z].distance(!cenpos) lt min(!aod / 10,5) then
+									!newWeld = false
+									--$p $!weldmems[$!z]
+									if type of $!weldmems[$!z] eq 'WELD' then
+										!weldindex = !z
+									endif
+									break
+								endif
+							enddo
+							if !newWeld then
+								!weldposs.append(!cenpos.offset(!tempdir,!aod / 2))
+								!weldShops.append(!shop)
+								!weldmems.append(!mem)
+								--!weldnums.append('')
+							elseif !weldindex ne 0 then
+								-----------------------
+								-----------------------put the weld data to the right position in three array
+								!weldposs.append(!weldposs[!weldindex])
+								!weldshops.append(!weldshops[!weldindex])
+								!weldmems.append(!weldmems[!weldindex])
+								--!weldnums.append('')
+
+								!weldposs[!weldindex].delete()
+								!weldshops[!weldindex].delete()
+								!weldmems[!weldindex].delete()
+								--!weldnums[!weldindex].delete()
+							endif
+
+
+							--$p $!mem $!newweld
+							--elseif !memtype eq 'ATTA' then	$*挡块有2个weld 护板有1个,但是只考虑与外管壁有接触的ATTA
+						endif
+					endif
+				else
+					if !this.isinstpipe then	$*EM4 use weld only
+						--$p $!mem
+						do !y from 1 to 2
+							if !y eq 1 then
+								!conn = aconn of $!mem
+								!pos = !apos
+								!od = aod of $!mem
+							else
+								!conn = lconn of $!mem
+								!pos = !lpos
+								!od = lod of $!mem
+							endif
+							if !conn.match('BW') ne 0 or !conn.match('SW') ne 0 then
+								if (!x eq 1 and !y eq 1) or (!x eq !validmems.size() and !y eq 2) then		$*head or tail of bran should be field
+									!shop = false
+								else
+									if !memtype inset('ELBO','TEE','REDU','CROS','FLAN') then
+										!shop = true
+									else
+										!shop = false
+									endif
+								endif
+
+								--$p $!mem $!shop $!x $!y
+
+								!newWeld = true
+								!weldindex = 0
+								do !z indices !weldposs
+									--if !weldposs[!z].distance(!pos) lt 1 then
+									if !weldposs[!z].distance(!pos) lt min(!od / 10,5) then
+										if type of $!weldmems[$!z] eq 'WELD' then
+											-----------------------
+											-----------------------use weld data first
+											!newweld = false
+											!weldindex = !z
+										elseif !weldShops[!z] and !shop.not() then
+											-----------------------
+											-----------------------use field weld first
+											!weldposs[!z].delete()
+											!weldshops[!z].delete()
+											!weldmems[!z].delete()
+											--!weldnums[!z].delete()
+										else
+											!newweld = false
+										endif
+										break
+
+										$(
+										if !shop then
+											!newWeld = false
+										else
+											if type of $!weldmems[$!z] eq 'WELD' or !weldShops[!z].not() then
+												!newWeld = false
+											else	$* replace
+												!weldposs[!z] = !pos
+												!weldShops[!z] = !shop
+												!weldmems[!z] = !mem
+												!newWeld = false
+											endif
+										endif
+										break
+										$)
+									endif
+								enddo
+								if !newWeld then
+									!weldposs.append(!pos)
+									!weldShops.append(!shop)
+									!weldmems.append(!mem)
+									--!weldnums.append('')
+								elseif !weldindex ne 0 then
+									!weldposs.append(!weldposs[!weldindex])
+									!weldshops.append(!weldshops[!weldindex])
+									!weldmems.append(!weldmems[!weldindex])
+									--!weldnums.append('')
+
+									!weldposs[!weldindex].delete()
+									!weldshops[!weldindex].delete()
+									!weldmems[!weldindex].delete()
+									--!weldnums[!weldindex].delete()
+								endif
+							endif
+						enddo
+					endif
+				endif
+			endif
+		endif
+	enddo
+
+
+
+	if !this.isinstpipe then	$*EM4 use weld only
+		-----------------------
+		-----------------------ensure the last weld is last one(because sometimes the tail is not right, a tail weld would be created)
+		!lastmem = !validMems.last()
+		if type of $!lastmem eq 'WELD' then
+			!weldindex = !weldmems.findfirst(!lastmem)
+			if !weldindex ne !weldmems.maxindex() then
+				!weldposs.append(!weldposs[!weldindex])
+				!weldshops.append(!weldshops[!weldindex])
+				!weldmems.append(!weldmems[!weldindex])
+				--!weldnums.append(!weldnums[!weldindex])
+
+				!weldposs[!weldindex].delete()
+				!weldshops[!weldindex].delete()
+				!weldmems[!weldindex].delete()
+				--!weldnums[!weldindex].delete()
+			endif
+		endif
+	endif
+
+	!weldposs.compress()
+	!weldshops.compress()
+	!weldmems.compress()
+	--!weldnums.compress()
+
+	!weldmovedirs = array()
+	!weldmovediss = array()
+	do !x indices !weldposs
+		!weldmovedirs[!x] = u
+		!weldmovediss[!x] = 0
+	enddo
+
+    --q var !weldmems
+    --q var !weldposs !weldshops !weldmems
+	----------------------
+	----------------------Step x:get weld of ATTA
+	!temparr = !this.getattawelds()
+    --q var !temparr
+	--q var !temparr[1]
+	!weldposs.appendarray(!temparr[1])
+	!weldshops.appendarray(!temparr[2])
+	!weldmems.appendarray(!temparr[3])
+	!weldmovedirs.appendarray(!temparr[4])
+	!weldmovediss.appendarray(!temparr[5])
+
+
+    --q var !weldmems
+    --q var !temparr
+    --q var !weldposs
+
+	----------------------
+	----------------------Step x:get weld of KD
+	!temparr = !this.getkdwelds()
+	--q var !temparr[1]
+	!weldposs.appendarray(!temparr[1])
+	!weldshops.appendarray(!temparr[2])
+	!weldmems.appendarray(!temparr[3])
+	!weldmovedirs.appendarray(!temparr[4])
+	!weldmovediss.appendarray(!temparr[5])
+	--q var !temparr
+
+
+	----------------------
+	----------------------Step x:sort weld acoording their position
+    --q var !weldposs
+	!newweldindices = !this.sortwelds(!weldposs)
+	!weldposs.reindex(!newweldindices)
+	!weldshops.reindex(!newweldindices)
+	!weldmems.reindex(!newweldindices)
+	!weldmovedirs.reindex(!newweldindices)
+	!weldmovediss.reindex(!newweldindices)
+
+	$(
+	--can not change it manually
+	if !weldposs.set() then
+		!hpos = hpos of $!this.branname wrt/*
+		if !weldposs[1].distance(!hpos) lt 5 then
+			!weldshops[1] = false
+		endif
+
+		!tpos = tpos of $!this.branname wrt/*
+		if !weldposs.last().distance(!tpos) lt 5 then
+			!weldshops[!weldposs.size()] = false
+		endif
+	endif
+	$)
+
+	------------------------------------------------------
+	------------------------------------------------------
+	------------------------------------------------------
+	------------------------------------------------------
+	------------------------------------------------------
+	------------------------------------------------------set weld number
+	--if true then
+	if !this.isinstpipe then
+		do !x indices !weldposs
+			if !weldshops[!x].not() then
+				!text = 'M' & !x
+			else
+				!text = 'A' & !x
+			endif
+			!isoWeldText = object isoWeldText(!weldmems[!x],!weldposs[!x],!text,!weldmovedirs[!x],!weldmovediss[!x],!weldshops[!x])
+			!this.welds.append(!text)
+			!this.weldobjects.append(!isoweldtext)
+		enddo
+	else
+		var !attas coll all atta for $!this.branname
+        --q var !attas
+		!attanames = array()
+		!allattaweldnums = array()
+		do !atta values !attas
+			!attaname = name of $!atta
+            --q var !attaname
+			!attanames.append(!attaname)
+			!text = :ZD_WLDN of $!atta
+			handle any
+				!attaweldnums = array()
+			elsehandle none
+            --q var !text
+				if !text.unset() or !text eq '' then
+					!attaweldnums = array()
+                    --q var !atta
+				else
+                    --q var !atta
+					if !text.match('-') ne 0 then
+						if !text.match('A') ne 0 then
+							!shopletter = 'A'
+						else
+							!shopletter = 'M'
+						endif
+						!text = !text.replace('A','').replace('M','')
+						!parts = !text.split('-')
+
+						!attaweldnums = array()
+						if !parts.size() eq 2 then
+                        --$p 1
+							!sx = !parts[1].real()
+							!ex = !parts.last().real()
+							do !x from !sx to !ex
+								!attaweldnums.append(!shopletter & !x)
+							enddo
+						else
+                        --$p 2
+							do !part values !parts
+								!attaweldnums.append(!shopletter + !part)
+							enddo
+						endif
+					else
+                    --$p 3
+                        --q var !attaname
+						!attaweldnums = !text.split(';')
+                        --Q VAR !attaweldnums
+					endif
+				endif
+                --q var !attaweldnums
+			endhandle
+            --q var !attaweldnums
+			!allattaweldnums.append(!attaweldnums)
+		enddo
+        --Q VAR !allattaweldnums
+		------------------------------------------------------got all atta and weldnums on this each atta
+        --Q VAR !allattaweldnums
+        --$P --------------
+        --q var !attanames  !allattaweldnums
+        --q var !weldposs !weldmems
+        --q var  !weldmems
+        --q var !attanames
+        --q var !weldposs
+		do !x indices !weldposs
+			!weldname = name of $!weldmems[$!x]
+			!memtype = type of $!weldname
+            !memSpref = name of  spref of $!weldname
+            --q var !weldname !memtype
+			if !memtype eq 'WELD' then
+				!text = :ZD_WLDN of $!weldname
+				handle any
+					!text = ''
+				endhandle
+			elseif !memtype eq 'PCOM' then
+                --modify by jyg 20241205  临时解决pocm添加四个焊点的问题
+                !scomPcom = name of  catref of $!weldname
+                !FourScomPcom =  !scomPcom.Matchwild(!scomPcom,'/QDMT1D1NE-0')
+                !selectWeldAll = !weldmems.find(!weldname)
+                if !x eq !selectWeldAll[1] and !FourScomPcom then
+                    !text = :ZD_WLDN of $!weldname
+                    !text = !text.split(';')[1]
+                elseif !x eq !selectWeldAll[2] and !FourScomPcom then
+                    !text = :ZD_WLDN of $!weldname
+                    !text = !text.split(';')[2]
+                elseif !x eq !selectWeldAll[3] and !FourScomPcom then
+                    !text = :ZD_WLDN of $!weldname
+                    !text = !text.split(';')[3]
+                elseif !x eq !selectWeldAll[4] and !FourScomPcom then
+                    !text = :ZD_WLDN of $!weldname
+                    !text = !text.split(';')[4]
+                else
+                    !text = :ZD_WLDN of $!weldname
+                    handle any
+                        !text = ''
+                    endhandle
+                endif
+
+			elseif !memtype eq 'ATTA' then
+            --$p 759
+                --q var !attanames !weldname
+				!index = !attanames.findfirst(!weldname)
+                --q var !attanames[!index]
+                --q var !allattaweldnums[!index]
+                --q var !index !allattaweldnums[!index]
+				!text = !allattaweldnums[!index][1]
+				handle any
+					--$p Weld number is not set on this ATTA $!weldname
+                    --$p 753951
+                    --modify by jyg 20241028
+                    if  !memSpref.Matchwild('*BG*')then
+                        !text = ''
+                    else
+                        $p ATTA $!weldname 没设置好 焊缝编号
+                        !text = ''
+                    endif
+				elsehandle none
+                    --q var !weldname
+                    --$p 123
+                    --Q VAR !weldname
+					!allattaweldnums[!index][1].delete()
+					!allattaweldnums[!index].compress()
+				endhandle
+			else
+				$p This type $!memtype was not considered as a WELD TYPE	--object isobran
+				skip
+			endif
+
+			if !text.unset() or !text eq '' then
+                if !memSpref.Matchwild('*BG*')then
+                    !text =' '
+                else
+                    !text = 'Weld Num Unset'
+                endif
+			endif
+
+			!isoWeldText = object isoWeldText(!weldmems[!x],!weldposs[!x],!text,!weldmovedirs[!x],!weldmovediss[!x],!weldshops[!x])
+			--!isoWeldText = object isoWeldText(!weldmems[!x],!weldposs[!x],!text)
+			--!this.objects.append(!isoWeldText)
+            --Q VAR !text
+
+            --modify by jyg 20240926
+            !text = !text.replace('\','/')
+
+			!this.welds.append(!text)
+			!this.weldobjects.append(!isoweldtext)
+		enddo
+        --q var !allattaweldnums
+        --q var !attanames !allattaweldnums
+        --Q VAR !attanames !allattaweldnums
+        --q var !attanames
+		do !x indices !attanames
+            --q var !allattaweldnums[!x] !allattaweldnums[!x].set()
+			if !allattaweldnums[!x].set() then
+				--!wrongline = |Weld number is wrong on this ATTA $!attanames[$!x]   (more than normal number)|
+				--!wrongline = |焊缝编号设置错了 ATTA $!attanames[$!x]   (比需要的多)|
+                !wrongline = |焊缝编号设置错了 ATTA $!attanames[$!x]  |
+				!this.wronglines.append(!wrongline)
+				$p $!wrongline
+			endif
+		enddo
+
+	endif
+
+endmethod
+
+define method .sortwelds(!weldposs is array) is array
+	!mems = !this.branmems
+	!poss = array()
+	do !mem values !mems
+		if !mem eq 'Head' then
+			!pos = hpos of $!this.branname wrt/*
+		elseif !mem eq 'Tail' then
+			!pos = tpos of $!this.branname wrt/*
+		else
+			!memtype = type of $!mem
+			if !memtype eq 'ATTA' then
+				skip
+			elseif !memtype eq 'WELD' then
+				skip
+			endif
+			!pos = pos of $!mem wrt/*
+		endif
+		!poss.append(!pos)
+	enddo
+	!poss.unique()
+	!size = !poss.size()
+	!lines = array()
+	do !x from 1 to !size - 1
+		!line = !poss[!x].line(!poss[!x + 1])
+		!line = !line.extendstart(1).extendend(1)
+		!lines.append(!line)
+	enddo
+
+	!alllineweldindices = array()
+	!alllinediss = array()
+	do !x indices !lines
+		!alllineweldindices[!x] = array()
+		!alllinediss[!x] = array()
+	enddo
+    --q var !weldposs
+	do !x indices !weldposs
+		!pos = !weldposs[!x]
+		!diss = array()
+		do !line values !lines
+			if !line.onprojected(!pos) then
+				!dis = !line.distance(!pos)
+			else
+				!dis = 1000000
+			endif
+			!diss.append(!dis)
+		enddo
+		!indices = !diss.sortedindices()
+
+		!linenum = !indices[1]
+		!alllineweldindices[!linenum].append(!x)
+		!alllinediss[!linenum].append(!!suidirdis(!lines[!linenum].startposition,!lines[!linenum].direction(),!pos))
+	enddo
+
+
+
+	do !x indices !alllineweldindices
+		!indices = !alllinediss[!x].sortedindices()
+		!alllineweldindices[!x].reindex(!indices)
+	enddo
+
+	!newweldindices = array()
+	do !lineweldindices values !alllineweldindices
+		!newweldindices.appendarray(!lineweldindices)
+	enddo
+
+	return !newweldindices
+
+endmethod
+
+define method .getkdwelds() is array
+	var !kds coll all pcom with(matchwild(name,'*KD*')) for $!this.branname
+	!weldposs = array()
+	!weldshops = array()
+	!weldmems = array()
+	!weldmovedirs = array()
+	!weldmovediss = array()
+
+	do !kd values !kds
+        --modify by jyg 20240813
+        !cateType = name of cate of catref of $!kd
+		!isokd = object isokd(!kd)
+        --q var !isokd
+        if not !cateType.matchwild('*MT*') then
+            !weldposs.append(!isokd.weldpos)
+            !weldshops.append(!isokd.weldshop)
+            !weldmems.append(!isokd.name)
+            !weldmovedirs.append(u)
+            !weldmovediss.append(0)
+        else
+            --modify by jyg 20241205  临时解决pocm添加四个焊点的问题
+            !gmrefType = name of gmref of catref of $!kd
+            if !gmrefType eq '/QDMT1D1-G2' then
+                !pcomPos1 = p1 pos of $!kd wrt /*
+                !pcomPos2 = p2 pos of $!kd wrt /*
+                !pcomdir = adir of $!kd wrt /*
+                !pcomPos3 = p4 pos of $!kd wrt /*
+                !pcomPos4 = p6 pos of $!kd wrt /*
+                !weldposs.append(!pcomPos1.Offset(!pcomdir.opposite(),117))
+                !weldposs.append(!pcomPos2.Offset(!pcomdir,117))
+                !weldposs.append(!pcomPos3)
+                !weldposs.append(!pcomPos4)
+                !weldshops.append(!isokd.weldshop)
+                !weldshops.append(!isokd.weldshop)
+                !weldshops.append(!isokd.weldshop)
+                !weldshops.append(!isokd.weldshop)
+                !weldmems.append(!isokd.name)
+                !weldmems.append(!isokd.name)
+                !weldmems.append(!isokd.name)
+                !weldmems.append(!isokd.name)
+                !weldmovedirs.append(u)
+                !weldmovedirs.append(u)
+                !weldmovedirs.append(u)
+                !weldmovedirs.append(u)
+                !weldmovediss.append(0)
+                !weldmovediss.append(0)
+                !weldmovediss.append(0)
+                !weldmovediss.append(0)
+            endif
+        endif
+	enddo
+
+	--q var !weldposs !weldshops !weldmems !weldmovedirs !weldmovediss
+	!result = array()
+	!result.append(!weldposs)
+	!result.append(!weldshops)
+	!result.append(!weldmems)
+	!result.append(!weldmovedirs)
+	!result.append(!weldmovediss)
+	return !result
+endmethod
+
+define method .getattawelds() is array
+    --$p 111
+	!result = array()
+	!this.getattadatas()
+	if !this.wronglines.set() then
+		!emptyarr = array()
+		do !x from 1 to 5
+			!result.append(!emptyarr)
+		enddo
+		return !result
+	endif
+
+	!weldposs = array()
+	!weldshops = array()
+	!weldmems = array()
+	--!weldnums = array()
+	!weldmovedirs = array()
+	!weldmovediss = array()
+	--q var !this.pipeatta.attaobjects
+	--!this.getfromltor()
+
+	do !attadata values !this.pipeatta.attaobjects
+		!bt = !attadata.objecttype()
+        --q var !attadata
+		------------------------------------------------------all atta belong to pipe according to new rule
+		--if !bt inset ('ISOLUG','ISOLEG') and !attadata.onpad then	$*  unnecessary if leg or lug is on pad
+		--	skip
+		--endif
+		if !bt eq 'ISOPAD' then
+			!pos = !attadata.pos.offset(!attadata.dir,!attadata.rinside).offset(!attadata.ori.zdir(),!attadata.height / 2)
+
+			!weldposs.append(!pos)
+			!weldshops.append(true)
+			!weldmems.append(!attadata.name)
+		elseif !bt eq 'ISOELBOPAD' then
+			!pos = !attadata.axisarc.angleposition(0)
+			--!pos = !attadata.axisarc.position.offset(!attadata.axisarc.angledirection(0),!attadata.routside)
+			!weldposs.append(!pos)
+			!weldshops.append(true)
+			!weldmems.append(!attadata.name)
+		else
+
+			if !bt eq 'ISOLEG' then
+                --q var !attadata
+                --q var !attadata.elboname
+				if !attadata.elboname.unset() then
+				!tempdir = !attadata.attapos.direction(!attadata.pos)
+				handle any
+					!tempdir = !attadata.ori.zdir()
+				endhandle
+				!adir = adir of $!attadata.name wrt/*
+				!tempdir2 = !tempdir.orthogonal(!adir)
+				$(
+
+				--if !tempdir2.angle(!this.polarsystem.showdir) lt 90 then
+				if !this.branlookdirection.set() then
+					if !tempdir2.angle(!this.branlookdirection) lt 90 then
+						!tempdir2 = !tempdir2.opposite()
+					endif
+				endif
+				$)
+
+				--!aod = !this.getattaaod(!attadata.name)
+				!aod = !attadata.touchitemradius * 2
+
+				$(
+				if !this.fromltor.set() then
+					if !this.fromltor then
+						!movedir = !adir.orthogonal(d)
+						handle any
+						endhandle
+					else
+						!movedir = !adir.orthogonal(u)
+						handle any
+						endhandle
+					endif
+
+					if defined(!movedir) then
+						if !tempdir2.angle(!movedir) gt 90 then
+							!tempdir2 = !tempdir2.opposite()
+						endif
+					endif
+				endif
+				$)
+
+
+
+				--$p $!aod $!attadata.height
+
+				if !aod gt !attadata.outdia + 0.1 then
+					!dis1 = sqrt(power(!aod,2) / 4 - power(!attadata.outdia,2) / 4)
+					!pos = !attadata.attapos.offset(!tempdir, !dis1)
+					--.offset(!tempdir2,!attadata.outdia / 2)
+
+					!movedis = !attadata.outdia / 2
+				elseif !attadata.outdia - !aod gt 1 then
+					!dis1 = sqrt(power(!attadata.outdia,2) / 4 - power(!aod,2) / 4)
+					--!pos = !attadata.attapos.offset(!adir, !dis1).offset(!tempdir2,!aod / 2)
+					--!weldposs.append(!pos)
+					--!weldshops.append(false)
+					--!weldmems.append(!attadata.name)
+					--only one weld
+
+					!pos = !attadata.attapos.offset(!adir, - !dis1)
+					--.offset(!tempdir2,!aod / 2)
+					!movedis = !aod / 2
+					--!pos = !attadata.attapos.offset(!tempdir2,!attadata.outdia / 2)
+				else
+					!pos = !attadata.attapos
+					--.offset(!tempdir2,!aod / 2)
+					!movedis = !aod / 2
+				endif
+				--!pos = !attadata.attapos.offset(!tempdir, - !attadata.height / 2).offset(!adir,!attadata.india / 2)
+				--$p $!pos
+                --modify by jyg 20250327解决补强板有两条焊缝信息报错的问题
+                !attaCatref = !attadata.name.dbref().catref.owner.name
+                if  !attaCatref eq '/NPHS-JQ' then
+                    !weldposs.append(!pos)
+                    !weldshops.append(false)
+                    !weldmems.append(!attadata.name)
+                    !index = !weldposs.size()
+                    !weldmovedirs[!index] = !tempdir2
+                    !weldmovediss[!index] = !movedis
+                endif
+
+				!weldposs.append(!pos)
+				!weldshops.append(false)
+				!weldmems.append(!attadata.name)
+				!index = !weldposs.size()
+				!weldmovedirs[!index] = !tempdir2
+				!weldmovediss[!index] = !movedis
+				else
+					!weldposs.append(!attadata.weldpos)
+					!weldshops.append(false)
+					!weldmems.append(!attadata.name)
+				endif
+			elseif !bt eq 'ISOLUG' then
+				!arc = object arc(!attadata.pos,!attadata.ori,0,!attadata.angle,!attadata.rinside,true)
+				do !times from 1 to 2
+					if !times eq 1 then
+						!dir = !arc.angledirection(0)
+					else
+						!dir = !arc.angledirection(!attadata.angle)
+					endif
+					!pos = !attadata.pos.offset(!dir,!attadata.rinside)
+					!weldposs.append(!pos)
+					!weldshops.append(false)
+					!weldmems.append(!attadata.name)
+				enddo
+			endif
+		endif
+	enddo
+
+	do !x indices !weldposs
+		if undefined(!weldmovediss[!x]) then
+			!weldmovedirs[!x] = u
+			!weldmovediss[!x] = 0
+		endif
+	enddo
+	--q var !weldposs !weldshops !weldmems !weldmovedirs !weldmovediss
+	!result.append(!weldposs)
+	!result.append(!weldshops)
+	!result.append(!weldmems)
+	!result.append(!weldmovedirs)
+	!result.append(!weldmovediss)
+	return !result
+endmethod
+
+define method .getAttaAod(!atta is string) is real
+	!aod = aod of $!atta
+	handle any
+		!aod = 0
+	endhandle
+	if !aod eq 0 then
+
+	------------------------------------------------------202404072028 s
+		var !mode mode
+		forward
+		!aod = aod of pre tubi of $!atta
+		handle any
+			!aod = aod of next tubi of $!atta
+			handle any
+			endhandle
+		endhandle
+		$!mode
+	------------------------------------------------------202404072028 e
+
+		$(
+		!anothermem = !!getpremem(!atta)
+		if !anothermem eq '' then
+			!anothermem = !!getnextmem(!atta)
+			if !anothermem eq '' then
+				!aod = hbore of bran of $!atta	$*not accurate
+			else
+				!aod = aod of $!anothermem
+			endif
+		else
+			!aod = lod of $!anothermem
+		endif
+		$)
+	endif
+	return !aod
+endmethod
+
+define method .getcutparts()
+    --q var !this.materials[1]
+	if !this.cutparts.set() then
+		return
+	endif
+
+    --Q VAR !this.branmlabel
+	if !this.branmlabel.unset() then
+		!this.getbranmlabel()
+	endif
+
+	!cutdata = array()
+	!end = false
+	!tpos = tpos of $!this.branname wrt/*
+	!lastmem = !this.branmems.last()
+	!lastmemname = name of $!lastmem
+	!num = 0
+
+	!this.getwelds()
+	!objects = !this.weldobjects
+    --q var !objects[1]
+
+	do !x indices !objects
+		--do !x indices !this.objects
+		-----------------------------------------------------------------------------------
+		-----------------------------------------------------------------------------------焊点不考虑ATTA
+		--if !this.objects[!x].objecttype() eq 'ISOWELDTEXT' and type of $!this.objects[$!x].name ne 'ATTA' then
+		if type of $!objects[$!x].name eq 'ATTA' OR type of $!objects[$!x].name eq 'PCOM' then
+			skip
+		endif
+		--q var !num
+		if !objects[!x].text.substring(1,1) eq 'M' or matchwild(DTXR of $!objects[$!x].name,'*FIELD*') then
+			if !num eq 0 then
+				-----------------------
+				-----------------------如果出现了焊点，但是管段序号还是0，那说明，在头部没有现场焊，需要加上
+				!hpos = hpos of $!this.branname wrt/*
+				if !objects[!x].pos.distance(!hpos) gt 1 then
+					!firstele = !this.branmems[1]
+					!firstpos = hpos of $!this.branname wrt/*
+					!num = !num + 1
+				endif
+			endif
+			--q var !num
+			if !num ne 0 then
+				!secondele = !objects[!x].name
+				!secondpos = !objects[!x].pos
+
+				!onecut = array()
+				!onecut.append(!num)
+				!onecut.append(!firstele)
+				!onecut.append(!firstpos)
+				!onecut.append(!secondele)
+				!onecut.append(!secondpos)
+
+				!cutdata.append(!onecut)
+
+
+				!objectname = !objects[!x].name
+				!objectname = name of $!objectname
+				if !objectname eq !lastmemname then
+					--if !objects[!x].pos.distance(!tpos) lt 1 then		$* length of cap maybe 0, so can use this method
+					--$p asdfadsf
+
+					!end = true
+					break
+				endif
+			endif
+			!num = !num + 1
+			!firstele = !objects[!x].name
+			!firstpos = !objects[!x].pos
+			--q var !num
+		endif
+		--endif
+	enddo
+
+	if !end.not() then
+		if undefined(!firstele) then
+			!firstele = !this.branmems[1]
+			!firstpos = hpos of $!this.branname wrt/*
+		endif
+		!secondele = !this.branmems.last()
+		!secondpos = !tpos
+
+		if !num eq 0 then
+			!num = !num  + 1
+		endif
+
+		!onecut = array()
+		!onecut.append(!num)
+		!onecut.append(!firstele)
+		!onecut.append(!firstpos)
+		!onecut.append(!secondele)
+		!onecut.append(!secondpos)
+
+		!cutdata.append(!onecut)
+	endif
+
+	--q var !cutdata[1] !cutdata[2] !cutdata[3]
+
+	!this.getcutparts2(!cutdata)
+
+    --q var !this.materials[1]
+endmethod
+
+define method .getcutparts2(!cutdata is array )
+	!cutnum = 1
+	!index = 1
+	!onecuteles = array()
+	!onecutlines = array()	$*优先用
+	!onetubilines = array()	$*备用，怕没有直管段
+	!oneattas = array()
+
+	!notconsidertypes = split('GASK FLAN WELD ATTA')
+	--q var !this.drawnum
+    --q var !this
+	!sitename = name of site of $!this.branname
+	if !sitename.match('NPIC') ne 0 then
+		!bpart = 'NP.' & !this.wjbm.substring(3,4) & '.' & !this.wjbm.substring(9,3) & '.T'
+	elseif !sitename.match('23') ne 0 then
+		!bpart = 'CP.' & !this.drawnum.substring(5,4) & '.' & !this.drawnum.substring(-3,3) & '.T'
+	else
+		!bpart = 'BN.' & !this.drawnum.substring(5,4) & '.' & !this.drawnum.substring(-3,3) & '.T'
+	endif
+	do !mem values !this.branmems
+		--$p $!cutnum
+		--label /useSecondMemAsFirstMem
+		if !mem eq 'Head' then
+			skip
+		elseif !mem eq 'Tail' then
+			golabel /cutend
+		endif
+		--$p $!mem $!cutnum $!index
+		!memtype = type of $!mem
+
+		if !memtype eq 'TUBI' then
+			!apos = apos of $!mem wrt/*
+			!lpos = lpos of $!mem wrt/*
+			--!onecutlines.append(!apos.line(!lpos))
+			if !apos.distance(!lpos) gt 0.1 then
+                --!oo = !apos.line(!lpos) $* test command
+                --!oo.Draw(1,2,3)
+				!onetubilines.append(!apos.line(!lpos))
+			endif
+		endif
+		if !memtype eq 'ATTA' then
+			!oneattas.append(!mem)
+			!this.addAttapointintolines(!onetubilines,!mem)
+			!this.addAttapointintolines(!onecutlines,!mem)
+			skip
+		elseif !mem eq !cutdata[!index][2] then
+			if !memtype ne 'WELD' then
+				!this.addmemintocutpart(!cutdata[!index][3],true,!onecuteles,!onecutlines,!mem,!notconsidertypes)
+			endif
+			--$p $!index $!cutnum $!mem start
+			skip
+		elseif !mem eq !cutdata[!index][4] then
+			if !memtype ne 'WELD' then
+				!this.addmemintocutpart(!cutdata[!index][5],false,!onecuteles,!onecutlines,!mem,!notconsidertypes)
+			endif
+			--$p $!index $!cutnum $!mem end
+			!index = !index + 1
+		else
+			--$p $!index $!cutnum $!mem mid
+			!onecuteles.append(!mem)
+			!this.addmemintocutpart(!onecuteles,!onecutlines,!mem,!notconsidertypes)
+			skip
+		endif
+		label /cutend
+
+		!this.addbranpointintolines(!onetubilines)	$*避开管道名称标签
+		!this.addbranpointintolines(!onecutlines)	$*避开管道名称标签
+		!havetubi = false
+		do !ele values !onecuteles
+			if type of $!ele eq 'TUBI' then
+				!havetubi = true
+				break
+			endif
+		enddo
+		--q var !havetubi
+		if !havetubi then
+		--if !onecuteles.size() gt 1 or !notubi.not() then
+            --q var !oneattas
+			!this.addcutnumtoisomaterial(!cutnum,!onecuteles,!oneattas)
+			!goodpos = !this.findhalfpos(!onetubilines)
+
+			if !goodpos.unset() then
+				!goodpos = !this.findhalfpos(!onecutlines)
+			endif
+			!tag = object isotag()
+			!tag.branname = !this.branname
+			!tag.tagtype = 'pos'
+			!tag.pos = !goodpos
+			!tag.infoarr = array()
+
+			!cutnumstring = !cutnum.string()
+			!tag.infoarr.append(!bpart & !cutnumstring)
+			!tag.function = 'cutpipe'
+			--!this.objects.append(!tag)
+            --q var !tag
+			!this.cutparts.append(!tag)
+			--!this.tags.append(!tag)
+			!onecuteles = array()
+			!onecutlines = array()
+			!onetubilines = array()
+			!oneattas = array()
+
+			--$p $!cutnum $!mem $!index
+			--q var !cutdata
+
+			!cutnum = !cutnum + 1
+			--!index = !index + 1
+
+			if !mem eq 'Tail' or !index gt !cutdata.size() then
+				--$p $!index $!mem safasdf
+				break
+			else
+				--$p $!mem again asdfasdf
+				--golabel /useSecondMemAsFirstMem
+				if !memtype ne 'WELD' then
+					!this.addmemintocutpart(!cutdata[!index][3],true,!onecuteles,!onecutlines,!mem,!notconsidertypes)
+				endif
+			endif
+		endif
+	enddo
+    --q var !this.materials[1]
+endmethod
+
+define method .getbranmlabel()
+	if !this.branmlabel.set() then
+		return
+	endif
+	!goodpos = !this.gettubimlabelpoint(!this.branmems)
+
+	!borestring = :ZD_GDWJ of $!this.branname
+	handle any
+		!borestring = ''
+	endhandle
+	$(
+	!hbore = hbore of $!this.branname
+	if !hbore.unset() or !hbore eq 0 then
+		!bore = 0
+	else
+		!dnaodarr = split('6/10.3 8/13.7 10/17.1 15/21.3 20/26.7 25/33.4 32/42.2 40/48.3 50/60.3 65/73.0 80/88.9 90/101.6 100/114.3 125/141.3 150/168.3 200/219.1 250/273.0 300/323.8 350/355.6 400/406.4 450/457 500/508 550/559 600/610 750/762')
+		!dns = array()
+		!aods = array()
+		do !dnaod values !dnaodarr
+			!temparr = !dnaod.split('/')
+			!dns.append(!temparr[1].real())
+			!aods.append(!temparr[2].real())
+		enddo
+		!index = !dns.findfirst(!hbore)
+		!bore = !aods[!index]
+		handle any
+			!bore = 0
+		endhandle
+	endif
+
+	if !bore eq 0 then
+		var !mode mode
+		if !mode.upcase() eq 'FORWARDS' then
+			!mem = !this.branmems[2]
+		else
+			!mem = !this.branmems[!this.branmems.size() - 1]
+		endif
+		!bore = aod of $!mem
+	endif
+
+	!borestring = !bore.real().value().string()
+	if !bore lt 450 then
+		if !borestring.match('.') eq 0 then
+			!borestring = !borestring + '.0'
+		endif
+	endif
+	$)
+
+
+
+	--!inch = !!changemmtoin(!bore)
+
+	!name = name of $!this.branname
+	!part1 = !name.part(1,'-').after('/')
+
+	!tag = object isotag()
+	!tag.branname = !this.branname
+	!tag.tagtype = 'pos'
+	!tag.pos = !goodpos
+	!tag.infoarr = array()
+	!tag.infoarr.append(!part1 & '-' & !borestring)
+	!tag.function = '管道名称'
+	!this.branmlabel = !tag
+endmethod
+
+define method .gettubimlabelpoint(!eles is array) is position
+	!onetubilines = array()
+	!onecutlines = array()
+
+	--!eles = !this.branmems
+    --q var !eles
+	do !mem values !eles
+        --q var !mem
+		if !mem eq 'Head' then
+			skip
+		elseif !mem eq 'Tail' then
+			break
+		endif
+		!memtype = type of $!mem
+		--q var !memtype
+		if !memtype eq 'TUBI' then
+            --q var !mem
+			!apos = apos of $!mem wrt/*
+			!lpos = lpos of $!mem wrt/*
+            --modify by jyg 20240812
+            if !apos eq !lpos then
+                skip
+            else
+            --$p 11
+                !onetubilines.append(!apos.line(!lpos))
+            endif
+		endif
+
+		if !memtype eq 'ATTA' then
+        --$p 22
+			!this.addAttapointintolines(!onetubilines,!mem)
+			!this.addAttapointintolines(!onecutlines,!mem)
+		else
+        --q var !mem
+            --modify by jyg 20240925
+            !lpos = lpos of $!mem wrt/*
+            !apos = apos of $!mem wrt/*
+            handle any
+                !apos = !lpos
+            endhandle
+
+			!cpos = pos of $!mem wrt/*
+			if !apos.distance(!cpos) gt 1 then
+            --$p 33
+				!onecutlines.append(!apos.line(!cpos))
+			endif
+			if !cpos.distance(!lpos) gt 1 then
+            --$p 44
+				!onecutlines.append(!cpos.line(!lpos))
+			endif
+		endif
+        --q var !onecutlines
+	enddo
+
+	!goodpos = !this.findhalfpos(!onetubilines)
+	if !goodpos.unset() then
+		!goodpos = !this.findhalfpos(!onecutlines)
+	endif
+	return !goodpos
+endmethod
+
+define method .addcutnumtoisomaterial(!cutnum is real,!memnames is array,!oneattas is array)
+	!arr = !memnames
+	!arr.appendarray(!oneattas)
+	do !x indices !this.materials
+		if !arr.findfirst(!this.materials[!x].name).set() then
+            --q var !this.materials[!x].cutnum
+			!this.materials[!x].cutnum = !cutnum
+		endif
+	enddo
+endmethod
+
+define method .addattapointintolines(!onecutlines is array,!mem is string)
+	!mempos = pos of $!mem wrt/*
+	!size = !onecutlines.size()
+	!aod = !this.getattaaod(!mem)
+	do !x from !size to 1 by -1
+        --q var !onecutlines[!x]   !aod
+		if !onecutlines[!x].onprojected(!mempos) and !onecutlines[!x].distance(!mempos) lt !aod * 2 / 3 then
+			!nearpos = !onecutlines[!x].near(!mempos)
+            --$p 11
+			if !nearpos.distance(!onecutlines[!x].startposition) gt 1 and !nearpos.distance(!onecutlines[!x].endposition) gt 1 then
+				!line1 = !onecutlines[!x].startposition.line(!nearpos)
+				!line2 = !nearpos.line(!onecutlines[!x].endposition)
+                --!line1.Draw(1,2,3)
+                --$p 22
+				!onecutlines[!x] = !line2
+				!onecutlines.insert(!x,!line1)
+				break
+			endif
+		endif
+	enddo
+endmethod
+
+define method .addbranpointintolines(!onecutlines is array)
+	!tagpos = !this.branmlabel.pos
+    --Q VAR !this.branmlabel !this.branmlabel.infoarr[1]
+	!aod = !this.branmlabel.infoarr[1].part(-1,'-').real()
+    handle any
+        $p 请检查最小交付单元的:ZD_GDWJ属性值是否准确
+    endhandle
+	if !aod.unset() then
+		!aod = 50
+	endif
+	!size = !onecutlines.size()
+	do !x from !size to 1 by -1
+
+		if !onecutlines[!x].onprojected(!tagpos) and !onecutlines[!x].distance(!tagpos) lt !aod * 2 / 3 then
+			!nearpos = !onecutlines[!x].near(!tagpos)
+			if !nearpos.distance(!onecutlines[!x].startposition) gt 1 and !nearpos.distance(!onecutlines[!x].endposition) gt 1 then
+				!line1 = !onecutlines[!x].startposition.line(!nearpos)
+				!line2 = !nearpos.line(!onecutlines[!x].endposition)
+				!onecutlines[!x] = !line2
+				!onecutlines.insert(!x,!line1)
+				break
+			endif
+		endif
+	enddo
+endmethod
+
+define method .findhalfpos(!onecutlines is array) is position
+	!resultpos = object position()
+	if !onecutlines.unset() then
+		golabel /end
+	endif
+	!lens = array()
+    --q var !onecutlines !evalindex
+	!onecutlines.evaluate(object block('!lens.append(!onecutlines[!evalindex].length())'))
+    --q var !lens
+	!indices = !lens.sortedindices()
+	!minlen = !lens[!indices[1]]
+	!maxlen = !lens[!indices.last()]
+
+
+
+	!goodlen = !minlen + 2 * (!maxlen - !minlen) / 3
+
+
+
+	!size = !lens.size()
+	if nint(!size / 2) * 2 eq !size then
+		!goodx = !size / 2
+	else
+		!goodx = int(!size / 2)
+	endif
+	--q var !goodx
+
+	do !x from 0 to !size
+		!x1 = !goodx + !x
+		!x2 = !goodx - !x
+		if !x1 le !size and !x ge 1 and !lens[!x1] ge !goodlen then
+			!resultpos = !onecutlines[!x1].startposition.midpoint(!onecutlines[!x1].endposition)
+			break
+		endif
+		if !x2 ge 1 and !x2 le !size and !lens[!x2] ge !goodlen then
+			!resultpos = !onecutlines[!x2].startposition.midpoint(!onecutlines[!x2].endposition)
+			break
+		endif
+	enddo
+	--q var !resultpos
+	label /end
+	return !resultpos
+return
+
+	!lens = array()
+	!len = 0
+	do !line values !onecutlines
+		!len = !len + !line.length()
+		!lens.append(!len)
+	enddo
+
+	!halflen = !len / 2
+	do !x indices !onecutlines
+		if !lens[!x] ge !halflen then
+			!goodx = !x
+			break
+			--!goodpos = !onecutlines[!x].endposition.offset(!onecutlines[!x].direction().opposite(),!lens[!x] - !halflen)
+			--return !goodpos
+		endif
+	enddo
+
+
+	-----------------------------------------------------------------------------------
+	-----------------------------------------------------------------------------------new way：选择最长的一段中点标注管段
+	!dir = !onecutlines[!goodx].direction()
+	!size = !onecutlines.size()
+	!lines = array()
+	!lens = array()
+
+	!lines.append(!onecutlines[!goodx])
+	!lens.append(!onecutlines[!goodx].length())
+
+	!index = !goodx
+	do !x from 0 to !size
+		!index = !index + 1
+		if !index gt 0 and !index lt !size then
+			!line = !onecutlines[!index]
+			!angle = !line.direction().angle(!dir)
+			if !angle gt 0.1 and !angle lt 179.9 then
+				break
+			else
+				!lines.append(!line)
+				!lens.append(!line.length())
+			endif
+		endif
+	enddo
+
+	!index = !goodx
+	do !x from 1 to !size
+		!index = !index - 1
+		if !index gt 0 and !index lt !size then
+			!line = !onecutlines[!index]
+			!angle = !line.direction().angle(!dir)
+			if !angle gt 0.1 and !angle lt 179.9 then
+				break
+			else
+				!lines.append(!line)
+				!lens.append(!line.length())
+			endif
+		endif
+	enddo
+
+
+
+	!lines.reindex(!lens.sortedindices().invert())
+	!line = !lines[1]
+	!goodpos = !line.startposition.midpoint(!line.endposition)
+	return !goodpos
+endmethod
+define method .addmemintocutpart(!onecuteles is array, !onecutlines is array, !mem is string, !notconsidertypes is array)
+
+    --modify by jyg 20240925
+    !ldir = ldir of $!mem wrt/*
+    !lpos = lpos of $!mem wrt/*
+    !adir = adir of $!mem wrt/*
+    handle any
+        !adir = !ldir.opposite()
+    endhandle
+    !apos = apos of $!mem wrt/*
+    handle any
+        !apos = !lpos
+    endhandle
+
+	--if !notconsidertypes.findfirst(!memtype).unset() then
+	--!memname = name of $!mem
+	--if !memname.substring(1,1) ne '/' then
+	--!onecuteles.append(!mem)
+	!cpos = pos of $!mem wrt/*
+
+	!memtype = type of $!mem
+
+	if !apos.distance(!cpos) gt 1 then
+		!onecutlines.append(!apos.line(!cpos))
+	endif
+	if !cpos.distance(!lpos) gt 1 then
+		!onecutlines.append(!cpos.line(!lpos))
+	endif
+	--endif
+	--endif
+endmethod
+define method .addmemintocutpart(!pos is position, !isstart is boolean, !onecuteles is array, !onecutlines is array, !mem is string, !notconsidertypes is array)
+	!apos = apos of $!mem wrt/*
+	!lpos = lpos of $!mem wrt/*
+	if !isstart then
+		!firstpos = !pos
+		if !firstpos.distance(!apos) le !firstpos.distance(!lpos) then
+			--if !notconsidertypes.findfirst(!memtype).unset() then
+			--!memname = name of $!mem
+			--if !memname.substring(1,1) ne '/' then
+			!onecuteles.append(!mem)
+			!cpos = pos of $!mem wrt/*
+			if !apos.distance(!cpos) gt 1 then
+				!onecutlines.append(!apos.line(!cpos))
+			endif
+			if !cpos.distance(!lpos) gt 1 then
+				!onecutlines.append(!cpos.line(!lpos))
+			endif
+			--endif
+			--endif
+		endif
+	else
+		!secondpos = !pos
+		if !secondpos.distance(!lpos) le !secondpos.distance(!apos) then
+			--if !notconsidertypes.findfirst(!memtype).unset() then
+			--!memname = name of $!mem
+			--if !memname.substring(1,1) ne '/' then
+			!onecuteles.append(!mem)
+			!cpos = pos of $!mem wrt/*
+			if !apos.distance(!cpos) gt 1 then
+				!onecutlines.append(!apos.line(!cpos))
+			endif
+			if !cpos.distance(!lpos) gt 1 then
+				!onecutlines.append(!cpos.line(!lpos))
+			endif
+			--endif
+			--endif
+		endif
+	endif
+endmethod
+
+
+$(
+//old method, it didnot consider that only one element cant be counted as a cut part
+define method .getcutparts2(!cutdata is array )
+
+	!lines = !this.getbranlines()
+	if !lines.unset() then
+		return
+	endif
+	--!cutnum = 0
+	!bpart = 'BN.' & !this.drawnum.substring(5,4) & '.' & !this.drawnum.substring(-3,3) & '.T'
+	do !onecut values !cutdata
+		!fpos = !onecut[3]
+		!spos = !onecut[5]
+		!farr = !this.findneardata(!lines,!fpos)
+		!sarr = !this.findneardata(!lines,!spos)
+		!totallen = 0
+		!totallen = !lines[!farr[2]].endposition.distance(!fpos)
+		!lens = array()
+		!lens[!farr[2]] = !totallen
+		do !x from !farr[2] + 1 to !sarr[2] - 1
+			!totallen = !totallen + !lines[!x].length()
+			!lens[!x] = !totallen
+		enddo
+		!totallen = !totallen + !lines[!sarr[2]].startposition.distance(!spos)
+		!lens[!sarr[2]] = !totallen
+
+
+		!halflen = !totallen / 2
+
+		do !x indices !lens
+			if !lens[!x] gt !halflen then
+				!goodpos = !lines[!x].endposition.offset(!lines[!x].direction().opposite(),!lens[!x] - !halflen)
+				break
+			endif
+		enddo
+
+		!cutnum = !onecut[1]
+		--!cutnum = !cutnum + 1
+
+		!tag = object isotag()
+		!tag.branname = !this.branname
+		!tag.tagtype = 'pos'
+		!tag.pos = !goodpos
+		!tag.infoarr = array()
+
+		!cutnumstring = !cutnum.string()
+
+		!tag.infoarr.append(!bpart & !cutnumstring)
+		!tag.function = 'cutpipe'
+
+		!this.objects.append(!tag)
+	enddo
+endmethod
+
+define method .findneardata(!lines is array,!pos is position ) is array
+	!mindis = 10000000
+	do !x indices !lines
+		!dis = !lines[!x].distance(!pos)
+		if !dis lt !mindis then
+			!mindis = !dis
+			!minindex = !x
+		endif
+	enddo
+	!result = array()
+	!result.append(!lines[!minindex].near(!pos))
+	!result.append(!minindex)
+	!result.append(!mindis)
+	return !result
+endmethod
+
+define method .getbranlines() is array
+	!lines = array()
+	!poss = array()
+	!hpos = hpos of $!this.branname wrt/*
+	!tpos = tpos of $!this.branname wrt/*
+	!poss.append(!hpos)
+	!mems = member of $!this.branname
+	do !mem values !mems
+		!apos = apos of $!mem wrt/*
+		!lpos = lpos of $!mem wrt/*
+		!cpos = pos of $!mem wrt/*
+		!poss.append(!apos)
+		!poss.append(!cpos)
+		!poss.append(!lpos)
+	enddo
+	!poss.append(!tpos)
+	!poss.unique()
+	!dels = array()
+
+	!prepos = !poss[1]
+	do !x from 2 to !poss.size()
+		if !poss[!x].distance(!prepos) lt 1 then
+			!dels.append(!x)
+		else
+			!cdir = !prepos.direction(!poss[!x])
+			if defined(!predir) and !cdir.angle(!predir) gt 179.5 then
+				!dels.append(!x)
+				skip
+			endif
+			!predir = !cdir
+			!prepos = !poss[!x]
+		endif
+	enddo
+
+	do !x values !dels
+		!poss[!x].delete()
+	enddo
+
+	!poss.compress()
+	do !x from 2 to !poss.size()
+		!lines.append(!poss[!x - 1].line(!poss[!x]))
+	enddo
+	return !lines
+endmethod
+$)
+
+$(
+define method .getwelds() $*useless
+	!weldPoss = array()
+	do !mem values !this.branmems
+		if !mem eq 'Head' or !mem eq 'Tail' then
+			skip
+		endif
+		!memtype = type of $!mem
+		if !memtype eq 'WELD' then
+			!weldpos = pos of $!mem
+			!weldPoss.append(!weldpos)
+		endif
+	enddo
+
+	!weldnum = 0
+	do !xx indices !this.branmems
+		!mem = !this.branmems[!xx]
+		--do !mem values !this.branmems
+		if !mem eq 'Head' or !mem eq 'Tail' then
+			skip
+		endif
+		!memtype = type of $!mem
+
+
+
+
+		if !memtype inset ('TUBI','OLET','ATTA','BEND') then
+			if !memtype eq 'TUBI' and (!xx eq 2 or !xx eq !this.branmems.size() - 1) then
+				!weldNum = !weldNum + 1
+				!text = 'M' + !weldnum.string()
+				if !xx eq 2 then
+					!pos = hpos of bran of $!mem wrt/*
+				else
+					!pos = tpos of bran of $!mem wrt/*
+				endif
+				!isoWeldText = object isoWeldText(!mem,!pos,!text)
+				!this.objects.append(!isoWeldText)
+				!this.welds.append(!text)
+			else
+				skip
+			endif
+		elseif !memtype eq 'WELD' then
+			!weldNum = !weldNum + 1
+			!shop = shop of $!mem
+			if !shop.unset() or !shop.not() then
+				!text = 'M' + !weldnum.string()
+			else
+				!text = 'A' + !weldnum.string()
+			endif
+			!pos = pos of $!mem wrt/*
+			!isoWeldText = object isoWeldText(!mem,!pos,!text)
+			!this.objects.append(!isoWeldText)
+			!this.welds.append(!text)
+		else
+			!apos = apos of $!mem wrt/*
+			!lpos = lpos of $!mem wrt/*
+			if !apos.distance(!lpos) lt 1 then
+				skip
+			endif
+			do !x from 1 to 2
+				if !x eq 1 then
+					!conntype = aconn of $!mem
+					!pos = !apos
+				else
+					!conntype = lconn of $!mem
+					!pos = !lpos
+				endif
+				if !conntype eq 'BWD' or !conntype eq 'SWF' then
+
+					if !this.checkposifconsider(!weldposs,!pos).not() then	$*valv directely after elbo, the weld between them would be wrong (shop false)
+						--if !weldposs.findfirst(!pos).set() then
+						skip
+						--!text = 'M' + !weldnum.string()
+					else
+						!weldnum = !weldnum + 1
+						if !memtype inset('ELBO','TEE','REDU','CROS','FLAN') then
+							!text = 'A' + !weldnum.string()
+						else
+							!text = 'M' + !weldnum.string()
+						endif
+
+						!isoWeldText = object isoWeldText(!mem,!pos,!text)
+						!this.objects.append(!isoWeldText)
+						!this.welds.append(!text)
+						!weldposs.append(!pos)
+					endif
+				endif
+			enddo
+		endif
+	enddo
+endmethod
+$)
+
+define method .checkposifconsider(!weldposs is array,!pos is position) is boolean
+	!result = true
+	do !onepos values !weldposs
+		if !onepos.distance(!pos) lt 1 then
+			!result = false
+			break
+		endif
+	enddo
+	return !result
+endmethod
+
+define method .getzyjc() is array
+	!result = array()
+	if !this.zyjc.unset() then
+		if !this.weldobjects.unset() then
+			!this.getwelds()
+		endif
+		do !weldobject values !this.weldobjects
+			!welditem = !weldobject.name
+			!zyjc = :ZD_ZYJC of $!welditem
+			handle any
+				skip
+			endhandle
+			if !zyjc.set() and !zyjc eq 'Y' then
+				!onearr = array()
+				!onearr.append(!weldobject.text)
+				!zyjcbjlx = :ZD_ZYJCBJLX of $!welditem
+				handle any
+					!zyjcbjlx = :ZD_BJLX of $!welditem
+					handle any
+						!zyjcbjlx = :ZD-BJLX of $!welditem
+						handle any
+							skip
+						endhandle
+					endhandle
+				endhandle
+				if !zyjcbjlx.unset() then
+					!zyjcbjlx = ''
+				endif
+				!onearr.append(!zyjcbjlx)
+				!jcxs = :ZD_JCXS of $!welditem
+				handle any
+					skip
+				endhandle
+				if !jcxs.unset() then
+					!jcxs = ''
+				endif
+				!onearr.append(!jcxs)
+				!result.append(!onearr)
+			endif
+		enddo
+		!this.zyjc = !result
+	else
+		!result = !this.zyjc
+	endif
+	return !result
+endmethod
+
+define method .getweldlist() is array
+	if !this.welds.unset() then
+		!this.getwelds()
+	endif
+	!fieldwelds = array()
+	!fieldnumbers = array()
+	!shopwelds = array()
+	!shopnumbers = array()
+
+	do !weldindex indices !this.welds
+		!weld = !this.welds[!weldindex]
+        --q var !weld
+		if !weld.matchwild('M*') then
+			!fieldwelds.append(!weld)
+            --modify by jyg 20240812
+			--!fieldnumbers.append(!weld.after('M').real())
+            !fieldnumbers.append(!weld.after('M').before('\').before('/').real())
+		elseif !weld.matchwild('A*') then
+			!shopwelds.append(!weld)
+            --modify by jyg 20240812
+			--!shopnumbers.append(!weld.after('A').real())
+            !shopnumbers.append(!weld.after('A').before('\').before('/').real())
+		else
+			if !this.weldobjects[!weldindex].shop then
+				!shopwelds.append(!weld)
+				!shopnumbers.append(object real())
+			else
+				!fieldwelds.append(!weld)
+				!fieldnumbers.append(object real())
+			endif
+		endif
+	enddo
+
+	--q var !fieldnumbers !shopnumbers
+	!fieldindices = !fieldnumbers.sortedindices()
+	handle any
+	elsehandle none
+		!fieldwelds.reindex(!fieldindices)
+	endhandle
+
+	!shopindices = !shopnumbers.sortedindices()
+	handle any
+	elsehandle none
+		!shopwelds.reindex(!shopindices)
+	endhandle
+
+	!result = array()
+	!result.append(!fieldwelds)
+	!result.append(!shopwelds)
+	return !result
+endmethod
+
+--useless now
+define method .getJsonData(!materialAttS is array, !materialAttShow is array, !BranAtts is array ,!branAttShow is array ,!cutpipelengthatts is array, !cutpipelengthattshow is array) is array
+	--define method .getJsonData(!materialAttS is array, !materialAttShow is array, !BranAtts is array ,!branAttShow is array ,!cutpipelengthatts is array, !cutpipelengthattshow is array, !merge is boolean) is array
+	--$p 44
+    !jsonmem = object jsonmem()
+	!jsonmem.node = !this.branname
+	--!jsonmem.code = !this.branname
+	--$(
+	!nbbm = :zd_nbbm of $!this.branname
+	handle any
+	elsehandle none
+		if !nbbm.unset() or !nbbm eq '' then
+			!jsonmem.code = !this.branname
+		else
+			!jsonmem.code = !nbbm
+		endif
+	endhandle
+	!jsonmem.rev = !this.rev
+    var !E3DProject  pro num
+    !jsonmem.E3DProject = !E3DProject
+    --q var !jsonmem.E3DProject
+	--$)
+
+	--q var !materialAttS !materialAttShow !BranAtts !branAttShow !cutpipelengthatts !cutpipelengthattshow
+	!jsonmem.type = 'ISO'
+	!jsonmem.content = !this.getDimJson()
+	!jsonmem.material = !this.materialsJson(!materialAttS, !materialAttShow)
+	!jsonmem.separateMaterial = !this.specialmaterialsJson(!materialAttS, !materialAttShow)
+	!jsonmem.branatt = !this.branAttJson(!BranAtts, !branAttShow)
+	!jsonmem.weld = !this.weldJson()
+	!jsonmem.cutpipelength = !this.cutpipelengthJson(!cutpipelengthAttS, !cutpipelengthattShow)
+	!jsonmem.drawingInfo = !this.getDrawingInfoJson()
+	!jsonmem.proofreading = !this.getproofreadingjson()
+	return !jsonmem.getjsontext()
+
+	$(
+	!arrs = array()
+	!arrs.append(!this.getDimJson())
+	!arrs.append(!this.materialsJson(!materialAttS, !materialAttShow))
+	!arrs.append(!this.specialmaterialsJson(!materialAttS, !materialAttShow))
+	!arrs.append(!this.branAttJson(!BranAtts, !branAttShow))
+	!arrs.append(!this.weldJson())
+	!arrs.append(!this.cutpipelengthJson(!cutpipelengthAttS, !cutpipelengthattShow))
+
+
+	if !merge then
+		!json = object json(!arrs)
+		return !json.getpackjson()
+	else
+		do !x indices !arrs
+			--q var !arrs[!x].size()
+			!json = object json(!arrs[!x])
+			!arrs[!x] = !json.getpackjson()
+		enddo
+		return !arrs
+	endif
+	$)
+endmethod
+
+--use this method now
+define method .getJsonData(!materialAttS is array, !materialAttShow is array, !elematerialAttS is array, !elematerialAttShow is array, !BranAtts is array ,!branAttShow is array ,!cutpipelengthatts is array, !cutpipelengthattshow is array) is array
+	--define method .getJsonData(!materialAttS is array, !materialAttShow is array, !BranAtts is array ,!branAttShow is array ,!cutpipelengthatts is array, !cutpipelengthattshow is array, !merge is boolean) is array
+	--$p 66
+    --q var !materialAttS !materialAttShow !elematerialAttS !elematerialAttShow !BranAtts !branAttShow !cutpipelengthatts !cutpipelengthattshow
+	!jsonmem = object jsonmem()
+	!jsonmem.node = !this.branname
+    --modify by jyg 20240923
+    !jsonmem.refno = !this.branname.Dbref().ref.string()
+	--!jsonmem.code = !this.branname
+	--$(
+	!nbbm = :zd_nbbm of $!this.branname
+	handle any
+	elsehandle none
+		if !nbbm.unset() or !nbbm eq '' then
+			!jsonmem.code = !this.branname
+		else
+			!jsonmem.code = !nbbm
+		endif
+	endhandle
+	--$)
+
+	if !this.isinstpipe then
+		!jsonmem.type = 'EM9PIPE'
+	else
+		!jsonmem.type = 'EM4PIPE'
+	endif
+	!jsonmem.rev = !this.rev
+    --modify by jyg 20250214 添加项目号
+	var !E3DProject  pro num
+    !jsonmem.E3DProject = !E3DProject
+
+
+	--!jsonmem.type = 'ISO'
+	!jsonmem.content = !this.getDimJson()
+	!jsonmem.material = !this.materialsJson(!materialAttS, !materialAttShow)
+	!jsonmem.separateMaterial = !this.specialmaterialsJson(!elematerialAttS, !elematerialAttShow)
+	!jsonmem.branatt = !this.branAttJson(!BranAtts, !branAttShow)
+	!jsonmem.weld = !this.weldJson()
+	if !this.isinstpipe.not() then
+		!jsonmem.zyjc = !this.zyjcjson()
+	endif
+	!jsonmem.cutpipelength = !this.cutpipelengthJson(!cutpipelengthAttS, !cutpipelengthattShow)
+	!jsonmem.drawingInfo = !this.getDrawingInfoJson()
+	!jsonmem.proofreading = !this.getproofreadingjson()
+
+	return !jsonmem.getjsontext()
+
+	$(
+	!arrs = array()
+	!arrs.append(!this.getDimJson())
+	!arrs.append(!this.materialsJson(!materialAttS, !materialAttShow))
+	!arrs.append(!this.specialmaterialsJson(!materialAttS, !materialAttShow))
+	!arrs.append(!this.branAttJson(!BranAtts, !branAttShow))
+	!arrs.append(!this.weldJson())
+	!arrs.append(!this.cutpipelengthJson(!cutpipelengthAttS, !cutpipelengthattShow))
+
+
+	if !merge then
+		!json = object json(!arrs)
+		return !json.getpackjson()
+	else
+		do !x indices !arrs
+			--q var !arrs[!x].size()
+			!json = object json(!arrs[!x])
+			!arrs[!x] = !json.getpackjson()
+		enddo
+		return !arrs
+	endif
+	$)
+endmethod
+
+define method .getProofreadingJson() is array
+	!row = !!getProofreadingJson(!this,!this.branname)
+	return !row
+endmethod
+
+define method .getdrawinfo()
+	if !this.drawgroup.unset() then
+		--if !this.isinstpipe then
+		--	!this.drawmajor = '仪表'
+		--else
+		--	!this.drawmajor = '布置11'
+		--endif
+		--!this.drawname = '管道设计模型（一）'
+		!this.drawname = !this.branname
+		if !this.drawname.substring(1,1) eq '/' then
+			!this.drawname = !this.drawname.after('/')
+		endif
+		!!getdrawinginfo(!this)
+	endif
+endmethod
+
+define method .getDrawingInfoJson() is array
+	!row = !!getdrawinginfojson(!this,!this.branname)
+	return !row
+endmethod
+
+define method .getDimJson() is array
+	if !this.mbdstru.unset() then
+		!this.mbdstru = object mbdstru(!this.branname)
+	endif
+    --q var !this.mbdstru.mbdstru
+	!json = object json(!this.mbdstru.mbdstru)
+    --q var !json.data !json.items
+	return !json.getJson()
+endmethod
+
+define method .materialsJson(!materialAttS is array, !materialAttShow is array ) is array
+	!result = array()
+	!materials = !this.sumMaterials(!materialAttS)
+	do !y indices !materials
+		!rowarr = !materials[!y]
+		!onearr = array()
+		!onearr.append(|{|)
+		do !x indices !rowarr
+			--!onearr.append(|"| + !materialAttShow[!x] + |": "| + !rowarr[!x].string() + |",|)
+			!onearr.append(|"| + !materialAttShow[!x] + |": "| + !rowarr[!x].string().replace(|\|,|\\|).replace(|"|,|\"|) + |",|)
+			handle any
+				--q var !!error
+				!onearr.append(|"| + !materialAttShow[!x] + |": "| + '' + |",|)
+			endhandle
+			if !x eq !rowarr.size() then
+				!onearr[!onearr.size()] = !onearr[!onearr.size()].substring(1,!onearr[!onearr.size()].length() - 1)
+			endif
+		enddo
+
+		!onearr.insert(2,|"type":"pipeMaterial",|)
+
+		!onearr.insert(2,|"nodeNames":["| + !this.summaterialsnodestrings[!y] + |"],|)
+		--!onearr.insert(2,|"nodeNames":["| + !this.branname + |"],|)
+
+
+		--if !y ne !materials.size() then
+		!onearr.append(|},|)
+		--else
+		--    !onearr.append(|}|)
+		--endif
+		!result.appendarray(!onearr)
+	enddo
+
+	return !result
+	--!result.insert(1,|[|)
+	--!result.append(|]|)
+endmethod
+
+define method .specialmaterialsJson(!materialAttS is array, !materialAttShow is array ) is array
+
+	!result = array()
+    --Q VAR !materialAttS
+	!materials = !this.getspecialMaterials(!materialAttS)
+	!nodestrings = !this.materialsnodestrings
+    --q var !nodestrings
+	--q var !materials[1] !materials[13]
+    --q var !this.materials[1] !this.materials[13]
+
+    --modify by jyg 20250217 给json文件添加refno信息用
+    !indexs = array()
+    !indexMaterials = !this.materials
+    do !isomaterial values !this.materials
+        --q var !isomaterial
+		if !isomaterial.specialnum.match('_') ne 0 then
+			!indexs.append(!isomaterial.specialnum.after('_').real())
+		else
+			!indexs.append(!isomaterial.specialnum.real())
+		endif
+    enddo
+    !indices = !indexs.sortedindices()
+	!indexMaterials.reindex(!indices)
+
+
+	do !y indices !materials
+		!rowarr = !materials[!y]
+        --q var !rowarr
+		!onearr = array()
+		!onearr.append(|{|)
+		do !x indices !rowarr
+            --q var !materialAttShow[!x]
+			!onearr.append(|"| + !materialAttShow[!x] + |": "| + !rowarr[!x].string().replace(|\|,|\\|).replace(|"|,|\"|) + |",|)
+			handle any
+				!onearr.append(|"| + !materialAttShow[!x] + |": "| + '' + |",|)
+			endhandle
+			if !x eq !rowarr.size() then
+				!onearr[!onearr.size()] = !onearr[!onearr.size()].substring(1,!onearr[!onearr.size()].length() - 1)
+			endif
+		enddo
+
+		!onearr.insert(2,|"type":"pipeSpecialMaterial",|)
+
+		!onearr.insert(2,|"nodeNames":["| + !nodestrings[!y] + |"],|)
+
+        !onearr.insert(2,|"refno特殊说明":["| + |"],|)
+
+        !materialsType = !indexMaterials[!y].type
+        if  !materialsType eq 'TUBI' then
+            !onearr.insert(2,|"refno":["| + !indexMaterials[!y].name + |"],|)
+        else
+            !onearr.insert(2,|"refno":["| + !indexMaterials[!y].name.dbref().ref.string() + |"],|)
+        endif
+
+		--!onearr.insert(2,|"nodeNames":["| + !this.branname + |"],|)
+		--if !y ne !materials.size() then
+		!onearr.append(|},|)
+		--else
+		--    !onearr.append(|}|)
+		--endif
+		!result.appendarray(!onearr)
+	enddo
+	return !result
+	--!result.insert(1,|[|)
+	--!result.append(|]|)
+	--!this.instore(!result,!filename + '_specialMaterials',!path)
+endmethod
+
+
+define method .branAttJson(!BranAtts is array, !branAttShow is array) is array
+	!rowarr = !this.getBranAttArr(!branAtts)
+	!row = array()
+	!row.append(|{|)
+	do !x indices !rowarr
+		!row.append(|"| + !branAttShow[!x] + |": "| + !rowarr[!x].string().replace(|\|,|\\|).replace(|"|,|\"|) + |",|)
+		handle any
+			!row.append(|"| + !branAttShow[!x] + |": "| + '' + |",|)
+		endhandle
+		if !x eq !rowarr.size() then
+			!row[!row.size()] = !row[!row.size()].substring(1,!row[!row.size()].length() - 1)
+		endif
+	enddo
+	--!row.append(|}|)
+	!row.append(|},|)
+
+	!row.insert(2,|"type":"branAttribution",|)
+	!row.insert(2,|"nodeNames":["| + !this.branname + |"],|)
+	return !row
+	--!this.instore(!row,!filename + '_BranAtt',!path)
+endmethod
+define method .weldJson() is array
+	!maxnum = 16
+	!arrs = !this.getweldlist()
+	!rows = array()
+	do !arr values !arrs
+		!temparr = array()
+		do !x indices !arr
+			!temparr.append(!arr[!x])
+			if !x / !maxnum eq int(!x / !maxnum) then
+				!rows.append(!temparr)
+				!temparr = array()
+			elseif !x eq !arr.size() then
+				!rows.append(!temparr)
+			endif
+		enddo
+	enddo
+
+	do !x indices !rows
+		if !rows[!x][1].matchwild('M*') then
+			!rows[!x].insert(1,'现场焊缝号')
+		else
+			!rows[!x].insert(1,'工厂焊缝号')
+		endif
+	enddo
+
+	!resultarr = array()
+	do !welds values !rows
+		!result = array()
+		!result.append(|{|)
+		!result.append(|"weldText":[|)
+		do !x indices !welds
+			if !x ne !welds.size() then
+				!result.append(|"| + !welds[!x] + |",|)
+			else
+				!result.append(|"| + !welds[!x] + |"|)
+			endif
+		enddo
+		!result.append(|]|)
+		!result.append(|},|)
+
+		!result.insert(2,|"type":"branWeld",|)
+		!result.insert(2,|"nodeNames":["| + !this.branname + |"],|)
+
+		!resultarr.appendarray(!result)
+	enddo
+	return !resultarr
+
+	$(
+	!welds = !this.welds
+	!result = array()
+	!result.append(|{|)
+	!result.append(|"weldText":[|)
+	do !x indices !welds
+		if !x ne !welds.size() then
+			!result.append(|"| + !welds[!x] + |",|)
+		else
+			!result.append(|"| + !welds[!x] + |"|)
+		endif
+	enddo
+	!result.append(|]|)
+	--!result.append(|}|)
+	!result.append(|},|)
+
+	!result.insert(2,|"type":"branWeld",|)
+	!result.insert(2,|"nodeNames":["| + !this.branname + |"],|)
+	return !result
+	--!this.instore(!result,!filename + '_WeldText',!path)
+	$)
+endmethod
+
+define method .zyjcJson() is array
+	!result = array()
+	!zyjc = !this.getzyjc()
+	--q var !zyjc
+	!atts = split('焊缝号 受检部件类型 检查方法')
+	do !y indices !zyjc
+		!rowarr = !zyjc[!y]
+		--q var !rowarr
+		!onearr = array()
+		!onearr.append(|{|)
+		do !x indices !rowarr
+
+			!onearr.append(|"| + !atts[!x] + |": "| + !rowarr[!x].string().replace(|\|,|\\|).replace(|"|,|\"|) + |",|)
+			handle any
+				!onearr.append(|"| + !atts[!x] + |": "| + '' + |",|)
+			endhandle
+			if !x eq !rowarr.size() then
+				!onearr[!onearr.size()] = !onearr[!onearr.size()].substring(1,!onearr[!onearr.size()].length() - 1)
+			endif
+		enddo
+
+		!onearr.insert(2,|"type":"pipeZyjc",|)
+		!onearr.insert(2,|"nodeNames":["| + !this.branname + |"],|)
+		!onearr.append(|},|)
+		!result.appendarray(!onearr)
+	enddo
+	return !result
+endmethod
+
+
+define method .cutpipelengthJson(!cutpipelengthAttS is array, !cutpipelengthAttShow is array ) is array
+	!result = array()
+
+	!cutpipelengths = !this.getcuttubi(!cutpipelengthAttS)
+	!nodestrings = !this.cuttubinodestrings
+
+	--!temparr = !this.getcuttubi(!cutpipelengthAttS)
+	--!cutpipelengths = !temparr[1]
+	--!nodestrings = !temparr[2]
+
+
+	--q var !cutpipelengths
+	do !y indices !cutpipelengths
+		!rowarr = !cutpipelengths[!y]
+		!onearr = array()
+		!onearr.append(|{|)
+		do !x indices !rowarr
+			!onearr.append(|"| + !cutpipelengthAttShow[!x] + |": "| + !rowarr[!x].string().replace(|\|,|\\|).replace(|"|,|\"|) + |",|)
+			handle any
+				!onearr.append(|"| + !cutpipelengthAttShow[!x] + |": "| + '' + |",|)
+			endhandle
+			if !x eq !rowarr.size() then
+				!onearr[!onearr.size()] = !onearr[!onearr.size()].substring(1,!onearr[!onearr.size()].length() - 1)
+			endif
+		enddo
+
+		!onearr.insert(2,|"type":"Tubelength",|)
+
+		!onearr.insert(2,|"nodeNames":["| + !nodestrings[!y] + |"],|)
+		--!onearr.insert(2,|"nodeNames":["| + !this.branname + |"],|)
+		!onearr.append(|},|)
+		!result.appendarray(!onearr)
+	enddo
+	return !result
+endmethod
+
+
+
+
+8

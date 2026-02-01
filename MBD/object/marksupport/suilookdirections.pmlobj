@@ -1,0 +1,753 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= June 26th 2023
+--[Function]:	get best directions of looking view
+--
+--[REV]
+--Revision		= 1.1
+--Date			= October 27th 2023
+--[Function]:	add object as input data
+------------------------------------------
+
+--Method:
+--Public method:
+--suilookdirections(!inputitems is any) 									$*
+
+--Private method:
+--getitemposdir(!item is any)   											$*
+----Steps:
+----Step 1: object as (supppoint supppanes)
+----Step 2: component
+----
+--getlookdirs() 															$*
+--getpossdirs() 															$*
+--getthreeddir()															$*
+--inputitems(!inputitems is any)											$*
+
+
+define object suilookdirections
+	member .poss is array
+	member .dirs is array
+
+	member .pipeposs is array	$*use this when the support is empty
+	member .pipedirs is array	$*use this when the support is empty
+
+	member .lookdirs is array
+	member .threeddir is direction
+	member .items is array
+
+	member .cenpoint is position
+	member .concreteDir is direction
+
+	member .inputlookdir is direction
+
+	member .maxlen is real			$*max len in e n u
+
+	member .dimlines is array		$* for lookdirs
+endobject
+
+define method .suilookdirections(!inputitems is any,!inputlookdir is direction,!dimlines is array)
+	!this.inputlookdir = !inputlookdir
+	!this.dimlines = !dimlines
+	!this.inputitems(!inputitems)
+endmethod
+
+define method .suilookdirections(!inputitems is any,!inputlookdir is direction)
+	!this.inputlookdir = !inputlookdir
+	!this.inputitems(!inputitems)
+endmethod
+
+define method .suilookdirections(!inputitems is any)
+	!this.inputitems(!inputitems)
+endmethod
+
+define method .inputitems(!inputitems is any)
+	if !inputitems.objecttype() ne 'ARRAY' then
+		!inputarr = array()
+		!inputarr.append(!inputitems)
+	else
+		!inputarr = !inputitems
+	endif
+
+	--!types = split('SUPPAPDP,SUPPBEAM,SUPPBOLT,SUPPCLAMP,SUPPCONCRETE,SUPPCONNECT,SUPPPANE,SUPPPANES,PROFILE,SUPPPOINT,SUPPTUBE,SCTN,GENSEC,HELE,PANE,FLOOR,PLOO,LINE,ARC',',')
+
+	--var !refs eval ref for all from !inputarr
+	--!this.items = !refs
+    --q var !inputarr
+	!this.items = !inputarr
+
+	!this.getpossdirs()
+	if !this.poss.unset() then
+		$p No poss --- suilookdirections
+		return
+	endif
+	!this.getcenpoint()
+	!this.getconcretedir()
+	!this.getlookdirs()
+	!this.getthreeddir()
+endmethod
+
+define method .getcenpoint()
+	--!this.cenpoint = !!getcenpoint(!this.poss)
+
+	if !this.poss.size() le 1 then
+
+		do !item values !this.items
+			!mem = !item.mems[1]
+			handle any
+				skip
+			endhandle
+			!stru = name of stru of $!mem
+			handle any
+				!rest = name of rest of $!mem
+				handle any
+					skip
+				endhandle
+			endhandle
+			--$p $!mem
+			!volume = object volume(object dbref(!mem))
+			if !volume.from.distance(!volume.to) lt 2000 then	$*avoid concrete
+				!this.poss.append(!volume.from)
+				!this.poss.append(!volume.to)
+			endif
+		enddo
+	endif
+
+
+	do !pos values !this.poss
+		if undefined(!w) then
+			!e = !pos.east
+			!w = !pos.east
+			!n = !pos.north
+			!s = !pos.north
+			!u = !pos.up
+			!d = !pos.up
+		else
+			!e = max(!e,!pos.east)
+			!w = min(!w,!pos.east)
+			!n = max(!n,!pos.north)
+			!s = min(!s,!pos.north)
+			!u = max(!u,!pos.up)
+			!d = min(!d,!pos.up)
+		endif
+	enddo
+	!this.maxlen = max(max(!e - !w,!n - !s),!u - !d)
+	--q var !this.maxlen
+
+	!e = (!w + !e) / 2
+	!n = (!s + !n) / 2
+	!u = (!d + !u) / 2
+	!pos = e $!e n $!n u $!u
+	!this.cenpoint = !pos
+endmethod
+
+define method .getconcretedir()
+	do !item values !this.items
+		!type = type of $!item
+		handle any
+			!type = !item.objecttype()
+			handle any
+				$p $!item has no type
+				return
+			endhandle
+		endhandle
+		if !type eq 'SUPPAPDP' then
+			!plane = object plane(!item.pos,!item.orientation)
+			!this.concretedir = !this.cenpoint.direction(!plane.near(!this.cenpoint))
+			handle any
+			elsehandle none
+				return
+			endhandle
+		elseif !type eq 'SUPPCONCRETE' then
+			if !item.markcivil.profiles.set() then
+				do !profile values !item.markcivil.profiles
+					!this.concretedir = !this.cenpoint.direction(!profile.plane().near(!this.cenpoint))
+					handle any
+					elsehandle none
+						return
+					endhandle
+				enddo
+			else
+				do !arc values !item.markcivil.arcs
+					!nearpos = !arc.angleposition(!arc.near(!this.cenpoint))
+					if !nearpos.distance(!arc.position) lt !arc.radius then
+						!this.concretedir = !arc.position.direction(!nearpos)
+					else
+						!this.concretedir = !nearpos.direction(!arc.position)
+					endif
+					return
+				enddo
+			endif
+		endif
+	enddo
+endmethod
+
+define method .getpossdirs()
+	!this.poss = array()
+	!this.dirs = array()
+	do !item values !this.items
+		!this.getitemposdir(!item)
+	enddo
+	if !this.poss.unset() then
+		!this.poss = !this.pipeposs
+		!this.dirs = !this.pipedirs
+	endif
+
+	!this.dirs.unique()
+	!this.poss.unique()
+endmethod
+
+define method .getitemposdir(!item is any)
+	!type = type of $!item
+	handle any
+		!type = !item.objecttype()
+		handle any
+			$p $!item has no type
+			return
+		endhandle
+	endhandle
+	-----------------------------------------------------------------------------------
+	-----------------------------------------------------------------------------------Step 1:object as (supppoint supppanes)
+	if !type eq 'SUPPAPDP' then
+		!this.poss.append(!item.pos)
+		!this.dirs.append(!item.orientation.zdir())
+	elseif !type eq 'SUPPBEAM' then
+		!this.poss.append(!item.pos1)
+		!this.poss.append(!item.pos2)
+		!this.dirs.append(!item.axis.direction())
+	elseif !type eq 'SUPPBOLT' then
+		!this.poss.append(!item.apos)
+		!this.poss.append(!item.lpos)
+		!this.dirs.append(!item.dir)
+	elseif !type eq 'SUPPCLAMP' then
+		!this.poss.append(!item.apos)
+		if !item.lpos.set() then
+			!this.poss.append(!item.lpos)
+		endif
+		!this.dirs.append(!item.adir)
+	elseif !type eq 'SUPPCONCRETE' then
+		--$p $!type was not considered
+	elseif !type eq 'SUPPCONNECT' then
+		!this.poss.appendarray(!item.poss)
+		do !line values !item.lines
+			!this.dirs.append(!line.direction())
+		enddo
+	elseif !type eq 'SUPPPANE' then
+        --q var !item.mems !item.profile
+		!this.getitemposdir(!item.profile)
+	elseif !type eq 'SUPPPANES' then
+		do !profile values !item.profiles
+			!this.getitemposdir(!profile)
+		enddo
+	elseif !type eq 'PROFILE' then
+        --q var !item
+		!edges = !item.edges()
+		handle any  $*modify by jyg 20240905
+		elsehandle none
+			do !edge values !edges
+				!this.getitemposdir(!edge)
+			enddo
+		endhandle
+	elseif !type eq 'SUPPPOINT' then
+		!this.poss.append(!item.pos)
+		!this.dirs.append(!item.dir)
+	elseif !type eq 'SUPPTUBE' then
+	--q var !item.pos1.distance(!item.pos2)
+		if !item.pos1.unset() or !item.pos2.unset() then	$*some type was not identified
+			skip
+		endif
+		if abs(!item.pos1.distance(!item.pos2) - 2000) gt 0.1 then		$*supptube is pipe when length of it is 2000
+			!this.poss.append(!item.pos1)
+			!this.poss.append(!item.pos2)
+			!this.dirs.append(!item.axis.direction())
+		else
+			!this.pipeposs.append(!item.pos1)
+			!this.pipeposs.append(!item.pos2)
+			!this.pipedirs.append(!item.axis.direction())
+		endif
+
+
+		-----------------------------------------------------------------------------------
+		-----------------------------------------------------------------------------------Step 2:component
+	elseif !type eq 'SCTN' then
+		!spos = posstart of $!item wrt/*
+		!epos = posend of $!item wrt/*
+		!this.poss.append(!spos)
+		!this.poss.append(!epos)
+		!this.dirs.append(!spos.direction(!epos))
+		handle any
+		endhandle
+	elseif !type eq 'GENSEC' then
+		var !poinsps coll all poinsp for $!item
+		!spos = pos of $!poinsps[1] wrt/*
+		!lastp = !poinsps.last()
+		!epos = pos of $!lastp wrt/*
+		!this.poss.append(!spos)
+		!this.poss.append(!epos)
+		!this.dirs.append(!spos.direction(!epos))
+		handle any
+		endhandle
+	elseif !type eq 'HELE' then
+		!spos = p1 pos of $!item wrt/*
+		!epos = p2 pos of $!item wrt/*
+		!this.poss.append(!spos)
+		!this.poss.append(!epos)
+		!this.dirs.append(!spos.direction(!epos))
+		handle any
+		endhandle
+	elseif !type eq 'PANE' or !type eq 'FLOOR' then
+		var !ploos coll all ploo for $!item
+		do !ploo values !ploos
+			!this.getitemposdir(!ploo)
+		enddo
+	elseif !type eq 'PLOO' then
+		!pro = object profile($!item)
+		!pro.close()
+		!this.getitemposdir(!pro)
+	elseif !type eq 'LINE' then
+		!this.poss.append(!item.startposition)
+		!this.poss.append(!item.endposition)
+		!this.dirs.append(!item.direction())
+	elseif !type eq 'ARC' then
+		!this.dirs.append(!item.angledirection(!item.startangle))
+		!this.dirs.append(!item.angledirection(!item.endangle))
+		!this.dirs.append(!item.orientation.zdir())
+		!this.poss.append(!item.position)
+		!this.poss.append(!item.angleposition(!item.startangle))
+		!this.poss.append(!item.angleposition(!item.endangle))
+	else
+		--$p $!type was not considered           suilookdirections
+	endif
+
+endmethod
+
+define method .getdimlinesdirs() is array
+	!lines = array()
+	do !x indices !this.dimlines
+		!line = !this.dimlines[!x].axis
+		!line = !line.extendstart(100).extendend(100)
+		!lines.append(!line)
+	enddo
+
+	!dirs = array()
+	!size = !lines.size()
+	do !x from 1 to !size - 1
+		!line1 = !lines[!x]
+		do !y from !x + 1 to !size
+			!line2 = !lines[!y]
+			!point = !line1.intersection(!line2)
+			handle any
+			elsehandle none
+				if !line1.onprojected(!point) and !line2.onprojected(!point) then
+					if !line1.distance(!point) lt 100 and !line2.distance(!point) lt 100 then
+						!dirs.append(!line1.direction().orthogonal(!line2.direction()))
+					endif
+				endif
+			endhandle
+		enddo
+	enddo
+
+	!dirs = !this.uniquedirs(!dirs,1)
+	return !dirs
+endmethod
+
+define method .uniquedirs(!dirs is array,!tolerance is real) is array
+	!newdirs = array()
+	!dirnums = array()
+
+	!size = !dirs.size()
+	!delnums = array()
+	do !x from 1 to !size
+		if !delnums.findfirst(!x).set() then
+			skip
+		endif
+		!dir = !dirs[!x]
+		!newdirs.append(!dir)
+		!dirnums.append(1)
+		do !y from !x + 1 to !size
+			if !delnums.findfirst(!y).set() then
+				skip
+			endif
+			!onedir = !dirs[!y]
+			!angle = !dir.angle(!onedir)
+			if !angle gt 180 - !tolerance or !angle lt !tolerance then
+				!delnums.append(!y)
+				!dirnums[!dirnums.size()] = !dirnums[!dirnums.size()] + 1
+			endif
+		enddo
+	enddo
+
+	!indices = !dirnums.sortedindices().invert()
+	!newdirs.reindex(!indices)
+	return !newdirs
+endmethod
+
+define method .getlookdirs()
+    --$P 1
+    --Q VAR !this.dimlines
+	if !this.dimlines.set() then
+		!dirs = !this.getdimlinesdirs()
+	else
+		!dirs = !this.dirs
+	endif
+	--Q VAR !dirs
+	!positions = !this.poss
+
+	!dirs = !this.uniquedirs(!dirs,1)
+
+	$(
+	--q var !dirs
+	--!dirs.unique()
+	--!positions.unique()
+	do !x indices !dirs
+		!delnums = array()
+		do !n from !x + 1 to !dirs.size()
+			!angle = !dirs[!x].angle(!dirs[!n])
+			if !angle gt 179 or !angle lt 1 then
+				!delnums.append(!n)
+			endif
+		enddo
+		do !num values !delnums
+			!dirs[$!num].delete()
+		enddo
+		!dirs.unique()
+	enddo
+	--q var !dirs
+	--------------------------------------------------unique all directions
+	$)
+
+	!threeormoredirs = array()
+	--q var !dirs
+	if !dirs.size() gt 0 then
+		if !dirs.size() eq 1 then
+			!xdir = !dirs[1]
+			!ydir = !xdir.orthogonal(u)
+			handle any
+				!ydir = !xdir.orthogonal(e)
+			endhandle
+			!zdir = !xdir.orthogonal(!ydir)
+
+			!threeOrMoredirs.append(!xdir)
+			!threeOrMoredirs.append(!ydir)
+			!threeOrMoredirs.append(!zdir)
+		elseif !dirs.size() eq 2 then
+
+
+			!threeOrMoredirs[1] = !dirs[1].orthogonal(!dirs[2])
+			!dir = !threeOrMoredirs[1].orthogonal(!dirs[1])
+			!threeOrMoredirs.append(!dir)
+			!dir = !threeOrMoredirs[1].orthogonal(!dirs[2])
+			!threeOrMoredirs.append(!dir)
+
+		elseif !dirs.size() ge 3 then
+			if !this.dimlines.unset() then
+				do !n from 1 to !dirs.size() - 1
+					do !x from !n + 1 to  !dirs.size()
+						!dir = !dirs[!n].orthogonal(!dirs[!x])
+						handle any
+						elsehandle none
+							!threeormoredirs.append(!dir)
+						endhandle
+					enddo
+				enddo
+				!threeOrMoredirs.unique()
+				!temarray = array()
+				do !dir values !threeormoredirs
+					do !dir2 values !dirs
+						!angle = !dir.angle(!dir2)
+						--if !angle ne 180 and !angle ne 0 then
+						if !angle le 178 and !angle ge 2 then
+							!dir3 = !dir.orthogonal(!dir2)
+							!temarray.append(!dir3)
+						endif
+					enddo
+				enddo
+				!temarray.unique()
+				!threeOrMoredirs.appendarray(!temarray)
+				!threeOrMoredirs.unique()
+			else
+				!threeOrMoredirs = !dirs
+			endif
+		endif
+		!dirs = !threeOrMoredirs
+		--q var !dirs
+	else
+		!dirs[1] = E
+		!dirs[2] = N
+		!dirs[3] = U
+	endif
+	--q var !dirs
+	----------------------------------------obtain orthogonal direction of beams and orthogonal direction between beam and first batch orthogonal directions
+
+	!dirs.unique()
+
+	!dirs = !this.uniquedirs(!dirs,5)
+	$(
+	--q var !dirs
+	do !x indices !dirs
+		!delnums = array()
+		do !n from !x + 1 to !dirs.size()
+			!angle = !dirs[!x].angle(!dirs[!n])
+			-- if !angle gt 179 or !angle lt 1 then
+			if !angle gt 175 or !angle lt 5 then                   $*201608100912
+				!delnums.append(!n)
+			endif
+		enddo
+		do !num values !delnums
+			!dirs[$!num].delete()
+		enddo
+		!dirs.unique()
+	enddo
+	--------------------------------------------------unique all directions
+	$)
+
+
+	--q var !dirs
+	-----------------------------------------------------------------------
+
+	!originpos = E 0 N 0 U 0
+	!mindiss = array()
+	!neardiss = array()
+	!alldirs = array()
+	do !dir values !dirs
+		!mindiss.append(!this.getdirdis(!dir))
+	enddo
+	!sortindices = !mindiss.sortedindices()
+	!dirs.reindex(!sortindices)                             $* size ge 3
+	!mindiss.reindex(!sortindices)
+
+
+	--q var !dirs
+	!this.lookdirs = !dirs
+
+
+	---------------------------------------------------------------------------------------
+endmethod
+
+define method .getdirdis(!dir is direction) is real
+	$(
+	if !this.dirs.size() gt 6 then	$* 6 count be another number like 5 7 9
+		!size = 0
+		do !onedir values !this.dirs
+			if abs(!onedir.angle(!dir) - 90) lt 5 then
+				!size = !size + 1
+			endif
+		enddo
+		!size = !this.dirs.size() - !size
+		return !size
+	else
+	$)
+		!originpos = E 0 N 0 U 0
+		!line = !originpos.line(!originpos.offset(!dir,1000))
+		!nearposs = array()
+		do !pos values !this.poss
+			!nearposs.append(!line.near(!pos))
+		enddo
+		!distance = 0
+		do !pos values !nearposs
+			do !otherpos values !nearposs
+				!distance = !pos.distance(!otherpos) + !distance
+			enddo
+		enddo
+
+		--$(
+
+		!angle = !dir.angle(u)
+		if !angle lt 179.9 and !angle gt 0.1 and abs(!angle - 90) gt 0.1 then	$*people dont like incline view
+			!distance = !distance * 1.5
+		endif
+		$(
+		!tempdirs =  array()
+		!tempdirs.append(e)
+		!tempdirs.append(w)
+		!tempdirs.append(s)
+		!tempdirs.append(n)
+		!tempdirs.append(u)
+		!tempdirs.append(d)
+		!xs = 1.5
+		do !tempdir values !tempdirs
+			if !tempdir.angle(!dir) lt 0.1 then
+				!xs = 1
+				break
+			endif
+		enddo
+		!distance = !distance * !xs
+		$)
+
+		return !distance
+	--endif
+endmethod
+
+define method .getthreeddir()
+	!diss = array()
+    --q var !this.lookdirs
+	!dirs = !this.lookdirs
+    --q var !dirs
+
+
+	!forbiddirs = array()
+	if !this.inputlookdir.set() then
+		do !tempdir values !this.lookdirs
+			if !tempdir.angle(!this.inputlookdir) gt 91 then
+				!forbiddirs.append(!tempdir)
+			elseif !tempdir.opposite().angle(!this.inputlookdir) gt 91 then
+				!forbiddirs.append(!tempdir.opposite())
+			else
+				if !tempdir.angle(u) lt 90 then
+					!forbiddirs.append(!tempdir)
+				elseif !tempdir.opposite().angle(u) lt 90 then
+					!forbiddirs.append(!tempdir.opposite())
+				endif
+			endif
+		enddo
+		!forbidangle = 1	$*if angle is like 70, maybe no dirs could be good
+	else
+		if !this.concretedir.set() then
+			!forbiddirs.append(!this.concretedir.opposite())
+			!tempangle = !this.concretedir.angle(u)
+			if !tempangle gt 89 and !tempangle lt 91 then
+				!forbiddirs.append(u)
+			endif
+		else
+			!forbiddirs.append(u)
+		endif
+		!forbidangle = 70
+	endif
+
+
+	--q var !this.concretedir
+
+
+	!cannotoppoindices = array()
+	do !x indices !dirs
+		do !forbiddir values !forbiddirs
+			if !dirs[!x].angle(!forbiddir) lt !forbidangle then
+				!cannotoppoindices.append(!x)
+				!dirs[!x] = !dirs[!x].opposite()
+				break
+			endif
+		enddo
+	enddo
+
+    --q var !dirs
+	do !x from 1 to 8
+		!fourdirs = array()
+		if !x eq 1 then
+			!fourdirs[1] = !dirs[1]
+			!fourdirs[2] = !dirs[2]
+			!fourdirs[3] = !dirs[3]
+            handle any
+            endhandle
+		elseif !x eq 2 then
+			!fourdirs[1] = !dirs[1].opposite()
+			!fourdirs[2] = !dirs[2]
+			!fourdirs[3] = !dirs[3]
+            handle any
+            endhandle
+		elseif !x eq 3 then
+			!fourdirs[1] = !dirs[1]
+			!fourdirs[2] = !dirs[2].opposite()
+			!fourdirs[3] = !dirs[3]
+            handle any
+            endhandle
+		elseif !x eq 4 then
+			!fourdirs[1] = !dirs[1]
+			!fourdirs[2] = !dirs[2]
+			!fourdirs[3] = !dirs[3].opposite()
+            handle any
+            endhandle
+		elseif !x eq 5 then
+			!fourdirs[1] = !dirs[1].opposite()
+			!fourdirs[2] = !dirs[2].opposite()
+			!fourdirs[3] = !dirs[3]
+            handle any
+            endhandle
+		elseif !x eq 6 then
+			!fourdirs[1] = !dirs[1].opposite()
+			!fourdirs[2] = !dirs[2]
+			!fourdirs[3] = !dirs[3].opposite()
+            handle any
+            endhandle
+		elseif !x eq 7 then
+			!fourdirs[1] = !dirs[1]
+			!fourdirs[2] = !dirs[2].opposite()
+			!fourdirs[3] = !dirs[3].opposite()
+            handle any
+            endhandle
+		elseif !x eq 8 then
+			!fourdirs[1] = !dirs[1].opposite()
+			!fourdirs[2] = !dirs[2].opposite()
+			!fourdirs[3] = !dirs[3].opposite()
+            handle any
+            endhandle
+		endif
+
+		!abandon = false
+		do !dir values !fourdirs
+			do !forbiddir values !forbiddirs
+				if !dir.angle(!forbiddir) lt !forbidangle then
+					!abandon = true
+					break
+				endif
+			enddo
+
+			if !abandon then
+				break
+			endif
+		enddo
+		--q var !abandon
+		if !abandon then
+
+			skip
+		endif
+
+
+		!threeddir = !!GetAverageDir(!fourdirs)
+		!dis = !this.getdirdis(!threeddir)
+		if undefined(!mindis) or !dis lt !mindis then
+
+			!mindis = !dis
+			!goodthreeddir = !threeddir
+			!gooddirs = !fourdirs
+		endif
+	enddo
+
+	-----------------------
+	-----------------------size of dirs maybe more than 3
+	!dirs = !this.lookdirs
+	do !dir values !gooddirs
+		!index = !dirs.findfirst(!dir)
+		if !index.set() then
+			!dirs[!index].delete()
+		endif
+	enddo
+
+	!this.lookdirs = !gooddirs
+	if !dirs.set() then
+		!dirs.compress()
+		!this.lookdirs.appendarray(!dirs)
+	endif
+	--!this.lookdirs = !gooddirs
+	!this.threeddir = !goodthreeddir
+
+
+	return
+
+	$(
+	-----------------------------------------------------------------------------------
+	-----------------------------------------------------------------------------------Step 1:old way
+	!dirs = !this.lookdirs
+	!fourdirs = array()
+	!fourdirs[1] = !dirs[1]
+	!fourdirs[2] = !dirs[2]
+	!fourdirs[3] = !dirs[3]
+
+	!this.threeddir = !!GetAverageDir(!fourdirs)
+	handle any
+	endhandle
+	$)
+endmethod

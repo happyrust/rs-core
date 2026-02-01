@@ -1,0 +1,11 @@
+define function !!posToArr(!pos is position) is array
+	!e = !pos.east.string().upcase().before('MM') + ','
+	!n = !pos.north.string().upcase().before('MM') + ','
+	!u = !pos.up.string().upcase().before('MM')
+	!result = array()
+	!result.append(!e)
+	!result.append(!n)
+	!result.append(!u)
+	return !result
+endfunction
+«z

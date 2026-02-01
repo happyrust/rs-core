@@ -1,0 +1,37 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= July 27th 2023
+--[Function]:	got blurry zdir
+------------------------------------------
+
+define function !!getOriWithPoints(!points is array) is orientation
+	!ori = object orientation()
+	if !points.size() le 2 then
+		return !ori
+	endif
+
+	do !x from 2 to !points.size()
+		!onedir = !points[1].direction(!points[!x])
+		handle any
+		elsehandle none
+			if defined(!xdir) then
+				!zdir = !xdir.orthogonal(!onedir)
+				handle any
+				elsehandle none
+					break
+				endhandle
+			else
+				!xdir = !onedir
+			endif
+		endhandle
+	enddo
+	!ori = object orientation('x is $!xdir and z is $!zdir')
+	handle any
+	endhandle
+	return !ori
+endfunction
+Và

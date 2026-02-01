@@ -1,0 +1,477 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= October 12nd 2023
+--[Function]:
+------------------------------------------
+
+define object supppane
+	$(
+	member .pos is position
+	member .ori is orientation
+	member .xlen is real
+	member .ylen is real
+	member .zlen is real
+	$)
+	--$(
+	member .profile is profile
+	member .thick is real
+
+	member .mems is array
+
+	member .upstream is array		$*instore suppconnection of upstream
+	member .downstream is array		$*instore suppconnection of downstream
+
+	member .connections is array	$*instore rest suppconnection which is hard to say upstream or downstream
+	--$)
+endobject
+
+define method .supppane(!item is string)
+	!type = type of $!item
+    --q  var !type
+    --$p 452145214
+	!name = name of $!item
+	if !type eq 'SCTN' or !type eq 'GENSEC' then
+		!this.getsctndata(!item)
+	elseif !type eq 'FIXING' then
+		$p This type for PANE is not considered yet
+		return
+	elseif !type eq 'FITTING' or !type eq 'FITT' then
+		!this.getdata(!item)
+	elseif !type eq 'PANE' then
+		!this.getpanedata(!item)
+	elseif !type eq 'HELE' then
+		!this.getdata(!item)
+    elseif !type eq 'PCLA' then
+        --modify by jyg 20250226 解决pcla类型钢板没有标注尺寸信息
+		!this.getdata(!item)
+	else
+		$p This type for PANE is not considered yet
+		return
+	endif
+	!this.mems.append(!name)
+
+endmethod
+
+define method .supppane(!item is string, !mem is string)
+--$p 021569
+	!name = name of $!item
+	!this.getmemdata(!item,!mem)
+	!this.mems.append(!name)
+endmethod
+
+
+define method .getpanedata(!item is any)
+--$p 579846
+	!vertpoints = object vertpoints(!item,false)
+	!cenpos = !vertpoints.cenpoint1.midpoint(!vertpoints.cenpoint2)
+	!this.profile = object profile(!cenpos,!vertpoints.ori,!vertpoints.points1)
+	!this.profile.close()
+	!this.thick = !vertpoints.cenpoint1.distance(!vertpoints.cenpoint2)
+
+	$(
+	!this.pos = !vertpoints.cenpoint1.midpoint(!vertpoints.cenpoint2)
+	!this.ori = !vertpoints.ori
+	!this.xlen = !vertpoints.poss[2].distance(!vertpoints.poss[1])
+	!this.ylen = !vertpoints.poss[2].distance(!vertpoints.poss[3])
+	!xdir = !vertpoints.poss[2].direction(!vertpoints.poss[1])
+	!zdir = !vertpoints.cenpoint1.direction(!vertpoints.cenpoint2)
+	!this.ori = x is $!xdir and z is $!zdir
+	$)
+endmethod
+
+define method .getsctndata(!item is any)
+--$p adfadsf
+	!poss = !!getsctnpoints(!item)
+	!ori = ori of $!item wrt/*
+	!poss = !!getoutsidepoints(!poss,!ori)
+	!pos1 = posstart of $!item wrt/*
+	!pos2 = posend of $!item wrt/*
+
+	!dis = !pos1.distance(!pos2)
+	!dir = !pos1.direction(!pos2)
+	do !x from 1 to 4
+		!poss.append(!poss[!x].offset(!dir,!dis))
+	enddo
+
+
+	$(
+	!poss = array()
+	!tempstring = split('RTOS LTOS LBOS RBOS')
+	do !string values !tempstring
+		!com = 'var !posstring pos ppli ' & !string & ' prop 0 of $' & '!item wrt/*'
+		--q var !com
+		$!com
+		!poss.append(!posstring.position())
+	enddo
+
+	do !string values !tempstring
+		!com = 'var !posstring pos ppli ' & !string & ' prop 1 of $' & '!item wrt/*'
+		$!com
+		!poss.append(!posstring.position())
+	enddo
+
+	var !posstring1 pos ppli na prop 0 of $!item wrt/*
+	var !posstring2 pos ppli na prop 1 of $!item wrt/*
+	!pos1 = !posstring1.position()
+	!pos2 = !posstring2.position()
+	$)
+
+
+	!len1 = !poss[1].distance(!poss[2])
+	!len2 = !poss[2].distance(!poss[3])
+	!len3 = !pos1.distance(!pos2)
+
+	!dir1 = !poss[2].direction(!poss[1])
+	!dir2 = !poss[3].direction(!poss[2])
+	!dir3 = !pos1.direction(!pos2)
+
+	!cenpos = !poss[1].midpoint(!poss[3]).offset(!dir3,!len3 / 2)
+	if !len3 le !len1 and !len3 le !len2 then
+		!zdir = !dir3
+		!this.thick = !len3
+	elseif !len1 lt !len2 and !len1 lt !len3 then
+		!zdir = !dir1
+		!this.thick = !len1
+	else
+		!zdir = !dir2
+		!this.thick = !len2
+	endif
+
+
+
+	--!diss = array()
+
+	!poss1 = array()
+	!poss2 = array()
+	do !pos values !poss
+		!dis = !!suidirdis(!cenpos,!zdir,!pos)
+		if !dis lt 0 then
+			!poss1.append(!pos)
+		else
+			!poss2.append(!pos)
+		endif
+		--!diss.append(!!suidirdis(!cenpos,!zdir,!pos))
+	enddo
+	--!poss.reindex(!diss.sortedindices())
+
+	!ori = z is $!zdir
+	if !poss1[1].direction(!poss1[2]).angle(!poss1[3].direction(!poss1[4])) lt 90 then
+		!temppos = !poss1[3]
+		!poss1[3] = !poss1[4]
+		!poss1[4] = !temppos
+
+		if !poss1[1].direction(!poss1[2]).angle(!poss2[1].direction(!poss2[2])) lt 90 then
+			!temppos = !poss2[3]
+			!poss2[3] = !poss2[4]
+			!poss2[4] = !temppos
+		else
+			!temppos = !poss2[1]
+			!poss2[1] = !poss2[2]
+			!poss2[2] = !temppos
+		endif
+	endif
+
+	!poss = !poss1
+	!poss.appendarray(!poss2)
+
+	!this.profile = object profile(!cenpos,!ori,!poss1)
+	!this.profile.close()
+	return
+
+
+	$(
+	!poss = array()
+	!tempstring = split('RTOS LTOS LBOS RBOS')
+	do !string values !tempstring
+		!com = 'var !posstring pos ppli ' & !string & ' prop 0 of $' & '!item wrt/*'
+		$!com
+		!poss.append(!posstring.position())
+	enddo
+
+	var !posstring1 pos ppli na prop 0 of $!this.name wrt/*
+	var !posstring2 pos ppli na prop 1 of $!this.name wrt/*
+	!pos1 = !posstring1.position()
+	!pos2 = !posstring2.position()
+
+	!len1 = !poss[1].distance(!poss[2])
+	!len2 = !poss[2].distance(!poss[3])
+	!len3 = !pos1.distance(!pos2)
+
+	!dir1 = !poss[2].direction(!poss[1])
+	!dir2 = !poss[3].direction(!poss[2])
+	!dir3 = !pos1.direction(!pos2)
+
+	!this.pos = !poss[1].midpoint(!poss[3]).offset(!dir3,!len3 / 2)
+	if !len3 le !len1 and !len3 le !len2 then
+		!this.ori = x is $!dir1 and y is $!dir2
+		!this.xlen = !len1
+		!this.ylen = !len2
+		!this.zlen = !len3
+	elseif !len1 lt !len2 and !len1 lt !len3 then
+		!this.ori = x is $!dir2 and y is $!dir3
+		!this.xlen = !len2
+		!this.ylen = !len3
+		!this.zlen = !len1
+	else
+		!this.ori = x is $!dir3 and y is $!dir1
+		!this.xlen = !len3
+		!this.ylen = !len1
+		!this.zlen = !len2
+	endif
+	$)
+endmethod
+
+define method .getmemdata(!item is any, !mem is string) is boolean
+	!level = level of $!mem
+	if !level[1] gt 6 or !level[2] lt 6 then
+		return false
+	endif
+	!obst = obstruction of $!mem
+	if !obst ne 2 and !obst ne 0 then
+		return false
+	endif
+	!ori = ori of $!item wrt/*
+	!pos = pos of $!item wrt/*
+	!xdir = !ori.xdir()
+	!ydir = !ori.ydir()
+	!zdir = !ori.zdir()
+
+	!memtype = type of $!mem
+    --q var !memtype
+	if !memtype eq 'SBOX' then
+		!pxle = pxle of $!mem
+		!len1 = !!evalcata(!item,!pxle)
+		!pyle = pyle of $!mem
+		!len2 = !!evalcata(!item,!pyle)
+		!pzle = pzle of $!mem
+		!len3 = !!evalcata(!item,!pzle)
+
+		!px = px of $!mem
+		!ox = !!evalcata(!item,!px)
+		!py = py of $!mem
+		!oy = !!evalcata(!item,!py)
+		!pz = pz of $!mem
+		!oz = !!evalcata(!item,!pz)
+
+
+		!cenpos = !pos.offset(!xdir,!ox).offset(!ydir,!oy).offset(!zdir,!oz)
+
+		if !len3 le !len1 and !len3 le !len2 then
+			!ori = x is $!xdir and y is $!ydir
+			!xlen = !len1
+			!ylen = !len2
+			!zlen = !len3
+		elseif !len1 lt !len2 and !len1 lt !len3 then
+			!ori = x is $!ydir and y is $!zdir
+			!xlen = !len2
+			!ylen = !len3
+			!zlen = !len1
+		else
+			!ori = x is $!zdir and y is $!xdir
+			!xlen = !len3
+			!ylen = !len1
+			!zlen = !len2
+		endif
+		!this.thick = !zlen
+
+		!xdir = !ori.xdir()
+		!ydir = !ori.ydir()
+		!zdir = !ori.zdir()
+
+		!poss = array()
+		!poss.append(!cenpos.offset(!xdir,!xlen / 2).offset(!ydir,!ylen / 2))
+		!poss.append(!cenpos.offset(!xdir, - !xlen / 2).offset(!ydir,!ylen / 2))
+		!poss.append(!cenpos.offset(!xdir, - !xlen / 2).offset(!ydir, - !ylen / 2))
+		!poss.append(!cenpos.offset(!xdir,!xlen / 2).offset(!ydir, - !ylen / 2))
+
+		!this.profile = object profile(!cenpos,!ori,!poss)
+		!this.profile.close()
+		--$p 1111
+		return true
+    elseif !memtype eq 'SEXT' then
+        --modify by jyg 20241220 处理方斜垫块无法标注的问题
+        !this.thick = para[2] of $!item
+        var !allsloo coll all sloo for $!mem
+        !this.profile = object profile(!allsloo[1].dbref(),!item.dbref())
+        !this.profile.close()
+        return true
+		$(
+	elseif !memtype eq 'SEXT' then
+		!newatts = split('pos ori height loops')
+
+		!dirpos1 = !!evalcata(!item,paax of $!mem)
+		if !dirpos1.objecttype() eq 'ARRAY' then
+			!ydir = !dirpos1[1]
+		else
+			!ydir = !dirpos1
+		endif
+
+		!dirpos2 = !!evalcata(!item,pbax of $!mem)
+		if !dirpos2.objecttype() eq 'ARRAY' then
+			!xdir = !dirpos2[1]
+		else
+			!xdir = !dirpos2
+		endif
+
+		!zdir = !xdir.orthogonal(!ydir)
+		!ori = x is $!xdir and z is $!zdir
+		!px = !!evalcata(!item,px of $!mem)
+		!py = !!evalcata(!item,py of $!mem)
+		!pz = !!evalcata(!item,pz of $!mem)
+		!pos = !this.pos.offset(!xdir,!px).offset(!ydir,!py).offset(!zdir,!pz)
+		!height = !!evalcata(!item,phei of $!mem)
+
+		!loops = array()
+		var !sloos coll all sloo for $!mem
+		do !sloo values !sloos
+			!onelooppoints = array()
+			!oneloopradiuss =array()
+			var !svers coll all sver for $!sloo
+			do !sver values !svers
+				var !pxstring px of $!sver
+				var !pystring py of $!sver
+				var !pradstring prad of $!sver
+				!px = !!evalcata(!this.dbref,!pxstring)
+				!py = !!evalcata(!this.dbref,!pystring)
+				!radius = !!evalcata(!this.dbref,!pradstring)
+				!point = !pos.offset(!xdir,!px).offset(!ydir,!py)
+				!onelooppoints.append(!point)
+				!oneloopradiuss.append(!radius)
+			enddo
+
+			!loops.append(!!mergePointsradiuss(!onelooppoints,!oneloopradiuss))
+
+		enddo
+
+		if !height eq 0 or !loops.unset() or !loops[1][1].unset() then
+			return false
+		endif
+
+
+
+		return true
+		$)
+	else
+
+		return false
+	endif
+endmethod
+
+define method .getdata(!item is any)
+--$p 852369
+    --Q VAR !item
+	!gm = name of gstref of catref of $!item
+	handle any
+		!gm = name of gmre of catref of $!item
+		handle any
+			return
+		endhandle
+	endhandle
+	--$p $!item
+	--$P 66
+
+	$(
+	!ori = ori of $!item wrt/*
+	!xdir = !ori.xdir()
+	!ydir = !ori.ydir()
+	!zdir = !ori.zdir()
+	!pos = pos of $!item wrt/*
+	$)
+	!considertypes = split('SBOX')
+	!allarrs = array()
+
+
+	!mems = mem of $!gm
+    --Q VAR !MEMS !gm
+	do !onemem values !mems
+		!mem = name of $!onemem
+		!memtype = type of $!mem
+		--q var !memtype
+        --$P 1
+		if !considertypes.findfirst(!memtype).unset() then
+			skip
+		endif
+        --$P 2
+        --Q VAR !this.getmemdata(!item,!mem)
+		if !this.getmemdata(!item,!mem).not() then
+			skip
+		else
+			return
+		endif
+		$(
+		!level = level of $!mem
+		if !level[1] gt 6 or !level[2] lt 6 then
+			skip
+		endif
+		!obst = obstruction of $!mem
+		if !obst ne 2 and !obst ne 0 then
+			skip
+		endif
+
+		if !memtype eq 'SBOX' then
+			!pxle = pxle of $!mem
+			!len1 = !!evalcata(!item,!pxle)
+			!pyle = pyle of $!mem
+			!len2 = !!evalcata(!item,!pyle)
+			!pzle = pzle of $!mem
+			!len3 = !!evalcata(!item,!pzle)
+
+			!px = px of $!mem
+			!ox = !!evalcata(!item,!px)
+			!py = py of $!mem
+			!oy = !!evalcata(!item,!py)
+			!pz = pz of $!mem
+			!oz = !!evalcata(!item,!pz)
+
+			--if !item eq '=17663/1953' then
+
+			--endif
+
+			!cenpos = !pos.offset(!xdir,!ox).offset(!ydir,!oy).offset(!zdir,!oz)
+
+			if !len3 le !len1 and !len3 le !len2 then
+				!ori = x is $!xdir and y is $!ydir
+				!xlen = !len1
+				!ylen = !len2
+				!zlen = !len3
+			elseif !len1 lt !len2 and !len1 lt !len3 then
+				!ori = x is $!ydir and y is $!zdir
+				!xlen = !len2
+				!ylen = !len3
+				!zlen = !len1
+			else
+				!ori = x is $!zdir and y is $!xdir
+				!xlen = !len3
+				!ylen = !len1
+				!zlen = !len2
+			endif
+			!this.thick = !zlen
+
+			!xdir = !ori.xdir()
+			!ydir = !ori.ydir()
+			!zdir = !ori.zdir()
+
+			!poss = array()
+			!poss.append(!cenpos.offset(!xdir,!xlen / 2).offset(!ydir,!ylen / 2))
+			!poss.append(!cenpos.offset(!xdir, - !xlen / 2).offset(!ydir,!ylen / 2))
+			!poss.append(!cenpos.offset(!xdir, - !xlen / 2).offset(!ydir, - !ylen / 2))
+			!poss.append(!cenpos.offset(!xdir,!xlen / 2).offset(!ydir, - !ylen / 2))
+
+			--!ori = z is $!zdir
+			!this.profile = object profile(!cenpos,!ori,!poss)
+			!this.profile.close()
+		elseif !memtype eq 'SPRO' then
+			skip
+
+
+		endif
+		return
+		$)
+	enddo
+endmethod
+
+筐

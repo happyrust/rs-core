@@ -1,0 +1,2448 @@
+﻿
+09:16:24 20 January 2025
+SCTN =17539/7334 得不到材料,请检查它的 :itemcode
+SCTN =17539/7335 得不到材料,请检查它的 :itemcode
+
+09:16:10 20 January 2025
+SCTN =17539/7334 得不到材料,请检查它的 :itemcode
+SCTN =17539/7335 得不到材料,请检查它的 :itemcode
+
+14:40:39 13 January 2025
+/N523.003 failed to draw
+(2,759)   Object does not have a member REF
+ In line 393 of PML function suisupport.GETMATERIAL
+        if  !datalog.findfirst(!mem.ref).set() then
+ Called from line 201 of PML function suisupport.LOAD
+	!this.getmaterial()
+ Called from line 929 of PML function suisupport.DRAW
+	!this.load()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+19:16:19 12 January 2025
+/R311.003 failed to draw
+(47,62)   CP: Incomplete command line
+ In line 4051 of PML function suisupport.ADDINTERPOINTTOLINE
+            do  !hangmem values ARRAY^^
+ Called from line 888 of PML function suisupport.GETLINEDATA
+	!this.addInterPointToLine()
+ Called from line 196 of PML function suisupport.LOAD
+	if !this.getLineData().not() then
+ Called from line 929 of PML function suisupport.DRAW
+	!this.load()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+19:11:37 12 January 2025
+/R311.003 failed to draw
+(47,62)   CP: Incomplete command line
+ In line 4054 of PML function suisupport.ADDINTERPOINTTOLINE
+            do  !hangmem values ARRAY^^
+ Called from line 888 of PML function suisupport.GETLINEDATA
+	!this.addInterPointToLine()
+ Called from line 196 of PML function suisupport.LOAD
+	if !this.getLineData().not() then
+ Called from line 929 of PML function suisupport.DRAW
+	!this.load()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+23:05:03 11 January 2025
+/R311.003 failed to draw
+(47,62)   CP: Incomplete command line
+ In line 3607 of PML function suisupport.GETHANGMEMS
+                        !item = name of ^^
+ Called from line 2901 of PML function suisupport.GETTYPEDATA
+	!this.getHangMems()
+ Called from line 194 of PML function suisupport.LOAD
+	!this.getTypeData()
+ Called from line 915 of PML function suisupport.DRAW
+	!this.load()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+22:28:23 11 January 2025
+/R311.003 failed to draw
+(2,751)   Variable !!SUISUPPORT does not exist
+ In line 115 of PML function supporthangmem.GETHELEPOSS
+                    !!suiSupport.hangMems.append(!this)
+ Called from line 76 of PML function supporthangmem.GETPOSS
+		!poss.appendarray(!this.getheleposs())
+ Called from line 31 of PML function supporthangmem.SUPPORTHANGMEM
+	!this.getPoss()
+ Called from line 3589 of PML function suisupport.GETHANGMEMS
+					!hangobject = object supportHangMem(!mem)
+ Called from line 2901 of PML function suisupport.GETTYPEDATA
+	!this.getHangMems()
+ Called from line 194 of PML function suisupport.LOAD
+	!this.getTypeData()
+ Called from line 915 of PML function suisupport.DRAW
+	!this.load()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+10:00:19 20 December 2024
+SCTN =17501/182 得不到材料,请检查它的 :itemcode
+PCLA =17501/185 得不到材料,请检查它的 :itemcode
+
+09:24:54 20 December 2024
+/N190.001 failed to draw
+(2,754)   Argument 1 to / is unset
+ In line 1705 of PML function planesystem.GETSHAPES
+			!poss1.append(!pos.offset(!zdir, - !thick / 2))
+ Called from line 1 of Internal Command Internal Command
+CADCEVALBLCK !this.getShapes(!evalindex)
+ Called from line 138 of PML function planesystem.PLANESYSTEM
+	!this.objects.evaluate(object block('!this.getShapes(!evalindex)'))
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1759 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+09:24:07 20 December 2024
+/N190.001 failed to draw
+(2,754)   Argument 1 to / is unset
+ In line 1704 of PML function planesystem.GETSHAPES
+			!poss1.append(!pos.offset(!zdir, - !thick / 2))
+ Called from line 1 of Internal Command Internal Command
+CADCEVALBLCK !this.getShapes(!evalindex)
+ Called from line 138 of PML function planesystem.PLANESYSTEM
+	!this.objects.evaluate(object block('!this.getShapes(!evalindex)'))
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1759 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+08:59:25 20 December 2024
+/N190.001 failed to draw
+(2,752)   Array element 1 does not exist
+ In line 105 of PML function drawplane.PROJECTEDTOPLANE
+		!shape.planeminzdis = !zdiss[1]
+ Called from line 41 of PML function drawplane.DRAWPLANE
+	!this.projectedtoplane(!shapes)
+ Called from line 34 of PML function drawplane.DRAWPLANE
+	!this.drawplane(!shapes,!ori,!lookdirs)
+ Called from line 48 of PML function drawplane.DRAWPLANE
+	!this.drawplane(!shapes,!ori,!lookdirs,!pos)
+ Called from line 205 of PML function planesystem.CREATEONEDRAWPLANE
+	!drawplane = object drawplane(!this.realshapes,!dir,!this.dirobject.lookdirs,!this.dirobject.cenpoint)
+ Called from line 197 of PML function planesystem.CREATEDRAWPLANES
+		!this.createonedrawplane(!dir)
+ Called from line 446 of PML function planesystem.ASSIGNDIMANDMLABEL
+	!this.createdrawplanes()	$*create 3 drawplane, there would be a compare for dimline
+ Called from line 161 of PML function planesystem.PLANESYSTEM
+		!this.assignDimAndMlabel(!currentprogress,100)
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1759 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+08:58:37 20 December 2024
+/N190.001 failed to draw
+(2,752)   Array element 1 does not exist
+ In line 105 of PML function drawplane.PROJECTEDTOPLANE
+		!shape.planeminzdis = !zdiss[1]
+ Called from line 41 of PML function drawplane.DRAWPLANE
+	!this.projectedtoplane(!shapes)
+ Called from line 34 of PML function drawplane.DRAWPLANE
+	!this.drawplane(!shapes,!ori,!lookdirs)
+ Called from line 48 of PML function drawplane.DRAWPLANE
+	!this.drawplane(!shapes,!ori,!lookdirs,!pos)
+ Called from line 205 of PML function planesystem.CREATEONEDRAWPLANE
+	!drawplane = object drawplane(!this.realshapes,!dir,!this.dirobject.lookdirs,!this.dirobject.cenpoint)
+ Called from line 197 of PML function planesystem.CREATEDRAWPLANES
+		!this.createonedrawplane(!dir)
+ Called from line 446 of PML function planesystem.ASSIGNDIMANDMLABEL
+	!this.createdrawplanes()	$*create 3 drawplane, there would be a compare for dimline
+ Called from line 161 of PML function planesystem.PLANESYSTEM
+		!this.assignDimAndMlabel(!currentprogress,100)
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1759 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+08:58:11 20 December 2024
+/N190.001 failed to draw
+(2,752)   Array element 1 does not exist
+ In line 105 of PML function drawplane.PROJECTEDTOPLANE
+		!shape.planeminzdis = !zdiss[1]
+ Called from line 41 of PML function drawplane.DRAWPLANE
+	!this.projectedtoplane(!shapes)
+ Called from line 34 of PML function drawplane.DRAWPLANE
+	!this.drawplane(!shapes,!ori,!lookdirs)
+ Called from line 48 of PML function drawplane.DRAWPLANE
+	!this.drawplane(!shapes,!ori,!lookdirs,!pos)
+ Called from line 205 of PML function planesystem.CREATEONEDRAWPLANE
+	!drawplane = object drawplane(!this.realshapes,!dir,!this.dirobject.lookdirs,!this.dirobject.cenpoint)
+ Called from line 197 of PML function planesystem.CREATEDRAWPLANES
+		!this.createonedrawplane(!dir)
+ Called from line 446 of PML function planesystem.ASSIGNDIMANDMLABEL
+	!this.createdrawplanes()	$*create 3 drawplane, there would be a compare for dimline
+ Called from line 161 of PML function planesystem.PLANESYSTEM
+		!this.assignDimAndMlabel(!currentprogress,100)
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1759 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+14:14:45 19 December 2024
+/N190.001 failed to draw
+(2,752)   Array element 1 does not exist
+ In line 105 of PML function drawplane.PROJECTEDTOPLANE
+		!shape.planeminzdis = !zdiss[1]
+ Called from line 41 of PML function drawplane.DRAWPLANE
+	!this.projectedtoplane(!shapes)
+ Called from line 34 of PML function drawplane.DRAWPLANE
+	!this.drawplane(!shapes,!ori,!lookdirs)
+ Called from line 48 of PML function drawplane.DRAWPLANE
+	!this.drawplane(!shapes,!ori,!lookdirs,!pos)
+ Called from line 205 of PML function planesystem.CREATEONEDRAWPLANE
+	!drawplane = object drawplane(!this.realshapes,!dir,!this.dirobject.lookdirs,!this.dirobject.cenpoint)
+ Called from line 197 of PML function planesystem.CREATEDRAWPLANES
+		!this.createonedrawplane(!dir)
+ Called from line 446 of PML function planesystem.ASSIGNDIMANDMLABEL
+	!this.createdrawplanes()	$*create 3 drawplane, there would be a compare for dimline
+ Called from line 161 of PML function planesystem.PLANESYSTEM
+		!this.assignDimAndMlabel(!currentprogress,100)
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1759 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+14:10:05 19 December 2024
+/N190.001 failed to draw
+(2,752)   Array element 1 does not exist
+ In line 105 of PML function drawplane.PROJECTEDTOPLANE
+		!shape.planeminzdis = !zdiss[1]
+ Called from line 41 of PML function drawplane.DRAWPLANE
+	!this.projectedtoplane(!shapes)
+ Called from line 34 of PML function drawplane.DRAWPLANE
+	!this.drawplane(!shapes,!ori,!lookdirs)
+ Called from line 48 of PML function drawplane.DRAWPLANE
+	!this.drawplane(!shapes,!ori,!lookdirs,!pos)
+ Called from line 205 of PML function planesystem.CREATEONEDRAWPLANE
+	!drawplane = object drawplane(!this.realshapes,!dir,!this.dirobject.lookdirs,!this.dirobject.cenpoint)
+ Called from line 197 of PML function planesystem.CREATEDRAWPLANES
+		!this.createonedrawplane(!dir)
+ Called from line 446 of PML function planesystem.ASSIGNDIMANDMLABEL
+	!this.createdrawplanes()	$*create 3 drawplane, there would be a compare for dimline
+ Called from line 161 of PML function planesystem.PLANESYSTEM
+		!this.assignDimAndMlabel(!currentprogress,100)
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1759 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+14:09:25 19 December 2024
+/N190.001 failed to draw
+(2,754)   Argument 1 to / is unset
+ In line 1701 of PML function planesystem.GETSHAPES
+			!poss1.append(!pos.offset(!zdir, - !thick / 2))
+ Called from line 1 of Internal Command Internal Command
+CADCEVALBLCK !this.getShapes(!evalindex)
+ Called from line 138 of PML function planesystem.PLANESYSTEM
+	!this.objects.evaluate(object block('!this.getShapes(!evalindex)'))
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1759 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+14:08:39 19 December 2024
+/N190.001 failed to draw
+(2,754)   Argument 1 to / is unset
+ In line 1700 of PML function planesystem.GETSHAPES
+			!poss1.append(!pos.offset(!zdir, - !thick / 2))
+ Called from line 1 of Internal Command Internal Command
+CADCEVALBLCK !this.getShapes(!evalindex)
+ Called from line 138 of PML function planesystem.PLANESYSTEM
+	!this.objects.evaluate(object block('!this.getShapes(!evalindex)'))
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1759 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+14:06:49 19 December 2024
+/N190.001 failed to draw
+(2,754)   Argument 1 to / is unset
+ In line 1699 of PML function planesystem.GETSHAPES
+			!poss1.append(!pos.offset(!zdir, - !thick / 2))
+ Called from line 1 of Internal Command Internal Command
+CADCEVALBLCK !this.getShapes(!evalindex)
+ Called from line 138 of PML function planesystem.PLANESYSTEM
+	!this.objects.evaluate(object block('!this.getShapes(!evalindex)'))
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1759 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+14:06:14 19 December 2024
+/N190.001 failed to draw
+(2,754)   Argument 1 to / is unset
+ In line 1699 of PML function planesystem.GETSHAPES
+			!poss1.append(!pos.offset(!zdir, - !thick / 2))
+ Called from line 1 of Internal Command Internal Command
+CADCEVALBLCK !this.getShapes(!evalindex)
+ Called from line 138 of PML function planesystem.PLANESYSTEM
+	!this.objects.evaluate(object block('!this.getShapes(!evalindex)'))
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1759 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+14:03:19 19 December 2024
+/N190.001 failed to draw
+(2,754)   Argument 1 to / is unset
+ In line 1699 of PML function planesystem.GETSHAPES
+			!poss1.append(!pos.offset(!zdir, - !thick / 2))
+ Called from line 1 of Internal Command Internal Command
+CADCEVALBLCK !this.getShapes(!evalindex)
+ Called from line 138 of PML function planesystem.PLANESYSTEM
+	!this.objects.evaluate(object block('!this.getShapes(!evalindex)'))
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1759 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+14:02:28 19 December 2024
+/N190.001 failed to draw
+(2,754)   Argument 1 to / is unset
+ In line 1699 of PML function planesystem.GETSHAPES
+			!poss1.append(!pos.offset(!zdir, - !thick / 2))
+ Called from line 1 of Internal Command Internal Command
+CADCEVALBLCK !this.getShapes(!evalindex)
+ Called from line 138 of PML function planesystem.PLANESYSTEM
+	!this.objects.evaluate(object block('!this.getShapes(!evalindex)'))
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1759 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+14:02:03 19 December 2024
+/N190.001 failed to draw
+(46,58)   PML: Method PROFILE could not be found
+ In line 300 of PML function supppane.GETMEMDATA
+        !this.profile = object profile(!allsloo[1],!item)
+ Called from line 59 of PML function supppane.SUPPPANE
+	!this.getmemdata(!item,!mem)
+ Called from line 3716 of PML function instsupport.DEALPARTTYPE
+				!object = object supppane(!item,!memstring)
+ Called from line 3592 of PML function instsupport.ADDSELFTOPARTOBJECTS
+								!this.dealparttype(!one,'MORETHANONE')
+ Called from line 973 of PML function suisupport.GETPARTS
+	!instsupport.addselfToPartobjects()
+ Called from line 1733 of PML function suisupport.DRAWWITHNEWWAY
+	!partobjects = !this.getparts()
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+14:00:14 19 December 2024
+/N190.001 failed to draw
+(46,58)   PML: Method PROFILE could not be found
+ In line 299 of PML function supppane.GETMEMDATA
+        !ee = object profile ( !allsloo[1],!item)
+ Called from line 59 of PML function supppane.SUPPPANE
+	!this.getmemdata(!item,!mem)
+ Called from line 3716 of PML function instsupport.DEALPARTTYPE
+				!object = object supppane(!item,!memstring)
+ Called from line 3592 of PML function instsupport.ADDSELFTOPARTOBJECTS
+								!this.dealparttype(!one,'MORETHANONE')
+ Called from line 973 of PML function suisupport.GETPARTS
+	!instsupport.addselfToPartobjects()
+ Called from line 1733 of PML function suisupport.DRAWWITHNEWWAY
+	!partobjects = !this.getparts()
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+13:59:40 19 December 2024
+/N190.001 failed to draw
+(46,58)   PML: Method PROFILE could not be found
+ In line 299 of PML function supppane.GETMEMDATA
+        !ee = object profile(!allsloo[1],!item)
+ Called from line 59 of PML function supppane.SUPPPANE
+	!this.getmemdata(!item,!mem)
+ Called from line 3716 of PML function instsupport.DEALPARTTYPE
+				!object = object supppane(!item,!memstring)
+ Called from line 3592 of PML function instsupport.ADDSELFTOPARTOBJECTS
+								!this.dealparttype(!one,'MORETHANONE')
+ Called from line 973 of PML function suisupport.GETPARTS
+	!instsupport.addselfToPartobjects()
+ Called from line 1733 of PML function suisupport.DRAWWITHNEWWAY
+	!partobjects = !this.getparts()
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+13:58:49 19 December 2024
+/N190.001 failed to draw
+(46,58)   PML: Method PROFILE could not be found
+ In line 299 of PML function supppane.GETMEMDATA
+        !this.profile = object profile(!allsloo[1],!item)
+ Called from line 59 of PML function supppane.SUPPPANE
+	!this.getmemdata(!item,!mem)
+ Called from line 3716 of PML function instsupport.DEALPARTTYPE
+				!object = object supppane(!item,!memstring)
+ Called from line 3592 of PML function instsupport.ADDSELFTOPARTOBJECTS
+								!this.dealparttype(!one,'MORETHANONE')
+ Called from line 973 of PML function suisupport.GETPARTS
+	!instsupport.addselfToPartobjects()
+ Called from line 1733 of PML function suisupport.DRAWWITHNEWWAY
+	!partobjects = !this.getparts()
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+13:54:31 19 December 2024
+/N190.001 failed to draw
+(46,58)   PML: Method PROFILE could not be found
+ In line 299 of PML function supppane.GETMEMDATA
+        !this.profile = object profile(!allsloo[1].dbref(),!item)
+ Called from line 59 of PML function supppane.SUPPPANE
+	!this.getmemdata(!item,!mem)
+ Called from line 3716 of PML function instsupport.DEALPARTTYPE
+				!object = object supppane(!item,!memstring)
+ Called from line 3592 of PML function instsupport.ADDSELFTOPARTOBJECTS
+								!this.dealparttype(!one,'MORETHANONE')
+ Called from line 973 of PML function suisupport.GETPARTS
+	!instsupport.addselfToPartobjects()
+ Called from line 1733 of PML function suisupport.DRAWWITHNEWWAY
+	!partobjects = !this.getparts()
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+13:51:06 19 December 2024
+/N190.001 failed to draw
+(46,58)   PML: Method PROFILE could not be found
+ In line 299 of PML function supppane.GETMEMDATA
+        !aaaa = object profile(!allsloo[1],!item)
+ Called from line 59 of PML function supppane.SUPPPANE
+	!this.getmemdata(!item,!mem)
+ Called from line 3716 of PML function instsupport.DEALPARTTYPE
+				!object = object supppane(!item,!memstring)
+ Called from line 3592 of PML function instsupport.ADDSELFTOPARTOBJECTS
+								!this.dealparttype(!one,'MORETHANONE')
+ Called from line 973 of PML function suisupport.GETPARTS
+	!instsupport.addselfToPartobjects()
+ Called from line 1733 of PML function suisupport.DRAWWITHNEWWAY
+	!partobjects = !this.getparts()
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+13:50:44 19 December 2024
+/N190.001 failed to draw
+(46,58)   PML: Method PROFILE could not be found
+ In line 299 of PML function supppane.GETMEMDATA
+        !aaaa = object profile(!allsloo[1].dbref(),!item)
+ Called from line 59 of PML function supppane.SUPPPANE
+	!this.getmemdata(!item,!mem)
+ Called from line 3716 of PML function instsupport.DEALPARTTYPE
+				!object = object supppane(!item,!memstring)
+ Called from line 3592 of PML function instsupport.ADDSELFTOPARTOBJECTS
+								!this.dealparttype(!one,'MORETHANONE')
+ Called from line 973 of PML function suisupport.GETPARTS
+	!instsupport.addselfToPartobjects()
+ Called from line 1733 of PML function suisupport.DRAWWITHNEWWAY
+	!partobjects = !this.getparts()
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+13:46:32 19 December 2024
+/N190.001 failed to draw
+(46,58)   PML: Method PROFILE could not be found
+ In line 299 of PML function supppane.GETMEMDATA
+        !aaaa = object profile(!item,!allsloo[1].dbref())
+ Called from line 59 of PML function supppane.SUPPPANE
+	!this.getmemdata(!item,!mem)
+ Called from line 3716 of PML function instsupport.DEALPARTTYPE
+				!object = object supppane(!item,!memstring)
+ Called from line 3592 of PML function instsupport.ADDSELFTOPARTOBJECTS
+								!this.dealparttype(!one,'MORETHANONE')
+ Called from line 973 of PML function suisupport.GETPARTS
+	!instsupport.addselfToPartobjects()
+ Called from line 1733 of PML function suisupport.DRAWWITHNEWWAY
+	!partobjects = !this.getparts()
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+13:46:11 19 December 2024
+/N190.001 failed to draw
+(46,58)   PML: Method PROFILE could not be found
+ In line 298 of PML function supppane.GETMEMDATA
+        !aaaa = object profile(!item,!allsloo[1].dbref())
+ Called from line 59 of PML function supppane.SUPPPANE
+	!this.getmemdata(!item,!mem)
+ Called from line 3716 of PML function instsupport.DEALPARTTYPE
+				!object = object supppane(!item,!memstring)
+ Called from line 3592 of PML function instsupport.ADDSELFTOPARTOBJECTS
+								!this.dealparttype(!one,'MORETHANONE')
+ Called from line 973 of PML function suisupport.GETPARTS
+	!instsupport.addselfToPartobjects()
+ Called from line 1733 of PML function suisupport.DRAWWITHNEWWAY
+	!partobjects = !this.getparts()
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+11:45:32 19 December 2024
+/N190.001 failed to draw
+(46,58)   PML: Method PROFILE could not be found
+ In line 298 of PML function supppane.GETMEMDATA
+        !aaaa = object profile(!item,!allsloo[1].dbref())
+ Called from line 59 of PML function supppane.SUPPPANE
+	!this.getmemdata(!item,!mem)
+ Called from line 3716 of PML function instsupport.DEALPARTTYPE
+				!object = object supppane(!item,!memstring)
+ Called from line 3592 of PML function instsupport.ADDSELFTOPARTOBJECTS
+								!this.dealparttype(!one,'MORETHANONE')
+ Called from line 973 of PML function suisupport.GETPARTS
+	!instsupport.addselfToPartobjects()
+ Called from line 1733 of PML function suisupport.DRAWWITHNEWWAY
+	!partobjects = !this.getparts()
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+11:43:36 19 December 2024
+/N190.001 failed to draw
+(46,58)   PML: Method PROFILE could not be found
+ In line 298 of PML function supppane.GETMEMDATA
+        !aaaa = object profile(!allsloo[1].dbref(),!item)
+ Called from line 59 of PML function supppane.SUPPPANE
+	!this.getmemdata(!item,!mem)
+ Called from line 3716 of PML function instsupport.DEALPARTTYPE
+				!object = object supppane(!item,!memstring)
+ Called from line 3592 of PML function instsupport.ADDSELFTOPARTOBJECTS
+								!this.dealparttype(!one,'MORETHANONE')
+ Called from line 973 of PML function suisupport.GETPARTS
+	!instsupport.addselfToPartobjects()
+ Called from line 1733 of PML function suisupport.DRAWWITHNEWWAY
+	!partobjects = !this.getparts()
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+11:42:58 19 December 2024
+/N190.001 failed to draw
+(46,58)   PML: Method PROFILE could not be found
+ In line 298 of PML function supppane.GETMEMDATA
+        !this.profile = object profile(!allsloo[1].dbref(),!item)
+ Called from line 59 of PML function supppane.SUPPPANE
+	!this.getmemdata(!item,!mem)
+ Called from line 3716 of PML function instsupport.DEALPARTTYPE
+				!object = object supppane(!item,!memstring)
+ Called from line 3592 of PML function instsupport.ADDSELFTOPARTOBJECTS
+								!this.dealparttype(!one,'MORETHANONE')
+ Called from line 973 of PML function suisupport.GETPARTS
+	!instsupport.addselfToPartobjects()
+ Called from line 1733 of PML function suisupport.DRAWWITHNEWWAY
+	!partobjects = !this.getparts()
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+11:41:56 19 December 2024
+/N190.001 failed to draw
+(2,752)   Array element 1 does not exist
+ In line 298 of PML function supppane.GETMEMDATA
+        !this.profile = object profile(!allsloo[1].dbref(),!mem)
+ Called from line 59 of PML function supppane.SUPPPANE
+	!this.getmemdata(!item,!mem)
+ Called from line 3716 of PML function instsupport.DEALPARTTYPE
+				!object = object supppane(!item,!memstring)
+ Called from line 3592 of PML function instsupport.ADDSELFTOPARTOBJECTS
+								!this.dealparttype(!one,'MORETHANONE')
+ Called from line 973 of PML function suisupport.GETPARTS
+	!instsupport.addselfToPartobjects()
+ Called from line 1733 of PML function suisupport.DRAWWITHNEWWAY
+	!partobjects = !this.getparts()
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+11:41:25 19 December 2024
+/N190.001 failed to draw
+(2,752)   Array element 1 does not exist
+ In line 297 of PML function supppane.GETMEMDATA
+        !this.profile = object profile(!allsloo[1].dbref(),!mem)
+ Called from line 59 of PML function supppane.SUPPPANE
+	!this.getmemdata(!item,!mem)
+ Called from line 3716 of PML function instsupport.DEALPARTTYPE
+				!object = object supppane(!item,!memstring)
+ Called from line 3592 of PML function instsupport.ADDSELFTOPARTOBJECTS
+								!this.dealparttype(!one,'MORETHANONE')
+ Called from line 973 of PML function suisupport.GETPARTS
+	!instsupport.addselfToPartobjects()
+ Called from line 1733 of PML function suisupport.DRAWWITHNEWWAY
+	!partobjects = !this.getparts()
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+11:40:44 19 December 2024
+/N190.001 failed to draw
+(2,752)   Array element 1 does not exist
+ In line 296 of PML function supppane.GETMEMDATA
+        !this.profile = object profile(!allsloo[1].dbref(),!mem)
+ Called from line 59 of PML function supppane.SUPPPANE
+	!this.getmemdata(!item,!mem)
+ Called from line 3716 of PML function instsupport.DEALPARTTYPE
+				!object = object supppane(!item,!memstring)
+ Called from line 3592 of PML function instsupport.ADDSELFTOPARTOBJECTS
+								!this.dealparttype(!one,'MORETHANONE')
+ Called from line 973 of PML function suisupport.GETPARTS
+	!instsupport.addselfToPartobjects()
+ Called from line 1733 of PML function suisupport.DRAWWITHNEWWAY
+	!partobjects = !this.getparts()
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+09:31:13 19 December 2024
+/N190.001 failed to draw
+(2,869)   Error in conversion to world co-ordinates. Check for unset objects
+ In line 1944 of PML function suisupport.DRAWWITHNEWWAY
+					!mindiss.append(min(!temppos1.distance(!linepos),!temppos2.distance(!linepos)))
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+09:28:35 19 December 2024
+/N190.001 failed to draw
+(2,754)   Argument 1 to XDIR/YDIR/ZDIR is unset
+ In line 1894 of PML function suisupport.DRAWWITHNEWWAY
+				!ydir = !ori.ydir()
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+21:24:01 18 December 2024
+/N190.001 failed to draw
+(2,751)   Variable !NEARPOS does not exist
+ In line 23 of PML function suidirdis
+	!dis = !pos1.distance(!nearpos)
+ Called from line 298 of PML function orixyeles.FINDTEXTSPACE
+	!xdis = !!suidirdis(!this.pos,!this.ori.xdir(),!pos)
+ Called from line 303 of PML function drawplane.PUTTEXT
+	!cornerposs = !this.allorixyeles[!goodindex].findtextspace(!text,!pos,!this.cheight,!this.planeShapes,!maxlen)
+ Called from line 880 of PML function planesystem.ASSIGNTEXTS
+			!tempshape = !gooddrawplane.puttext(!text,!pos,!this.realShapes,!this.dirobject.maxlen * 100)	$*no layers
+ Called from line 483 of PML function planesystem.ASSIGNDIMANDMLABEL
+	!this.assigntexts(!smalltexts.size(),!bigtexts)
+ Called from line 161 of PML function planesystem.PLANESYSTEM
+		!this.assignDimAndMlabel(!currentprogress,100)
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1754 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+21:23:36 18 December 2024
+/N190.001 failed to draw
+(46,28)   ERROR - Variable POS3 not defined
+ In line 1187 of PML function suisupport.GETPIPEELTEXTINDEXS
+        pin3 at $!pos3
+ Called from line 1523 of PML function suisupport.GETTEXTINDEXS
+	!textindexs.appendarray(!this.getpipeELtextindexs())
+ Called from line 1733 of PML function suisupport.DRAWWITHNEWWAY
+	!textindexs = !this.gettextindexs(!partobjects)
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+20:50:05 18 December 2024
+/N190.001 failed to draw
+(2,751)   Variable !NEARPOS does not exist
+ In line 23 of PML function suidirdis
+	!dis = !pos1.distance(!nearpos)
+ Called from line 298 of PML function orixyeles.FINDTEXTSPACE
+	!xdis = !!suidirdis(!this.pos,!this.ori.xdir(),!pos)
+ Called from line 303 of PML function drawplane.PUTTEXT
+	!cornerposs = !this.allorixyeles[!goodindex].findtextspace(!text,!pos,!this.cheight,!this.planeShapes,!maxlen)
+ Called from line 880 of PML function planesystem.ASSIGNTEXTS
+			!tempshape = !gooddrawplane.puttext(!text,!pos,!this.realShapes,!this.dirobject.maxlen * 100)	$*no layers
+ Called from line 483 of PML function planesystem.ASSIGNDIMANDMLABEL
+	!this.assigntexts(!smalltexts.size(),!bigtexts)
+ Called from line 161 of PML function planesystem.PLANESYSTEM
+		!this.assignDimAndMlabel(!currentprogress,100)
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1750 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+20:49:46 18 December 2024
+/N190.001 failed to draw
+(2,751)   Variable !NEARPOS does not exist
+ In line 23 of PML function suidirdis
+	!dis = !pos1.distance(!nearpos)
+ Called from line 298 of PML function orixyeles.FINDTEXTSPACE
+	!xdis = !!suidirdis(!this.pos,!this.ori.xdir(),!pos)
+ Called from line 303 of PML function drawplane.PUTTEXT
+	!cornerposs = !this.allorixyeles[!goodindex].findtextspace(!text,!pos,!this.cheight,!this.planeShapes,!maxlen)
+ Called from line 880 of PML function planesystem.ASSIGNTEXTS
+			!tempshape = !gooddrawplane.puttext(!text,!pos,!this.realShapes,!this.dirobject.maxlen * 100)	$*no layers
+ Called from line 483 of PML function planesystem.ASSIGNDIMANDMLABEL
+	!this.assigntexts(!smalltexts.size(),!bigtexts)
+ Called from line 161 of PML function planesystem.PLANESYSTEM
+		!this.assignDimAndMlabel(!currentprogress,100)
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1750 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+20:43:13 18 December 2024
+/N190.001 failed to draw
+(2,751)   Variable !NEARPOS does not exist
+ In line 23 of PML function suidirdis
+	!dis = !pos1.distance(!nearpos)
+ Called from line 298 of PML function orixyeles.FINDTEXTSPACE
+	!xdis = !!suidirdis(!this.pos,!this.ori.xdir(),!pos)
+ Called from line 303 of PML function drawplane.PUTTEXT
+	!cornerposs = !this.allorixyeles[!goodindex].findtextspace(!text,!pos,!this.cheight,!this.planeShapes,!maxlen)
+ Called from line 880 of PML function planesystem.ASSIGNTEXTS
+			!tempshape = !gooddrawplane.puttext(!text,!pos,!this.realShapes,!this.dirobject.maxlen * 100)	$*no layers
+ Called from line 483 of PML function planesystem.ASSIGNDIMANDMLABEL
+	!this.assigntexts(!smalltexts.size(),!bigtexts)
+ Called from line 161 of PML function planesystem.PLANESYSTEM
+		!this.assignDimAndMlabel(!currentprogress,100)
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1748 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+20:42:12 18 December 2024
+/N190.001 failed to draw
+(2,751)   Variable !NEARPOS does not exist
+ In line 23 of PML function suidirdis
+	!dis = !pos1.distance(!nearpos)
+ Called from line 298 of PML function orixyeles.FINDTEXTSPACE
+	!xdis = !!suidirdis(!this.pos,!this.ori.xdir(),!pos)
+ Called from line 303 of PML function drawplane.PUTTEXT
+	!cornerposs = !this.allorixyeles[!goodindex].findtextspace(!text,!pos,!this.cheight,!this.planeShapes,!maxlen)
+ Called from line 880 of PML function planesystem.ASSIGNTEXTS
+			!tempshape = !gooddrawplane.puttext(!text,!pos,!this.realShapes,!this.dirobject.maxlen * 100)	$*no layers
+ Called from line 483 of PML function planesystem.ASSIGNDIMANDMLABEL
+	!this.assigntexts(!smalltexts.size(),!bigtexts)
+ Called from line 161 of PML function planesystem.PLANESYSTEM
+		!this.assignDimAndMlabel(!currentprogress,100)
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1747 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+20:17:24 18 December 2024
+/N190.001 failed to draw
+(2,751)   Variable !NEARPOS does not exist
+ In line 23 of PML function suidirdis
+	!dis = !pos1.distance(!nearpos)
+ Called from line 298 of PML function orixyeles.FINDTEXTSPACE
+	!xdis = !!suidirdis(!this.pos,!this.ori.xdir(),!pos)
+ Called from line 303 of PML function drawplane.PUTTEXT
+	!cornerposs = !this.allorixyeles[!goodindex].findtextspace(!text,!pos,!this.cheight,!this.planeShapes,!maxlen)
+ Called from line 880 of PML function planesystem.ASSIGNTEXTS
+			!tempshape = !gooddrawplane.puttext(!text,!pos,!this.realShapes,!this.dirobject.maxlen * 100)	$*no layers
+ Called from line 483 of PML function planesystem.ASSIGNDIMANDMLABEL
+	!this.assigntexts(!smalltexts.size(),!bigtexts)
+ Called from line 161 of PML function planesystem.PLANESYSTEM
+		!this.assignDimAndMlabel(!currentprogress,100)
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1745 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+20:12:52 18 December 2024
+/N190.001 failed to draw
+(2,751)   Variable !NEARPOS does not exist
+ In line 23 of PML function suidirdis
+	!dis = !pos1.distance(!nearpos)
+ Called from line 298 of PML function orixyeles.FINDTEXTSPACE
+	!xdis = !!suidirdis(!this.pos,!this.ori.xdir(),!pos)
+ Called from line 303 of PML function drawplane.PUTTEXT
+	!cornerposs = !this.allorixyeles[!goodindex].findtextspace(!text,!pos,!this.cheight,!this.planeShapes,!maxlen)
+ Called from line 880 of PML function planesystem.ASSIGNTEXTS
+			!tempshape = !gooddrawplane.puttext(!text,!pos,!this.realShapes,!this.dirobject.maxlen * 100)	$*no layers
+ Called from line 483 of PML function planesystem.ASSIGNDIMANDMLABEL
+	!this.assigntexts(!smalltexts.size(),!bigtexts)
+ Called from line 161 of PML function planesystem.PLANESYSTEM
+		!this.assignDimAndMlabel(!currentprogress,100)
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1744 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:56:57 18 December 2024
+/N190.001 failed to draw
+(2,751)   Variable !NEARPOS does not exist
+ In line 23 of PML function suidirdis
+	!dis = !pos1.distance(!nearpos)
+ Called from line 298 of PML function orixyeles.FINDTEXTSPACE
+	!xdis = !!suidirdis(!this.pos,!this.ori.xdir(),!pos)
+ Called from line 303 of PML function drawplane.PUTTEXT
+	!cornerposs = !this.allorixyeles[!goodindex].findtextspace(!text,!pos,!this.cheight,!this.planeShapes,!maxlen)
+ Called from line 880 of PML function planesystem.ASSIGNTEXTS
+			!tempshape = !gooddrawplane.puttext(!text,!pos,!this.realShapes,!this.dirobject.maxlen * 100)	$*no layers
+ Called from line 483 of PML function planesystem.ASSIGNDIMANDMLABEL
+	!this.assigntexts(!smalltexts.size(),!bigtexts)
+ Called from line 161 of PML function planesystem.PLANESYSTEM
+		!this.assignDimAndMlabel(!currentprogress,100)
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1744 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:38:39 18 December 2024
+/N190.001 failed to draw
+(2,751)   Variable !NEARPOS does not exist
+ In line 23 of PML function suidirdis
+	!dis = !pos1.distance(!nearpos)
+ Called from line 298 of PML function orixyeles.FINDTEXTSPACE
+	!xdis = !!suidirdis(!this.pos,!this.ori.xdir(),!pos)
+ Called from line 303 of PML function drawplane.PUTTEXT
+	!cornerposs = !this.allorixyeles[!goodindex].findtextspace(!text,!pos,!this.cheight,!this.planeShapes,!maxlen)
+ Called from line 880 of PML function planesystem.ASSIGNTEXTS
+			!tempshape = !gooddrawplane.puttext(!text,!pos,!this.realShapes,!this.dirobject.maxlen * 100)	$*no layers
+ Called from line 483 of PML function planesystem.ASSIGNDIMANDMLABEL
+	!this.assigntexts(!smalltexts.size(),!bigtexts)
+ Called from line 161 of PML function planesystem.PLANESYSTEM
+		!this.assignDimAndMlabel(!currentprogress,100)
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1739 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:32:07 18 December 2024
+/N190.001 failed to draw
+(2,751)   Variable !NEARPOS does not exist
+ In line 23 of PML function suidirdis
+	!dis = !pos1.distance(!nearpos)
+ Called from line 298 of PML function orixyeles.FINDTEXTSPACE
+	!xdis = !!suidirdis(!this.pos,!this.ori.xdir(),!pos)
+ Called from line 303 of PML function drawplane.PUTTEXT
+	!cornerposs = !this.allorixyeles[!goodindex].findtextspace(!text,!pos,!this.cheight,!this.planeShapes,!maxlen)
+ Called from line 880 of PML function planesystem.ASSIGNTEXTS
+			!tempshape = !gooddrawplane.puttext(!text,!pos,!this.realShapes,!this.dirobject.maxlen * 100)	$*no layers
+ Called from line 483 of PML function planesystem.ASSIGNDIMANDMLABEL
+	!this.assigntexts(!smalltexts.size(),!bigtexts)
+ Called from line 161 of PML function planesystem.PLANESYSTEM
+		!this.assignDimAndMlabel(!currentprogress,100)
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1739 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:31:29 18 December 2024
+/N190.001 failed to draw
+(2,751)   Variable !NEARPOS does not exist
+ In line 23 of PML function suidirdis
+	!dis = !pos1.distance(!nearpos)
+ Called from line 298 of PML function orixyeles.FINDTEXTSPACE
+	!xdis = !!suidirdis(!this.pos,!this.ori.xdir(),!pos)
+ Called from line 303 of PML function drawplane.PUTTEXT
+	!cornerposs = !this.allorixyeles[!goodindex].findtextspace(!text,!pos,!this.cheight,!this.planeShapes,!maxlen)
+ Called from line 880 of PML function planesystem.ASSIGNTEXTS
+			!tempshape = !gooddrawplane.puttext(!text,!pos,!this.realShapes,!this.dirobject.maxlen * 100)	$*no layers
+ Called from line 483 of PML function planesystem.ASSIGNDIMANDMLABEL
+	!this.assigntexts(!smalltexts.size(),!bigtexts)
+ Called from line 161 of PML function planesystem.PLANESYSTEM
+		!this.assignDimAndMlabel(!currentprogress,100)
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1739 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:30:58 18 December 2024
+/N190.001 failed to draw
+(2,751)   Variable !NEARPOS does not exist
+ In line 23 of PML function suidirdis
+	!dis = !pos1.distance(!nearpos)
+ Called from line 298 of PML function orixyeles.FINDTEXTSPACE
+	!xdis = !!suidirdis(!this.pos,!this.ori.xdir(),!pos)
+ Called from line 303 of PML function drawplane.PUTTEXT
+	!cornerposs = !this.allorixyeles[!goodindex].findtextspace(!text,!pos,!this.cheight,!this.planeShapes,!maxlen)
+ Called from line 880 of PML function planesystem.ASSIGNTEXTS
+			!tempshape = !gooddrawplane.puttext(!text,!pos,!this.realShapes,!this.dirobject.maxlen * 100)	$*no layers
+ Called from line 483 of PML function planesystem.ASSIGNDIMANDMLABEL
+	!this.assigntexts(!smalltexts.size(),!bigtexts)
+ Called from line 161 of PML function planesystem.PLANESYSTEM
+		!this.assignDimAndMlabel(!currentprogress,100)
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1737 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:29:35 18 December 2024
+/N190.001 failed to draw
+(2,751)   Variable !NEARPOS does not exist
+ In line 23 of PML function suidirdis
+	!dis = !pos1.distance(!nearpos)
+ Called from line 298 of PML function orixyeles.FINDTEXTSPACE
+	!xdis = !!suidirdis(!this.pos,!this.ori.xdir(),!pos)
+ Called from line 303 of PML function drawplane.PUTTEXT
+	!cornerposs = !this.allorixyeles[!goodindex].findtextspace(!text,!pos,!this.cheight,!this.planeShapes,!maxlen)
+ Called from line 880 of PML function planesystem.ASSIGNTEXTS
+			!tempshape = !gooddrawplane.puttext(!text,!pos,!this.realShapes,!this.dirobject.maxlen * 100)	$*no layers
+ Called from line 483 of PML function planesystem.ASSIGNDIMANDMLABEL
+	!this.assigntexts(!smalltexts.size(),!bigtexts)
+ Called from line 161 of PML function planesystem.PLANESYSTEM
+		!this.assignDimAndMlabel(!currentprogress,100)
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1737 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:29:03 18 December 2024
+/N190.001 failed to draw
+(2,751)   Variable !NEARPOS does not exist
+ In line 23 of PML function suidirdis
+	!dis = !pos1.distance(!nearpos)
+ Called from line 298 of PML function orixyeles.FINDTEXTSPACE
+	!xdis = !!suidirdis(!this.pos,!this.ori.xdir(),!pos)
+ Called from line 303 of PML function drawplane.PUTTEXT
+	!cornerposs = !this.allorixyeles[!goodindex].findtextspace(!text,!pos,!this.cheight,!this.planeShapes,!maxlen)
+ Called from line 880 of PML function planesystem.ASSIGNTEXTS
+			!tempshape = !gooddrawplane.puttext(!text,!pos,!this.realShapes,!this.dirobject.maxlen * 100)	$*no layers
+ Called from line 483 of PML function planesystem.ASSIGNDIMANDMLABEL
+	!this.assigntexts(!smalltexts.size(),!bigtexts)
+ Called from line 161 of PML function planesystem.PLANESYSTEM
+		!this.assignDimAndMlabel(!currentprogress,100)
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1737 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:25:45 18 December 2024
+/N190.001 failed to draw
+(2,751)   Variable !NEARPOS does not exist
+ In line 23 of PML function suidirdis
+	!dis = !pos1.distance(!nearpos)
+ Called from line 298 of PML function orixyeles.FINDTEXTSPACE
+	!xdis = !!suidirdis(!this.pos,!this.ori.xdir(),!pos)
+ Called from line 303 of PML function drawplane.PUTTEXT
+	!cornerposs = !this.allorixyeles[!goodindex].findtextspace(!text,!pos,!this.cheight,!this.planeShapes,!maxlen)
+ Called from line 880 of PML function planesystem.ASSIGNTEXTS
+			!tempshape = !gooddrawplane.puttext(!text,!pos,!this.realShapes,!this.dirobject.maxlen * 100)	$*no layers
+ Called from line 483 of PML function planesystem.ASSIGNDIMANDMLABEL
+	!this.assigntexts(!smalltexts.size(),!bigtexts)
+ Called from line 161 of PML function planesystem.PLANESYSTEM
+		!this.assignDimAndMlabel(!currentprogress,100)
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1736 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:25:09 18 December 2024
+/N190.001 failed to draw
+(2,751)   Variable !NEARPOS does not exist
+ In line 23 of PML function suidirdis
+	!dis = !pos1.distance(!nearpos)
+ Called from line 298 of PML function orixyeles.FINDTEXTSPACE
+	!xdis = !!suidirdis(!this.pos,!this.ori.xdir(),!pos)
+ Called from line 303 of PML function drawplane.PUTTEXT
+	!cornerposs = !this.allorixyeles[!goodindex].findtextspace(!text,!pos,!this.cheight,!this.planeShapes,!maxlen)
+ Called from line 880 of PML function planesystem.ASSIGNTEXTS
+			!tempshape = !gooddrawplane.puttext(!text,!pos,!this.realShapes,!this.dirobject.maxlen * 100)	$*no layers
+ Called from line 483 of PML function planesystem.ASSIGNDIMANDMLABEL
+	!this.assigntexts(!smalltexts.size(),!bigtexts)
+ Called from line 161 of PML function planesystem.PLANESYSTEM
+		!this.assignDimAndMlabel(!currentprogress,100)
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1735 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:22:39 18 December 2024
+/N190.001 failed to draw
+(2,751)   Variable !NEARPOS does not exist
+ In line 23 of PML function suidirdis
+	!dis = !pos1.distance(!nearpos)
+ Called from line 298 of PML function orixyeles.FINDTEXTSPACE
+	!xdis = !!suidirdis(!this.pos,!this.ori.xdir(),!pos)
+ Called from line 303 of PML function drawplane.PUTTEXT
+	!cornerposs = !this.allorixyeles[!goodindex].findtextspace(!text,!pos,!this.cheight,!this.planeShapes,!maxlen)
+ Called from line 880 of PML function planesystem.ASSIGNTEXTS
+			!tempshape = !gooddrawplane.puttext(!text,!pos,!this.realShapes,!this.dirobject.maxlen * 100)	$*no layers
+ Called from line 483 of PML function planesystem.ASSIGNDIMANDMLABEL
+	!this.assigntexts(!smalltexts.size(),!bigtexts)
+ Called from line 161 of PML function planesystem.PLANESYSTEM
+		!this.assignDimAndMlabel(!currentprogress,100)
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1735 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:17:45 18 December 2024
+/N190.001 failed to draw
+(2,751)   Variable !NEARPOS does not exist
+ In line 23 of PML function suidirdis
+	!dis = !pos1.distance(!nearpos)
+ Called from line 298 of PML function orixyeles.FINDTEXTSPACE
+	!xdis = !!suidirdis(!this.pos,!this.ori.xdir(),!pos)
+ Called from line 303 of PML function drawplane.PUTTEXT
+	!cornerposs = !this.allorixyeles[!goodindex].findtextspace(!text,!pos,!this.cheight,!this.planeShapes,!maxlen)
+ Called from line 880 of PML function planesystem.ASSIGNTEXTS
+			!tempshape = !gooddrawplane.puttext(!text,!pos,!this.realShapes,!this.dirobject.maxlen * 100)	$*no layers
+ Called from line 483 of PML function planesystem.ASSIGNDIMANDMLABEL
+	!this.assigntexts(!smalltexts.size(),!bigtexts)
+ Called from line 161 of PML function planesystem.PLANESYSTEM
+		!this.assignDimAndMlabel(!currentprogress,100)
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1735 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:17:10 18 December 2024
+/N190.001 failed to draw
+(2,751)   Variable !NEARPOS does not exist
+ In line 23 of PML function suidirdis
+	!dis = !pos1.distance(!nearpos)
+ Called from line 298 of PML function orixyeles.FINDTEXTSPACE
+	!xdis = !!suidirdis(!this.pos,!this.ori.xdir(),!pos)
+ Called from line 303 of PML function drawplane.PUTTEXT
+	!cornerposs = !this.allorixyeles[!goodindex].findtextspace(!text,!pos,!this.cheight,!this.planeShapes,!maxlen)
+ Called from line 880 of PML function planesystem.ASSIGNTEXTS
+			!tempshape = !gooddrawplane.puttext(!text,!pos,!this.realShapes,!this.dirobject.maxlen * 100)	$*no layers
+ Called from line 483 of PML function planesystem.ASSIGNDIMANDMLABEL
+	!this.assigntexts(!smalltexts.size(),!bigtexts)
+ Called from line 161 of PML function planesystem.PLANESYSTEM
+		!this.assignDimAndMlabel(!currentprogress,100)
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1735 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:13:35 18 December 2024
+/N190.001 failed to draw
+(2,751)   Variable !NEARPOS does not exist
+ In line 23 of PML function suidirdis
+	!dis = !pos1.distance(!nearpos)
+ Called from line 298 of PML function orixyeles.FINDTEXTSPACE
+	!xdis = !!suidirdis(!this.pos,!this.ori.xdir(),!pos)
+ Called from line 303 of PML function drawplane.PUTTEXT
+	!cornerposs = !this.allorixyeles[!goodindex].findtextspace(!text,!pos,!this.cheight,!this.planeShapes,!maxlen)
+ Called from line 880 of PML function planesystem.ASSIGNTEXTS
+			!tempshape = !gooddrawplane.puttext(!text,!pos,!this.realShapes,!this.dirobject.maxlen * 100)	$*no layers
+ Called from line 483 of PML function planesystem.ASSIGNDIMANDMLABEL
+	!this.assigntexts(!smalltexts.size(),!bigtexts)
+ Called from line 161 of PML function planesystem.PLANESYSTEM
+		!this.assignDimAndMlabel(!currentprogress,100)
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1734 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:13:11 18 December 2024
+/N190.001 failed to draw
+(2,751)   Variable !NEARPOS does not exist
+ In line 23 of PML function suidirdis
+	!dis = !pos1.distance(!nearpos)
+ Called from line 298 of PML function orixyeles.FINDTEXTSPACE
+	!xdis = !!suidirdis(!this.pos,!this.ori.xdir(),!pos)
+ Called from line 303 of PML function drawplane.PUTTEXT
+	!cornerposs = !this.allorixyeles[!goodindex].findtextspace(!text,!pos,!this.cheight,!this.planeShapes,!maxlen)
+ Called from line 880 of PML function planesystem.ASSIGNTEXTS
+			!tempshape = !gooddrawplane.puttext(!text,!pos,!this.realShapes,!this.dirobject.maxlen * 100)	$*no layers
+ Called from line 483 of PML function planesystem.ASSIGNDIMANDMLABEL
+	!this.assigntexts(!smalltexts.size(),!bigtexts)
+ Called from line 161 of PML function planesystem.PLANESYSTEM
+		!this.assignDimAndMlabel(!currentprogress,100)
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1734 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:12:39 18 December 2024
+/N190.001 failed to draw
+(2,751)   Variable !NEARPOS does not exist
+ In line 23 of PML function suidirdis
+	!dis = !pos1.distance(!nearpos)
+ Called from line 298 of PML function orixyeles.FINDTEXTSPACE
+	!xdis = !!suidirdis(!this.pos,!this.ori.xdir(),!pos)
+ Called from line 303 of PML function drawplane.PUTTEXT
+	!cornerposs = !this.allorixyeles[!goodindex].findtextspace(!text,!pos,!this.cheight,!this.planeShapes,!maxlen)
+ Called from line 880 of PML function planesystem.ASSIGNTEXTS
+			!tempshape = !gooddrawplane.puttext(!text,!pos,!this.realShapes,!this.dirobject.maxlen * 100)	$*no layers
+ Called from line 483 of PML function planesystem.ASSIGNDIMANDMLABEL
+	!this.assigntexts(!smalltexts.size(),!bigtexts)
+ Called from line 161 of PML function planesystem.PLANESYSTEM
+		!this.assignDimAndMlabel(!currentprogress,100)
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1734 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:05:29 18 December 2024
+/N190.001 failed to draw
+(2,751)   Variable !NEARPOS does not exist
+ In line 23 of PML function suidirdis
+	!dis = !pos1.distance(!nearpos)
+ Called from line 298 of PML function orixyeles.FINDTEXTSPACE
+	!xdis = !!suidirdis(!this.pos,!this.ori.xdir(),!pos)
+ Called from line 303 of PML function drawplane.PUTTEXT
+	!cornerposs = !this.allorixyeles[!goodindex].findtextspace(!text,!pos,!this.cheight,!this.planeShapes,!maxlen)
+ Called from line 880 of PML function planesystem.ASSIGNTEXTS
+			!tempshape = !gooddrawplane.puttext(!text,!pos,!this.realShapes,!this.dirobject.maxlen * 100)	$*no layers
+ Called from line 483 of PML function planesystem.ASSIGNDIMANDMLABEL
+	!this.assigntexts(!smalltexts.size(),!bigtexts)
+ Called from line 161 of PML function planesystem.PLANESYSTEM
+		!this.assignDimAndMlabel(!currentprogress,100)
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1733 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:04:56 18 December 2024
+/N190.001 failed to draw
+(2,751)   Variable !NEARPOS does not exist
+ In line 23 of PML function suidirdis
+	!dis = !pos1.distance(!nearpos)
+ Called from line 298 of PML function orixyeles.FINDTEXTSPACE
+	!xdis = !!suidirdis(!this.pos,!this.ori.xdir(),!pos)
+ Called from line 303 of PML function drawplane.PUTTEXT
+	!cornerposs = !this.allorixyeles[!goodindex].findtextspace(!text,!pos,!this.cheight,!this.planeShapes,!maxlen)
+ Called from line 880 of PML function planesystem.ASSIGNTEXTS
+			!tempshape = !gooddrawplane.puttext(!text,!pos,!this.realShapes,!this.dirobject.maxlen * 100)	$*no layers
+ Called from line 483 of PML function planesystem.ASSIGNDIMANDMLABEL
+	!this.assigntexts(!smalltexts.size(),!bigtexts)
+ Called from line 161 of PML function planesystem.PLANESYSTEM
+		!this.assignDimAndMlabel(!currentprogress,100)
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1733 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:04:29 18 December 2024
+/N190.001 failed to draw
+(2,751)   Variable !NEARPOS does not exist
+ In line 23 of PML function suidirdis
+	!dis = !pos1.distance(!nearpos)
+ Called from line 298 of PML function orixyeles.FINDTEXTSPACE
+	!xdis = !!suidirdis(!this.pos,!this.ori.xdir(),!pos)
+ Called from line 303 of PML function drawplane.PUTTEXT
+	!cornerposs = !this.allorixyeles[!goodindex].findtextspace(!text,!pos,!this.cheight,!this.planeShapes,!maxlen)
+ Called from line 879 of PML function planesystem.ASSIGNTEXTS
+			!tempshape = !gooddrawplane.puttext(!text,!pos,!this.realShapes,!this.dirobject.maxlen * 100)	$*no layers
+ Called from line 483 of PML function planesystem.ASSIGNDIMANDMLABEL
+	!this.assigntexts(!smalltexts.size(),!bigtexts)
+ Called from line 161 of PML function planesystem.PLANESYSTEM
+		!this.assignDimAndMlabel(!currentprogress,100)
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1733 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:03:34 18 December 2024
+/N190.001 failed to draw
+(2,751)   Variable !NEARPOS does not exist
+ In line 23 of PML function suidirdis
+	!dis = !pos1.distance(!nearpos)
+ Called from line 298 of PML function orixyeles.FINDTEXTSPACE
+	!xdis = !!suidirdis(!this.pos,!this.ori.xdir(),!pos)
+ Called from line 303 of PML function drawplane.PUTTEXT
+	!cornerposs = !this.allorixyeles[!goodindex].findtextspace(!text,!pos,!this.cheight,!this.planeShapes,!maxlen)
+ Called from line 879 of PML function planesystem.ASSIGNTEXTS
+			!tempshape = !gooddrawplane.puttext(!text,!pos,!this.realShapes,!this.dirobject.maxlen * 100)	$*no layers
+ Called from line 483 of PML function planesystem.ASSIGNDIMANDMLABEL
+	!this.assigntexts(!smalltexts.size(),!bigtexts)
+ Called from line 161 of PML function planesystem.PLANESYSTEM
+		!this.assignDimAndMlabel(!currentprogress,100)
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1733 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+16:57:41 18 December 2024
+/N190.001 failed to draw
+(2,751)   Variable !NEARPOS does not exist
+ In line 23 of PML function suidirdis
+	!dis = !pos1.distance(!nearpos)
+ Called from line 298 of PML function orixyeles.FINDTEXTSPACE
+	!xdis = !!suidirdis(!this.pos,!this.ori.xdir(),!pos)
+ Called from line 303 of PML function drawplane.PUTTEXT
+	!cornerposs = !this.allorixyeles[!goodindex].findtextspace(!text,!pos,!this.cheight,!this.planeShapes,!maxlen)
+ Called from line 879 of PML function planesystem.ASSIGNTEXTS
+			!tempshape = !gooddrawplane.puttext(!text,!pos,!this.realShapes,!this.dirobject.maxlen * 100)	$*no layers
+ Called from line 483 of PML function planesystem.ASSIGNDIMANDMLABEL
+	!this.assigntexts(!smalltexts.size(),!bigtexts)
+ Called from line 161 of PML function planesystem.PLANESYSTEM
+		!this.assignDimAndMlabel(!currentprogress,100)
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1733 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+16:55:28 18 December 2024
+/N190.001 failed to draw
+(2,751)   Variable !NEARPOS does not exist
+ In line 23 of PML function suidirdis
+	!dis = !pos1.distance(!nearpos)
+ Called from line 298 of PML function orixyeles.FINDTEXTSPACE
+	!xdis = !!suidirdis(!this.pos,!this.ori.xdir(),!pos)
+ Called from line 303 of PML function drawplane.PUTTEXT
+	!cornerposs = !this.allorixyeles[!goodindex].findtextspace(!text,!pos,!this.cheight,!this.planeShapes,!maxlen)
+ Called from line 877 of PML function planesystem.ASSIGNTEXTS
+			!tempshape = !gooddrawplane.puttext(!text,!pos,!this.realShapes,!this.dirobject.maxlen * 100)	$*no layers
+ Called from line 483 of PML function planesystem.ASSIGNDIMANDMLABEL
+	!this.assigntexts(!smalltexts.size(),!bigtexts)
+ Called from line 161 of PML function planesystem.PLANESYSTEM
+		!this.assignDimAndMlabel(!currentprogress,100)
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1733 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+16:54:28 18 December 2024
+/N190.001 failed to draw
+(2,751)   Variable !NEARPOS does not exist
+ In line 23 of PML function suidirdis
+	!dis = !pos1.distance(!nearpos)
+ Called from line 298 of PML function orixyeles.FINDTEXTSPACE
+	!xdis = !!suidirdis(!this.pos,!this.ori.xdir(),!pos)
+ Called from line 303 of PML function drawplane.PUTTEXT
+	!cornerposs = !this.allorixyeles[!goodindex].findtextspace(!text,!pos,!this.cheight,!this.planeShapes,!maxlen)
+ Called from line 875 of PML function planesystem.ASSIGNTEXTS
+			!tempshape = !gooddrawplane.puttext(!text,!pos,!this.realShapes,!this.dirobject.maxlen * 100)	$*no layers
+ Called from line 483 of PML function planesystem.ASSIGNDIMANDMLABEL
+	!this.assigntexts(!smalltexts.size(),!bigtexts)
+ Called from line 161 of PML function planesystem.PLANESYSTEM
+		!this.assignDimAndMlabel(!currentprogress,100)
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1733 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+16:54:12 18 December 2024
+/N190.001 failed to draw
+(2,751)   Variable !NEARPOS does not exist
+ In line 23 of PML function suidirdis
+	!dis = !pos1.distance(!nearpos)
+ Called from line 298 of PML function orixyeles.FINDTEXTSPACE
+	!xdis = !!suidirdis(!this.pos,!this.ori.xdir(),!pos)
+ Called from line 303 of PML function drawplane.PUTTEXT
+	!cornerposs = !this.allorixyeles[!goodindex].findtextspace(!text,!pos,!this.cheight,!this.planeShapes,!maxlen)
+ Called from line 874 of PML function planesystem.ASSIGNTEXTS
+			!tempshape = !gooddrawplane.puttext(!text,!pos,!this.realShapes,!this.dirobject.maxlen * 100)	$*no layers
+ Called from line 483 of PML function planesystem.ASSIGNDIMANDMLABEL
+	!this.assigntexts(!smalltexts.size(),!bigtexts)
+ Called from line 161 of PML function planesystem.PLANESYSTEM
+		!this.assignDimAndMlabel(!currentprogress,100)
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1733 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+16:53:15 18 December 2024
+/N190.001 failed to draw
+(2,751)   Variable !NEARPOS does not exist
+ In line 23 of PML function suidirdis
+	!dis = !pos1.distance(!nearpos)
+ Called from line 298 of PML function orixyeles.FINDTEXTSPACE
+	!xdis = !!suidirdis(!this.pos,!this.ori.xdir(),!pos)
+ Called from line 303 of PML function drawplane.PUTTEXT
+	!cornerposs = !this.allorixyeles[!goodindex].findtextspace(!text,!pos,!this.cheight,!this.planeShapes,!maxlen)
+ Called from line 873 of PML function planesystem.ASSIGNTEXTS
+			!tempshape = !gooddrawplane.puttext(!text,!pos,!this.realShapes,!this.dirobject.maxlen * 100)	$*no layers
+ Called from line 483 of PML function planesystem.ASSIGNDIMANDMLABEL
+	!this.assigntexts(!smalltexts.size(),!bigtexts)
+ Called from line 161 of PML function planesystem.PLANESYSTEM
+		!this.assignDimAndMlabel(!currentprogress,100)
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1733 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+16:52:48 18 December 2024
+/N190.001 failed to draw
+(2,751)   Variable !NEARPOS does not exist
+ In line 23 of PML function suidirdis
+	!dis = !pos1.distance(!nearpos)
+ Called from line 298 of PML function orixyeles.FINDTEXTSPACE
+	!xdis = !!suidirdis(!this.pos,!this.ori.xdir(),!pos)
+ Called from line 303 of PML function drawplane.PUTTEXT
+	!cornerposs = !this.allorixyeles[!goodindex].findtextspace(!text,!pos,!this.cheight,!this.planeShapes,!maxlen)
+ Called from line 872 of PML function planesystem.ASSIGNTEXTS
+			!tempshape = !gooddrawplane.puttext(!text,!pos,!this.realShapes,!this.dirobject.maxlen * 100)	$*no layers
+ Called from line 483 of PML function planesystem.ASSIGNDIMANDMLABEL
+	!this.assigntexts(!smalltexts.size(),!bigtexts)
+ Called from line 161 of PML function planesystem.PLANESYSTEM
+		!this.assignDimAndMlabel(!currentprogress,100)
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1733 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+16:47:51 18 December 2024
+/N190.001 failed to draw
+(2,751)   Variable !NEARPOS does not exist
+ In line 23 of PML function suidirdis
+	!dis = !pos1.distance(!nearpos)
+ Called from line 298 of PML function orixyeles.FINDTEXTSPACE
+	!xdis = !!suidirdis(!this.pos,!this.ori.xdir(),!pos)
+ Called from line 303 of PML function drawplane.PUTTEXT
+	!cornerposs = !this.allorixyeles[!goodindex].findtextspace(!text,!pos,!this.cheight,!this.planeShapes,!maxlen)
+ Called from line 872 of PML function planesystem.ASSIGNTEXTS
+			!tempshape = !gooddrawplane.puttext(!text,!pos,!this.realShapes,!this.dirobject.maxlen * 100)	$*no layers
+ Called from line 483 of PML function planesystem.ASSIGNDIMANDMLABEL
+	!this.assigntexts(!smalltexts.size(),!bigtexts)
+ Called from line 161 of PML function planesystem.PLANESYSTEM
+		!this.assignDimAndMlabel(!currentprogress,100)
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1733 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+16:47:10 18 December 2024
+/N190.001 failed to draw
+(2,751)   Variable !NEARPOS does not exist
+ In line 23 of PML function suidirdis
+	!dis = !pos1.distance(!nearpos)
+ Called from line 298 of PML function orixyeles.FINDTEXTSPACE
+	!xdis = !!suidirdis(!this.pos,!this.ori.xdir(),!pos)
+ Called from line 303 of PML function drawplane.PUTTEXT
+	!cornerposs = !this.allorixyeles[!goodindex].findtextspace(!text,!pos,!this.cheight,!this.planeShapes,!maxlen)
+ Called from line 872 of PML function planesystem.ASSIGNTEXTS
+			!tempshape = !gooddrawplane.puttext(!text,!pos,!this.realShapes,!this.dirobject.maxlen * 100)	$*no layers
+ Called from line 483 of PML function planesystem.ASSIGNDIMANDMLABEL
+	!this.assigntexts(!smalltexts.size(),!bigtexts)
+ Called from line 161 of PML function planesystem.PLANESYSTEM
+		!this.assignDimAndMlabel(!currentprogress,100)
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1733 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+16:46:14 18 December 2024
+/N190.001 failed to draw
+(2,751)   Variable !NEARPOS does not exist
+ In line 23 of PML function suidirdis
+	!dis = !pos1.distance(!nearpos)
+ Called from line 298 of PML function orixyeles.FINDTEXTSPACE
+	!xdis = !!suidirdis(!this.pos,!this.ori.xdir(),!pos)
+ Called from line 303 of PML function drawplane.PUTTEXT
+	!cornerposs = !this.allorixyeles[!goodindex].findtextspace(!text,!pos,!this.cheight,!this.planeShapes,!maxlen)
+ Called from line 872 of PML function planesystem.ASSIGNTEXTS
+			!tempshape = !gooddrawplane.puttext(!text,!pos,!this.realShapes,!this.dirobject.maxlen * 100)	$*no layers
+ Called from line 483 of PML function planesystem.ASSIGNDIMANDMLABEL
+	!this.assigntexts(!smalltexts.size(),!bigtexts)
+ Called from line 161 of PML function planesystem.PLANESYSTEM
+		!this.assignDimAndMlabel(!currentprogress,100)
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1733 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+16:44:49 18 December 2024
+/N190.001 failed to draw
+(2,869)   Error in conversion to world co-ordinates. Check for unset objects
+ In line 17 of PML function suidirdis
+	!nearpos = !line.near(!pos2)
+ Called from line 298 of PML function orixyeles.FINDTEXTSPACE
+	!xdis = !!suidirdis(!this.pos,!this.ori.xdir(),!pos)
+ Called from line 303 of PML function drawplane.PUTTEXT
+	!cornerposs = !this.allorixyeles[!goodindex].findtextspace(!text,!pos,!this.cheight,!this.planeShapes,!maxlen)
+ Called from line 872 of PML function planesystem.ASSIGNTEXTS
+			!tempshape = !gooddrawplane.puttext(!text,!pos,!this.realShapes,!this.dirobject.maxlen * 100)	$*no layers
+ Called from line 483 of PML function planesystem.ASSIGNDIMANDMLABEL
+	!this.assigntexts(!smalltexts.size(),!bigtexts)
+ Called from line 161 of PML function planesystem.PLANESYSTEM
+		!this.assignDimAndMlabel(!currentprogress,100)
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1733 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+16:43:34 18 December 2024
+/N190.001 failed to draw
+(2,869)   Error in conversion to world co-ordinates. Check for unset objects
+ In line 16 of PML function suidirdis
+	!nearpos = !line.near(!pos2)
+ Called from line 298 of PML function orixyeles.FINDTEXTSPACE
+	!xdis = !!suidirdis(!this.pos,!this.ori.xdir(),!pos)
+ Called from line 303 of PML function drawplane.PUTTEXT
+	!cornerposs = !this.allorixyeles[!goodindex].findtextspace(!text,!pos,!this.cheight,!this.planeShapes,!maxlen)
+ Called from line 872 of PML function planesystem.ASSIGNTEXTS
+			!tempshape = !gooddrawplane.puttext(!text,!pos,!this.realShapes,!this.dirobject.maxlen * 100)	$*no layers
+ Called from line 483 of PML function planesystem.ASSIGNDIMANDMLABEL
+	!this.assigntexts(!smalltexts.size(),!bigtexts)
+ Called from line 161 of PML function planesystem.PLANESYSTEM
+		!this.assignDimAndMlabel(!currentprogress,100)
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1733 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+16:42:14 18 December 2024
+/N190.001 failed to draw
+(2,751)   Variable !NEARPOS does not exist
+ In line 22 of PML function suidirdis
+	!dis = !pos1.distance(!nearpos)
+ Called from line 298 of PML function orixyeles.FINDTEXTSPACE
+	!xdis = !!suidirdis(!this.pos,!this.ori.xdir(),!pos)
+ Called from line 303 of PML function drawplane.PUTTEXT
+	!cornerposs = !this.allorixyeles[!goodindex].findtextspace(!text,!pos,!this.cheight,!this.planeShapes,!maxlen)
+ Called from line 872 of PML function planesystem.ASSIGNTEXTS
+			!tempshape = !gooddrawplane.puttext(!text,!pos,!this.realShapes,!this.dirobject.maxlen * 100)	$*no layers
+ Called from line 483 of PML function planesystem.ASSIGNDIMANDMLABEL
+	!this.assigntexts(!smalltexts.size(),!bigtexts)
+ Called from line 161 of PML function planesystem.PLANESYSTEM
+		!this.assignDimAndMlabel(!currentprogress,100)
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1733 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+16:40:59 18 December 2024
+/N190.001 failed to draw
+(2,751)   Variable !NEARPOS does not exist
+ In line 22 of PML function suidirdis
+	!dis = !pos1.distance(!nearpos)
+ Called from line 298 of PML function orixyeles.FINDTEXTSPACE
+	!xdis = !!suidirdis(!this.pos,!this.ori.xdir(),!pos)
+ Called from line 303 of PML function drawplane.PUTTEXT
+	!cornerposs = !this.allorixyeles[!goodindex].findtextspace(!text,!pos,!this.cheight,!this.planeShapes,!maxlen)
+ Called from line 872 of PML function planesystem.ASSIGNTEXTS
+			!tempshape = !gooddrawplane.puttext(!text,!pos,!this.realShapes,!this.dirobject.maxlen * 100)	$*no layers
+ Called from line 483 of PML function planesystem.ASSIGNDIMANDMLABEL
+	!this.assigntexts(!smalltexts.size(),!bigtexts)
+ Called from line 161 of PML function planesystem.PLANESYSTEM
+		!this.assignDimAndMlabel(!currentprogress,100)
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1733 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+16:40:26 18 December 2024
+/N190.001 failed to draw
+(2,751)   Variable !PPOS1 does not exist
+ In line 14 of PML function suidirdis
+	!line = !ppos1.line(!pos1.offset(!dir,100000))
+ Called from line 63 of PML function dimline.DIMLINE
+		!dis = !!suidirdis(!poss[1],!dir,!onepos)
+ Called from line 43 of PML function dimline.DIMLINE
+	!this.dimline(!dir,!inputposs,!class)
+ Called from line 1554 of PML function suisupport.GETDIMLINES
+            !dimline = object dimline(!dir,!poss,!class,!uniquepoints)
+ Called from line 1704 of PML function suisupport.DRAWWITHNEWWAY
+	!dimlines = !this.getdimlines()
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+16:08:35 18 December 2024
+/N190.001 failed to draw
+(2,751)   Variable !PPOS1 does not exist
+ In line 14 of PML function suidirdis
+	!line = !ppos1.line(!pos1.offset(!dir,100000))
+ Called from line 63 of PML function dimline.DIMLINE
+		!dis = !!suidirdis(!poss[1],!dir,!onepos)
+ Called from line 43 of PML function dimline.DIMLINE
+	!this.dimline(!dir,!inputposs,!class)
+ Called from line 1553 of PML function suisupport.GETDIMLINES
+            !dimline = object dimline(!dir,!poss,!class,!uniquepoints)
+ Called from line 1703 of PML function suisupport.DRAWWITHNEWWAY
+	!dimlines = !this.getdimlines()
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+16:08:24 18 December 2024
+/N190.001 failed to draw
+(2,751)   Variable !PPOS1 does not exist
+ In line 14 of PML function suidirdis
+	!line = !ppos1.line(!pos1.offset(!dir,100000))
+ Called from line 63 of PML function dimline.DIMLINE
+		!dis = !!suidirdis(!poss[1],!dir,!onepos)
+ Called from line 43 of PML function dimline.DIMLINE
+	!this.dimline(!dir,!inputposs,!class)
+ Called from line 1553 of PML function suisupport.GETDIMLINES
+            !dimline = object dimline(!dir,!poss,!class,!uniquepoints)
+ Called from line 1703 of PML function suisupport.DRAWWITHNEWWAY
+	!dimlines = !this.getdimlines()
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+16:06:10 18 December 2024
+/N190.001 failed to draw
+(2,751)   Variable !NEARPOS does not exist
+ In line 22 of PML function suidirdis
+	!dis = !pos1.distance(!nearpos)
+ Called from line 298 of PML function orixyeles.FINDTEXTSPACE
+	!xdis = !!suidirdis(!this.pos,!this.ori.xdir(),!pos)
+ Called from line 303 of PML function drawplane.PUTTEXT
+	!cornerposs = !this.allorixyeles[!goodindex].findtextspace(!text,!pos,!this.cheight,!this.planeShapes,!maxlen)
+ Called from line 872 of PML function planesystem.ASSIGNTEXTS
+			!tempshape = !gooddrawplane.puttext(!text,!pos,!this.realShapes,!this.dirobject.maxlen * 100)	$*no layers
+ Called from line 483 of PML function planesystem.ASSIGNDIMANDMLABEL
+	!this.assigntexts(!smalltexts.size(),!bigtexts)
+ Called from line 161 of PML function planesystem.PLANESYSTEM
+		!this.assignDimAndMlabel(!currentprogress,100)
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1732 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+16:04:16 18 December 2024
+/N190.001 failed to draw
+(2,785)   Unset/Invalid object passed to method
+ In line 339 of PML function drawplane.PUTTEXT
+	!plane = object plane(!pos,!this.ori)
+ Called from line 872 of PML function planesystem.ASSIGNTEXTS
+			!tempshape = !gooddrawplane.puttext(!text,!pos,!this.realShapes,!this.dirobject.maxlen * 100)	$*no layers
+ Called from line 483 of PML function planesystem.ASSIGNDIMANDMLABEL
+	!this.assigntexts(!smalltexts.size(),!bigtexts)
+ Called from line 161 of PML function planesystem.PLANESYSTEM
+		!this.assignDimAndMlabel(!currentprogress,100)
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1732 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+16:03:58 18 December 2024
+/N190.001 failed to draw
+(2,751)   Variable !NEARPOS does not exist
+ In line 21 of PML function suidirdis
+	!dis = !pos1.distance(!nearpos)
+ Called from line 298 of PML function orixyeles.FINDTEXTSPACE
+	!xdis = !!suidirdis(!this.pos,!this.ori.xdir(),!pos)
+ Called from line 303 of PML function drawplane.PUTTEXT
+	!cornerposs = !this.allorixyeles[!goodindex].findtextspace(!text,!pos,!this.cheight,!this.planeShapes,!maxlen)
+ Called from line 872 of PML function planesystem.ASSIGNTEXTS
+			!tempshape = !gooddrawplane.puttext(!text,!pos,!this.realShapes,!this.dirobject.maxlen * 100)	$*no layers
+ Called from line 483 of PML function planesystem.ASSIGNDIMANDMLABEL
+	!this.assigntexts(!smalltexts.size(),!bigtexts)
+ Called from line 161 of PML function planesystem.PLANESYSTEM
+		!this.assignDimAndMlabel(!currentprogress,100)
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1732 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+16:02:38 18 December 2024
+/N190.001 failed to draw
+(2,869)   Error in conversion to world co-ordinates. Check for unset objects
+ In line 16 of PML function suidirdis
+	!nearpos = !line.near(!pos2)
+ Called from line 298 of PML function orixyeles.FINDTEXTSPACE
+	!xdis = !!suidirdis(!this.pos,!this.ori.xdir(),!pos)
+ Called from line 303 of PML function drawplane.PUTTEXT
+	!cornerposs = !this.allorixyeles[!goodindex].findtextspace(!text,!pos,!this.cheight,!this.planeShapes,!maxlen)
+ Called from line 872 of PML function planesystem.ASSIGNTEXTS
+			!tempshape = !gooddrawplane.puttext(!text,!pos,!this.realShapes,!this.dirobject.maxlen * 100)	$*no layers
+ Called from line 483 of PML function planesystem.ASSIGNDIMANDMLABEL
+	!this.assigntexts(!smalltexts.size(),!bigtexts)
+ Called from line 161 of PML function planesystem.PLANESYSTEM
+		!this.assignDimAndMlabel(!currentprogress,100)
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1732 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+15:59:23 18 December 2024
+/N190.001 failed to draw
+(2,869)   Error in conversion to world co-ordinates. Check for unset objects
+ In line 16 of PML function suidirdis
+	!nearpos = !line.near(!pos2)
+ Called from line 298 of PML function orixyeles.FINDTEXTSPACE
+	!xdis = !!suidirdis(!this.pos,!this.ori.xdir(),!pos)
+ Called from line 303 of PML function drawplane.PUTTEXT
+	!cornerposs = !this.allorixyeles[!goodindex].findtextspace(!text,!pos,!this.cheight,!this.planeShapes,!maxlen)
+ Called from line 872 of PML function planesystem.ASSIGNTEXTS
+			!tempshape = !gooddrawplane.puttext(!text,!pos,!this.realShapes,!this.dirobject.maxlen * 100)	$*no layers
+ Called from line 483 of PML function planesystem.ASSIGNDIMANDMLABEL
+	!this.assigntexts(!smalltexts.size(),!bigtexts)
+ Called from line 161 of PML function planesystem.PLANESYSTEM
+		!this.assignDimAndMlabel(!currentprogress,100)
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1732 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 931 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+14:21:18 18 December 2024
+SCLA =17592/105990 得不到材料,请检查它的 :itemcode
+SCLA =17592/105991 得不到材料,请检查它的 :itemcode
+
+14:19:41 18 December 2024
+SCLA =17517/15779 得不到材料,请检查它的 :itemcode
+SCLA =17517/15780 得不到材料,请检查它的 :itemcode
+
+14:09:35 18 December 2024
+SCTN =17535/4043 得不到材料,请检查它的 :itemcode
+PANE =17535/4046 得不到材料,请检查它的 :itemcode
+PFIT =17535/4055 得不到材料,请检查它的 :itemcode
+PFIT =17535/4057 得不到材料,请检查它的 :itemcode
+PFIT =17535/4059 得不到材料,请检查它的 :itemcode
+PFIT =17535/4061 得不到材料,请检查它的 :itemcode
+PFIT =17535/4063 得不到材料,请检查它的 :itemcode
+PFIT =17535/4065 得不到材料,请检查它的 :itemcode
+PFIT =17535/4067 得不到材料,请检查它的 :itemcode
+PFIT =17535/4069 得不到材料,请检查它的 :itemcode
+PFIT =17535/4071 得不到材料,请检查它的 :itemcode
+PFIT =17535/4073 得不到材料,请检查它的 :itemcode
+PFIT =17535/4075 得不到材料,请检查它的 :itemcode
+PFIT =17535/4077 得不到材料,请检查它的 :itemcode
+
+22:46:30 15 December 2024
+/Copy-of-S226.017 failed to draw
+(2,759)   Object does not have a member LAST
+ In line 1537 of PML function suisupport.GETDIMLINES
+         !pos1 = pos of $!this.attas.last() wrt/*
+ Called from line 1698 of PML function suisupport.DRAWWITHNEWWAY
+	!dimlines = !this.getdimlines()
+ Called from line 929 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+22:46:17 15 December 2024
+/Copy-of-S226.017 failed to draw
+(2,759)   Object does not have a member LATER
+ In line 1537 of PML function suisupport.GETDIMLINES
+         !pos1 = pos of $!this.attas.later() wrt/*
+ Called from line 1698 of PML function suisupport.DRAWWITHNEWWAY
+	!dimlines = !this.getdimlines()
+ Called from line 929 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+22:25:24 15 December 2024
+/Copy-of-S226.017 failed to draw
+(2,751)   Variable !DIR does not exist
+ In line 1647 of PML function suisupport.GETDIMLINES
+    !dimline = object dimline(!dir,!poss,5,!uniquepoints)
+ Called from line 1689 of PML function suisupport.DRAWWITHNEWWAY
+	!dimlines = !this.getdimlines()
+ Called from line 929 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+21:16:20 15 December 2024
+/Copy-of-S226.017 failed to draw
+(2,759)   Object does not have a member POSSTART
+ In line 3550 of PML function suisupport.TRYTOPUTOBJECTINTOONELINE
+	!pos1 = !object.posstart
+ Called from line 1 of Internal Command Internal Command
+CADCEVALBLCK !this.tryToPutObjectIntoOneLine(!tempObjects[!EvalIndex])
+ Called from line 3797 of PML function suisupport.GETDIROBJECTANDLINES
+	!tempObjects.evaluate(object block('!this.tryToPutObjectIntoOneLine(!tempObjects[!EvalIndex])'))
+ Called from line 868 of PML function suisupport.GETLINEDATA
+	!this.getDirObjectAndLines()
+ Called from line 196 of PML function suisupport.LOAD
+	if !this.getLineData().not() then
+ Called from line 912 of PML function suisupport.DRAW
+	!this.load()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+21:15:58 15 December 2024
+/Copy-of-S226.017 failed to draw
+(2,759)   Object does not have a member POSSTART
+ In line 3550 of PML function suisupport.TRYTOPUTOBJECTINTOONELINE
+	!pos1 = !object.posstart
+ Called from line 1 of Internal Command Internal Command
+CADCEVALBLCK !this.tryToPutObjectIntoOneLine(!tempObjects[!EvalIndex])
+ Called from line 3797 of PML function suisupport.GETDIROBJECTANDLINES
+	!tempObjects.evaluate(object block('!this.tryToPutObjectIntoOneLine(!tempObjects[!EvalIndex])'))
+ Called from line 868 of PML function suisupport.GETLINEDATA
+	!this.getDirObjectAndLines()
+ Called from line 196 of PML function suisupport.LOAD
+	if !this.getLineData().not() then
+ Called from line 912 of PML function suisupport.DRAW
+	!this.load()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:50:13 15 December 2024
+/Copy-of-N523.005 failed to draw
+(47,15)   CP: Syntax error
+ In line 46 of PML function supporthangmem.GETPOSS
+    elseif  ^^or !heleName.matchwild('*HELE/BF*') then
+ Called from line 30 of PML function supporthangmem.SUPPORTHANGMEM
+	!this.getPoss()
+ Called from line 3522 of PML function suisupport.GETHANGMEMS
+					!hangobject = object supportHangMem(!mem)
+ Called from line 2839 of PML function suisupport.GETTYPEDATA
+	!this.getHangMems()
+ Called from line 194 of PML function suisupport.LOAD
+	!this.getTypeData()
+ Called from line 912 of PML function suisupport.DRAW
+	!this.load()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+01:23:07 15 December 2024
+SCTN =17592/97949 得不到材料,请检查它的 :itemcode
+SCTN =17592/97950 得不到材料,请检查它的 :itemcode
+
+01:21:16 15 December 2024
+SCTN =17539/7334 得不到材料,请检查它的 :itemcode
+SCTN =17539/7335 得不到材料,请检查它的 :itemcode
+
+21:56:32 14 December 2024
+/S116.022 failed to draw
+(2,766)   This function does not return a result
+ In line 62 of PML function supporthangmem.GETPOSS
+		!poss.appendarray(!this.getheleposs())
+ Called from line 30 of PML function supporthangmem.SUPPORTHANGMEM
+	!this.getPoss()
+ Called from line 3513 of PML function suisupport.GETHANGMEMS
+					!hangobject = object supportHangMem(!mem)
+ Called from line 2830 of PML function suisupport.GETTYPEDATA
+	!this.getHangMems()
+ Called from line 194 of PML function suisupport.LOAD
+	!this.getTypeData()
+ Called from line 909 of PML function suisupport.DRAW
+	!this.load()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+21:55:21 14 December 2024
+/S116.022 failed to draw
+(2,766)   This function does not return a result
+ In line 62 of PML function supporthangmem.GETPOSS
+		!poss.appendarray(!this.getheleposs())
+ Called from line 30 of PML function supporthangmem.SUPPORTHANGMEM
+	!this.getPoss()
+ Called from line 3513 of PML function suisupport.GETHANGMEMS
+					!hangobject = object supportHangMem(!mem)
+ Called from line 2830 of PML function suisupport.GETTYPEDATA
+	!this.getHangMems()
+ Called from line 194 of PML function suisupport.LOAD
+	!this.getTypeData()
+ Called from line 909 of PML function suisupport.DRAW
+	!this.load()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+21:54:41 14 December 2024
+/S116.022 failed to draw
+(2,766)   This function does not return a result
+ In line 62 of PML function supporthangmem.GETPOSS
+		!poss.appendarray(!this.getheleposs())
+ Called from line 30 of PML function supporthangmem.SUPPORTHANGMEM
+	!this.getPoss()
+ Called from line 3513 of PML function suisupport.GETHANGMEMS
+					!hangobject = object supportHangMem(!mem)
+ Called from line 2830 of PML function suisupport.GETTYPEDATA
+	!this.getHangMems()
+ Called from line 194 of PML function suisupport.LOAD
+	!this.getTypeData()
+ Called from line 909 of PML function suisupport.DRAW
+	!this.load()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+14:47:34 13 December 2024
+/S502.004 failed to draw
+(99,532)  Undefined UDA or UDET name. An MDB with suitable definitions must be selected
+ In line 149 of PML function gettubespco
+   推枞
+ Called from line 813 of PML function pipeatta.GETATTAGEO
+				!nsAndSpref = !!gettubespco(!dia,!atta,!usecalvalue)
+ Called from line 120 of PML function pipeatta.GETATTAOBJECTS
+		!oneattaobjects = !this.getattageo(!atta)
+ Called from line 92 of PML function pipeatta.PIPEATTA
+	!this.getattaobjects()
+ Called from line 72 of PML function pipeatta.PIPEATTA
+	!this.pipeatta(!attas)
+ Called from line 3011 of PML function suisupport.ADDATTATOPARTOBJECTS
+		!pipeatta = object pipeatta(!attas,'supp')
+ Called from line 2924 of PML function suisupport.GETATTADATA
+	!this.addattatopartobjects()
+ Called from line 2814 of PML function suisupport.GETTYPEDATA
+	!this.getattaData()					$* atta data(attatubes attapoints)
+ Called from line 194 of PML function suisupport.LOAD
+	!this.getTypeData()
+ Called from line 909 of PML function suisupport.DRAW
+	!this.load()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+14:46:59 13 December 2024
+/S502.004 failed to draw
+(2,766)   This function does not return a result
+ In line 813 of PML function pipeatta.GETATTAGEO
+				!nsAndSpref = !!gettubespco(!dia,!atta,!usecalvalue)
+ Called from line 120 of PML function pipeatta.GETATTAOBJECTS
+		!oneattaobjects = !this.getattageo(!atta)
+ Called from line 92 of PML function pipeatta.PIPEATTA
+	!this.getattaobjects()
+ Called from line 72 of PML function pipeatta.PIPEATTA
+	!this.pipeatta(!attas)
+ Called from line 3011 of PML function suisupport.ADDATTATOPARTOBJECTS
+		!pipeatta = object pipeatta(!attas,'supp')
+ Called from line 2924 of PML function suisupport.GETATTADATA
+	!this.addattatopartobjects()
+ Called from line 2814 of PML function suisupport.GETTYPEDATA
+	!this.getattaData()					$* atta data(attatubes attapoints)
+ Called from line 194 of PML function suisupport.LOAD
+	!this.getTypeData()
+ Called from line 909 of PML function suisupport.DRAW
+	!this.load()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+14:46:22 13 December 2024
+/S502.004 failed to draw
+(2,766)   This function does not return a result
+ In line 813 of PML function pipeatta.GETATTAGEO
+				!nsAndSpref = !!gettubespco(!dia,!atta,!usecalvalue)
+ Called from line 120 of PML function pipeatta.GETATTAOBJECTS
+		!oneattaobjects = !this.getattageo(!atta)
+ Called from line 92 of PML function pipeatta.PIPEATTA
+	!this.getattaobjects()
+ Called from line 72 of PML function pipeatta.PIPEATTA
+	!this.pipeatta(!attas)
+ Called from line 3011 of PML function suisupport.ADDATTATOPARTOBJECTS
+		!pipeatta = object pipeatta(!attas,'supp')
+ Called from line 2924 of PML function suisupport.GETATTADATA
+	!this.addattatopartobjects()
+ Called from line 2814 of PML function suisupport.GETTYPEDATA
+	!this.getattaData()					$* atta data(attatubes attapoints)
+ Called from line 194 of PML function suisupport.LOAD
+	!this.getTypeData()
+ Called from line 909 of PML function suisupport.DRAW
+	!this.load()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+14:46:05 13 December 2024
+/S502.004 failed to draw
+(99,532)  Undefined UDA or UDET name. An MDB with suitable definitions must be selected
+ In line 149 of PML function gettubespco
+   推枞
+ Called from line 813 of PML function pipeatta.GETATTAGEO
+				!nsAndSpref = !!gettubespco(!dia,!atta,!usecalvalue)
+ Called from line 120 of PML function pipeatta.GETATTAOBJECTS
+		!oneattaobjects = !this.getattageo(!atta)
+ Called from line 92 of PML function pipeatta.PIPEATTA
+	!this.getattaobjects()
+ Called from line 72 of PML function pipeatta.PIPEATTA
+	!this.pipeatta(!attas)
+ Called from line 3011 of PML function suisupport.ADDATTATOPARTOBJECTS
+		!pipeatta = object pipeatta(!attas,'supp')
+ Called from line 2924 of PML function suisupport.GETATTADATA
+	!this.addattatopartobjects()
+ Called from line 2814 of PML function suisupport.GETTYPEDATA
+	!this.getattaData()					$* atta data(attatubes attapoints)
+ Called from line 194 of PML function suisupport.LOAD
+	!this.getTypeData()
+ Called from line 909 of PML function suisupport.DRAW
+	!this.load()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+14:45:48 13 December 2024
+/S502.004 failed to draw
+(99,532)  Undefined UDA or UDET name. An MDB with suitable definitions must be selected
+ In line 149 of PML function gettubespco
+   推枞
+ Called from line 813 of PML function pipeatta.GETATTAGEO
+				!nsAndSpref = !!gettubespco(!dia,!atta,!usecalvalue)
+ Called from line 120 of PML function pipeatta.GETATTAOBJECTS
+		!oneattaobjects = !this.getattageo(!atta)
+ Called from line 92 of PML function pipeatta.PIPEATTA
+	!this.getattaobjects()
+ Called from line 72 of PML function pipeatta.PIPEATTA
+	!this.pipeatta(!attas)
+ Called from line 3011 of PML function suisupport.ADDATTATOPARTOBJECTS
+		!pipeatta = object pipeatta(!attas,'supp')
+ Called from line 2924 of PML function suisupport.GETATTADATA
+	!this.addattatopartobjects()
+ Called from line 2814 of PML function suisupport.GETTYPEDATA
+	!this.getattaData()					$* atta data(attatubes attapoints)
+ Called from line 194 of PML function suisupport.LOAD
+	!this.getTypeData()
+ Called from line 909 of PML function suisupport.DRAW
+	!this.load()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+14:43:57 13 December 2024
+/S502.004 failed to draw
+(99,532)  Undefined UDA or UDET name. An MDB with suitable definitions must be selected
+ In line 149 of PML function gettubespco
+   推枞
+ Called from line 813 of PML function pipeatta.GETATTAGEO
+				!nsAndSpref = !!gettubespco(!dia,!atta,!usecalvalue)
+ Called from line 120 of PML function pipeatta.GETATTAOBJECTS
+		!oneattaobjects = !this.getattageo(!atta)
+ Called from line 92 of PML function pipeatta.PIPEATTA
+	!this.getattaobjects()
+ Called from line 72 of PML function pipeatta.PIPEATTA
+	!this.pipeatta(!attas)
+ Called from line 3011 of PML function suisupport.ADDATTATOPARTOBJECTS
+		!pipeatta = object pipeatta(!attas,'supp')
+ Called from line 2924 of PML function suisupport.GETATTADATA
+	!this.addattatopartobjects()
+ Called from line 2814 of PML function suisupport.GETTYPEDATA
+	!this.getattaData()					$* atta data(attatubes attapoints)
+ Called from line 194 of PML function suisupport.LOAD
+	!this.getTypeData()
+ Called from line 909 of PML function suisupport.DRAW
+	!this.load()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()

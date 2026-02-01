@@ -1,0 +1,538 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= February 6th 2024
+--[Function]:
+------------------------------------------
+
+--
+--<<Method>>:
+--<<Public method>>:
+--updatefiles(!input is any, !type is string)   							$*只需输入文件夹或文件夹数组或文件或文件数组 和 模型服务名称
+--updatefiles(!input is any , !http1 is string, !username1 is string, !password1 is string, !projectidOrName1 is string, !attIdOrName1 is string, !modelidOrName1 is string)	$*输入完整数据
+--
+--<<Private method>>:
+--getfileorpaths(!input is any) 											$*不管输入是什么，都变成文件路径
+--getpathfiles(!pathfile is file)   										$*把当个文件或文件夹变成文件路径
+--classjsonfiles()  														$*对文件进行分析，找出匹配的rvm att json
+--getusername(!username1 is string) 										$*用户名为空的话，用默认的
+--getpassword(!password1 is string) 										$*密码为空的话，用默认的
+--gethttp(!http1 is string) 												$*地址为空的话，用默认的
+--getprojectidOrName(!projectidOrName1 is string)   						$*项目的话，用默认的
+--getmodelidOrName(!modelidOrName1 is string)   							$*这个不能为空，如果找不到相应服务会创建新的
+--getattidOrName(!attidOrName1 is string)   								$*属性类型为空的话，用默认的
+--login(!obj is any)														$*登陆
+--inportnet() is boolean													$*加载接口文件
+--checkresult(!arr is array, !type is string) is string 					$*检查接口返回数据是否正常
+--getprojectattmodelid(!obj is any) is boolean  							$*接口返回项目、属性、模型服务数据
+--update(!obj is any)   													$*上传
+-------------------------------------
+
+
+define object updatefiles
+	member .fileorpaths is array
+
+	member .names is array
+	member .rvms is array
+	member .atts is array
+	member .jsons is array
+
+	member .username is string
+	member .password is string
+	member .http is string
+
+	member .token is string
+
+	member .projectidorname is string
+	member .modelidorname is string
+	member .attidorname is string
+
+	member .projectid is string
+	member .attid is string
+	member .modelid is string
+	member .modelServerName is string
+	member .impModel is string
+endobject
+define method .updatefiles(!input is any, !type is string) $*只需输入文件夹或文件夹数组或文件或文件数组 和 模型服务名称
+	--!modelidorname1 = 'MBD-' + !type
+	!modelidorname1 = !type
+	!this.updatefiles(!input,'','','','','',!modelidOrName1)
+endmethod
+define method .updatefiles(!input is any , !http1 is string, !username1 is string, !password1 is string, !projectidOrName1 is string, !attIdOrName1 is string, !modelidOrName1 is string) $*输入完整数据
+	!this.getfileorpaths(!input)
+
+	!this.classjsonfiles()
+	--!!4(!this.names,!this.rvms,!this.atts,!this.jsons)
+	!this.getusername(!username1)
+	!this.getpassword(!password1)
+	!this.gethttp(!http1)
+
+	!this.getprojectidOrName(!projectidOrName1)
+	!this.getmodelidOrName(!modelidOrName1)
+	!this.getattidOrName(!attIdOrName1)
+
+	if !this.inportnet().not() then
+		$p 导入接口失败
+		return
+	endif
+	using namespace 'UpFileToPlatform.Interface'
+	!obj = object ApiRequest()
+
+	!maxtimes = 2
+	!maxtimes = 1
+	do !times from 1 to !maxtimes
+		!this.login(!obj)
+
+		if !this.token.unset() then
+			return
+		endif
+
+		if !this.getprojectattmodelid(!obj).not() then
+			--$p 获取项目或模型服务失败
+			return
+		endif
+		!this.update(!obj)
+	enddo
+endmethod
+
+define method .getfileorpaths(!input is any) $*不管输入是什么，都变成文件路径
+
+	!this.fileorpaths = array()
+
+	!temparr = array()
+	if !input.objecttype() eq 'ARRAY' then
+		!temparr = !input
+	else
+		!temparr.append(!input)
+	endif
+
+	!this.fileorpaths = array()
+	do !one values !temparr
+		if !one.objecttype() eq 'FILE' then
+			!pathfile = !one
+		else
+			--q var !one
+			!pathfile = object file(!one)
+		endif
+
+		if !pathfile.exists().not() then
+			$p $!one does not exists
+			skip
+		endif
+		!this.getpathfiles(!pathfile)
+	enddo
+endmethod
+
+define method .getpathfiles(!pathfile is file) $*把当个文件或文件夹变成文件路径
+	if !pathfile.type() eq 'FILE' then
+		!this.fileorpaths.append(!pathfile.fullname())
+	else
+		!files = !pathfile.files()
+		!this.fileorpaths.appendarray(!files)
+		!dirs = !pathfile.subdirs()
+		do !dir values !dirs
+			!this.getpathfiles(!dir)
+		enddo
+	endif
+endmethod
+
+define method .classjsonfiles() $*对文件进行分析，找出匹配的rvm att json
+	!files = !this.fileorpaths
+	!names = array()
+	!itematts = array()
+	!itemrvms = array()
+	!itemjsons = array()
+	do !file values !files
+		if !file.objecttype() eq 'FILE' then
+			!path = !file.fullname()
+		else
+			!path = !file
+		endif
+		if !path.match('\') ne 0 then
+			!name = !path.part(-1,'\')
+		else
+			!name = !path.part(-1,'/')
+		endif
+		!parts = !name.split('.')
+		--q var !parts
+		!afterpart = !parts.last().upcase()
+		!name = !name.substring(1,!name.length() - !afterpart.length() - 1)
+		--!name = !name.before('.' & !afterpart)
+		--!afterpart = !name.after('.').upcase()
+		--!name = !name.before('.')
+
+		!index = !names.findfirst(!name)
+		if !index.unset() then
+			!index = !names.size() + 1
+			if !afterpart inset('ATT','RVM','JSON') then
+				!names[!index] = !name
+			else
+				skip
+			endif
+		endif
+		if !afterpart eq 'ATT' then
+			!itematts[!index] = !path
+		elseif !afterpart eq 'RVM' then
+			!itemrvms[!index] = !path
+		elseif !afterpart eq 'JSON' then
+			!itemjsons[!index] = !path
+		endif
+	enddo
+
+	!this.names = !names
+	!this.rvms = !itemrvms
+	!this.atts = !itematts
+	!this.jsons = !itemjsons
+endmethod
+
+define method .getusername(!username1 is string) $*用户名为空的话，用默认的
+	if !username1.unset() or !username1 eq '' then
+		!this.username = 'ccc'
+	else
+		!this.username = !username1
+	endif
+endmethod
+define method .getpassword(!password1 is string) $*密码为空的话，用默认的
+	if !password1.unset() or !password1 eq '' then
+		!this.password = 'Admin123#'
+	else
+		!this.password = !password1
+	endif
+endmethod
+define method .gethttp(!http1 is string) $*地址为空的话，用默认的
+	if !http1.unset() or !http1 eq '' then
+		!this.http = 'http://10.30.200.43'
+	else
+		!this.http = !http1
+	endif
+endmethod
+define method .getprojectidOrName(!projectidOrName1 is string) $*项目的话，用默认的
+	if !projectidOrName1.unset() or !projectidorName1 eq '' then
+		!this.projectidOrName = '示例项目'
+	else
+		!this.projectidOrName = !projectidOrName1
+	endif
+endmethod
+define method .getmodelidOrName(!modelidOrName1 is string) $*这个不能为空，如果找不到相应服务会创建新的
+	if !modelidOrName1.unset() or !modelidOrName1 eq '' then
+		!this.modelidOrName = 'MBD-MODEL'
+	else
+		!this.modelidOrName = !modelidOrName1
+	endif
+endmethod
+define method .getattidOrName(!attidOrName1 is string) $*属性类型为空的话，用默认的
+	if !attidOrName1.unset() or !attidOrName1 eq '' then
+		--1￥获取成功￥
+		--1455452672595419138￥PDMS-长属性名 (att)
+		--1455745202897641473￥PDMS-短属性名 (att)
+		--1648981779037097985￥3DMax (max)
+		--!attidOrName = 'PDMS-长属性名 (att)'
+		!this.attidOrName = 'PDMS-长属性名 (type)'
+	else
+		!this.attidOrName = !attidOrName1
+	endif
+endmethod
+
+define method .login(!obj is any) $*登陆
+	!resultstring = !obj.Login( !this.username,!this.password,!this.http)
+	handle any
+		$p resultstring error
+		return
+	endhandle
+
+	!list = !resultstring.Split('￥')
+	if !list[1] eq '1' then
+		!this.token = !list[3]
+	else
+		$p Fail to get token
+		$p $!list[3]
+	endif
+endmethod
+
+define method .inportnet() is boolean $*加载接口文件
+	var !banner banner
+	!path = !!pml.Getpathname( 'jsontotplant.pmlfnc' ).Before( 'jsontotplant.pmlfnc' ).Replace( '\/','\' ).Replace( '/','\' ).Trim()		$* publishtest possible folder 1
+	!tryfile = object file(!path)
+	!exists = !tryfile.exists()
+	handle any
+		!path = !!pml.Getpathname( 'pdmstorvmattfortplant.pmlfrm' ).Before( 'pdmstorvmattfortplant.pmlfrm' ).Replace( '\/','\' ).Replace( '/','\' ).Trim()		$* publishtest possible folder 2
+	endhandle
+
+	if !banner.match('12.1') ne 0 then
+		!path = !path + 'PublishTest\pdms12.1_SP4\UpFileToPlatform'
+	elseif !banner.match('12.0') ne 0 then
+		!path = !path + 'PublishTest\pdms12.0_SP4\UpFileToPlatform'
+	elseif !banner.match('PDMS') ne 0 then
+		!path = !path + 'PublishTest\pdms12.0_SP4\UpFileToPlatform'
+	else
+		!path = !path + 'PublishTest\E3D\UpFileToPlatform'
+	endif
+
+	import '$!path'
+	handle any
+		--q var !!error
+		if !!error.text.matchwild('*already loaded*').not() then
+			$p Failed to Import $!path
+			return false
+		endif
+	endhandle
+	return true
+endmethod
+
+
+define method .checkresult(!arr is array, !type is string) is string $*检查接口返回数据是否正常
+	if (!arr.size() gt 0) then
+		!list = !arr[1].Split('￥')
+		if ( !list[1] eq '0' ) then
+			!info = '获取' & !type & '失败，' + !list[3]
+			$p $!info
+			--!!alert.warning(!list[3])
+			return ''
+		endif
+	else
+		!info = '获取' & !type & '失败'
+		$p $!info
+		return ''
+	endif
+
+	if !type eq '项目数据' then
+		!idorname = !this.projectidorname
+	elseif !type eq '属性类别' then
+		!idorname = !this.attidorname
+	elseif !type eq '模型数据' then
+		!idorname = !this.modelidorname
+	endif
+
+	!find = false
+	Do !index from 2 to !arr.size()
+		!dataList = !arr[!index].Split('￥')
+		!tempid = !dataList[1]
+		!tempName = !dataList[2]
+		if !tempid eq !idorname or !tempname eq !idorname then
+			!id = !tempid
+			!find = true
+			break
+		endif
+		--q '项目ID：$!dataList[1]，项目名称：$!dataList[2]，项目代码：$!dataList[3]'
+	enddo
+
+	if !find.not() then
+		--q var !type
+		--!info = !type & '的ID不存在' & !idorname
+		--$p $!info
+		return ''
+	endif
+
+	return !id
+endmethod
+define method .getprojectattmodelid(!obj is any) is boolean $*接口返回项目、属性、模型服务数据
+	!projectarr = !obj.GetProject( !this.token,!this.http)
+	!this.projectid = !this.checkresult(!projectarr,'项目数据')
+	if !this.projectid eq '' then
+		$p 获取项目失败
+		return false
+	endif
+
+	!attarr = !obj.GetAttData( !this.TOKEN, !this.http )
+	!this.attid = !this.checkresult(!attarr,'属性类别')
+	if !this.attid eq '' then
+		$p 获取属性失败
+		return false
+	endif
+
+	$(
+	!modelarr = !obj.GetModelServer( !this.token,!this.projectid,!this.http)
+	--q var !modelarr
+
+	!this.modelid = !this.checkresult(!modelarr,'模型数据')
+	--上传操作， 0删除替换， 1覆盖更新，2追加更新
+	if !this.modelid eq '' then
+		--这里应该是2追加更新，但是1才能用
+		!this.modelServerName = !this.modelidOrName
+		!this.impModel = '2'	$*追加更新	河北用这个可以
+		--!this.impModel = '1'	$*替换更新
+	else
+		--这里应该是1覆盖更新，但是2才能用
+		!this.modelServerName = ''
+		!this.impModel = '1'
+		--!this.impModel = '2'
+	endif
+	$)
+	return true
+endmethod
+define method .update(!obj is any) $*上传
+	if !this.names.unset() then
+		$p 没有可上传的文件
+		!!alert.warning('没有可上传的文件')
+		return
+	endif
+	!rvms = !this.rvms.compress()
+	!atts = !this.atts.compress()
+	!jsons = !this.jsons.compress()
+
+
+
+	if !this.modelid.unset() or !this.modelid eq '' then
+		!modelarr = !obj.GetModelServer( !this.token,!this.projectid,!this.http)
+		!this.modelid = !this.checkresult(!modelarr,'模型数据')
+	endif
+
+	if !this.modelid eq '' then
+		--这里没有模型代码时，应该是选2追加更新，但是实际上1才能用，以前是用2的
+		!this.modelServerName = !this.modelidOrName
+		--!this.impModel = '2'	$*追加更新	河北用这个可以
+		!this.impModel = '1'	$*替换更新
+		--!this.impModel = '4'
+	else
+		--这里有模型代码时,应该是选1覆盖更新，但是实际上2才能用，以前是用1的
+		!this.modelServerName = ''
+		--!this.impModel = '1'
+		!this.impModel = '3'
+		--!this.impModel = '2'
+	endif
+
+	$(
+	完全替换(保留ID)：重新上传模型，保留原ID。
+	完全替换：重新上传模型，不保留原ID。
+	追加：追加新的模型，节点名称相同则自动重命名。
+	自动合并：以叶子节点的方式融合追加，叶子节点相同则替换。
+	节点替换：根据选择的节点名称，查找并替换对应的节点。
+	自动替换：自动识别模型的节点名称，执行节点替换。
+	注：完全替换(保留ID)、自动合并、节点替换、自动替换模式都会最大程度上保留原ID。
+
+	1:完全替换（保留ID）
+	0:完全替换
+	2:追加
+	3:自动合并
+	4:节点替换
+	5:自动替换
+	$)
+
+
+
+	$p
+	$p rvm:
+	q var !rvms
+	$p att:
+	q var !atts
+	$p json:
+	q var !jsons
+	$p project id: $!this.projectid
+	$p model id:   $!this.modelid
+	$p model server name: $!this.modelservername
+	$p impModel: $!this.impmodel
+	$p http: $!this.http
+	$p token: $!this.token
+	$p att id: $!this.attid
+
+	--return
+	!result = !obj.UploadMultiFiles(!rvms,!atts, !this.projectid,!this.modelid, !this.modelServerName, !this.impModel,!this.http, !this.token, !this.attid,!jsons)
+	!list = !result.Split('￥')
+	if ( !list[1] eq '1' ) then
+		!info = '发布成功 ' + !list[3]
+		$p $!info
+	elseif (!list[1] eq '0') then
+		if !list[3].trim() eq '' then
+			!info = '发布失败 没有返回其它信息'
+		else
+			!info = !list[3]
+		endif
+		$p $!info
+		!!alert.warning(!info)
+		return
+	endif
+
+	!!alert.message('发布成功')
+
+	return
+	---old way
+	do !x indices !this.names
+		if defined(!this.rvms[!x]) then
+			!rvmpath = !this.rvms[!x]
+		else
+			!rvmpath = ''
+		endif
+		if defined(!this.atts[!x]) then
+			!attpath = !this.atts[!x]
+		else
+			!attpath = ''
+		endif
+		if defined(!this.jsons[!x]) then
+			!jsonpath = !this.jsons[!x]
+		else
+			!jsonpath = ''
+		endif
+
+
+		if !this.modelid.unset() or !this.modelid eq '' then
+			!modelarr = !obj.GetModelServer( !this.token,!this.projectid,!this.http)
+			!this.modelid = !this.checkresult(!modelarr,'模型数据')
+		endif
+
+		if !this.modelid eq '' then
+			--这里没有模型代码时，应该是选2追加更新，但是实际上1才能用，以前是用2的
+			!this.modelServerName = !this.modelidOrName
+			--!this.impModel = '2'	$*追加更新	河北用这个可以
+			!this.impModel = '1'	$*替换更新
+			--!this.impModel = '4'
+		else
+			--这里有模型代码时,应该是选1覆盖更新，但是实际上2才能用，以前是用1的
+			!this.modelServerName = ''
+			--!this.impModel = '1'
+			!this.impModel = '3'
+			--!this.impModel = '2'
+		endif
+
+		$(
+		完全替换(保留ID)：重新上传模型，保留原ID。
+		完全替换：重新上传模型，不保留原ID。
+		追加：追加新的模型，节点名称相同则自动重命名。
+		自动合并：以叶子节点的方式融合追加，叶子节点相同则替换。
+		节点替换：根据选择的节点名称，查找并替换对应的节点。
+		自动替换：自动识别模型的节点名称，执行节点替换。
+		注：完全替换(保留ID)、自动合并、节点替换、自动替换模式都会最大程度上保留原ID。
+
+		1:完全替换（保留ID）
+		0:完全替换
+		2:追加
+		3:自动合并
+		4:节点替换
+		5:自动替换
+		$)
+
+
+
+		$p
+		$p $!x
+		$p rvm: $!rvmpath
+		$p att: $!attpath
+		$p project id: $!this.projectid
+		$p model id:   $!this.modelid
+		$p model server name: $!this.modelservername
+		$p impModel: $!this.impmodel
+		$p http: $!this.http
+		$p token: $!this.token
+		$p att id: $!this.attid
+		$p json path: $!jsonpath
+		!result = !obj.UpModelFile(!rvmPath,!attpath, !this.projectid,!this.modelid, !this.modelServerName, !this.impModel,!this.http, !this.token, !this.attid,!jsonpath)
+		!list = !result.Split('￥')
+		if ( !list[1] eq '1' ) then
+			!info = '发布成功 ' + !list[3]
+			$p $!info
+			!this.names[!x].delete()
+		elseif (!list[1] eq '0') then
+			if !list[3].trim() eq '' then
+				!info = '发布失败 没有返回其它信息'
+			else
+				!info = !list[3]
+			endif
+			$p $!info
+			!!alert.warning(!info)
+			return
+		endif
+	enddo
+	!!alert.message('发布成功')
+endmethod

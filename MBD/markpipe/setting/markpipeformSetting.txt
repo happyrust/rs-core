@@ -1,0 +1,12 @@
+﻿colcombobox:red
+enhancered:TRUE
+cheightbili:0.3
+autocheight:true
+autocheightbili:0.5
+sepSmallDim:true
+ignoreline:true
+considerprenextdir:true
+lookangle:0
+plusstringcheightbili:0.6
+generatejson:false
+filepath:D:\MBD\EM4PIPE\

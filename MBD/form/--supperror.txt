@@ -1,0 +1,1367 @@
+﻿
+14:43:05 13 December 2024
+/S502.004 failed to draw
+(99,532)  Undefined UDA or UDET name. An MDB with suitable definitions must be selected
+ In line 149 of PML function gettubespco
+   推枞
+ Called from line 813 of PML function pipeatta.GETATTAGEO
+				!nsAndSpref = !!gettubespco(!dia,!atta,!usecalvalue)
+ Called from line 120 of PML function pipeatta.GETATTAOBJECTS
+		!oneattaobjects = !this.getattageo(!atta)
+ Called from line 92 of PML function pipeatta.PIPEATTA
+	!this.getattaobjects()
+ Called from line 72 of PML function pipeatta.PIPEATTA
+	!this.pipeatta(!attas)
+ Called from line 3011 of PML function suisupport.ADDATTATOPARTOBJECTS
+		!pipeatta = object pipeatta(!attas,'supp')
+ Called from line 2924 of PML function suisupport.GETATTADATA
+	!this.addattatopartobjects()
+ Called from line 2814 of PML function suisupport.GETTYPEDATA
+	!this.getattaData()					$* atta data(attatubes attapoints)
+ Called from line 194 of PML function suisupport.LOAD
+	!this.getTypeData()
+ Called from line 909 of PML function suisupport.DRAW
+	!this.load()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:11:45 11 December 2024
+SCTN =17489/55263 得不到材料,请检查它的 :itemcode
+PCLA =17489/55266 得不到材料,请检查它的 :itemcode
+
+10:11:57 10 December 2024
+/S103.026 failed to draw
+(2,752)   Array element 2 does not exist
+ In line 330 of PML function suisupport.GETMATERIAL
+        !xinghao = !spAllLength[1].string() + 'x' + !spAllLength[2].string() + 'x' + !suppmaterial.ns
+ Called from line 201 of PML function suisupport.LOAD
+	!this.getmaterial()
+ Called from line 889 of PML function suisupport.DRAW
+	!this.load()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+14:09:53 5 December 2024
+/D303.872-22 failed to draw
+(2,201)   Element HROD 1 of HANGER /D303.872/HANG-01 does not have attribute APOS
+ In line 19 of PML function supporthangmem.SUPPORTHANGMEM
+	!this.posstart = apos of $!mem wrt/*
+ Called from line 3493 of PML function suisupport.GETHANGMEMS
+					!hangobject = object supportHangMem(!mem)
+ Called from line 2810 of PML function suisupport.GETTYPEDATA
+	!this.getHangMems()
+ Called from line 194 of PML function suisupport.LOAD
+	!this.getTypeData()
+ Called from line 889 of PML function suisupport.DRAW
+	!this.load()
+ Called from line 731 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+10:15:41 3 December 2024
+SCTN =17592/77918 得不到材料,请检查它的 :itemcode
+PANE =17592/77885 得不到材料,请检查它的 :itemcode
+
+10:07:54 3 December 2024
+SCTN =17592/77918 得不到材料,请检查它的 :itemcode
+PANE =17592/77885 得不到材料,请检查它的 :itemcode
+PFIT =17592/77894 得不到材料,请检查它的 :itemcode
+PFIT =17592/77896 得不到材料,请检查它的 :itemcode
+PFIT =17592/77898 得不到材料,请检查它的 :itemcode
+PFIT =17592/77900 得不到材料,请检查它的 :itemcode
+PFIT =17592/77902 得不到材料,请检查它的 :itemcode
+PFIT =17592/77904 得不到材料,请检查它的 :itemcode
+PFIT =17592/77906 得不到材料,请检查它的 :itemcode
+PFIT =17592/77908 得不到材料,请检查它的 :itemcode
+PFIT =17592/77910 得不到材料,请检查它的 :itemcode
+PFIT =17592/77912 得不到材料,请检查它的 :itemcode
+PFIT =17592/77914 得不到材料,请检查它的 :itemcode
+PFIT =17592/77916 得不到材料,请检查它的 :itemcode
+
+09:45:33 3 December 2024
+SCTN =17592/77918 得不到材料,请检查它的 :itemcode
+PANE =17592/77885 得不到材料,请检查它的 :itemcode
+PFIT =17592/77894 得不到材料,请检查它的 :itemcode
+PFIT =17592/77896 得不到材料,请检查它的 :itemcode
+PFIT =17592/77898 得不到材料,请检查它的 :itemcode
+PFIT =17592/77900 得不到材料,请检查它的 :itemcode
+PFIT =17592/77902 得不到材料,请检查它的 :itemcode
+PFIT =17592/77904 得不到材料,请检查它的 :itemcode
+PFIT =17592/77906 得不到材料,请检查它的 :itemcode
+PFIT =17592/77908 得不到材料,请检查它的 :itemcode
+PFIT =17592/77910 得不到材料,请检查它的 :itemcode
+PFIT =17592/77912 得不到材料,请检查它的 :itemcode
+PFIT =17592/77914 得不到材料,请检查它的 :itemcode
+PFIT =17592/77916 得不到材料,请检查它的 :itemcode
+
+09:39:20 3 December 2024
+SCTN =17535/4043 得不到材料,请检查它的 :itemcode
+PANE =17535/4046 得不到材料,请检查它的 :itemcode
+PFIT =17535/4055 得不到材料,请检查它的 :itemcode
+PFIT =17535/4057 得不到材料,请检查它的 :itemcode
+PFIT =17535/4059 得不到材料,请检查它的 :itemcode
+PFIT =17535/4061 得不到材料,请检查它的 :itemcode
+PFIT =17535/4063 得不到材料,请检查它的 :itemcode
+PFIT =17535/4065 得不到材料,请检查它的 :itemcode
+PFIT =17535/4067 得不到材料,请检查它的 :itemcode
+PFIT =17535/4069 得不到材料,请检查它的 :itemcode
+PFIT =17535/4071 得不到材料,请检查它的 :itemcode
+PFIT =17535/4073 得不到材料,请检查它的 :itemcode
+PFIT =17535/4075 得不到材料,请检查它的 :itemcode
+PFIT =17535/4077 得不到材料,请检查它的 :itemcode
+
+09:25:33 3 December 2024
+PANE =25702/8355 得不到材料,请检查它的 :itemcode
+PANE =25702/8373 得不到材料,请检查它的 :itemcode
+PANE =25702/8367 得不到材料,请检查它的 :itemcode
+PANE =25702/8379 得不到材料,请检查它的 :itemcode
+
+09:16:50 3 December 2024
+PANE =25702/8355 得不到材料,请检查它的 :itemcode
+PANE =25702/8373 得不到材料,请检查它的 :itemcode
+PANE =25702/8367 得不到材料,请检查它的 :itemcode
+PANE =25702/8379 得不到材料,请检查它的 :itemcode
+
+09:14:57 3 December 2024
+PANE =25702/8355 得不到材料,请检查它的 :itemcode
+PANE =25702/8373 得不到材料,请检查它的 :itemcode
+PANE =25702/8367 得不到材料,请检查它的 :itemcode
+PANE =25702/8379 得不到材料,请检查它的 :itemcode
+
+21:23:27 29 November 2024
+GENSEC =17408/263346 得不到材料,请检查它的 :itemcode
+GENSEC =17408/263355 得不到材料,请检查它的 :itemcode
+GENSEC =17408/263364 得不到材料,请检查它的 :itemcode
+GENSEC =17408/263373 得不到材料,请检查它的 :itemcode
+ANCI /1SD07-MSUP-E0057.1 得不到材料,请检查它的 :itemcode
+ANCI /1SD07-MSUP-E0057.2 得不到材料,请检查它的 :itemcode
+ANCI /1SD07-MSUP-E0057.3 得不到材料,请检查它的 :itemcode
+ANCI /1SD07-MSUP-E0057.4 得不到材料,请检查它的 :itemcode
+
+15:37:24 21 November 2024
+/D303.872-22 failed to draw
+(2,201)   Element HROD 1 of HANGER /D303.872/HANG-01 does not have attribute APOS
+ In line 19 of PML function supporthangmem.SUPPORTHANGMEM
+	!this.posstart = apos of $!mem wrt/*
+ Called from line 3475 of PML function suisupport.GETHANGMEMS
+					!hangobject = object supportHangMem(!mem)
+ Called from line 2792 of PML function suisupport.GETTYPEDATA
+	!this.getHangMems()
+ Called from line 194 of PML function suisupport.LOAD
+	!this.getTypeData()
+ Called from line 871 of PML function suisupport.DRAW
+	!this.load()
+ Called from line 727 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:41:52 13 November 2024
+/K270.803 failed to draw
+(2,759)   Object does not have a member ISINSTPIPE
+ In line 1420 of PML function suisupport.GETTEXTINDEXS
+        if  !this.isinstpipe.not() then
+ Called from line 1648 of PML function suisupport.DRAWWITHNEWWAY
+	!textindexs = !this.gettextindexs(!partobjects)
+ Called from line 887 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 727 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:38:43 13 November 2024
+/K270.803 failed to draw
+(2,759)   Object does not have a member ISINSTPIPE
+ In line 1420 of PML function suisupport.GETTEXTINDEXS
+        if  !this.isinstpipe.not() then
+ Called from line 1648 of PML function suisupport.DRAWWITHNEWWAY
+	!textindexs = !this.gettextindexs(!partobjects)
+ Called from line 887 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 727 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:38:08 13 November 2024
+/K270.803 failed to draw
+(2,759)   Object does not have a member ISINSTPIPE
+ In line 1419 of PML function suisupport.GETTEXTINDEXS
+        if  !this.isinstpipe.not() then
+ Called from line 1647 of PML function suisupport.DRAWWITHNEWWAY
+	!textindexs = !this.gettextindexs(!partobjects)
+ Called from line 887 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 727 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:37:15 13 November 2024
+/K270.803 failed to draw
+(2,759)   Object does not have a member ISINSTPIPE
+ In line 1419 of PML function suisupport.GETTEXTINDEXS
+        if  !this.isinstpipe.not() then
+ Called from line 1647 of PML function suisupport.DRAWWITHNEWWAY
+	!textindexs = !this.gettextindexs(!partobjects)
+ Called from line 887 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 727 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+17:03:14 13 November 2024
+PANE =17497/13621 得不到材料,请检查它的 :itemcode
+PANE =17497/13629 得不到材料,请检查它的 :itemcode
+PANE =17497/13635 得不到材料,请检查它的 :itemcode
+PANE =17497/13645 得不到材料,请检查它的 :itemcode
+PANE =17497/13651 得不到材料,请检查它的 :itemcode
+FITT =17497/13628 得不到材料,请检查它的 :itemcode
+FITT =17497/13642 得不到材料,请检查它的 :itemcode
+FITT =17497/13644 得不到材料,请检查它的 :itemcode
+FITT =17497/13658 得不到材料,请检查它的 :itemcode
+
+17:01:15 13 November 2024
+SCTN =18013/12132 得不到材料,请检查它的 :itemcode
+SCTN =18013/12133 得不到材料,请检查它的 :itemcode
+SCTN =18013/12134 得不到材料,请检查它的 :itemcode
+SCTN =18013/12135 得不到材料,请检查它的 :itemcode
+
+16:31:47 30 October 2024
+SCTN =17592/53752 得不到材料,请检查它的 :itemcode
+
+16:31:12 30 October 2024
+SCTN =17592/53752 得不到材料,请检查它的 :itemcode
+PCLA =17592/53748 得不到材料,请检查它的 :itemcode
+PCLA =17592/53749 得不到材料,请检查它的 :itemcode
+SCTN =17592/53752 得不到材料,请检查它的 :itemcode
+PCLA =17592/53748 得不到材料,请检查它的 :itemcode
+PCLA =17592/53749 得不到材料,请检查它的 :itemcode
+SCTN =17592/53752 得不到材料,请检查它的 :itemcode
+
+10:36:23 30 October 2024
+SCTN =17592/53752 得不到材料,请检查它的 :itemcode
+PCLA =17592/53748 得不到材料,请检查它的 :itemcode
+PCLA =17592/53749 得不到材料,请检查它的 :itemcode
+SCTN =17592/53752 得不到材料,请检查它的 :itemcode
+PCLA =17592/53748 得不到材料,请检查它的 :itemcode
+PCLA =17592/53749 得不到材料,请检查它的 :itemcode
+SCTN =17592/53752 得不到材料,请检查它的 :itemcode
+
+09:39:47 30 October 2024
+SCTN =17592/53752 得不到材料,请检查它的 :itemcode
+PCLA =17592/53748 得不到材料,请检查它的 :itemcode
+PCLA =17592/53749 得不到材料,请检查它的 :itemcode
+
+16:17:51 24 October 2024
+PANE =17510/60749 得不到材料,请检查它的 :itemcode
+PANE =17510/60755 得不到材料,请检查它的 :itemcode
+PANE =17510/60761 得不到材料,请检查它的 :itemcode
+PANE =17510/60767 得不到材料,请检查它的 :itemcode
+
+16:16:43 24 October 2024
+PANE =17510/60749 得不到材料,请检查它的 :itemcode
+PANE =17510/60755 得不到材料,请检查它的 :itemcode
+PANE =17510/60761 得不到材料,请检查它的 :itemcode
+PANE =17510/60767 得不到材料,请检查它的 :itemcode
+
+15:57:40 24 October 2024
+HELE =17510/61275 得不到材料,请检查它的 :itemcode
+HELE =17510/61277 得不到材料,请检查它的 :itemcode
+PCLA =17510/61273 得不到材料,请检查它的 :itemcode
+
+15:31:37 24 October 2024
+/Copy-of-R409.020 failed to draw
+(46,99)   PML: HANDLE (line 122) has no matching ENDHANDLE
+ In line 123 of PML function manysort.MOVEELEAFTER
+        handle any
+ Called from line 63 of PML function manysort.SORTORDER2
+			!level2 = !this.moveeleafter(!ele2,1,!x.string())
+ Called from line 22 of PML function manysort.MANYSORT
+	!this.sortorder2()
+ Called from line 12 of PML function manysort
+	!manysort = object manysort(!allsortarrs)
+ Called from line 338 of PML function planesystem.SORTDIMLINEARR
+	!indices = !!manysort(!allarrs)
+ Called from line 277 of PML function planesystem.SORTDIMLINEACCORDINGINTERPOINTS
+		!newlinearr = !this.sortdimlinearr(!linearr)
+ Called from line 235 of PML function planesystem.SORTDIMLINES
+	!this.dimlines = !this.sortdimlineaccordinginterpoints(!this.dimlines)
+ Called from line 538 of PML function planesystem.ASSIGNDIMLINESNEW
+	!this.sortdimlines()	$*sort dimline according to number of inter points (and class)
+ Called from line 477 of PML function planesystem.ASSIGNDIMANDMLABEL
+	!this.assignDimlinesnew()
+ Called from line 160 of PML function planesystem.PLANESYSTEM
+		!this.assignDimAndMlabel(!currentprogress,100)
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1646 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 883 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 727 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+15:30:04 24 October 2024
+/Copy-of-R409.020 failed to draw
+(46,99)   PML: HANDLE (line 122) has no matching ENDHANDLE
+ In line 123 of PML function manysort.MOVEELEAFTER
+        handle any
+ Called from line 63 of PML function manysort.SORTORDER2
+			!level2 = !this.moveeleafter(!ele2,1,!x.string())
+ Called from line 22 of PML function manysort.MANYSORT
+	!this.sortorder2()
+ Called from line 12 of PML function manysort
+	!manysort = object manysort(!allsortarrs)
+ Called from line 338 of PML function planesystem.SORTDIMLINEARR
+	!indices = !!manysort(!allarrs)
+ Called from line 277 of PML function planesystem.SORTDIMLINEACCORDINGINTERPOINTS
+		!newlinearr = !this.sortdimlinearr(!linearr)
+ Called from line 235 of PML function planesystem.SORTDIMLINES
+	!this.dimlines = !this.sortdimlineaccordinginterpoints(!this.dimlines)
+ Called from line 538 of PML function planesystem.ASSIGNDIMLINESNEW
+	!this.sortdimlines()	$*sort dimline according to number of inter points (and class)
+ Called from line 477 of PML function planesystem.ASSIGNDIMANDMLABEL
+	!this.assignDimlinesnew()
+ Called from line 160 of PML function planesystem.PLANESYSTEM
+		!this.assignDimAndMlabel(!currentprogress,100)
+ Called from line 79 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!inputlookdir)
+ Called from line 75 of PML function planesystem.PLANESYSTEM
+	!this.planesystem(!objects,!connections,!textindexs,!cheight,!dimlines,!inputlookdir)
+ Called from line 1646 of PML function suisupport.DRAWWITHNEWWAY
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+ Called from line 883 of PML function suisupport.DRAW
+		!this.drawwithnewway()
+ Called from line 727 of PML function marksuppform.DRAWALL
+		!tempboolean = !this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+	!this.getattaData()					$* atta data(attatubes attapoints)
+ Called from line 512 of PML function suisupport.GETLINEDATA
+	!this.getTypeData()
+ Called from line 150 of PML function suisupport.SUISUPPORT
+	if !this.getLineData().not() then
+ Called from line 314 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+08:57:47 1 December 2023
+/K270.031 对象化失败
+(2,759)   Object does not have a member PIPEATTAS
+ In line 1425 of PML function suisupport.ADDATTATOPARTOBJECTS
+		!this.pipeattas.append(!pipeatta)
+ Called from line 1343 of PML function suisupport.GETATTADATA
+	!this.addattatopartobjects()
+ Called from line 1327 of PML function suisupport.GETTYPEDATA
+	!this.getattaData()					$* atta data(attatubes attapoints)
+ Called from line 524 of PML function suisupport.GETLINEDATA
+	!this.getTypeData()
+ Called from line 152 of PML function suisupport.SUISUPPORT
+	if !this.getLineData().not() then
+ Called from line 314 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+08:58:15 1 December 2023
+/K270.031 对象化失败
+(46,58)   PML: Method PIPEATTA could not be found
+ In line 1424 of PML function suisupport.ADDATTATOPARTOBJECTS
+		!pipeatta = object pipeatta(!attas,'supp')
+ Called from line 1343 of PML function suisupport.GETATTADATA
+	!this.addattatopartobjects()
+ Called from line 1327 of PML function suisupport.GETTYPEDATA
+	!this.getattaData()					$* atta data(attatubes attapoints)
+ Called from line 524 of PML function suisupport.GETLINEDATA
+	!this.getTypeData()
+ Called from line 152 of PML function suisupport.SUISUPPORT
+	if !this.getLineData().not() then
+ Called from line 314 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+08:58:34 1 December 2023
+/K270.031 对象化失败
+(46,58)   PML: Method PIPEATTA could not be found
+ In line 1424 of PML function suisupport.ADDATTATOPARTOBJECTS
+		!pipeatta = object pipeatta(!attas,'supp')
+ Called from line 1343 of PML function suisupport.GETATTADATA
+	!this.addattatopartobjects()
+ Called from line 1327 of PML function suisupport.GETTYPEDATA
+	!this.getattaData()					$* atta data(attatubes attapoints)
+ Called from line 524 of PML function suisupport.GETLINEDATA
+	!this.getTypeData()
+ Called from line 152 of PML function suisupport.SUISUPPORT
+	if !this.getLineData().not() then
+ Called from line 314 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+08:59:27 1 December 2023
+/K270.031 对象化失败
+(46,58)   PML: Method PIPEATTA could not be found
+ In line 1424 of PML function suisupport.ADDATTATOPARTOBJECTS
+		!pipeatta = object pipeatta(!attas,'supp')
+ Called from line 1343 of PML function suisupport.GETATTADATA
+	!this.addattatopartobjects()
+ Called from line 1327 of PML function suisupport.GETTYPEDATA
+	!this.getattaData()					$* atta data(attatubes attapoints)
+ Called from line 524 of PML function suisupport.GETLINEDATA
+	!this.getTypeData()
+ Called from line 152 of PML function suisupport.SUISUPPORT
+	if !this.getLineData().not() then
+ Called from line 314 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+09:00:01 1 December 2023
+/K270.031 对象化失败
+(46,58)   PML: Method PIPEATTA could not be found
+ In line 1425 of PML function suisupport.ADDATTATOPARTOBJECTS
+		!pipeatta = object pipeatta(!attas,'supp')
+ Called from line 1343 of PML function suisupport.GETATTADATA
+	!this.addattatopartobjects()
+ Called from line 1327 of PML function suisupport.GETTYPEDATA
+	!this.getattaData()					$* atta data(attatubes attapoints)
+ Called from line 524 of PML function suisupport.GETLINEDATA
+	!this.getTypeData()
+ Called from line 152 of PML function suisupport.SUISUPPORT
+	if !this.getLineData().not() then
+ Called from line 314 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+09:00:44 1 December 2023
+/K270.031 对象化失败
+(2,759)   Object does not have a member ITEMCODES
+ In line 262 of PML function suppmaterial.SUPPMATERIAL
+	!index = !!marksuppform.itemcodes.findfirst(!this.itemcode)
+ Called from line 302 of PML function suisupport.GETLUGLEGMATERIAL
+			!onematerial = object suppmaterial(!attaobject)
+ Called from line 272 of PML function suisupport.GETMATERIAL
+	!materials.appendarray(!this.getluglegmaterial())
+ Called from line 157 of PML function suisupport.SUISUPPORT
+	!this.getmaterial()
+ Called from line 314 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+09:02:44 1 December 2023
+/K270.031 对象化失败
+(2,759)   Object does not have a member ITEMCODES
+ In line 263 of PML function suppmaterial.SUPPMATERIAL
+	!index = !!marksuppform.itemcodes.findfirst(!this.itemcode)
+ Called from line 302 of PML function suisupport.GETLUGLEGMATERIAL
+			!onematerial = object suppmaterial(!attaobject)
+ Called from line 272 of PML function suisupport.GETMATERIAL
+	!materials.appendarray(!this.getluglegmaterial())
+ Called from line 157 of PML function suisupport.SUISUPPORT
+	!this.getmaterial()
+ Called from line 314 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+09:03:44 1 December 2023
+/K270.031 对象化失败
+(2,756)   Array index is unset
+ In line 297 of PML function suppmaterial.SUPPMATERIAL
+	!this.ns = !dataarr[!nsindex]
+ Called from line 302 of PML function suisupport.GETLUGLEGMATERIAL
+			!onematerial = object suppmaterial(!attaobject)
+ Called from line 272 of PML function suisupport.GETMATERIAL
+	!materials.appendarray(!this.getluglegmaterial())
+ Called from line 157 of PML function suisupport.SUISUPPORT
+	!this.getmaterial()
+ Called from line 314 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+09:04:48 1 December 2023
+/K270.031 对象化失败
+(2,756)   Array index is unset
+ In line 297 of PML function suppmaterial.SUPPMATERIAL
+	!this.ns = !dataarr[!nsindex]
+ Called from line 302 of PML function suisupport.GETLUGLEGMATERIAL
+			!onematerial = object suppmaterial(!attaobject)
+ Called from line 272 of PML function suisupport.GETMATERIAL
+	!materials.appendarray(!this.getluglegmaterial())
+ Called from line 157 of PML function suisupport.SUISUPPORT
+	!this.getmaterial()
+ Called from line 314 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+09:08:58 1 December 2023
+/K270.031 对象化失败
+(2,756)   Array index is unset
+ In line 304 of PML function suppmaterial.SUPPMATERIAL
+	!this.size = !dataarr[!sizeindex]
+ Called from line 302 of PML function suisupport.GETLUGLEGMATERIAL
+			!onematerial = object suppmaterial(!attaobject)
+ Called from line 272 of PML function suisupport.GETMATERIAL
+	!materials.appendarray(!this.getluglegmaterial())
+ Called from line 157 of PML function suisupport.SUISUPPORT
+	!this.getmaterial()
+ Called from line 314 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+09:13:36 1 December 2023
+/K270.031 对象化失败
+(2,759)   Object does not have a member NS
+ In line 302 of PML function suppmaterial.SUPPMATERIAL
+		!this.ns = !input.ns
+ Called from line 302 of PML function suisupport.GETLUGLEGMATERIAL
+			!onematerial = object suppmaterial(!attaobject)
+ Called from line 272 of PML function suisupport.GETMATERIAL
+	!materials.appendarray(!this.getluglegmaterial())
+ Called from line 157 of PML function suisupport.SUISUPPORT
+	!this.getmaterial()
+ Called from line 314 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+09:17:01 1 December 2023
+/K270.031 对象化失败
+(2,759)   Object does not have a member NS
+ In line 302 of PML function suppmaterial.SUPPMATERIAL
+		!this.ns = !input.ns
+ Called from line 302 of PML function suisupport.GETLUGLEGMATERIAL
+			!onematerial = object suppmaterial(!attaobject)
+ Called from line 272 of PML function suisupport.GETMATERIAL
+	!materials.appendarray(!this.getluglegmaterial())
+ Called from line 157 of PML function suisupport.SUISUPPORT
+	!this.getmaterial()
+ Called from line 314 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+09:17:24 1 December 2023
+/K270.031 对象化失败
+(2,759)   Object does not have a member NS
+ In line 302 of PML function suppmaterial.SUPPMATERIAL
+		!this.ns = !input.ns
+ Called from line 302 of PML function suisupport.GETLUGLEGMATERIAL
+			!onematerial = object suppmaterial(!attaobject)
+ Called from line 272 of PML function suisupport.GETMATERIAL
+	!materials.appendarray(!this.getluglegmaterial())
+ Called from line 157 of PML function suisupport.SUISUPPORT
+	!this.getmaterial()
+ Called from line 314 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+09:18:03 1 December 2023
+/K270.031 对象化失败
+(2,756)   Array index is unset
+ In line 322 of PML function suppmaterial.SUPPMATERIAL
+	!this.qualitylevel = !dataarr[!qualitylevelindex]
+ Called from line 302 of PML function suisupport.GETLUGLEGMATERIAL
+			!onematerial = object suppmaterial(!attaobject)
+ Called from line 272 of PML function suisupport.GETMATERIAL
+	!materials.appendarray(!this.getluglegmaterial())
+ Called from line 157 of PML function suisupport.SUISUPPORT
+	!this.getmaterial()
+ Called from line 314 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+09:21:21 1 December 2023
+/K270.031 对象化失败
+(2,756)   Array index is unset
+ In line 322 of PML function suppmaterial.SUPPMATERIAL
+	!this.qualitylevel = !dataarr[!qualitylevelindex]
+ Called from line 302 of PML function suisupport.GETLUGLEGMATERIAL
+			!onematerial = object suppmaterial(!attaobject)
+ Called from line 272 of PML function suisupport.GETMATERIAL
+	!materials.appendarray(!this.getluglegmaterial())
+ Called from line 157 of PML function suisupport.SUISUPPORT
+	!this.getmaterial()
+ Called from line 314 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+09:56:15 1 December 2023
+/K270.031 对象化失败
+(47,15)   CP: Syntax error
+ In line 1434 of PML function suisupport.ADDATTATOPARTOBJECTS
+		!attapos = pos of ^^ARRAY wrt/*
+ Called from line 1343 of PML function suisupport.GETATTADATA
+	!this.addattatopartobjects()
+ Called from line 1327 of PML function suisupport.GETTYPEDATA
+	!this.getattaData()					$* atta data(attatubes attapoints)
+ Called from line 524 of PML function suisupport.GETLINEDATA
+	!this.getTypeData()
+ Called from line 152 of PML function suisupport.SUISUPPORT
+	if !this.getLineData().not() then
+ Called from line 314 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+11:07:35 1 December 2023
+/K270.031 对象化失败
+(2,752)   Array element 1 does not exist
+ In line 1380 of PML function suisupport.GETFITTPANEINSCTN
+				!pos = !pos.offset(!ori.xdir(),!values[!atts.findfirst('px')]).offset(!ori.ydir(),!values[!atts.findfirst('py')]).offset(!ori.zdir(),!values[!atts.findfirst('pz')])
+ Called from line 1338 of PML function suisupport.GETTYPEDATA
+	!fittsps = !this.getfittpaneinsctn()
+ Called from line 524 of PML function suisupport.GETLINEDATA
+	!this.getTypeData()
+ Called from line 152 of PML function suisupport.SUISUPPORT
+	if !this.getLineData().not() then
+ Called from line 314 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+11:08:31 1 December 2023
+/K270.031 对象化失败
+(2,752)   Array element 1 does not exist
+ In line 1381 of PML function suisupport.GETFITTPANEINSCTN
+				!pos = !pos.offset(!ori.xdir(),!values[!atts.findfirst('px')]).offset(!ori.ydir(),!values[!atts.findfirst('py')]).offset(!ori.zdir(),!values[!atts.findfirst('pz')])
+ Called from line 1338 of PML function suisupport.GETTYPEDATA
+	!fittsps = !this.getfittpaneinsctn()
+ Called from line 524 of PML function suisupport.GETLINEDATA
+	!this.getTypeData()
+ Called from line 152 of PML function suisupport.SUISUPPORT
+	if !this.getLineData().not() then
+ Called from line 314 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+11:09:11 1 December 2023
+/K270.031 对象化失败
+(2,752)   Array element 1 does not exist
+ In line 1382 of PML function suisupport.GETFITTPANEINSCTN
+				!pos = !pos.offset(!ori.xdir(),!values[!atts.findfirst('px')]).offset(!ori.ydir(),!values[!atts.findfirst('py')]).offset(!ori.zdir(),!values[!atts.findfirst('pz')])
+ Called from line 1338 of PML function suisupport.GETTYPEDATA
+	!fittsps = !this.getfittpaneinsctn()
+ Called from line 524 of PML function suisupport.GETLINEDATA
+	!this.getTypeData()
+ Called from line 152 of PML function suisupport.SUISUPPORT
+	if !this.getLineData().not() then
+ Called from line 314 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+11:09:47 1 December 2023
+/K270.031 对象化失败
+(2,752)   Array element 1 does not exist
+ In line 1383 of PML function suisupport.GETFITTPANEINSCTN
+				!pos = !pos.offset(!ori.xdir(),!values[!atts.findfirst('px')]).offset(!ori.ydir(),!values[!atts.findfirst('py')]).offset(!ori.zdir(),!values[!atts.findfirst('pz')])
+ Called from line 1338 of PML function suisupport.GETTYPEDATA
+	!fittsps = !this.getfittpaneinsctn()
+ Called from line 524 of PML function suisupport.GETLINEDATA
+	!this.getTypeData()
+ Called from line 152 of PML function suisupport.SUISUPPORT
+	if !this.getLineData().not() then
+ Called from line 314 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+11:12:23 1 December 2023
+/K270.031 对象化失败
+(2,752)   Array element 1 does not exist
+ In line 1383 of PML function suisupport.GETFITTPANEINSCTN
+				!pos = !pos.offset(!ori.xdir(),!values[!atts.findfirst('px')]).offset(!ori.ydir(),!values[!atts.findfirst('py')]).offset(!ori.zdir(),!values[!atts.findfirst('pz')])
+ Called from line 1338 of PML function suisupport.GETTYPEDATA
+	!fittsps = !this.getfittpaneinsctn()
+ Called from line 524 of PML function suisupport.GETLINEDATA
+	!this.getTypeData()
+ Called from line 152 of PML function suisupport.SUISUPPORT
+	if !this.getLineData().not() then
+ Called from line 314 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+11:12:44 1 December 2023
+/K270.031 对象化失败
+(2,751)   Variable !X does not exist
+ In line 1377 of PML function suisupport.GETFITTPANEINSCTN
+						!values[!x] = !!evalCata(!dbref,!string)
+ Called from line 1338 of PML function suisupport.GETTYPEDATA
+	!fittsps = !this.getfittpaneinsctn()
+ Called from line 524 of PML function suisupport.GETLINEDATA
+	!this.getTypeData()
+ Called from line 152 of PML function suisupport.SUISUPPORT
+	if !this.getLineData().not() then
+ Called from line 314 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+11:13:31 1 December 2023
+/K270.031 对象化失败
+(46,58)   PML: Method PROFILE could not be found
+ In line 105 of PML function supportpane.SUPPORTPANE
+	!this.profile = object profile(!this.poss)
+ Called from line 1407 of PML function suisupport.GETFITTPANEINSCTN
+				!supportpane = object supportpane(!fitt,!px,!py,!pz,!xlen,!ylen,!zlen)
+ Called from line 1338 of PML function suisupport.GETTYPEDATA
+	!fittsps = !this.getfittpaneinsctn()
+ Called from line 524 of PML function suisupport.GETLINEDATA
+	!this.getTypeData()
+ Called from line 152 of PML function suisupport.SUISUPPORT
+	if !this.getLineData().not() then
+ Called from line 314 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+11:14:55 1 December 2023
+/K270.031 对象化失败
+(2,751)   Variable !MEM does not exist
+ In line 266 of PML function suisupport.GETMATERIAL
+		!suppmaterial = object suppmaterial(!mem,1)
+ Called from line 157 of PML function suisupport.SUISUPPORT
+	!this.getmaterial()
+ Called from line 314 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+14:18:53 1 December 2023
+/K270.031 对象化失败
+(47,15)   CP: Syntax error
+ In line 144 of PML function mbdinputdata.GETMATERIALINONETYPE
+			!this.dealdata(!headings ^^is array,!materials is array)
+ Called from line 180 of PML function mbdinputdata.GETDATA
+	!headdata = !this.getmaterialinonetype(!itemcode,!type)
+ Called from line 890 of PML function pipeatta.GETATTATAGTEXT
+		!SCH = !!mbdmaterialdata.getdata(!itemcode,'PIPE','压力(壁厚)')
+ Called from line 867 of PML function pipeatta.GETTAGS
+		!infoarr = !this.getattatagtext(!temparr)
+ Called from line 84 of PML function pipeatta.PIPEATTA
+	!this.gettags()
+ Called from line 67 of PML function pipeatta.PIPEATTA
+	!this.pipeatta(!attas)
+ Called from line 1560 of PML function suisupport.ADDATTATOPARTOBJECTS
+		!pipeatta = object pipeatta(!attas,'pipe')
+ Called from line 1477 of PML function suisupport.GETATTADATA
+	!this.addattatopartobjects()
+ Called from line 1368 of PML function suisupport.GETTYPEDATA
+	!this.getattaData()					$* atta data(attatubes attapoints)
+ Called from line 565 of PML function suisupport.GETLINEDATA
+	!this.getTypeData()
+ Called from line 152 of PML function suisupport.SUISUPPORT
+	if !this.getLineData().not() then
+ Called from line 314 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+14:39:53 1 December 2023
+/K270.031 对象化失败
+(47,15)   CP: Syntax error
+ In line 144 of PML function mbdinputdata.GETMATERIALINONETYPE
+			!this.dealdata(!headings ^^is array,!materials is array)
+ Called from line 180 of PML function mbdinputdata.GETDATA
+	!headdata = !this.getmaterialinonetype(!itemcode,!type)
+ Called from line 890 of PML function pipeatta.GETATTATAGTEXT
+		!SCH = !!mbdmaterialdata.getdata(!itemcode,'PIPE','压力(壁厚)')
+ Called from line 867 of PML function pipeatta.GETTAGS
+		!infoarr = !this.getattatagtext(!temparr)
+ Called from line 84 of PML function pipeatta.PIPEATTA
+	!this.gettags()
+ Called from line 67 of PML function pipeatta.PIPEATTA
+	!this.pipeatta(!attas)
+ Called from line 1560 of PML function suisupport.ADDATTATOPARTOBJECTS
+		!pipeatta = object pipeatta(!attas,'pipe')
+ Called from line 1477 of PML function suisupport.GETATTADATA
+	!this.addattatopartobjects()
+ Called from line 1368 of PML function suisupport.GETTYPEDATA
+	!this.getattaData()					$* atta data(attatubes attapoints)
+ Called from line 565 of PML function suisupport.GETLINEDATA
+	!this.getTypeData()
+ Called from line 152 of PML function suisupport.SUISUPPORT
+	if !this.getLineData().not() then
+ Called from line 314 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+14:42:29 1 December 2023
+/K270.031 对象化失败
+(47,15)   CP: Syntax error
+ In line 162 of PML function mbdinputdata.DEALDATA
+
+ Called from line 144 of PML function mbdinputdata.GETMATERIALINONETYPE
+			!this.dealdata(!headings,!materials)
+ Called from line 127 of PML function mbdinputdata.GETMATERIAL
+		!result = !this.getMaterialInOneType(!itemcode,!type)
+ Called from line 79 of PML function suppmaterial.SUPPMATERIAL
+	!headdataarr = !!mbdmaterialdata.getmaterial(!this.itemcode)
+ Called from line 243 of PML function suisupport.GETMATERIAL
+		!suppmaterial = object suppmaterial(!sp.ref,!sp.profile.area().value())
+ Called from line 157 of PML function suisupport.SUISUPPORT
+	!this.getmaterial()
+ Called from line 314 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+14:44:34 1 December 2023
+/K270.031 对象化失败
+(47,15)   CP: Syntax error
+ In line 178 of PML function mbdinputdata.DEALDATA
+	!eye1l^^(!materials,'dealdata')
+ Called from line 144 of PML function mbdinputdata.GETMATERIALINONETYPE
+			!this.dealdata(!headings,!materials)
+ Called from line 182 of PML function mbdinputdata.GETDATA
+	!headdata = !this.getmaterialinonetype(!itemcode,!type)
+ Called from line 890 of PML function pipeatta.GETATTATAGTEXT
+		!SCH = !!mbdmaterialdata.getdata(!itemcode,'PIPE','压力(壁厚)')
+ Called from line 867 of PML function pipeatta.GETTAGS
+		!infoarr = !this.getattatagtext(!temparr)
+ Called from line 84 of PML function pipeatta.PIPEATTA
+	!this.gettags()
+ Called from line 67 of PML function pipeatta.PIPEATTA
+	!this.pipeatta(!attas)
+ Called from line 1560 of PML function suisupport.ADDATTATOPARTOBJECTS
+		!pipeatta = object pipeatta(!attas,'pipe')
+ Called from line 1477 of PML function suisupport.GETATTADATA
+	!this.addattatopartobjects()
+ Called from line 1368 of PML function suisupport.GETTYPEDATA
+	!this.getattaData()					$* atta data(attatubes attapoints)
+ Called from line 565 of PML function suisupport.GETLINEDATA
+	!this.getTypeData()
+ Called from line 152 of PML function suisupport.SUISUPPORT
+	if !this.getLineData().not() then
+ Called from line 314 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+14:57:10 1 December 2023
+/K270.031 对象化失败
+(2,751)   Variable !QUANTITY does not exist
+ In line 356 of PML function suppmaterial.SUPPMATERIAL
+	!this.quantity = !quantity.string('d1').replace('.0','').real()
+ Called from line 313 of PML function suisupport.GETLUGLEGMATERIAL
+			!onematerial = object suppmaterial(!attaobject)
+ Called from line 281 of PML function suisupport.GETMATERIAL
+	!materials.appendarray(!this.getluglegmaterial())
+ Called from line 157 of PML function suisupport.SUISUPPORT
+	!this.getmaterial()
+ Called from line 314 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+14:25:31 5 December 2023
+SUISUPPORT failed to draw
+(2,759)   Object does not have a member SPECIALNUM
+ In line 3696 of PML function suisupport.GETDRAWINGINFOJSON
+	!row.append(|"图号": "| + !this.specialnum.string() + |",|)
+ Called from line 3495 of PML function suisupport.GETJSONDATA
+	!jsonmem.drawingInfo = !this.getDrawingInfoJson(!this.nodename)
+ Called from line 674 of PML function suisupport.GENERATEJSONATTRVM
+	!result = !this.getjsondata(!!marksuppform.materialAttS, !!marksuppform.materialAttShow, !!marksuppform.suppAtts ,!!marksuppform.suppAttShow)
+ Called from line 662 of PML function suisupport.DRAW
+		!this.generatejsonattrvm()
+ Called from line 577 of PML function marksuppform.DRAWALL
+		!this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+15:53:25 5 December 2023
+/K202.047 对象化失败
+(2,756)   Array index is unset
+ In line 131 of PML function suppmaterial.SUPPMATERIAL
+	!this.ns = !dataarr[!nsindex]
+ Called from line 237 of PML function suisupport.GETMATERIAL
+		!suppmaterial = object suppmaterial(!supportsctn.ref,!supportsctn.length)	$*use mm
+ Called from line 160 of PML function suisupport.SUISUPPORT
+	!this.getmaterial()
+ Called from line 384 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+16:03:42 5 December 2023
+/K202.047 对象化失败
+(2,756)   Array index is unset
+ In line 131 of PML function suppmaterial.SUPPMATERIAL
+	!this.ns = !dataarr[!nsindex]
+ Called from line 237 of PML function suisupport.GETMATERIAL
+		!suppmaterial = object suppmaterial(!supportsctn.ref,!supportsctn.length)	$*use mm
+ Called from line 160 of PML function suisupport.SUISUPPORT
+	!this.getmaterial()
+ Called from line 384 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+16:05:29 5 December 2023
+/K202.047 对象化失败
+(2,756)   Array index is unset
+ In line 131 of PML function suppmaterial.SUPPMATERIAL
+	!this.ns = !dataarr[!nsindex]
+ Called from line 237 of PML function suisupport.GETMATERIAL
+		!suppmaterial = object suppmaterial(!supportsctn.ref,!supportsctn.length)	$*use mm
+ Called from line 160 of PML function suisupport.SUISUPPORT
+	!this.getmaterial()
+ Called from line 384 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+16:06:10 5 December 2023
+/K202.047 对象化失败
+(2,751)   Variable !ITEMCODE does not exist
+ In line 129 of PML function suppmaterial.SUPPMATERIAL
+
+ Called from line 237 of PML function suisupport.GETMATERIAL
+		!suppmaterial = object suppmaterial(!supportsctn.ref,!supportsctn.length)	$*use mm
+ Called from line 160 of PML function suisupport.SUISUPPORT
+	!this.getmaterial()
+ Called from line 384 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+16:06:33 5 December 2023
+/K202.047 对象化失败
+(2,756)   Array index is unset
+ In line 131 of PML function suppmaterial.SUPPMATERIAL
+	!this.ns = !dataarr[!nsindex]
+ Called from line 237 of PML function suisupport.GETMATERIAL
+		!suppmaterial = object suppmaterial(!supportsctn.ref,!supportsctn.length)	$*use mm
+ Called from line 160 of PML function suisupport.SUISUPPORT
+	!this.getmaterial()
+ Called from line 384 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+16:07:41 5 December 2023
+/K202.047 对象化失败
+(2,756)   Array index is unset
+ In line 131 of PML function suppmaterial.SUPPMATERIAL
+	!this.ns = !dataarr[!nsindex]
+ Called from line 237 of PML function suisupport.GETMATERIAL
+		!suppmaterial = object suppmaterial(!supportsctn.ref,!supportsctn.length)	$*use mm
+ Called from line 160 of PML function suisupport.SUISUPPORT
+	!this.getmaterial()
+ Called from line 384 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+16:08:11 5 December 2023
+/K202.047 对象化失败
+(2,756)   Array index is unset
+ In line 131 of PML function suppmaterial.SUPPMATERIAL
+	!this.ns = !dataarr[!nsindex]
+ Called from line 237 of PML function suisupport.GETMATERIAL
+		!suppmaterial = object suppmaterial(!supportsctn.ref,!supportsctn.length)	$*use mm
+ Called from line 160 of PML function suisupport.SUISUPPORT
+	!this.getmaterial()
+ Called from line 384 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+16:25:36 5 December 2023
+/K202.047 对象化失败
+(2,756)   Array index is unset
+ In line 132 of PML function suppmaterial.SUPPMATERIAL
+	!this.ns = !dataarr[!nsindex]
+ Called from line 237 of PML function suisupport.GETMATERIAL
+		!suppmaterial = object suppmaterial(!supportsctn.ref,!supportsctn.length)	$*use mm
+ Called from line 160 of PML function suisupport.SUISUPPORT
+	!this.getmaterial()
+ Called from line 384 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+16:25:55 5 December 2023
+/K202.047 对象化失败
+(2,756)   Array index is unset
+ In line 133 of PML function suppmaterial.SUPPMATERIAL
+	!this.ns = !dataarr[!nsindex]
+ Called from line 237 of PML function suisupport.GETMATERIAL
+		!suppmaterial = object suppmaterial(!supportsctn.ref,!supportsctn.length)	$*use mm
+ Called from line 160 of PML function suisupport.SUISUPPORT
+	!this.getmaterial()
+ Called from line 384 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+15:56:04 13 December 2023
+/K208.034 对象化失败
+(2,751)   Variable !!MBDMATERIALDATA does not exist
+ In line 92 of PML function suppmaterial.SUPPMATERIAL
+	!headdataarr = !!mbdmaterialdata.getmaterial(!this.itemcode)
+ Called from line 237 of PML function suisupport.GETMATERIAL
+		!suppmaterial = object suppmaterial(!supportsctn.ref,!supportsctn.length)	$*use mm
+ Called from line 160 of PML function suisupport.SUISUPPORT
+	!this.getmaterial()
+ Called from line 381 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+15:03:08 18 December 2023
+/S104.006 对象化失败
+(46,87)   PML: Object definition for ATTATUBE could not be found.
+ In line 1682 of PML function suisupport.ADDATTATUBE
+				!attatube = object attatube(!ao)
+ Called from line 1633 of PML function suisupport.ADDATTATOPARTOBJECTS
+	!this.addattatube()
+ Called from line 1537 of PML function suisupport.GETATTADATA
+	!this.addattatopartobjects()
+ Called from line 1428 of PML function suisupport.GETTYPEDATA
+	!this.getattaData()					$* atta data(attatubes attapoints)
+ Called from line 596 of PML function suisupport.GETLINEDATA
+	!this.getTypeData()
+ Called from line 155 of PML function suisupport.SUISUPPORT
+	if !this.getLineData().not() then
+ Called from line 391 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+09:26:12 20 December 2023
+/S104.005 对象化失败
+(2,751)   Variable !ITEMTYPE does not exist
+ In line 81 of PML function mbdstru.MBDSTRU
+		if !itemtype inset(':SUPP','STRU','REST','SUPPO','SUPC') or (!itemtype eq 'ZONE' and acttype of $!this.name eq ':SUPP') then
+ Called from line 1242 of PML function suisupport.GETNAME
+		!this.mbdstru = object mbdstru(!this.inputref)
+ Called from line 590 of PML function suisupport.GETLINEDATA
+	if !this.getName().not() then
+ Called from line 155 of PML function suisupport.SUISUPPORT
+	if !this.getLineData().not() then
+ Called from line 393 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+14:33:30 20 December 2023
+/R320.003 对象化失败
+(2,757)   Attempt to index on non-array object
+ In line 340 of PML function pipeatta.MERGELUGNOTONPAD
+		!object = !attaobjects[!lugindices[!index][1]]
+ Called from line 321 of PML function pipeatta.CLASSISOLUGOBJECT
+		!lugindices = !this.mergelugnotonpad(!lugindices,!difindices)
+ Called from line 446 of PML function pipeatta.CLASSATTAOBJECTS
+	!this.classisolugobject()
+ Called from line 78 of PML function pipeatta.PIPEATTA
+	!this.classattaobjects()
+ Called from line 67 of PML function pipeatta.PIPEATTA
+	!this.pipeatta(!attas)
+ Called from line 1636 of PML function suisupport.ADDATTATOPARTOBJECTS
+		!pipeatta = object pipeatta(!attas,'supp')
+ Called from line 1554 of PML function suisupport.GETATTADATA
+	!this.addattatopartobjects()
+ Called from line 1445 of PML function suisupport.GETTYPEDATA
+	!this.getattaData()					$* atta data(attatubes attapoints)
+ Called from line 596 of PML function suisupport.GETLINEDATA
+	!this.getTypeData()
+ Called from line 155 of PML function suisupport.SUISUPPORT
+	if !this.getLineData().not() then
+ Called from line 393 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+14:35:44 20 December 2023
+/R320.003 对象化失败
+(2,757)   Attempt to index on non-array object
+ In line 343 of PML function pipeatta.MERGELUGNOTONPAD
+			!object = !attaobjects[!lugindices[!index][1]]
+ Called from line 321 of PML function pipeatta.CLASSISOLUGOBJECT
+		!lugindices = !this.mergelugnotonpad(!lugindices,!difindices)
+ Called from line 450 of PML function pipeatta.CLASSATTAOBJECTS
+	!this.classisolugobject()
+ Called from line 78 of PML function pipeatta.PIPEATTA
+	!this.classattaobjects()
+ Called from line 67 of PML function pipeatta.PIPEATTA
+	!this.pipeatta(!attas)
+ Called from line 1636 of PML function suisupport.ADDATTATOPARTOBJECTS
+		!pipeatta = object pipeatta(!attas,'supp')
+ Called from line 1554 of PML function suisupport.GETATTADATA
+	!this.addattatopartobjects()
+ Called from line 1445 of PML function suisupport.GETTYPEDATA
+	!this.getattaData()					$* atta data(attatubes attapoints)
+ Called from line 596 of PML function suisupport.GETLINEDATA
+	!this.getTypeData()
+ Called from line 155 of PML function suisupport.SUISUPPORT
+	if !this.getLineData().not() then
+ Called from line 393 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+14:37:23 20 December 2023
+/R320.003 对象化失败
+(2,757)   Attempt to index on non-array object
+ In line 343 of PML function pipeatta.MERGELUGNOTONPAD
+			!object = !attaobjects[!lugindices[!index][1]]
+ Called from line 321 of PML function pipeatta.CLASSISOLUGOBJECT
+		!lugindices = !this.mergelugnotonpad(!lugindices,!difindices)
+ Called from line 450 of PML function pipeatta.CLASSATTAOBJECTS
+	!this.classisolugobject()
+ Called from line 78 of PML function pipeatta.PIPEATTA
+	!this.classattaobjects()
+ Called from line 67 of PML function pipeatta.PIPEATTA
+	!this.pipeatta(!attas)
+ Called from line 1636 of PML function suisupport.ADDATTATOPARTOBJECTS
+		!pipeatta = object pipeatta(!attas,'supp')
+ Called from line 1554 of PML function suisupport.GETATTADATA
+	!this.addattatopartobjects()
+ Called from line 1445 of PML function suisupport.GETTYPEDATA
+	!this.getattaData()					$* atta data(attatubes attapoints)
+ Called from line 596 of PML function suisupport.GETLINEDATA
+	!this.getTypeData()
+ Called from line 155 of PML function suisupport.SUISUPPORT
+	if !this.getLineData().not() then
+ Called from line 393 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+14:39:25 20 December 2023
+/R320.003 对象化失败
+(2,757)   Attempt to index on non-array object
+ In line 343 of PML function pipeatta.MERGELUGNOTONPAD
+			!object = !attaobjects[!lugindices[!index][1]]
+ Called from line 321 of PML function pipeatta.CLASSISOLUGOBJECT
+		!lugindices = !this.mergelugnotonpad(!lugindices,!difindices)
+ Called from line 450 of PML function pipeatta.CLASSATTAOBJECTS
+	!this.classisolugobject()
+ Called from line 78 of PML function pipeatta.PIPEATTA
+	!this.classattaobjects()
+ Called from line 67 of PML function pipeatta.PIPEATTA
+	!this.pipeatta(!attas)
+ Called from line 1636 of PML function suisupport.ADDATTATOPARTOBJECTS
+		!pipeatta = object pipeatta(!attas,'supp')
+ Called from line 1554 of PML function suisupport.GETATTADATA
+	!this.addattatopartobjects()
+ Called from line 1445 of PML function suisupport.GETTYPEDATA
+	!this.getattaData()					$* atta data(attatubes attapoints)
+ Called from line 596 of PML function suisupport.GETLINEDATA
+	!this.getTypeData()
+ Called from line 155 of PML function suisupport.SUISUPPORT
+	if !this.getLineData().not() then
+ Called from line 393 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+14:40:34 20 December 2023
+/R320.003 对象化失败
+(2,757)   Attempt to index on non-array object
+ In line 343 of PML function pipeatta.MERGELUGNOTONPAD
+			!object = !attaobjects[!lugindices[!index][1]]
+ Called from line 321 of PML function pipeatta.CLASSISOLUGOBJECT
+		!lugindices = !this.mergelugnotonpad(!lugindices,!difindices)
+ Called from line 450 of PML function pipeatta.CLASSATTAOBJECTS
+	!this.classisolugobject()
+ Called from line 78 of PML function pipeatta.PIPEATTA
+	!this.classattaobjects()
+ Called from line 67 of PML function pipeatta.PIPEATTA
+	!this.pipeatta(!attas)
+ Called from line 1636 of PML function suisupport.ADDATTATOPARTOBJECTS
+		!pipeatta = object pipeatta(!attas,'supp')
+ Called from line 1554 of PML function suisupport.GETATTADATA
+	!this.addattatopartobjects()
+ Called from line 1445 of PML function suisupport.GETTYPEDATA
+	!this.getattaData()					$* atta data(attatubes attapoints)
+ Called from line 596 of PML function suisupport.GETLINEDATA
+	!this.getTypeData()
+ Called from line 155 of PML function suisupport.SUISUPPORT
+	if !this.getLineData().not() then
+ Called from line 393 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+14:43:00 20 December 2023
+/R320.003 对象化失败
+(2,757)   Attempt to index on non-array object
+ In line 344 of PML function pipeatta.MERGELUGNOTONPAD
+			!object = !attaobjects[!lugindices[!index][1]]
+ Called from line 321 of PML function pipeatta.CLASSISOLUGOBJECT
+		!lugindices = !this.mergelugnotonpad(!lugindices,!difindices)
+ Called from line 451 of PML function pipeatta.CLASSATTAOBJECTS
+	!this.classisolugobject()
+ Called from line 78 of PML function pipeatta.PIPEATTA
+	!this.classattaobjects()
+ Called from line 67 of PML function pipeatta.PIPEATTA
+	!this.pipeatta(!attas)
+ Called from line 1636 of PML function suisupport.ADDATTATOPARTOBJECTS
+		!pipeatta = object pipeatta(!attas,'supp')
+ Called from line 1554 of PML function suisupport.GETATTADATA
+	!this.addattatopartobjects()
+ Called from line 1445 of PML function suisupport.GETTYPEDATA
+	!this.getattaData()					$* atta data(attatubes attapoints)
+ Called from line 596 of PML function suisupport.GETLINEDATA
+	!this.getTypeData()
+ Called from line 155 of PML function suisupport.SUISUPPORT
+	if !this.getLineData().not() then
+ Called from line 393 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+14:48:27 20 December 2023
+/R320.003 对象化失败
+(2,757)   Attempt to index on non-array object
+ In line 345 of PML function pipeatta.MERGELUGNOTONPAD
+			!object = !attaobjects[!lugindices[!index][1]]
+ Called from line 322 of PML function pipeatta.CLASSISOLUGOBJECT
+		!lugindices = !this.mergelugnotonpad(!lugindices,!difindices)
+ Called from line 452 of PML function pipeatta.CLASSATTAOBJECTS
+	!this.classisolugobject()
+ Called from line 78 of PML function pipeatta.PIPEATTA
+	!this.classattaobjects()
+ Called from line 67 of PML function pipeatta.PIPEATTA
+	!this.pipeatta(!attas)
+ Called from line 1636 of PML function suisupport.ADDATTATOPARTOBJECTS
+		!pipeatta = object pipeatta(!attas,'supp')
+ Called from line 1554 of PML function suisupport.GETATTADATA
+	!this.addattatopartobjects()
+ Called from line 1445 of PML function suisupport.GETTYPEDATA
+	!this.getattaData()					$* atta data(attatubes attapoints)
+ Called from line 596 of PML function suisupport.GETLINEDATA
+	!this.getTypeData()
+ Called from line 155 of PML function suisupport.SUISUPPORT
+	if !this.getLineData().not() then
+ Called from line 393 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+14:56:33 20 December 2023
+/R320.003 对象化失败
+(2,751)   Variable !NAME does not exist
+ In line 914 of PML function pipeatta.GETATTATAGTEXT
+		!premem = !!getpremem(!name)
+ Called from line 876 of PML function pipeatta.GETTAGS
+		!infoarr = !this.getattatagtext(!temparr)
+ Called from line 84 of PML function pipeatta.PIPEATTA
+	!this.gettags()
+ Called from line 67 of PML function pipeatta.PIPEATTA
+	!this.pipeatta(!attas)
+ Called from line 1636 of PML function suisupport.ADDATTATOPARTOBJECTS
+		!pipeatta = object pipeatta(!attas,'supp')
+ Called from line 1554 of PML function suisupport.GETATTADATA
+	!this.addattatopartobjects()
+ Called from line 1445 of PML function suisupport.GETTYPEDATA
+	!this.getattaData()					$* atta data(attatubes attapoints)
+ Called from line 596 of PML function suisupport.GETLINEDATA
+	!this.getTypeData()
+ Called from line 155 of PML function suisupport.SUISUPPORT
+	if !this.getLineData().not() then
+ Called from line 393 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+14:58:52 20 December 2023
+SUISUPPORT failed to draw
+(2,751)   Variable !!MARKSUPPEFORM does not exist
+ In line 678 of PML function suisupport.SETPROGRESS
+	if !!marksuppeform.suppdatas.size() eq 1 then
+ Called from line 649 of PML function suisupport.DRAW
+	!this.setprogress(1)
+ Called from line 605 of PML function marksuppform.DRAWALL
+		!this.suppdatas[!x].draw()
+ Called from line 1 of Command/Form Callback Command
+!this.drawall()
+
+15:09:32 20 December 2023
+/R320.003 对象化失败
+(2,751)   Variable !PADVOLUMES does not exist
+ In line 155 of PML function pipeatta.GETOBJECTPADNUMS
+					!padvolume = !padvolumes[!padindex]
+ Called from line 77 of PML function pipeatta.PIPEATTA
+	!this.getobjectPadnums()
+ Called from line 67 of PML function pipeatta.PIPEATTA
+	!this.pipeatta(!attas)
+ Called from line 1637 of PML function suisupport.ADDATTATOPARTOBJECTS
+		!pipeatta = object pipeatta(!attas,'supp')
+ Called from line 1555 of PML function suisupport.GETATTADATA
+	!this.addattatopartobjects()
+ Called from line 1446 of PML function suisupport.GETTYPEDATA
+	!this.getattaData()					$* atta data(attatubes attapoints)
+ Called from line 597 of PML function suisupport.GETLINEDATA
+	!this.getTypeData()
+ Called from line 155 of PML function suisupport.SUISUPPORT
+	if !this.getLineData().not() then
+ Called from line 393 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+17:51:07 26 December 2023
+/N412.008 对象化失败
+(2,751)   Variable !SPS does not exist
+ In line 24 of PML function checkiftouch
+			if !!posinprofile(!pos,!sps.profile) then
+ Called from line 861 of PML function panesctn.CHECKIFTOGETHER
+				if !!checkIfTouch(!add,!rests[!x]) then
+ Called from line 118 of PML function getpanesctns
+			if !panesctns[!x].checkIfTogether().not() then
+ Called from line 1472 of PML function suisupport.GETTYPEDATA
+	!temparr = !!getpanesctns(!this.suppname)
+ Called from line 619 of PML function suisupport.GETLINEDATA
+	!this.getTypeData()
+ Called from line 155 of PML function suisupport.SUISUPPORT
+	if !this.getLineData().not() then
+ Called from line 393 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()
+
+20:17:01 26 December 2023
+/6SU-CIVI-E 对象化失败 没找到supp
+(2,111)   Cannot access element type SUPC from the level of ZONE /6SU-CIVI-E
+ In line 70 of PML function mbdstru.MBDSTRU
+		!tempname = name of $!type of $!item
+ Called from line 1282 of PML function suisupport.GETNAME
+		!this.mbdstru = object mbdstru(!this.inputref)
+ Called from line 613 of PML function suisupport.GETLINEDATA
+	if !this.getName().not() then
+ Called from line 155 of PML function suisupport.SUISUPPORT
+	if !this.getLineData().not() then
+ Called from line 393 of PML function marksuppform.ADDCE
+			!supp = object suisupport(!name)
+ Called from line 1 of Command/Form Callback Command
+!this.AddCE()

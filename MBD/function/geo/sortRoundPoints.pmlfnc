@@ -1,0 +1,49 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= November 1st 2023
+--[Function]:
+--
+------------------------------------------
+
+define function !!sortRoundPoints(!inputpoints is array) is array
+	!points = !inputpoints
+	if !points.size() le 2 then
+		!points = !points
+		return !points
+	endif
+
+	!cenpos = !!getcenpoint(!points)
+	do !x indices !points
+		!onedir = !cenpos.direction(!points[!x])
+		handle any
+		elsehandle none
+			if defined(!xdir) then
+				!zdir = !xdir.orthogonal(!onedir)
+				handle any
+				elsehandle none
+					break
+				endhandle
+			else
+				!xdir = !onedir
+			endif
+		endhandle
+	enddo
+	if undefined(!zdir) then
+		return !points
+	endif
+	!arc = object arc(!cenpos,object orientation('x is $!xdir and z is $!zdir'),0,360,1000,true)
+
+
+	!angles = array()
+	do !point values !points
+		!angles.append(!arc.near(!point))
+	enddo
+	!indices = !angles.sortedindices()
+
+	!points.reindex(!indices)
+	return !points
+endfunction

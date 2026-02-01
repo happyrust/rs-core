@@ -1,0 +1,123 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= April 9th 2024
+--[Function]:
+------------------------------------------
+
+define function !!reloadmbdfiles()
+	!skipobjects = split('civilsystem boltpointdata-useless keyvalue-useless jsonmem-old jsonmem-old20240401')
+	!topath = !!getlocalmbdpath()
+	--!topath = 'D:\copyfiles\myprojects'
+	--q var !topath
+	!filefolders = !!getallfileandfolders(!topath)
+	--q var !filefolders
+	--return
+	!files = !filefolders[1]
+
+	!objects = array()
+	!forms = array()
+	do !file values !files
+		!filename = !file.name().part(-1,'/').part(-1,'\')
+		!part = !filename.part(-1,'.').lowcase()
+		if !part eq 'pmlobj' then
+			!objects.append(!filename.before('.').lowcase())
+		elseif !part eq 'pmlfrm' then
+			!forms.append(!filename.before('.').lowcase())
+		endif
+	enddo
+
+	!pmlindexfile = object file(!topath & '\pml.index')
+	if !pmlindexfile.exists() then
+		!pmlindexfile.deletefile()
+	else
+		!pmlindexfile = object file(!topath.before('myprojects') & 'pml.index')
+		if !pmlindexfile.exists() then
+			!pmlindexfile.deletefile()
+		endif
+	endif
+
+--q var !objects
+--return
+
+	pml rehash all
+
+	!objectfile = object file(!topath & '\function\updatembdfiles\orderedobjects.txt')
+	!session = current session
+	if !session.login eq 'pdms-bj-c103-03' then	$*如果是我就把object安顺序写进文件
+		!objectorder = object objectorder(!objects)
+		!objects = !objectorder.objects
+		!objectfile.writefile('overwrite',!objects)
+		--$p 1
+	else	$*其它人直接从文件读取
+		!fileobjects = !objectfile.readfile()
+		do !x indices !fileobjects
+			if !fileobjects[!x].trim() eq '' then
+				!fileobjects[!x].delete()
+			endif
+		enddo
+		!fileobjects.compress()
+
+		!newobjects = array()
+		do !oneobject values !fileobjects
+			if !objects.findfirst(!oneobject).set() then
+				!newobjects.append(!oneobject)
+			endif
+		enddo
+		!difobject = !objects.difference(!fileobjects)
+
+		--!interobject = !fileobjects.intersect(!objects)	$* reorder with this way, not good
+
+		!newobjects.appendarray(!difobject)
+		!objects = !newobjects
+		--$p 2
+	endif
+	--q var !objects.size()
+
+
+	!!mbdmaterialdata.delete()  $*make sure it is new
+	handle any
+	endhandle
+
+	$p--reload开始--
+	!size = !objects.size() + !forms.size()
+	!cs = 0
+	do !object values !objects
+		if !skipobjects.findfirst(!object.lowcase()).set() then
+			skip
+		endif
+		!cs = !cs + 1
+		!com = |pml reload object | & !object
+		--q var !com
+		$!com
+		handle any
+			$p Fail to run $!com
+		endhandle
+		!!fmsys.setprogress(nint(!cs / !size * 100))
+	enddo
+
+
+	do !form values !forms
+		!cs = !cs + 1
+		!com = |!shown = !!| & !form & |.shown()|
+
+		$!com
+		handle any
+		elsehandle none
+			--!com = |kill !!| & !form
+			!com = |pml reload form !!| & !form
+			--q var !com
+			$!com
+			handle any
+				$p Fail to run $!com
+			endhandle
+		endhandle
+		!!fmsys.setprogress(nint(!cs / !size * 100))
+	enddo
+	$p--reload完成--
+	!!fmsys.setprogress(0)
+endfunction
+/

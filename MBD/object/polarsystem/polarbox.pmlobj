@@ -1,0 +1,30 @@
+ï»¿------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= May 22nd 2023
+--[Function]:
+------------------------------------------
+
+define object polarbox
+	member .name is string
+	member .pos is position
+	member .ori  is orientation
+	member .xlen is real
+	member .ylen is real
+	member .zlen is real
+endobject
+
+define method .polarbox(!pos is position, !ori is orientation, !xlen is real,!ylen is real,!zlen is real)
+	!this.pos = !pos
+	!this.ori = !ori
+	!this.xlen = !xlen
+	!this.ylen = !ylen
+	!this.zlen = !zlen
+endmethod
+
+
+
+†

@@ -1,0 +1,1 @@
+equiAttarr:equiName/设备,Room/房间号,AZBZ/安装标准号,Purpose/工艺设备号,ProtectGroup/保护组,SafeGroup/安全列

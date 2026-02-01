@@ -1,0 +1,98 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= May 10th 2023
+--[Function]:
+------------------------------------------
+
+--Method:
+--Public method:
+--attaTube(!atta is any)													$*
+
+--Private method:
+--getMaxDis()   															$*
+
+define object attaTube
+	member .ref is string
+	member .zdir is direction
+	member .posstart is position
+	member .posend is position
+	member .axis is line
+
+	member .maxDis is real
+endobject
+
+define method .attaTube(!atta is any)
+	var !ref ref of $!atta
+	!this.ref = !ref
+	--q var !this.ref !atta
+	!this.posstart = pos of $!atta wrt/*
+	!this.posend = p3 pos of $!atta wrt/*
+	!this.axis = !this.posstart.line(!this.posend)
+
+	!this.zdir = !this.axis.direction()
+
+	!this.getMaxDis()
+
+endmethod
+
+define method .attatube(!isoleg is isoleg)
+	var !ref ref of $!isoleg.name
+	!this.ref = !ref
+	!this.posstart = !isoleg.pos.offset(!isoleg.ori.zdir(), - !isoleg.height / 2)
+	!this.posend = !isoleg.pos.offset(!isoleg.ori.zdir(),!isoleg.height / 2)
+	!this.axis = !this.posstart.line(!this.posend)
+	!this.zdir = !isoleg.ori.zdir()
+	!this.maxdis = !isoleg.outdia
+--	/ 2
+endmethod
+
+define method .getMaxDis()
+	!dbref = object dbref(!this.ref)
+	!this.maxdis = max(!dbref.aod / 2,!!getPipeMaxDia(!this.ref) / 2)
+
+	$(
+	!dbref = object dbref(!this.ref)
+	!this.maxdis = !dbref.aod / 2
+	!gmss = gmref of catref of $!this.ref
+	handle any
+		!gmss = gstref of catref of $!this.ref
+	endhandle
+	!mems = mem of $!gmss
+	!goodtypes = split('LCYL SSCY SCYL')
+	do !x indices !mems
+		!mem = !mems[!x]
+		!memtype = type of $!mem
+
+		if !goodtypes.findfirst(!memtype) then
+			!level = level of $!mem
+			if !level[1] gt 6 or !level[2] lt 6 then
+				skip
+			endif
+
+			!tuflag = tuflag of $!mem
+			handle any
+			elsehandle none
+				if !tuflag.not() then
+					skip
+				endif
+			endhandle
+			--!obst = obstruction of $!mem
+			--if !obst ne 2 and !obst ne 0 then
+			--	skip
+			--endif
+
+			!diastring = pdiam of $!mem
+			--!dia = !dbref.evaluate(object block(!diastring))
+			!dia = !!evalCata(!dbref,!diaString)
+			!this.maxdis = max(!this.maxdis,!dia / 2)
+		endif
+	enddo
+	--!this.maxdis = 1	$* cant find scyl
+	$)
+endmethod
+
+

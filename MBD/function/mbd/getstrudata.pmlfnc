@@ -1,0 +1,44 @@
+define function !!getstrudata(!inputarr is any) is array
+	if !inputarr.objecttype() ne 'ARRAY' then
+		!arr.append(!inputarr)
+	else
+		!arr = !inputarr
+	endif
+
+	!items = array()
+	do !path values !arr
+		var !items append coll all (lindim mlabel aidlin aidtext aidpoi aidarc aidcir) for $!path
+		handle any
+		endhandle
+	enddo
+
+	!functions = array()
+	!functionitems = array()
+    --q var !items
+	do !item values !items
+		var !function function of $!item
+		--if !function eq 'unset' then
+		--	$p $!item
+		--endif
+		!index = !functions.findfirst(!function)
+
+		if !index.set() then
+			!functionitems[!index].append(!item)
+		else
+			!functions.append(!function)
+			!temparr = array()
+			!temparr[1] = !item
+			!functionitems.append(!temparr)
+		endif
+	enddo
+	!indices = !functions.sortedindices()
+	!functions.reindex(!indices)
+	!functionitems.reindex(!indices)
+	--q var !functionitems[1]
+
+
+	!result = array()
+	!result.append(!functions)
+	!result.append(!functionitems)
+	return !result
+endfunction

@@ -1,0 +1,76 @@
+﻿define object isoSlope
+	member .name is string
+	member .pos is position
+
+	member .text is string
+	member .ori is orientation
+
+	member .lines is array
+
+	member .maxslope is real
+	member .minslope is real
+endobject
+
+define method .isoSlope(!mem is string,!minslope is real,!maxslope is real)
+	!this.minslope = !minslope
+	!this.maxslope = !maxslope
+	!memtype = type of $!mem
+	handle any
+		return
+	endhandle
+	if !memtype ne 'TUBI' then
+		return
+	endif
+	!tubi = !mem
+
+
+	!slop = Gradient of $!tubi
+	if !slop.unset() then
+		!slop = 0
+	endif
+	if (abs(!slop) gt !this.maxslope or abs(!slop) lt !this.minslope) then
+		return
+	endif
+
+	!bore = aod of $!tubi
+	!itlen = Itlength of $!tubi
+	if !itlen lt !bore then                     $*比管径还短，应该可以忽略
+		return
+	endif
+
+	!this.name = !mem
+
+	!p0 = Itposition of $!tubi wrt/*
+	!refpos = pos of ref of $!tubi wrt/*
+	handle any
+		!refpos = hpos of ref of $!tubi wrt/*
+	endhandle
+	!dir = !refpos.direction(!p0)
+	--!dir = ldir of $!tubi wrt/*
+
+
+	if (!slop.real() gt 0) then
+		!dir1 = !dir.opposite()
+	else
+		!dir1 = !dir
+	endif
+
+	!tempdir = !dir1.orthogonal(u)
+	!ydir = !tempdir.orthogonal(!dir1)
+
+	!p1 = !p0.offset(!dir1,!bore / 2).offset(!ydir,!bore / 2 + 20)
+	!p2 = !p0.offset(!dir1, - !bore / 2).offset(!ydir,!bore / 2 + 20)
+	!p3 = !p2.offset(!ydir,!bore / 4)
+	!p4 = !p1.offset(!ydir,!bore / 4 + 10)
+
+	!this.lines = array()
+	!this.lines.append(!p3.line(!p1))
+	!this.lines.append(!p3.line(!p2))
+	!this.lines.append(!p2.line(!p1))
+
+	!oriudir = !tempdir.opposite()
+	!this.text = 'slope ' + string(!slop * 100,'d1') + '%'
+	!this.pos = !p4
+	!this.ori = y is $!ydir and u is $!oriudir
+endmethod
+

@@ -1,0 +1,41 @@
+﻿------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= May 11st 2023
+--[Function]:
+------------------------------------------
+
+define function !!importtplantnet() is boolean
+	var !banner banner
+
+	!path = !!pml.Getpathname( 'jsontotplant.pmlfnc' ).Before( 'jsontotplant.pmlfnc' ).Replace( '\/','\' ).Replace( '/','\' ).Trim()		$* publishtest possible folder 1
+	!tryfile = object file(!path)
+	!exists = !tryfile.exists()
+	handle any
+		!path = !!pml.Getpathname( 'pdmstorvmattfortplant.pmlfrm' ).Before( 'pdmstorvmattfortplant.pmlfrm' ).Replace( '\/','\' ).Replace( '/','\' ).Trim()		$* publishtest possible folder 2
+	endhandle
+
+	if !banner.match('12.1') ne 0 then
+		!path = !path + 'PublishTest\pdms12.1_SP4\UpFileToPlatform'
+	elseif !banner.match('12.0') ne 0 then
+		!path = !path + 'PublishTest\pdms12.0_SP4\UpFileToPlatform'
+	elseif !banner.match('PDMS') ne 0 then
+		!path = !path + 'PublishTest\pdms12.0_SP4\UpFileToPlatform'
+	else
+		!path = !path + 'PublishTest\E3D\UpFileToPlatform'
+	endif
+
+	import '$!path'
+	handle any
+		--q var !!error
+		if !!error.text.matchwild('*already loaded*').not() then
+			$p Failed to Import $!path
+			return false
+		endif
+	endhandle
+	return true
+endfunction
+`q

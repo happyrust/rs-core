@@ -1,0 +1,631 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= April 17th 2023
+--[Function]:	get bolt data include elements involved in bolt and bolt material
+------------------------------------------
+
+--Method:
+--public:
+--boltdata(!item is any, !pre is boolean , !btsedata is btsedata)			$*item is one element with flan, the other one is the other element with flan
+--getmaterial() is isomaterial  											$*return array of isomaterial
+
+--private:
+--addbranmem(!inputname is string, !pnumstring is string)   				$*add bran mem into allmems allmempnums brans branmems
+--analyze() 																$*
+--checkifmatch(!pnum is real) is boolean									$*
+--checkifwithflan(!mem is string, !pre is boolean) is boolean   			$*
+--getnextflanmem(!inputcename is any)   									$*
+--getpreflanmem(!inputcename is any)										$*
+--gettheothermempnum(!currentpos is position, !theothermem is any) is real  	$*
+
+
+
+define object boltdata
+	--input:
+	member .name is string			$*input data, one element with flan involved in bolt
+	member .pnum is real			$*input data, ppoint num of input element( with flan)
+	member .btsedata is btsedata
+
+	--output:
+	member .allmems is array		$* useful data	  is it better to keep member of this bran only, instead of all member now all members
+	member .allmemPnums is array	$* useful data
+	member .boltitem is string		$* useful data		element which bolt belongs to (for ISOdraft when two brans)
+	member .showitem is string		$* useful data		string of name of pos	(to show in ISOdraft, valv show it at end point)
+	member .isomaterial is isomaterial
+
+	--private:
+	member .brans is array			$* array of bran or equi
+	member .branmems is array		$* array of array(maybe two or more brans)
+	member .haveGask is boolean		$* use it to get boltitem and showitem
+	member .elethick is real		$* sum of thickness of all element between two flan elements
+
+	member .firstFlan is string		$* upstream flan element
+	member .secondFlan is string	$* downstream flan element
+
+	member .theotheritem is string		$* the other item with flan
+	member .theotherpos is position		$* the point with flan connection of the other item
+	member .theotherdir is direction	$* the direction at the point with flan connection of the other item
+	member .theotherbore is bore		$* the bore at the point with flan connection of the other item
+endobject
+
+
+define method .boltdata(!item is any, !pre is boolean , !btsedata is btsedata)			$*item is one element with flan, the other one is the other element with flan
+	!this.name = name of $!item
+	!this.btsedata = !btsedata
+	!this.elethick = 0
+	!this.havegask = false
+	--!this.getDirEleS(!item,!pre)
+
+	if !pre then
+		!this.getpreflanmem(!item)
+		!pnum = arrive of $!this.name
+	else
+		!this.getnextflanmem(!item)
+		!pnum = leave of $!this.name
+	endif
+	!this.pnum = !pnum
+
+
+	if !this.checkifmatch(!pnum).not() then
+		return
+	endif
+	!this.analyze()
+	!this.getmaterial()
+endmethod
+
+$(
+define method .boltdata(!item is any, !pnum is real , !connitem is any , !btsedata is btsedata)		$*unecessary
+	!this.name = name of $!item
+	!this.pnum = !pnum
+	!this.btsedata = !btsedata
+	!this.elethick = 0
+	!this.havegask = false
+	!this.getPnumEles(!pnum,!connitem)
+	if !this.checkifmatch(!pnum).not() then
+		return
+	endif
+	!this.analyze()
+endmethod
+$)
+
+
+define method .analyze()
+	!this.firstflan = !this.branmems[1].first()
+	!this.secondflan = !this.branmems.last().last()
+	!firsttype = type of $!this.firstflan
+	!secondtype = type of $!this.secondflan
+	if !this.brans.size() eq 1 then
+		if !this.havegask then
+			do !x from !this.branmems[1].size() to 1 by -1
+				!mem = !this.branmems[1][!x]
+				if type of $!mem eq 'GASK' then
+					!this.boltitem = !mem
+
+					$(
+					--useless 202305091152
+					if !x gt 1 then
+						!preele = !this.branmems[1][!x - 1]
+						!pretype = type of $!preele
+						if !pretype eq 'FLAN' OR !pretype eq 'FBLI' then
+							!this.showitem = !preele
+						endif
+					endif
+
+					if !this.showitem.unset() and !x lt !this.branmems[1].size() then
+						!nextele = !this.branmems[1][!x + 1]
+						!nexttype = type of $!nextele
+						if !nexttype eq 'FLAN' OR !nexttype eq 'FBLI' then
+							!this.showitem = !nextele
+						endif
+					endif
+
+					if !this.showitem.unset() then
+						!this.showitem = !mem
+					endif
+					$)
+
+					--202305091153 following way it is right
+					--$(
+					--old 202305091148
+					!preele = !this.branmems[1][!x - 1]
+					!nextele = !this.branmems[1][!x + 1]
+					if type of $!nextele eq 'FLAN' OR type of $!nextele eq 'FBLI' then
+						!this.showitem = !nextele
+					elseif type of $!preele eq 'FLAN' OR type of $!preele eq 'FBLI' then
+						!this.showitem = !preele
+					else
+						!this.showitem = !mem
+					endif
+					--$)
+					break
+				endif
+			enddo
+		else
+			if !secondtype eq 'FLAN' or !secondtype eq 'FBLI'  then
+				!this.showitem = !this.secondflan
+				!this.boltitem = !this.secondflan
+			elseif !firsttype eq 'FLAN' or !firsttype eq 'FBLI'  then
+				!this.showitem = !this.firstflan
+				!this.boltitem = !this.firstflan
+			else
+				!this.boltitem = !this.branmems[1][!this.branmems[1].size() - 1]
+				!lpos = lpos of $!this.boltitem wrt/*
+				!this.showitem = !lpos.string()
+			endif
+		endif
+	else
+		--q var !this.brans !this.branmems !this.havegask
+		if !this.havegask then
+			!firstlast = !this.branmems[1].last()
+			if type of $!firstlast eq 'GASK' then		$* the last mem is gask in pre bran
+				!this.boltitem = !firstlast
+				!preele = !this.branmems[1][!this.branmems[1].size() - 1]
+				if type of $!preele eq 'FLAN' or type of $!preele eq 'FBLI' then
+					!this.showitem = !preele
+				else
+					!this.showitem = !this.boltitem
+				endif
+			else
+				!find = false
+				do !x from !this.branmems[2].size() to 1 by -1					$* check from the last ele to first ele in next bran
+					!mem = !this.branmems[2][!x]
+					if type of $!mem eq 'GASK' then						$* found GASK
+						!this.boltitem = !mem
+						!nextele = !this.branmems[2][!x + 1]
+						if type of $!nextele eq 'FLAN' OR type of $!nextele eq 'FBLI' then
+							!this.showitem = !nextele
+						else
+							!this.showitem = !mem
+						endif
+						!find = true
+						break
+					endif
+				enddo
+				if !find.not() then
+					if !secondtype eq 'FLAN' or !secondtype eq 'FBLI' then
+						!this.showitem = !this.secondflan
+						!this.boltitem = !this.secondflan
+					else
+						!this.boltitem = !this.branmems[2][!this.branmems[2].size() - 1]
+						handle any
+							!this.boltitem = !this.branmems[2].last()
+							!hpos = hpos of bran of $!this.boltitem wrt/*
+							handle any
+								!hpos = p1 pos of $!this.boltitem wrt/*			$*nozz
+							endhandle
+							!this.showitem = !hpos.string()
+						elsehandle none
+							!lpos = lpos of $!this.boltitem wrt/*
+							!this.showitem = !lpos.string()
+						endhandle
+					endif
+				endif
+			endif
+		else
+			if !secondtype eq 'FLAN' or !secondtype eq 'FBLI'  then
+				!this.showitem = !this.secondflan
+				!this.boltitem = !this.secondflan
+			else
+				--q var !this.branmems[2]
+				!this.boltitem = !this.branmems[2][!this.branmems[2].size() - 1]
+				handle any
+					!this.boltitem = !this.branmems[2].last()
+					!hpos = hpos of bran of $!this.boltitem wrt/*
+					handle any
+						!hpos = p1 pos of $!this.boltitem wrt/*			$*nozz
+					endhandle
+					!this.showitem = !hpos.string()
+				elsehandle none
+					!lpos = lpos of $!this.boltitem wrt/*
+					!this.showitem = !lpos.string()
+				endhandle
+			endif
+		endif
+	endif
+endmethod
+
+define method .checkifmatch(!pnum is real) is boolean
+	if !this.theotheritem.unset() then
+		return false
+	endif
+	!pbore = p$!pnum bore of $!this.name
+	if !pbore ne !this.theotherbore then
+		return false
+	endif
+	!pdir = p$!pnum dir of $!this.name
+	if !pdir.angle(!this.theotherdir) lt 179 then
+		return false
+	endif
+	!ppos = p$!pnum pos of $!this.name wrt/*
+	!line = !ppos.line(!ppos.offset(!pdir,10000))
+	if !line.distance(!this.theotherpos) gt 1 then
+		return false
+	endif
+	if !!suidirdis(!ppos,!pdir,!this.theotherpos) lt 0 then
+		return false
+	endif
+	return true
+endmethod
+
+
+
+
+define method .getpreflanmem(!inputcename is any)
+	--brans
+	--branmems
+	--havegask
+	--elethicklen
+	--allmems
+	--allmempnums
+	!cename = name of $!inputcename
+	!this.addbranmem(!cename,'arrive')
+
+	!result = array()
+	var !mode mode
+	forwards
+	!preone = name of $!cename
+
+	!otherpnum = 0
+	do
+		!preone = name of pre of $!preone
+		handle any
+			!bran = name of href of bran of $!preone		$* second bran
+			handle any	$* nozz or nothing
+				$!mode
+				return 		$* nothing
+			elsehandle none
+				if type of $!bran ne 'BRAN' then
+					!currentpos = hpos of bran of $!preone
+					!preone = name of $!bran
+					if type of $!bran ne 'NOZZ' then
+						!otherpnum = !this.gettheothermempnum(!currentpos, !preone)
+						if !otherpnum.unset() then
+							$!mode
+							return
+						endif
+					else
+						!otherpnum = 1
+					endif
+				else
+					!preone = name of last mem of $!bran
+					handle any
+						break		$*2 is maxnum number of branch
+					endhandle
+					!adir = adir of $!preone wrt/*
+					!ldir = ldir of $!preone wrt/*
+					if !adir.angle(!ldir) lt 179 then
+						$!mode
+						return
+					endif
+				endif
+			endhandle
+		elsehandle none
+			!adir = adir of $!preone wrt/*
+			!ldir = ldir of $!preone wrt/*
+			if !adir.angle(!ldir) lt 179 then
+				$!mode
+				return
+			endif
+		endhandle
+
+
+
+		if !this.checkifwithflan(!preone,true) then
+			if !otherpnum eq 0 then
+				!this.addbranmem(!preone,'leave')
+			else
+				!this.addbranmem(!preone,!otherpnum.string())
+			endif
+			break
+		elseif type of $!preone ne 'ATTA' then
+			!pos1 = apos of $!preone
+			!pos2 = lpos of $!preone
+			!thick = !pos1.distance(!pos2)
+			if !thick gt 0.01 then				$* atta is not to add
+				!this.elethick = !this.elethick + !thick
+				if type of $!preone eq 'GASK' then
+					!this.havegask = true
+				endif
+				!this.addbranmem(!preone,'all')
+			endif
+		endif
+	enddo
+	$!mode
+	!this.brans.invert()
+	!this.branmems.invert()
+	do !x indices !this.branmems
+		!this.branmems[!x].invert()
+	enddo
+	!this.allmems.invert()
+	!this.allmempnums.invert()
+endmethod
+
+define method .gettheothermempnum(!currentpos is position, !theothermem is any) is real
+	!cref = name of cref of $!theothermem
+	handle any
+		!crfa = crfa of $!theothermem
+		do !cnum indices !crfa
+			!pos = p$!cnum pos of $!theothermem
+			if !pos.distance(!currentpos) lt 1 then
+				return !cnum
+			endif
+		enddo
+	elsehandle none
+		!nums = array()
+		!nums.append(arrive of $!theothermem)
+		!nums.append(leave of $!theothermem)
+		!temparr = array()
+		!temparr.append(1)
+		!temparr.append(2)
+		!temparr.append(3)
+		!cnum = !temparr.difference(!nums)
+		!cpos = p$!cnum[1] pos of $!theothermem
+		if !cpos.distance(!currentpos) lt 1 then
+			return !cnum[1]
+		endif
+	endhandle
+	$(
+	do !x from 1 to 2
+		!pos = p$!x pos of $!theothermem
+		if !pos.distance(!currentpos) lt 1 then
+			return !x
+		endif
+	enddo
+	$)
+
+	!real = object real()
+	return !real
+endmethod
+
+define method .getnextflanmem(!inputcename is any)
+	--brans
+	--branmems
+	--havegask
+	--elethicklen
+	--allmems
+	--allmempnums
+	!cename = name of $!inputcename
+	!this.addbranmem(!cename,'leave')
+
+	!result = array()
+	var !mode mode
+	forwards
+	!nextone = name of $!cename
+
+	!otherpnum = 0
+	do
+		!nextone = name of next of $!nextone
+		handle any
+			!bran = name of tref of bran of $!nextone		$* second bran
+			handle any	$* nozz or nothing
+				$!mode
+				return 		$* nothing
+			elsehandle none
+				if type of $!bran ne 'BRAN' then
+					!currentpos = tpos of bran of $!nextone
+					!nextone = name of $!bran
+					if type of $!bran ne 'NOZZ' then
+						!otherpnum = !this.gettheothermempnum(!currentpos, !nextone)
+						if !otherpnum.unset() then
+							$!mode
+							return
+						endif
+					else
+						!otherpnum = 1
+					endif
+				else
+					!nextone = name of first mem of $!bran
+					handle any
+						break		$*2 is maxnum number of branch
+					endhandle
+					!adir = adir of $!nextone wrt/*
+					!ldir = ldir of $!nextone wrt/*
+					if !adir.angle(!ldir) lt 179 then
+						$!mode
+						return
+					endif
+				endif
+			endhandle
+		elsehandle none
+			!adir = adir of $!nextone wrt/*
+			!ldir = ldir of $!nextone wrt/*
+			if !adir.angle(!ldir) lt 179 then
+				$!mode
+				return
+			endif
+		endhandle
+
+		if !this.checkifwithflan(!nextone,false) then
+			!this.addbranmem(!nextone,'arrive')
+			if !otherpnum eq 0 then
+				!this.addbranmem(!nextone,'arrive')
+			else
+				!this.addbranmem(!nextone,!otherpnum.string())
+			endif
+			break
+		elseif type of $!nextone ne 'ATTA' then
+			!pos1 = apos of $!nextone
+			!pos2 = lpos of $!nextone
+			!thick = !pos1.distance(!pos2)
+			if !thick gt 0.01 then				$* atta is not to add
+				!this.elethick = !this.elethick + !thick
+				if type of $!nextone eq 'GASK' then
+					!this.havegask = true
+				endif
+				!this.addbranmem(!nextone,'all')
+			endif
+		endif
+	enddo
+	$!mode
+endmethod
+
+define method .addbranmem(!inputname is string, !pnumstring is string)
+	!added = false
+	!name = name of $!inputname
+	!branname = name of bran of $!name
+	handle any
+	--$P ASFDSAF
+		!branname = name of equi of $!name
+	endhandle
+	!index = !this.brans.findfirst(!branname)
+	if !index.unset() then
+		!this.brans.append(!branname)
+		!branmem = array()
+		!branmem.append(!name)
+		!this.branmems.append(!branmem)
+	else
+		if !this.branmems[!index].findfirst(!name).unset() then
+			!this.branmems[!index].append(!name)
+		else
+			!added = true
+		endif
+	endif
+
+	if !added.not() then
+		!this.allmems.append(!name)
+		!this.allmempnums.append(!pnumstring)
+	endif
+endmethod
+
+
+
+define method .checkifwithflan(!mem is string, !pre is boolean) is boolean
+	!result = array()
+	if type of $!mem eq 'NOZZ' then
+		!nozz = !mem
+		!gooditem = !nozz
+		!goodpos = p1 pos of $!nozz wrt/*
+		!gooddir = p1 dir of $!nozz wrt/*
+		!goodbore = p1 bore of $!nozz wrt/*
+	elseif !pre then
+		!bore = abore of $!mem
+		!adir = adir of $!mem wrt/*
+
+		!preone = !mem
+		!conn = lconn of $!preone
+		if !conn.matchwild('F*') then
+			!temparr = blrfarr of catref of $!preone
+			if !temparr.set() then
+				!gooditem = !preone
+				!goodpos = lpos of $!preone wrt/*
+				!gooddir = ldir of $!preone wrt/*
+				!goodbore = lbore of $!preone
+			endif
+		endif
+	else
+		!nextone = !mem
+		!conn = aconn of $!nextone
+		if !conn.matchwild('F*') then
+			!temparr = blrfarr of catref of $!nextone
+			if !temparr.set() then
+				!gooditem = !nextone
+				!goodpos = apos of $!nextone wrt/*
+				!gooddir = adir of $!nextone wrt/*
+				!goodbore = abore of $!nextone
+			endif
+		endif
+	endif
+
+
+	if defined(!goodpos) then
+		!this.theotheritem = !gooditem
+		!this.theotherpos = !goodpos
+		!this.theotherdir = !gooddir
+		!this.theotherbore = !goodbore
+		return true
+	else
+		return false
+	endif
+endmethod
+
+define method .getmaterial() is isomaterial
+	--q var !this.theotheritem
+	if !this.isomaterial.unset() and !this.theotheritem.set() then
+		!boltSpec = name of bspec of spec of spref of $!this.name
+		handle any
+			!boltSpec = name of bspec of pspec of pipe of $!this.name
+		endhandle
+		--$p $!this.name    	$!boltSpec
+		!this.btsedata.getspecdata(!boltspec)
+		--q var !boltspec
+
+		--q var !this.btsedata.bthkness
+		!flth1 = !!evalcata(!this.name,!this.btsedata.bthkness)
+		!flth2 = !!evalcata(!this.theotheritem,!this.btsedata.bthkness)
+
+		!this.isomaterial = object isomaterial(!this.btsedata,!this.elethick + !flth1 + !flth2,!this.boltitem)
+		--$p $!this.name
+		--q var !this.isomaterial
+	endif
+	return !this.isomaterial
+endmethod
+
+
+$(
+define method .getDirEleS(!item is any,!pre is boolean)
+	if !pre then
+		!this.getpreflanmem(!item)
+	else
+		!this.getnextflanmem(!item)
+	endif
+endmethod
+$)
+$(
+define method .getpnumeles(!cp is real, !cref is any) is array
+	--brans
+	--branmems
+	--havegask
+	--elethicklen
+	--allmems
+	--allmempnums
+
+
+
+	!cbran = name of bran of $!cref
+	handle any
+		return
+	elsehandle none
+		if name of href of $!cbran eq !this.name or name of bran of href of $!cbran eq name of bran of $!this.name then
+			var !mode mode
+			forwards
+			!startitem = first member of $!cbran
+			handle any
+				$!mode
+				return
+			elsehandle none
+				!this.addbranmem(!this.name,'leave')
+				if !this.checifwithflan(!startitem) then
+					!this.addbranmem(!preone,'arrive')
+					break
+				else
+					!this.getDirEleS(!startitem,false)
+				endif
+			endhandle
+		elseif name of tref of $!cbran eq !this.name or name of bran of href of $!cbran eq name of bran of $!this.name then
+			var !mode mode
+			forwards
+			!startitem = last member of $!cbran
+			handle any
+				$!mode
+				return
+			elsehandle none
+				!this.addbranmem(!this.name,'arrive')
+				if !this.checifwithflan(!startitem) then
+					!this.addbranmem(!preone,'leave')
+					break
+				else
+					!this.getDirEleS(!startitem,true)
+				endif
+			endhandle
+		else
+			return
+		endif
+	endhandle
+endmethod
+$)
+
+¸

@@ -1,0 +1,6304 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= June 26th 2023
+--[Function]:
+------------------------------------------
+
+--Method:
+--Public method:
+--suiSupport(!item is any)  												$*
+
+--Private method:
+--addATTApointToLine()  													$*
+--addInterPointToLine() 													$*
+--clear()   																$*
+--deleteDim() is boolean													$*
+--deleteOldDim(!type is string) 											$*
+--dimpaneSctnXY()   														$*
+--dimSpsXY()																$*
+--draw()																	$*
+--drawDim(!dimpos is position, !ori is orientation, !cheight is real, !poss is array, !currentDimType is string) is boolean 	$*
+--drawMain()																$*
+--drawOneLine(!x is real)   												$*
+--drawSub() 																$*
+--getAttaData() 															$*
+--getCenPos()   															$*
+--getDimName() is boolean   												$*
+--getDirObjectAndLines()													$*
+--getHangMems() 															$*
+--getLineData() is boolean  												$*
+--getName() is boolean  													$*
+--getSupportSctns() 														$*
+--getTypeData() 															$*
+--regetMaxDiss()															$*
+--SortOneLinePoss(!x is real)   											$*
+--toDimGro() is boolean 													$*
+--tryToPutFreePaneIntoOneLine(!sp is supportpane)   						$*
+--tryToPutObjectIntoOneLine(!object is any) 								$*
+--tryToPutPaneIntoOneLine(!sp is supportpane)   							$*
+--uniquePoss(!poss is array) is array   									$*
+--updateDim() is boolean													$*
+
+define object suiSupport
+	member .inputRef is string
+
+	member .suppName is string
+	member .struName is string
+	member .restName is string
+
+
+	--member .specialnum is string
+
+
+	member .nodename is string
+
+	member .toleranceDis is real	$* can be changed
+	member .toleranceAngle is real
+	member .cheight is real
+	member .cheightbili is real
+	member .plusstringcheightbili is real
+
+
+
+	------------------------------------------------------------------
+	member .pipeattas is array		$*element is pipeatta
+	member .attaTubes is array				$*leg
+	member .supportSctns is array			$*sctn gensec
+	member .paneSctns is array				$*fake sctn made of panes
+	member .sps is array					$*free pane
+	member .hangMems is array				$*hang
+	member .attas is array					$* include atta slabel and atta tube
+	member .pclas is array					$* pcla
+	member .weldobjects is array			$* array of suppweldtext
+
+
+	member .allsupportpanes is array		$*all supportpane of support
+	member .supppanepads is array			$*like pad
+
+	member .gottypedata is boolean
+
+
+	------------------------------------------------------for draw
+	member .lines is array					$*array of dim line
+	member .linePoss is array				$*array of points of each line
+	member .lineMaxDiss is array			$*array of maximum radius of each line
+	member .lineadlongths is array			$*adjust length
+	member .lineforheles is array			$*true if line is for hele
+
+
+	--member .dirObject is suiLookDirections	$*best directions of looking view
+
+	member .ATTApoints is array				$*position of ATTA
+	member .restAttaPoints is array			$*position of atta which could not be add into line
+	member .otherpoints is array			$*position for some type like some hele(apos is same with lpos)
+
+	member .cenPoint is position			$*centrel point in geometry shape
+
+	member .paneMaxDiss is array			$*maximum radius of pane in each line, but it is useless, linemaxdiss update according to this arr
+
+	member .lineDimSps is array				$*pane in line, lick a pane under the pipe, need to dim(only sub dim)
+	member .freeSps is array				$*not in line, but need to dim(sub dim and add into line?)
+	member .notDimSps is array				$*like the end cover pane, no need to dim
+
+
+	member .paneThick is real
+
+	--member .dimZone is string
+	--member .dimGro is string
+
+	member .mbdstru is mbdstru
+
+	member .changecheightauto is boolean	$*change cheight automatically
+	member .sepSmallDim is boolean			$*separate dim in order to change the position when necessary
+	member .ignoreline is boolean			$*donot consider line element in polarsystem
+	member .useoldway is boolean			$*use old method to draw
+	member .changecheightautobili is real
+	--member .mainDimName is string
+	--member .subDimName is string
+
+	member .maxsctndis is real
+
+	member .materials is array
+
+
+	--member .parttypes is array				$* instore all type of object for support
+	--member .parttypeindices is array		$* instore indices of object in partobjects
+	--member .partobjects is array			$* instore all object for each one component of support
+	--member .partconnections is array		$* instore relationship of part
+
+	member .generatejson is boolean
+	member .filepath is string
+
+
+	------------------------------------------------------att
+	member .spcl is string
+	member .function is string		$*function from atta
+	member .swzj is string
+	member .sgzj is string
+
+	member .mbdlocation is mbdlocation
+
+	--for modelatt drawing and proofreading
+	!tempstrings = split('membermodelatt memberdrawinginfo memberproofreading')
+	do !string values !tempstrings
+		!tempfile = object file(!!commonpath() + !string + '.txt')
+		!lines = !tempfile.readfile()
+		do !line values !lines
+			if !line.trim().trim('	') ne '' then
+				$!line
+			endif
+		enddo
+	enddo
+
+	member .wronglines is array
+endobject
+
+define method .suiSupport(!item is any)
+	--!this.parttypes = split('CLAMP PAD LUG LEG POINT BEAM PANE PANES BOLT TUBE APDP CONNECT WELD CONCRETE')
+	--do !x indices !this.parttypes
+	--	!this.parttypeindices[!x] = array()
+	--enddo
+
+	--$p kkkk
+	--q var !item
+	var !ref ref of $!item
+	handle any
+		!tryname = !item & '/STRU'
+		var !ref ref of $!tryname
+		handle any
+			!tryname = !item & '/REST'
+			var !ref ref of $!tryname
+			handle any
+				return
+			endhandle
+		endhandle
+	endhandle
+	!this.inputRef = !ref
+	!this.toleranceDis = 50
+	!this.toleranceAngle = 1
+	!this.cheight = 20						$* need to set
+	!this.cheightbili = 0.2
+	!this.paneThick = 30				$*
+	!this.gottypedata = false
+
+	--!this.getspecialnum()
+	!this.getName()
+	!this.getsuppatts()
+	--!this.load()
+endmethod
+define method .load()
+	!this.getTypeData()
+
+	if !this.getLineData().not() then
+		return
+	endif
+	--!this.getCenPos()
+
+	!this.getmaterial()
+	!this.getwelds()
+endmethod
+
+
+define method .getsuppAttArr(!suppAtts is array) is array
+	!row = array()
+	do !x indices !suppatts
+		!att = !suppAtts[!x]
+		--if !att.lowcase() eq 'support' then
+		--	!att = 'suppname'
+		--endif
+		!com = |!row[!x] = !this.| + !att
+        --q var !com
+		$!com
+		handle any
+			!rows[!x] = ''
+			$p No suppatt: $!att for supp $!this.suppname
+		endhandle
+	enddo
+	return !row
+endmethod
+
+define method .getsuppatts()
+	!name = !this.suppname
+
+	!sw = :ZD_SWZJ of $!this.suppname
+	handle any
+		!this.swzj = '否'
+	elsehandle none
+		if !sw.unset() or !sw eq '' then
+			!this.swzj = '否'
+		else
+			!this.swzj = !sw
+		endif
+	endhandle
+
+	!sg = :ZD_SGZJ of $!this.suppname
+	handle any
+		!this.sgzj = ''
+	elsehandle none
+		if !sg.unset() or !sg eq '' then
+			!this.sgzj = ''
+		else
+			!this.sgzj = !sg
+		endif
+	endhandle
+
+    --modify by jyg 20240731
+    !this.rev = :ZD_Rev of $!this.suppname
+
+	!!setattvalue(!this,!name,split('spcl/:zd_spcl,function/:zd_zjgn,drawnum/:zd_nbbm',','))
+	!!setattvalue(!this,!name,split('room/:room_no,tssm/:zd_tssm,wjbm/:zd_wjbm,nbbm/:zd_nbbm,status/:zd_status,rev/:zd_rev',','))
+	--!this.rev = 'A' $*4月30日前
+	!this.getdrawinfo()
+	!!setproofreadinginfo(!this,!name)
+endmethod
+
+define method .addtoview()
+	add $!this.suppname
+	handle any
+	endhandle
+	add $!this.struname
+	handle any
+	endhandle
+	add $!this.restname
+	handle any
+	endhandle
+    --q var !this.attas
+	do !atta values !this.attas
+		add $!atta
+		handle any
+		endhandle
+	enddo
+endmethod
+
+define method .getmaterial()
+	if !this.materials.set() then
+		return
+	endif
+    --$p 55
+	!this.gettypedata()
+    --$P 66
+	!materials = array()
+    --q var !this.supportsctns
+	do !supportsctn values !this.supportsctns
+		--!suppmaterial = object suppmaterial(!supportsctn.ref,!supportsctn.length.value() / 1000)
+		--!suppmaterial = object suppmaterial(!supportsctn.ref,!supportsctn.length.value())	$*use mm
+
+		if !supportsctn.adlongth.unset() or !supportsctn.adlongth eq 0 then
+			!suppmaterial = object suppmaterial(!supportsctn.ref,!supportsctn.length)	$*use mm
+		else
+			!suppmaterial = object suppmaterial(!supportsctn.ref,!supportsctn.length + !supportsctn.adlongth)
+		endif
+        --q var !suppmaterial
+		if !suppmaterial.errors.set() then
+			!this.wronglines.appendarray(!suppmaterial.errors)
+		endif
+		if !suppmaterial.weight.set() then
+			!materials.append(!suppmaterial)
+		endif
+	enddo
+	--q var !suppmaterial
+
+	!allpanerefs = array()
+    --q var !this.allsupportpanes[1].profile
+    --Q VAR !this.allsupportpanes
+	do !sp value !this.allsupportpanes
+        --q var !sp
+		!allpanerefs.append(!sp.ref)
+		if type of $!sp.ref eq 'PANE' then
+			--!suppmaterial = object suppmaterial(!sp.ref,!sp.profile.area().value())
+			!suppmaterial = object suppmaterial(!sp.ref,!sp.profile.area())
+			handle any
+				$p Pane $!sp.ref 建模有问题,请检查它的模型及材料
+				!suppmaterial = object suppmaterial(!sp.ref,!sp.axis1.length() * !sp.axis2.length())
+			endhandle
+		else
+			!suppmaterial = object suppmaterial(!sp.ref,1)	$*use number
+		endif
+		if !suppmaterial.errors.set() then
+			!this.wronglines.appendarray(!suppmaterial.errors)
+		endif
+
+        --modify by jyg 20241205 把加强版的厚度替换成长x宽
+        !suppNS = !suppmaterial.ns
+        if  !suppNS.isdigits() then
+            !spAllLength = array()
+            --q var !sp.Profile
+            !fradius = array()
+            do  !spLength values !sp.Profile.Edges()
+                !objType = !spLength.objecttype()
+                if  !objType eq 'ARC' then
+                    !fradius.append(!objType)
+                    !spAllLength.append(!spLength.radius.value())
+                else
+                    !spAllLength.append(!spLength.length().value())
+                endif
+            enddo
+            !spAllLength.sortUnique().invert()
+            if  !spAllLength.size() eq 1 then
+                if  !fradius.size() eq 1 then
+                    !xinghao = string(!spAllLength[1] *  2) + 'x' + !suppmaterial.ns
+                    !suppmaterial.remark = '直径x厚度'
+                else
+                    !xinghao = !spAllLength[1].nint().string() + 'x' + !spAllLength[1].nint().string() + 'x' + !suppmaterial.ns
+                    !suppmaterial.remark = '长x宽x高'
+                endif
+            else
+                !xinghao = !spAllLength[1].nint().string() + 'x' + !spAllLength[2].nint().string() + 'x' + !suppmaterial.ns
+                !suppmaterial.remark = '长x宽x高'
+            endif
+            !suppmaterial.ns = !xinghao
+            !suppmaterial.size = !xinghao
+        endif
+        --q var !suppmaterial
+
+
+		if !suppmaterial.weight.set() then
+			!materials.append(!suppmaterial)
+		endif
+
+
+	enddo
+	--q var !materials
+
+	do !supppanepad value !this.supppanepads
+		var !paneref ref of $!supppanepad.name
+		!allpanerefs.append(!paneref)
+
+		!suppmaterial = object suppmaterial(!paneref,!supppanepad.area)
+		if !suppmaterial.errors.set() then
+			!this.wronglines.appendarray(!suppmaterial.errors)
+		endif
+		if !suppmaterial.weight.set() then
+			--!supppanepad.ns = !suppmaterial.ns
+			!materials.append(!suppmaterial)
+		endif
+	enddo
+
+
+
+	!hangmems = !this.hangmems
+    --q var !hangmems
+    --q var !this.pclas
+	!hangmems.appendarray(!this.pclas)
+    --!hangmems.Unique()
+    --q var !hangmems
+    --q var !hangmems[1] !hangmems[2] !hangmems[3] !hangmems[4]
+
+    --modify by jyg 20250111处理弹簧添加直径尺寸后，弹簧开了双份料，需要合并重复项
+    !datalog = array()
+    --q var !hangmems[1]
+    --q var !hangmems
+	do !mem values !hangmems
+        --Q VAR !mem
+        --modify by jyg 20250111处理弹簧添加直径尺寸后，弹簧开了双份料，需要合并重复项
+        if !mem.objecttype() ne 'STRING' then
+            if  !datalog.findfirst(!mem.ref).set() then
+                skip
+            else
+                !datalog.append(!mem.ref)
+            endif
+        endif
+
+		if !mem.objecttype() ne 'STRING' then
+			!tempstring = !mem.ref
+		else
+			!tempstring = !mem
+		endif
+        --q var !tempstring
+
+        --modify by jyg 20250208 解决itemcode 有多个编码的情况
+        !hangmemtype = type of $!tempstring
+        !itemcode = :itemcode of $!tempstring
+        !allItemcode = !itemcode.split(';')
+        if  !hangmemtype eq 'PCLA' and !allItemcode.size() gt 1 then
+            --$P 123
+            do  !i index !allItemcode
+                !indexInfo = '1000000001,1000000002,1000000003,1000000004,1000000005,1000000006,1000000007,1000000008,1000000009'
+                !number = !indexInfo.split(',')[!i]
+                !suppmaterial = object suppmaterial(!tempstring,!number.real())
+                if !suppmaterial.errors.set() then
+                    !this.wronglines.appendarray(!suppmaterial.errors)
+                endif
+                if !suppmaterial.weight.set() then
+                    !materials.append(!suppmaterial)
+                endif
+            enddo
+        else
+            --$P 456
+            !catrefOwner = name of owner of catref of $!tempstring
+            --modify by jyg 20250219 解决阀门用支架拉杆数量不是1，而是取长度的问题。
+            if  !catrefOwner eq '/NPHS-TA(U型)' then
+                !catrefLength = !tempstring.dbref().desp[1] * pi + 2 * !tempstring.dbref().desp[2]
+                !suppmaterial = object suppmaterial(!tempstring,!catrefLength)
+                --q var !suppmaterial
+            else
+                !suppmaterial = object suppmaterial(!tempstring,1)
+            endif
+
+            if !suppmaterial.errors.set() then
+                !this.wronglines.appendarray(!suppmaterial.errors)
+            endif
+            if !suppmaterial.weight.set() then
+                !materials.append(!suppmaterial)
+            endif
+        endif
+	enddo
+
+	--Q VAR !this.struname !this.suppname !this.restname
+
+	var !AllPFIT coll all (PFIT FITT) for $!this.struname
+	handle any
+		!allpfit = array()
+	endhandle
+	do !pfit values !allpfit
+        --$p 123
+		if !allpanerefs.findfirst(!pfit).unset() then
+            --modify by jyg 20250208 解决itemcode 有多个编码的情况
+            !pfittype = type of $!pfit
+            !itemcode = :itemcode of $!pfit
+            !allItemcode = !itemcode.split(';')
+            if  !pfittype eq 'PFIT' and !allItemcode.size() gt 1 then
+                do  !i index !allItemcode
+                    !indexInfo = '1000000001,1000000002,1000000003,1000000004,1000000005,1000000006,1000000007,1000000008,1000000009'
+                    !number = !indexInfo.split(',')[!i]
+                    !suppmaterial = object suppmaterial(!pfit,!number.real())
+                    if !suppmaterial.errors.set() then
+                        !this.wronglines.appendarray(!suppmaterial.errors)
+                    endif
+                    if !suppmaterial.weight.set() then
+                        !materials.append(!suppmaterial)
+                    endif
+                enddo
+            else
+                !suppmaterial = object suppmaterial(!pfit,1)
+                if !suppmaterial.errors.set() then
+                    !this.wronglines.appendarray(!suppmaterial.errors)
+                endif
+                if !suppmaterial.weight.set() then
+                    !materials.append(!suppmaterial)
+                endif
+            endif
+		endif
+	enddo
+
+
+	--!materials.appendarray(!this.getluglegmaterial()) $*all atta belong to pipe according to new rule
+
+	--q var !materials[1]
+	!this.materials = !materials
+
+	!this.setMaterialSpecialNumber()
+
+
+	!this.setmaterialorder()
+endmethod
+
+define method .setmaterialorder()
+	!uniquecodes = array()
+	!cindex = 0
+	do !x indices !this.materials
+		!isomaterial = !this.materials[!x]
+		!index = !uniquecodes.findfirst(!isomaterial.uniquecode)
+		if !index.unset() then
+			!uniquecodes.append(!isomaterial.uniquecode)
+			!index = !cindex + 1
+		endif
+		!this.materials[!x].order = !index
+		!cindex = max(!index,!cindex)
+	enddo
+endmethod
+
+
+
+define method .getluglegmaterial() is array
+	!materials = array()
+
+	do !pipeatta values !this.pipeattas
+		do !attaobject values !pipeatta.attaobjects
+			if !attaobject.objecttype() ne 'ISOPAD' and !attaobject.onpad then
+				!onematerial = object suppmaterial(!attaobject)
+				if !onematerial.errors.set() then
+					!this.wronglines.appendarray(!onematerial.errors)
+				endif
+				if !onematerial.weight.set() then
+					!materials.append(!onematerial)
+				endif
+			endif
+		enddo
+	enddo
+	return !materials
+	$(
+	!materials = array()
+	!attadatas = array()
+	do !x from 1 to 2
+		if !x eq 1 then
+			!index1 = !this.parttypes.findfirst('LUG')
+		else
+			!index1 = !this.parttypes.findfirst('LEG')
+		endif
+
+		if !index1.set() then
+			do !index values !this.parttypeindices[!index1]
+				!attadatas.appendarray(!this.partobjects[!index].objects)
+			enddo
+		endif
+	enddo
+
+
+	do !object values !attadatas
+		if !object.onpad then
+			!onematerial = object suppmaterial(!object)
+			!materials.append(!onematerial)
+		endif
+	enddo
+	return !materials
+	$)
+endmethod
+
+define method .setMaterialSpecialNumber()
+	--!specialstring = !this.specialnum
+	!specialstring = !this.drawnum
+	--q var !this.specialnum
+	!num = 0
+	do !index indices !this.materials
+		!num = !num + 1
+		!this.materials[!index].specialnum = !num.string()
+		$(
+		!addstring = !num.string()
+		if !addstring.length() lt 3 then
+			do !x from 1 to 3 - !addstring.length()
+				!addstring = '0' + !addstring
+			enddo
+		endif
+		!this.materials[!index].specialnum = !specialstring + '_' + !addstring
+		$)
+	enddo
+endmethod
+
+define method .getSpecialMaterials(!atts is array) is array
+    --q var !this.materials
+    --$P 159
+	if !this.materials.unset() then
+		!this.getmaterial()
+	endif
+    --$P 147
+	!weightindex = !atts.findfirst('weight')
+	handle any
+	endhandle
+
+    --modify by jyg 20240731 手动调整零部件版本功能
+    !this.settemprev()
+
+	!indexs = array()
+	!rowarrs = array()
+    --q var !this.materials[1]
+    --q var !this.materials
+	do !suppmaterial values !this.materials
+		--!indexs.append(!suppmaterial.specialnum.after('_').real())
+		if !suppmaterial.specialnum.match('_') ne 0 then
+			!indexs.append(!suppmaterial.specialnum.after('_').real())
+		else
+			!indexs.append(!suppmaterial.specialnum.real())
+		endif
+		!rowarr = array()
+		do !x indices !atts
+			!att = !atts[!x]
+			if !att eq 'order' then
+				!com = '!rowarr[!x] = !suppmaterial.specialnum'
+			else
+				!com = '!rowarr[!x] = !suppmaterial.' + !att
+			endif
+			--!com = '!rowarr[!x] = !suppmaterial.' + !att
+			$!com
+			handle any
+				!rowarr[!x] = ''
+				$p No att: $!att in Material object
+			endhandle
+		enddo
+		!rowarrs.append(!rowarr)
+	enddo
+    --q var !rowarrs
+	!indices = !indexs.sortedindices()
+	!rowarrs.reindex(!indices)
+
+	if defined(!weightindex) then
+		do !index indices !rowarrs
+			!rowarrs[!index][!weightindex] = !rowarrs[!index][!weightindex].string('D1').real()
+		enddo
+	endif
+	return !rowarrs
+endmethod
+
+define method .settemprev()
+	!path = !!tempmodrev.path.val
+	handle any
+		pml reload form !!tempmodrev
+		!path = !!tempmodrev.path.val
+        handle any
+            return
+        endhandle
+	endhandle
+
+	!file = object file(!path & !this.suppName & 'rev.txt')
+    --q var !file
+	if !file.exists() then
+		!lines = !file.readfile()
+		if !lines.size() ne !this.materials.size() then
+			!!alert.warning('日志数据与现模型材料对不上。请重新标注')
+			!ans = !!alert.confirm('为了避免当前错误日志数据的影响，建议删除日志数据，是否删除?')
+			if !ans eq 'YES' then
+				!file.deletefile()
+			endif
+			return
+		endif
+
+		!nums = array()
+		!revs = array()
+		do !line values !lines
+			!arr = !line.split()
+			!nums.append(!arr[1].real())
+			!revs.append(!arr[2])
+		enddo
+		!indices = !nums.sortedindices()
+		!revs.reindex(!indices)
+		!nums.reindex(!indices)
+
+        --q var !revs !nums
+        --q var !this.materials
+		do !isomaterial values !this.materials
+        --q var !isomaterial
+			if !isomaterial.specialnum.match('_') ne 0 then
+				!snum = !isomaterial.specialnum.after('_').real()
+			else
+				!snum = !isomaterial.specialnum.real()
+			endif
+
+			!index = !nums.findfirst(!snum)
+			if !index.set() then
+				!isomaterial.rev = !revs[!index]
+			endif
+		enddo
+	endif
+    handle any
+    endhandle
+endmethod
+
+
+define method .sumMaterials(!inputatts is array) is array
+	if !inputatts.unset() then
+		--!atts = split('编号 品名 型号 材料牌号 材料标准 规格标准 尺寸 制造形式 RCC-M 质保等级 单位 单重 单重单位 备注 数量 重量')
+		!atts = split('itemcode desc ns material materialstandard specstandard size generateStyle rccm qualitylevel unit perWeight weightUnit remark quantity weight')
+	else
+		!atts = !inputatts
+	endif
+
+
+	!tempmaterials = !this.sumattamaterial()
+	!allorders = array()
+	do !isomaterial values !tempmaterials
+		!allorders.append(!isomaterial.order)
+	enddo
+	!orders = !allorders
+	!orders.unique().sort()
+
+	!isomaterials = array()
+	do !x indices !orders
+		!orderarr = !allorders.find(!x)
+		do !y values !orderarr
+			!isomaterial = !tempmaterials[!y]
+			if undefined(!isomaterials[!x]) then
+				!isomaterials[!x] = !isomaterial
+			else
+				!isomaterials[!x].quantity = !isomaterials[!x].quantity + !isomaterial.quantity
+				!isomaterials[!x].weight = !isomaterials[!x].weight + !isomaterial.weight
+			endif
+		enddo
+	enddo
+	return !!materialtoarr(!isomaterials,!atts)
+
+
+
+
+	!tempmaterials = !this.sumattamaterial()
+
+	!itemcodes = array()
+	!order = 0
+	!sumfail = false
+
+	!suppmaterials = array()
+	do !suppmaterial values !tempmaterials
+		!uniquecode = !suppmaterial.itemcode
+		if !uniquecode eq '' then
+			!sumfail = true
+			break
+		endif
+		!index = !itemcodes.findfirst(!uniquecode)
+		if !index.unset() then
+			!suppmaterials.append(!suppmaterial)
+			!itemcodes.append(!uniquecode)
+		else
+
+			!Suppmaterials[!index].quantity = !Suppmaterials[!index].quantity + !Suppmaterial.quantity
+			!Suppmaterials[!index].weight = !Suppmaterials[!index].weight + !Suppmaterial.weight
+		endif
+	enddo
+	if !sumfail then
+		$p Elements in $!this.suppname has no Itemcode
+		return !!materialtoarr(!this.materials,!atts)
+	else
+		return !!materialtoarr(!Suppmaterials,!atts)
+	endif
+
+
+	$(
+	!rowarrs = array()
+	!quantityindex = !atts.findfirst('quantity')
+	!weightindex = !atts.findfirst('weight')
+
+
+	!tempmaterials = !this.sumattamaterial()
+
+
+	!itemcodes = array()
+	!order = 0
+
+	do !suppmaterial values !tempmaterials
+		!uniquecode = !suppmaterial.itemcode
+		!index = !itemcodes.findfirst(!uniquecode)
+		--!index = !itemcodes.findfirst(!suppmaterial.spref)
+		if !index.unset() then
+			!order = !order + 1
+			!suppmaterial.order = !order
+			!itemcodes.append(!uniquecode)
+			!rowarr = array()
+			do !x indices !atts
+				!att = !atts[!x]
+				!com = '!rowarr[!x] = !suppmaterial.' + !att
+				$!com
+				handle any
+					!rowarr[!x] = ''
+					$p No att: $!att in Material object
+				endhandle
+			enddo
+			!rowarrs.append(!rowarr)
+		else
+			!suppmaterial.order = !order
+			if !quantityindex.set() and !weightindex.set() then
+				!rowarrs[!index][!quantityindex] = !rowarrs[!index][!quantityindex] + !suppmaterial.quantity
+				!rowarrs[!index][!weightindex] = !rowarrs[!index][!weightindex]  +  !suppmaterial.weight
+			endif
+		endif
+	enddo
+	return !rowarrs
+	$)
+endmethod
+
+define method .sumattamaterial() is array
+	------------------------------------------------------deal angle material s 202311141745
+	if !this.materials.unset() then
+		!this.getmaterial()
+	endif
+	!angleIsomaterials = array()
+	!angleuniquecodes = array()
+	!angles = array()
+
+	!tempmaterials = !this.materials
+	do !x indices !tempmaterials
+		!isomaterial = !tempmaterials[!x]
+		if !isomaterial.ns.match('°') ne 0 then
+			var !branname ref of bran of $!isomaterial.name
+			!uniquecode = !isomaterial.uniquecode
+			!index = !angleuniquecodes.findfirst(!uniquecode)
+			if !index.unset() then
+				!isomaterial.ns = !isomaterial.ns.before(' x ')
+				!angleIsomaterials.append(!isomaterial)
+				!angleuniquecodes.append(!uniquecode)
+				!angles.append(!isomaterial.materialangle)
+			else
+				if !angles[!index] + !isomaterial.materialangle gt 360 then
+					!angleIsomaterials[!index].quantity = !angleIsomaterials[!index].quantity + !isomaterial.quantity
+					!angleIsomaterials[!index].weight = !angleIsomaterials[!index].weight + !isomaterial.weight
+					!angles[!index] = !isomaterial.materialangle
+				else
+					!angles[!index] = !angles[!index] + !isomaterial.materialangle
+				endif
+			endif
+			!tempmaterials[!x].delete()
+		endif
+	enddo
+	!tempmaterials.compress()
+	!tempmaterials.appendarray(!angleIsomaterials)
+	------------------------------------------------------deal angle material e 202311141745
+	-----------------------------------------------------------------------------------
+	-----------------------------------------------------------------------------------Step 1:end
+
+	return !tempmaterials
+endmethod
+
+define method .drawweld()
+	!this.getwelds()
+
+endmethod
+
+define method .getwelds()
+	if !this.weldobjects.set() then
+		return
+	endif
+	var !boxs coll all box for $!this.struname
+	handle any
+		!boxs = array()
+	endhandle
+	do !box values !boxs
+		!dbdepth = dbdepth of $!box
+		if !dbdepth le 7 then
+			skip
+		endif
+		$(
+		!sctn = name of sctn of $!box
+		handle any
+			!sctn = name of gensec of $!box
+			handle any
+				!sctn = name of PANE of $!box
+				handle any
+					skip
+				endhandle
+			endhandle
+		endhandle
+		$)
+		!boxpos = pos of $!box wrt/*
+		!text = :weldTP of $!box
+		handle any
+			!text = ''
+		endhandle
+		if !text ne '' then
+            --q var !box !boxpos !text
+			!suppWeldText = object suppWeldText(!box,!boxpos,!text,'FW')
+			!this.weldobjects.append(!suppWeldText)
+		endif
+	enddo
+	--q var !this.weldobjects
+	return
+	var !boxs coll all box with (type of owner eq 'SCTN') for $!this.struname
+	!weldPoss = array()
+	!weldShops = array()
+	!weldmems = array()
+
+	do !box values !boxs
+		!boxpos = pos of $!box wrt/*
+		!weldposs.append(!boxpos)
+		!shop = :shop of $!box
+		!weldshops.append(!shop)
+		!weldmems.append(!box)
+	enddo
+
+	do !x indices !weldposs
+
+		if !weldshops[!x].not() then
+			!text = 'M' & !x
+		else
+			!text = 'A' & !x
+		endif
+		!suppWeldText = object suppWeldText(!weldmems[!x],!weldposs[!x],!text,'FW')
+		!this.weldobjects.append(!suppWeldText)
+	enddo
+endmethod
+
+define method .getweldlist() is array
+	!fieldwelds = array()
+	!shopwelds = array()
+	do !weldobject values !this.weldobjects
+		!weldtext = !weldobject.text
+		if !weldtext.matchwild('M*') then
+			!fieldwelds.append(!weldtext)
+		else
+			!shopwelds.append(!weldtext)
+		endif
+	enddo
+	!result = array()
+	!result.append(!fieldwelds)
+	!result.append(!shopwelds)
+	return !result
+endmethod
+
+
+define method .getLineData() is boolean
+	if !this.lines.set() then
+    --$p 852
+		return true
+	endif
+	--$p 555
+	!this.clear()
+	--$p sdf
+	if !this.getName().not() then
+		!this.clear()
+		return false
+	endif
+	--$p safd
+	--get data of atta hange pane sctn sps
+
+
+	--get dim lines and add object (pane panesctn hang sctn leg) into line
+	!this.getDirObjectAndLines()
+
+
+	--put intersection point between lines into line
+	!this.addInterPointToLine()
+
+
+
+	--put atta point which is near line
+	!this.addATTApointToLine()
+
+	--$p asdf
+
+	--q var !this.restattapoints
+	if !this.restattapoints.set() then
+		--add rest atta, and generate new line
+		!this.addrestattapoints()
+	endif
+
+	if !this.otherpoints.set() then
+		!this.addotherpoints()
+	endif
+
+
+	!this.reGetMaxDiss()
+
+	return true
+endmethod
+
+define method .addAtta(!item is any)	$* this method maybe needed
+    --$P 2222
+	var !ref ref of $!item
+	handle any
+		return
+	endhandle
+	if type of $!ref eq 'ATTA' then
+		!this.attas.append(!ref)
+		!this.getLineData()
+		!this.getCenPos()
+		!this.updateDim()
+	endif
+endmethod
+
+define method .draw() is boolean
+    --$p 123
+	!this.load()
+
+	!this.cheight = !this.maxsctndis * !this.cheightbili
+
+	if !this.mbdstru.deletedim().not() or !this.mbdstru.deleteaid().not() then
+		!!alert.warning('此账号没有SITE(MBD)的读写权限 1')
+		return false
+	endif
+	if !this.mbdstru.todim().not() or !this.mbdstru.toaid().not() then
+		!!alert.warning('此账号没有SITE(MBD)的读写权限 2')
+		return false
+	endif
+
+	!this.useoldway = false
+	--!this.useoldway = true
+	if !this.useoldway.not() then
+		!this.drawwithnewway()
+	else
+		--!this.drawOneLine(4)
+		--return
+		!this.setprogress(1)
+
+		!linesize = !this.lines.size()
+		do !lineindex indices !this.lines
+			!this.drawoneline(!lineindex)
+			!this.setprogress(1 + 0.69 * nint(100 * !lineindex / !linesize))
+		enddo
+		--!this.lines.evaluate(object block('!this.drawOneLine(!evalindex)'))
+
+		!this.dimspsXY()
+		!this.setprogress(80)
+		!this.dimpaneSctnXY()
+
+
+		!this.setprogress(85)
+		!this.drawweld()
+		!this.drawmaterial()
+		!this.setprogress(90)
+		--!this.drawMain()
+		--!this.drawSub()
+		!this.drawpipeEL()	$*no need according to pipe team in Hebei
+		!this.setprogress(92)
+		!this.drawpadlugleg()
+
+		!this.drawlocation()
+
+		!this.setprogress(95)
+		$!this.struname
+		if !this.generatejson then
+			!this.generatejsonattrvm()
+		endif
+	endif
+	return true
+endmethod
+
+define method .getparts() is array
+	!instsupport = object instsupport(!this.suppname)
+	!instsupport.addattatopartobjects()
+	!instsupport.addselfToPartobjects()
+
+	!instsupport.addconcreteToPartobjects()
+
+
+	!brantubes = !this.addbrantubetopartobjects()
+	!attatubes = !this.addattatubetopartobjects()
+	!tubes = !brantubes
+	!tubes.appendarray(!attatubes)
+
+	--q var !instsupport.partobjects
+	do !object values !tubes
+		!instsupport.partobjects.append(!object)
+		!index = !instsupport.parttypes.findfirst('TUBE')
+		!instsupport.parttypeindices[!index].append(!instsupport.partobjects.maxindex())
+	enddo
+
+	!concretes = !this.addconcretetopartobjects()
+	do !object values !concretes
+		!instsupport.partobjects.append(!object)
+		!index = !instsupport.parttypes.findfirst('CONCRETE')
+		!instsupport.parttypeindices[!index].append(!instsupport.partobjects.maxindex())
+	enddo
+	return !instsupport.partobjects
+endmethod
+
+define method .addconcretetopartobjects() is array
+	!concretes = array()
+	$(
+	if !this.mbdlocation.nswall.set() and !this.mbdlocation.ewwall.set() then
+		!concrete = object suppconcrete()
+		!concrete.markcivil = !this.mbdlocation.nswall
+		!concrete.mems = array()
+		!concrete.mems.append(!concrete.markcivil.civilname)
+
+		!concretes.append(!concrete)
+
+		!concrete = object suppconcrete()
+		!concrete.markcivil = !this.mbdlocation.ewwall
+		!concrete.mems = array()
+		!concrete.mems.append(!concrete.markcivil.civilname)
+
+		!concretes.append(!concrete)
+	elseif !this.mbdlocation.nearwalls.set() then
+	$)
+
+	do !wallcon values !this.mbdlocation.nearwalls
+		!concrete = object suppconcrete()
+		!concrete.markcivil = !wallcon
+		!concrete.mems = array()
+		!concrete.mems.append(!concrete.markcivil.civilname)
+		--$p $!concrete.markcivil.civilname
+		!concretes.append(!concrete)
+	enddo
+	--endif
+	return !concretes
+endmethod
+
+define method .addattatubetopartobjects() is array
+	!attatubes = array()
+	do !attatube values !this.attatubes
+		!dir = !attatube.zdir
+		!supptube = object supptube()
+		!supptube.pos1 = !attatube.posstart
+		!supptube.pos2 = !attatube.posend
+		!supptube.pos = !supptube.pos1.midpoint(!supptube.pos2)
+		!supptube.axis = !supptube.pos1.line(!supptube.pos2)
+		!supptube.ori = z is $!dir
+		!supptube.height = !attatube.axis.length()
+		!supptube.india = 0
+		!supptube.outdia = !attatube.maxDis
+		!supptube.isleg = true
+		!supptube.mems = array()
+		!supptube.mems.append(!attatube.ref)
+		!attatubes.append(!supptube)
+	enddo
+	return !attatubes
+endmethod
+
+define method .addbrantubetopartobjects() is array
+	!brantubes = array()
+
+	!attas = !this.attas
+	!brans = array()
+	!branposs = array()
+	!brandirs = array()
+	!branaods = array()
+	!brandns = array()
+	!abcs = array()
+	!branmems = array()
+
+	!names = array()
+	do !atta values !attas
+		!attaname = name of $!atta
+		!names.append(!attaname)
+	enddo
+	!attas.reindex(!names.sortedindices())	$* mark sure the A atta is in front of other ATTA like B C
+	--Q VAR !attas
+	do !atta values !attas
+		!bran = namn of bran of $!atta
+		!bran = !bran.part(1,'-')
+		!pos = pos of $!atta
+		!dir = ldir of $!atta
+		!aod = aod of $!atta
+		!abore = abore of $!atta
+		!aborereal = !abore.real()
+		!index = !brans.findfirst(!bran)
+		if !index.unset() or !branposs[!index].distance(!pos) gt 1 then
+			!brans.append(!bran)
+			!branposs.append(!pos)
+			!brandirs.append(!dir)
+			!branaods.append(!aod)
+			!brandns.append(!!changemmtoin(!aborereal))
+			!attaname = name of $!atta
+			!branmems.append(!attaname)
+			!abc = !attaname.part(-2,'-').substring(-1,1)
+			!abcs.append(!abc)
+		endif
+	enddo
+
+	do !x indices !branposs
+		!supptube = object supptube()
+		!pos = !branposs[!x]
+		!dir = !brandirs[!x]
+
+		!supptube.pos = !pos
+		!supptube.pos1 = !pos.offset(!dir, -1000)
+		!supptube.pos2 = !pos.offset(!dir, 1000)
+		!supptube.axis = !supptube.pos1.line(!supptube.pos2)
+		!supptube.ori = z is $!dir
+		!supptube.height = 2000
+		!supptube.india = 0
+		!supptube.outdia = !branaods[!x]
+		!supptube.isleg = false
+		!supptube.mems = array()
+		!supptube.mems.append(!branmems[!x])
+
+		!brantubes.append(!supptube)
+	enddo
+    --Q VAR !brantubes
+	return !brantubes
+endmethod
+
+define method .getpipeELtextindexs() is array
+	!textindexs = array()
+
+	!attas = !this.attas
+	!brans = array()
+	!branposs = array()
+	!brandirs = array()
+	!branaods = array()
+	!brandns = array()
+	!abcs = array()
+
+	!names = array()
+    --q var !attas
+	do !atta values !attas
+		!attaname = name of $!atta
+		!names.append(!attaname)
+	enddo
+	!attas.reindex(!names.sortedindices())	$* mark sure the A atta is in front of other ATTA like B C
+
+	do !atta values !attas
+		!bran = namn of bran of $!atta
+		!bran = !bran.part(1,'-')
+		!pos = pos of $!atta
+		!dir = ldir of $!atta
+		!aod = aod of $!atta
+		--!aod = !this.getattaaod(!atta)
+
+		!abore = abore of $!atta
+		!aborereal = !abore.real()
+		!index = !brans.findfirst(!bran)
+		if !index.unset() or !branposs[!index].distance(!pos) gt 1 then
+
+			!brans.append(!bran)
+			!branposs.append(!pos)
+			!brandirs.append(!dir)
+			!branaods.append(!aod)
+			!inbore = !!changemmtoin(!aborereal)
+			if !inbore eq '0"' then
+				!inbore = !!changemmtoin(!this.getattatubebore(!atta))
+			endif
+			!brandns.append(!inbore)
+			!attaname = name of $!atta
+			!abc = !attaname.part(-2,'-').substring(-1,1)
+			!abcs.append(!abc)
+		endif
+	enddo
+
+
+
+	do !x indices !brans
+		!tempdir1 = !brandirs[!x].orthogonal(u)
+		handle any
+			!onedir1 = e 45 n
+			!onedir2 = e 45 s
+		elsehandle none
+            --q var !tempdir1
+			!tempdir2 = !brandirs[!x].orthogonal(!tempdir1)
+            --q var !tempdir2
+            --$p 5555
+			!onedir1 = !tempdir1.bisect(!tempdir2)
+            --q var !onedir1
+			!onedir2 = !onedir1.orthogonal(!brandirs[!x])
+            --q var !onedir2
+		endhandle
+		!pos1 = !branposs[!x].offset(!onedir1,!branaods[!x] / 2)
+		!pos2 = !branposs[!x].offset(!onedir1, - !branaods[!x] / 2)
+        --pin1 at $!pos1
+        --pin2 at $!pos2
+        --在atta点的位置生成标识线
+		!aidline = object mbdaidline(!this.mbdstru.aidgro,!pos1,!pos2,'管道中心标识','node:' + !this.nodename)
+
+		!pos1 = !branposs[!x].offset(!onedir2,!branaods[!x] / 2)
+		!pos2 = !branposs[!x].offset(!onedir2, - !branaods[!x] / 2)
+        --pin3 at $!pos1
+        --pin4 at $!pos2
+        --在atta点的位置生成标识线
+		!aidline = object mbdaidline(!this.mbdstru.aidgro,!pos1,!pos2,'管道中心标识','node:' + !this.nodename)
+	enddo
+
+	!attasize = !brans.size()
+	do !xx indices !brans
+		!pos = !branposs[!xx]
+		!branstring = !brans[!xx] + '-' + !brandns[!xx].string()
+		--q var !branstring
+
+		!temptemparr = array()
+		!temptemparr.append(!branstring)
+		if !xx eq 1 then
+			!xpos = !pos.east.string('D0').before('mm')
+			!ypos = !pos.north.string('D0').before('mm')
+			!zpos = !pos.up.string('D0').before('mm')
+			!text = 'X ' & !xpos & ' Y ' & !ypos & ' Z ' & !zpos
+			!temptemparr.append(!text)
+		else
+			$(
+			!tempup = !pos.up / 1000
+			if !tempup gt 0 then
+				!text = 'PE +' + !tempup.string('D3').upcase().before('MM') + 'm'
+			else
+				!text = 'PE ' + !tempup.string('D3').upcase().before('MM') + 'm'
+			endif
+			$)
+			if !pos.up gt 0 then
+				!text = 'PE +' + !pos.up.string('D0').before('mm') + 'mm'
+			else
+				!text = 'PE ' + !pos.up.string('D0').before('mm') + 'mm'
+			endif
+			!temptemparr.append(!text)
+
+			--!temptemparr.append('EL ' & !pos.up.string('D0').before('mm'))
+		endif
+		if !attasize gt 1 then
+			!temptemparr.insert(1,!abcs[!xx])
+		endif
+		!temparr = array()
+		!temparr.append(!temptemparr)
+		!temparr.append(!pos)
+		!temparr.append('管道信息')
+        --q var !temparr[1]
+		!textindexs.append(!temparr)
+	enddo
+    --q var !textindexs
+	return !textindexs
+endmethod
+
+define method .getattaaod(!atta is string) is real
+	!aod = aod of $!atta
+	handle any
+		!aod = 0
+	endhandle
+
+	--if !aod eq 0 then
+	--	$p $!atta
+	--endif
+
+	if !aod.unset() or !aod eq 0 then
+		var !mode mode
+		if !mode eq 'Forwards' then
+			!tube = pre tubi of $!atta
+			handle any
+			elsehandle none
+				golabel /gottube
+			endhandle
+		else
+			!tube = next tubi of $!atta
+			handle any
+			elsehandle none
+				golabel /gottube
+			endhandle
+		endif
+
+		!tube = !!getpremem(!atta)
+		if !tube eq '' then
+			!tube = !!getnextmem(!atta)
+		endif
+
+		label /gottube
+		!aod = aod of $!tube
+	endif
+	return !aod
+endmethod
+
+define method .getattatubebore(!atta is string) is bore
+	var !mode mode
+	if !mode eq 'Forwards' then
+		!tube = pre tubi of $!atta
+		handle any
+		elsehandle none
+			!bore = abore of $!tube
+			golabel /gottube
+		endhandle
+	else
+		!tube = next tubi of $!atta
+		handle any
+		elsehandle none
+			!bore = abore of $!tube
+			golabel /gottube
+		endhandle
+	endif
+
+	!tube = !!getpremem(!atta)
+	if !tube eq '' then
+		!tube = !!getnextmem(!atta)
+		!bore = abore of $!tube
+	else
+		!bore = lbore of $!tube
+	endif
+	label /gottube
+	return !bore
+endmethod
+
+define method .getpadluglegtextindexs() is array
+	!textindexs = array()
+	do !pipeatta values !this.pipeattas
+		do !tag values !pipeatta.tags
+			!name = !tag.name
+			do !oneobject values !pipeatta.attaobjects
+				if !oneobject.name eq !name then
+					!object = !oneobject
+					break
+				endif
+			enddo
+
+			if !object.objecttype() inset ('ISOLUG','ISOPAD') then
+				!p3dir = !object.dir
+			else
+				!p3dir = !object.attapos.direction(!object.pos)
+			endif
+			if !object.objecttype() inset ('ISOPAD','ISOLUG') then
+				!pos = !object.pos.offset(!object.dir,!object.routside)
+			else
+				!pos = !object.pos
+			endif
+			!infoarr = !tag.infoarr
+
+			!mlabelpos = !pos.offset(!p3dir,!this.cheight * 2)
+			if !object.objecttype() eq 'ISOPAD' then
+				!function = '护板'
+			elseif !object.objecttype() eq 'ISOLUG' then
+				!function = '挡块'
+			elseif !object.objecttype() eq 'ISOLEG' then
+				!function = '支腿'
+			endif
+
+			!temparr = array()
+			!temparr.append(!infoarr)
+			!temparr.append(!pos)
+			!temparr.append(!function)
+			!textindexs.append(!temparr)
+
+			$(
+			if !object.objecttype() ne 'ISOLUG' then
+				!tempdir = ldir of $!object.name
+				!aod = aod of $!object.name
+				if !aod eq 0 then
+					!aod = !pos.distance(!object.attapos)
+				endif
+				!mlabelpos = !mlabelpos.offset(!tempdir,!aod / 2)
+			endif
+
+			!tempangle = !p3dir.angle(u)
+			if !tempangle lt 30 or !tempangle gt 150 then
+				do !dir values !this.dirObject.lookDirs
+					!angle = !dir.angle(u)
+					if !angle gt 45 and !angle lt 135 then
+						!gooddir = !dir
+						break
+					endif
+				enddo
+				!xdir = !gooddir.orthogonal(u)
+				!ori = x is $!xdir and y is u
+
+				!dir = !xdir.bisect(u)
+			else
+				!tempdir = !p3dir.orthogonal(u)
+				!dir = !p3dir.bisect(u)
+				!ori = z is $!tempdir and y is u
+			endif
+			!mlabelpos = !mlabelpos.offset(!ori.ydir(),!this.cheight)
+
+			!mlabel = object mlabel(!this.mbdstru.dimgro,!mlabelpos,!ori,!infoarr[1],!this.cheight,false,!function,!pos,'node:' + !this.nodename)
+			!mlabelpos = !mlabelpos.offset(!ori.ydir(), - !this.cheight)
+
+			!temparr = array()
+			!temparr.append(!infoarr[2])
+			!temparr.append(!pos)
+			--!temparr.append('标高')
+			!temparr.append(!function)
+			!textindexs.append(!temparr)
+
+			!mlabel = object mlabel(!this.mbdstru.dimgro,!mlabelpos,!ori,!infoarr[2],!this.cheight,false,'标高',!pos,'node:' + !this.nodename)
+			$)
+			!object.delete()
+		enddo
+	enddo
+	return !textindexs
+endmethod
+
+define method .getatttextindexs(!partobjects is array) is array
+	!textindexs = array()
+	do !material values !this.materials
+		!name = !material.name
+		!xcqg = :ZD-XCQG of $!name
+		handle any
+			skip
+		elsehandle none
+			if !xcqg.unset() or !xcqg eq '' then
+				skip
+			endif
+		endhandle
+
+		do !x indices !partobjects
+			!mem = !partobjects[!x].mems[1]
+			!tempname = name of $!mem
+			var !ref ref of $!mem
+			if !tempname eq !name or !ref eq !name then
+				!goodindex = !x
+				break
+			endif
+		enddo
+
+		!temparr = array()
+		!temparr.append('  ' + !xcqg + '  ')
+		!temparr.append(!goodindex)
+		!temparr.append('加工方式')
+		!textindexs.append(!temparr)
+	enddo
+	return !textindexs
+endmethod
+
+define method .getspecailpanetextindexs() is array
+	!textindexs = array()
+
+	do !supppanepad values !this.supppanepads
+        --Q VAR !supppanepad
+		--if !supppanepad.ns.set() then
+		!temparr = array()
+		!arr1 = array()
+		!arr1.append('  钢板 ' & !supppanepad.len.value().string('D0') & 'X' & !supppanepad.arclen.value().string('D0') & 'X' & !supppanepad.thick.value().string('D0') & '  ')
+		!arr1.append('  α=' & !supppanepad.angle.value().string('D1').replace('.0','') & '°' & '  ')
+		!temparr.append(!arr1)
+		!temparr.append(!supppanepad.pos)
+		!temparr.append('护板说明')
+		!textindexs.append(!temparr)
+		--endif
+	enddo
+	return !textindexs
+endmethod
+
+define method .gettextindexs(!partobjects is array) is array
+    --!partobjects是所有mem-object的集合
+
+	!textindexs = array()
+
+	----------------------
+	----------------------Step 1:weld
+	if !this.weldobjects.unset() then
+		!this.getwelds()
+	endif
+    --q var !this.weldobjects
+	do !weldobject values !this.weldobjects
+		!temparr = array()
+		!temparr.append('  ' + !weldobject.text + '  ')
+		!temparr.append(!weldobject.pos)
+		!temparr.append('焊缝')
+		!textindexs.append(!temparr)
+	enddo
+
+
+
+	----------------------
+	----------------------Step 2:materail
+	if !this.materials.unset() then
+		!this.getmaterial()
+	endif
+	!padposs = array()
+	!padrefs = array()
+    --q var !this.supppanepads
+    --$p 021
+	do !supppanepad values !this.supppanepads
+		var !padref ref of $!supppanepad.name
+		!padrefs.append(!padref)
+		!padposs.append(!supppanepad.pos)
+	enddo
+
+    --Q VAR !padrefs
+    --q var !this.materials
+
+	do !material values !this.materials
+		!temparr = array()
+        --q var !material
+        --modify by jyg 20241113 显示汇总材料序号改为显示零部件材料序号
+        --if !material.specialnum.match('_') ne 0 then
+        --    !materialtext = !material.order.string() + '(' + !material.specialnum.after('_').real().string() + ')'
+        --else
+        --    !materialtext = !material.order.string() + '(' + !material.specialnum + ')'
+        --endif
+        if !material.specialnum.match('_') ne 0 then
+            !materialtext = !material.specialnum.after('_').real().string()
+        else
+            !materialtext = !material.specialnum
+        endif
+
+		!temparr.append(!materialtext)
+
+		var !tempref ref of $!material.name
+		!tempindex = !padrefs.findfirst(!tempref)
+		if !tempindex.set() then
+			!temparr.append(!padposs[!tempindex])
+		else
+			!name = !material.name
+            --q var !name
+			!goodindex = 0
+			do !x indices !partobjects
+                --q var !partobjects[!x]
+				!mem = !partobjects[!x].mems[1]
+                --q var !mem
+				!tempname = name of $!mem
+				var !ref ref of $!mem
+				if !tempname eq !name or !ref eq !name then
+					!goodindex = !x
+					break
+				endif
+			enddo
+			if !goodindex eq 0 then
+				!pos = pos of $!name wrt/*
+				!temparr.append(!pos)
+			else
+				!temparr.append(!goodindex)
+			endif
+
+		endif
+		!temparr.append('材料')
+        --Q VAR !temparr
+		!textindexs.append(!temparr)
+
+
+        --modify by jyg 20250206 标记pane上的孔洞信息
+        if  !material.desc eq '钢板' and !material.type eq 'PANE' then
+            !panename = !material.name
+            var !allncyl coll all pane mem for $!panename
+            do  !ncyl values !allncyl
+                if  !ncyl.dbref().type eq 'NCYL' then
+                    !temparr = array()
+                    !temparr.append(' 孔 ' + !ncyl.dbref().diameter.string() + '  ')
+                    !temparr.append(!ncyl.dbref().pos)
+                    !temparr.append('钢板孔洞信息')
+                    !textindexs.append(!temparr)
+                endif
+            enddo
+        endif
+
+        --modify by jyg 20250211 标记阀门支架拉杆式关卡的详细信息
+        --q var !material
+        if  !material.desc eq '拉杆' and !material.type eq 'PCLA' then
+            !pclaName = !material.name
+            !cateName = namn of owne of catref of $!pclaName
+            if  !cateName eq 'NPHS-TA(U型)' then
+                !pclaDia = !pclaName.Dbref().desp[1]
+                !pclaLen = !pclaName.Dbref().desp[2]
+                !pclaAllLen = !pclaDia * pi + 2 * !pclaLen
+                !temparr = array()
+                !temparr.append(' 拉杆弯制抱箍:内径 ' + !pclaDia.string() + '  长度 ' + !pclaAllLen.string('d1'))
+                !temparr.append(!pclaName.dbref().pos)
+                --q var !temparr
+                !temparr.append('拉杆材料')
+                !textindexs.append(!temparr)
+            endif
+        endif
+
+	enddo
+
+	--q var !textindexs !textindexs[1] !textindexs[2] !textindexs[8]
+    --$p 1
+	----------------------
+	----------------------Step 3:pipeel
+	!textindexs.appendarray(!this.getpipeELtextindexs())
+	--q var !textindexs
+    --$p 2
+	----------------------
+	----------------------Step 4:padlugleg
+	--!textindexs.appendarray(!this.getpadluglegtextindexs())	$* all attas belong to pipe
+
+	----------------------
+	----------------------Step 5: attribution such as :ZD_XCQG
+	!textindexs.appendarray(!this.getatttextindexs(!partobjects))
+	--q var !textindexs
+    --$p 3
+	!textindexs.appendarray(!this.getspecailpanetextindexs())
+    --q var !textindexs[9]
+    --$p 4
+
+	return !textindexs
+endmethod
+
+
+
+define method .getdimlines() is array
+
+	!uniquepoints = true
+	----------------------
+	----------------------Step 1:normal dim
+	!dimlines = array()
+    --$p 0
+    --q var !dimlines
+    --q var !this.lines
+    --q var !this.lines[1]
+    --modify by jyg 20241215 解决纯管卡的共架支架没有标注距离的问题
+    --q var !this.lines
+    if  !this.lines.unset() then
+        !attaposs = array()
+        !dir = E
+        do  !atta values !this.attas
+            !attaPos = pos of $!atta wrt/*
+            !attaposs.append(!attaPos)
+        enddo
+        !attaposs.sort()
+        do  !x from 2 to !attaposs.size()
+            !poss = array ()
+            !y = !x - 1
+            !attapossup = !attaposs[!y].up
+            !attaposs[!x].up = !attapossup $*处理两个atta点高度不一致的情况(临时处理，后面可根据管道流向进行判断取UP/EAST/NORTH)
+            !poss.append(!attaposs[!y])
+            !poss.append(!attaposs[!x])
+            !dir = !attaposs[!y].Direction(!attaposs[!x])
+            !dimline = object dimline(!dir,!poss,5,!uniquepoints)
+            !dimlines.append(!dimline)
+        enddo
+    else
+        --q var !this.lines
+        do !lineindex indices !this.lines
+
+            --!this.lines[!lineindex].Draw(1,2,3)
+
+            !dir = !this.lines[!lineindex].direction()
+            !poss = !this.lineposs[!lineindex]
+            --q var !poss
+            !class = 1
+            !dimline = object dimline(!dir,!poss,!class,!uniquepoints)
+            --q var !dimline
+            if !poss.size() le 2 and defined(!this.lineadlongths[!lineindex]) and !this.lineadlongths[!lineindex].set() then
+                --添加补偿段信息
+                !dimline.adlongth = !this.lineadlongths[!lineindex]	$*put adlongth on the big dim
+            endif
+            !dimlines.append(!dimline)
+
+            if !poss.size() gt 2 then
+                !tempposs = array()
+                !tempposs.append(!poss[1])
+                !tempposs.append(!poss.last())
+                !poss = !tempposs
+                !dimline = object dimline(!dir,!poss,!class,!uniquepoints)
+                if defined(!this.lineadlongths[!lineindex]) and !this.lineadlongths[!lineindex].set() then
+                    --添加补偿段信息
+                    !dimline.adlongth = !this.lineadlongths[!lineindex]	$*put adlongth on the big dim
+                endif
+                !dimlines.append(!dimline)
+            endif
+        enddo
+	endif
+    --$p 1
+	--q var !dimlines[1].axis.Draw(1,2,3)
+	----------------------
+	----------------------Step 2:dimspsXY
+	!dimSps = !this.LineDimSps
+    --q var !dimSps
+	!dimSps.appendarray(!this.freeSps)
+    --q var  !dimSps[1]
+    --q var !dimSps[1]
+    --Q VAR !dimSps
+	do !times indices !dimSps
+		!sp = !dimSps[!times]
+        --q var !sp
+		if !sp.poss.size() eq 4 then
+			do !x from 1 to 2
+				!line = !sp.axis$!x
+				!poss = array()
+				!poss.append(!line.startposition)
+				!poss.append(!line.endposition)
+                --modify by jyg 20250220 解决加强版没有标注的问题
+                if  !sp.ref.dbref().type eq 'FITT' then
+                    !ownerPoss = !sp.ref.dbref().owner.poss
+                    !ownerPose = !sp.ref.dbref().owner.pose
+                    !nearPoss = !sp.plane.Near(!ownerPoss)
+                    !nearPose = !sp.plane.Near(!ownerPose)
+                    !poss.append(!nearPoss)
+                    --!poss.append(!nearPose)
+                elseif  !sp.ref.dbref().type eq 'PANE' then
+                    !paneName = !sp.ref
+                    --jyg 该方法考虑不全,存在搜集到的sctn[1]不是需要的标注的物项，需要取sctn[2],后期完善
+                    var !allSctnPane coll all sctn within vol $!paneName 10
+                    if  !allSctnPane.size() ge 1 then
+                        !ownerPoss = !allSctnPane[1].dbref().poss
+                        !ownerPose = !allSctnPane[1].dbref().pose
+                        !nearPoss = !sp.plane.Near(!ownerPoss)
+                        !nearPose = !sp.plane.Near(!ownerPose)
+                        !poss.append(!nearPoss)
+                    endif
+                    --!poss.append(!nearPose)
+                endif
+				!dimline = object dimline(!line.direction(),!poss,2,!uniquepoints)
+				!dimlines.append(!dimline)
+			enddo
+
+            --modify by jyg 20250210添加pane厚度标注
+            !poss = array()
+			!poss.append(!sp.poss[3].Offset(!sp.zdir,!sp.height))
+			!poss.append(!sp.poss[3])
+			!dimline = object dimline(!sp.ori.zdir(),!poss,2,!uniquepoints)
+			!dimlines.append(!dimline)
+
+		else
+			--$P 123456
+			!poss = array()
+			do !x from 1 to !sp.poss.size()
+				!poss[1] = !sp.poss[!x]
+				!poss[2] = !sp.poss[!x + 1]
+				handle any
+					!poss[2] = !sp.poss[1]
+				endhandle
+				if !poss[1].distance(!poss[2]) gt 1 then
+					!dimline = object dimline(!poss[1].direction(!poss[2]),!poss,2,!uniquepoints)
+					!dimlines.append(!dimline)
+				endif
+                --q var !dimline
+			enddo
+		endif
+        --q var !sp
+        --modify by jyg 20250207 给阀门支架钢板添加孔洞标注信息
+        if  !sp.objecttype() eq 'SUPPORTPANE' then
+            !panename = !sp.ref
+            var !allncyl coll all ncyl for $!panename
+            var !allpfit coll all pfit for $!panename
+            var !allploo coll all ploo for $!panename
+            if  !allpfit.size() gt 2 then
+                !allNcylPos = array()
+                !allNcyllog = array()
+                do  !ncyla values !allncyl
+                    !ncylaPos = !ncyla.dbref().position
+                    do  !ncylb values !allncyl
+                        if  !ncylb eq !ncyla then
+                            skip
+                        endif
+                        !ncyllog = array()
+                        !ncylpos = array()
+                        !ncylbPos = !ncylb.dbref().position
+                        !bothNcylline = !ncylaPos.line(!ncylbPos)
+                        do  !ncylc values !allncyl
+                            !ncylcPos = !ncylc.dbref().position
+                            if  !bothNcylline.on(!ncylcPos) then
+                                !ncylpos.append(!ncylcPos)
+                                !ncyllog.append(!ncylc)
+                            endif
+                        enddo
+                        if  !ncylpos.size() gt 2 then
+                            !allNcylPos.append(!ncylpos)
+                            !allNcyllog.appendarray(!ncyllog)
+                        endif
+                    enddo
+                enddo
+                !allNcylPos.unique()
+                !allNcyllog.unique()
+                --q var !allNcylPos
+                do  !NcylPoss values !allNcylPos
+                    --坐标未排序，后续优化
+                    do  !i index !NcylPoss
+                        !y = !i + 1
+                        if  !i eq 1 then
+                            var !allpave coll all pave for $!allploo[1]
+                            !pavePos = !allpave[2].dbref().pos
+                            !bothNcylline = !NcylPoss[!i].line(!NcylPoss[!y])
+                            !pavePos = !bothNcylline.near(!pavePos)
+
+                            !poss = array()
+                            !poss[1] = !NcylPoss[!i]
+                            !poss[2] = !pavePos
+                            !dimline = object dimline(!poss[1].direction(!poss[2]),!poss,2,!uniquepoints)
+                            !dimlines.append(!dimline)
+
+                        endif
+                        if  !NcylPoss.size() eq !i then
+                            var !allpave coll all pave for $!allploo[1]
+                            !pavePos = !allpave[1].dbref().pos
+                            !bothNcylline = !NcylPoss[!i].line(!NcylPoss[!i - 1])
+                            !pavePos = !bothNcylline.near(!pavePos)
+
+                            !poss = array()
+                            !poss[1] = !NcylPoss[!i]
+                            !poss[2] = !pavePos
+                            !dimline = object dimline(!poss[1].direction(!poss[2]),!poss,2,!uniquepoints)
+                            !dimlines.append(!dimline)
+                            skip
+                        endif
+
+                        !poss = array()
+                        !poss[1] = !NcylPoss[!i]
+                        !poss[2] = !NcylPoss[!y]
+                        !dimline = object dimline(!poss[1].direction(!poss[2]),!poss,2,!uniquepoints)
+                        !dimlines.append(!dimline)
+                    enddo
+                enddo
+
+
+                --modify by jyg 20250208 处理阀门支架螺栓孔角度标注问题
+                !allAngleNcyl = !allncyl.difference(!allNcyllog)
+                if  !allAngleNcyl.size() gt 2 then
+                    var !allpave coll all pave for $!allploo[1]
+                    !pavePos = !allpave[5].dbref().pos
+                    do  !i index !allAngleNcyl
+                        if  !allAngleNcyl.size() eq !i then
+                            skip
+                        endif
+                        !angleNcylPos1 = !allAngleNcyl[!i].dbref().pos
+                        !angleNcylPos2 = !allAngleNcyl[!i + 1].dbref().pos
+
+                        !line1 = !pavePos.line(!angleNcylPos1)
+                        !line2 = !pavePos.line(!angleNcylPos2)
+                        !radius = !line1.length() / 3
+                        !angle1 =   !sp.ori.xdir().angle(!line1.direction())
+                        !angle2 =   !pavePos.angle(!angleNcylPos1,!angleNcylPos2) + !angle1
+                        !arc = object arc(!pavePos,!sp.ori,!angle1,!angle2,!radius,true)
+
+                        !functiontext = '螺栓孔角度'
+                        !aidline1 = object mbdaidline(!this.mbdstru.aidgro,!line1,!functiontext,'node:' + !this.nodename)
+                        !aidline2 = object mbdaidline(!this.mbdstru.aidgro,!line2,!functiontext,'node:' + !this.nodename)
+                        !aidarc = object aidarc(!this.mbdstru.aidgro,!arc,!functiontext,'node:' + !this.nodename)
+
+                        --!textpos = !pavePos.offset(!line1.direction(),!radius)
+                        !textpos = !arc.angleposition(!angle1 + !arc.angle() / 2)
+                        !angle = !arc.angle().value().nint().string() + '°'
+                        --pin $!i at $!textpos
+
+                        !ydir = !sp.ori.ydir()
+                        !zdir = !sp.ori.zdir().opposite()
+                        !ori = y is $!zdir and z is $!ydir
+
+                        !aidtext = object aidtext(!this.mbdstru.aidgro,!textpos,!ori,!angle,!this.cheight,!functiontext,'node:' + !this.nodename)
+                    enddo
+                endif
+            endif
+
+        endif
+
+	enddo
+    -- $p 2
+	--q var !dimlines
+	----------------------
+	----------------------Step 3:dimpaneSctnXY
+    --q var !this.paneSctns
+	do !paneSctn values !this.paneSctns
+        --q var !paneSctn
+		!midpoint = !paneSctn.posstart.midpoint(!paneSctn.posend)
+		!lines = array()
+		!lines[1] = !midpoint.offset(!paneSctn.ori.xdir(), - !paneSctn.xlen / 2).line(!midpoint.offset(!paneSctn.ori.xdir(), !paneSctn.xlen / 2))
+		!lines[2] = !midpoint.offset(!paneSctn.ori.ydir(), - !paneSctn.ylen / 2).line(!midpoint.offset(!paneSctn.ori.ydir(), !paneSctn.ylen / 2))
+		do !x from 1 to 2
+			!line = !lines[!x]
+			!poss = array()
+			!poss.append(!line.startposition)
+			!poss.append(!line.endposition)
+			!dimline = object dimline(!line.direction(),!poss,2,!uniquepoints)
+			!dimlines.append(!dimline)
+		enddo
+	enddo
+	-- $p 3
+	--q var !dimlines
+	----------------------
+	----------------------Step 4:drawlocation
+	!needwalllocation = false
+	--!needwalllocation = true
+
+
+	!locationpos = !this.getlocationposition()
+    --q var !locationpos
+	--!locationpos = w 5526 s 33034 d 3500
+	if !locationpos.set() then
+		!this.mbdlocation = object mbdlocation(!locationpos,!this.suppname)
+		--$p asdfasdf
+
+		if !this.mbdlocation.nswall.set() and !this.mbdlocation.ewwall.set() then
+			!pos1 = !this.mbdlocation.pos
+			do !x from 1 to 2
+				if !x eq 1 then
+					!pos2 = !this.mbdlocation.nsnearpoint
+				else
+					!pos2 = !this.mbdlocation.ewnearpoint
+				endif
+				!dir = !pos1.direction(!pos2)
+				handle any
+					skip
+				endhandle
+				!poss = array()
+				!poss.append(!pos1)
+				!poss.append(!pos2)
+				!dimline = object dimline(!dir,!poss,5,!uniquepoints)
+				if !needwalllocation then
+					!dimlines.append(!dimline)	$*EM4 asked
+				endif
+			enddo
+			if !needwalllocation then	$*EM4 asked
+				!this.mbdlocation.addconinfo(!this.mbdlocation.nswall,'EN')
+				!this.mbdlocation.addconinfo(!this.mbdlocation.ewwall,'EN')
+			endif
+		else
+			--!this.mbdlocation.draw(!this.cheight,0,true,false,false,false)		$* if no ns ew, dont draw anything
+		endif
+	endif
+    --$p 4
+	--q var !this.lines
+    --q var !dimlines
+
+
+    --modify by jyg 20250211,处理拉杆弯制抱箍没有尺寸标注的问题
+    do  !x index !this.pclas
+        !pcla = !this.pclas[!x]
+        !pclaScom = name of catref of $!pcla
+        !scomGmse = name of gmref of $!pclaScom
+        !scomCate = namn of cate of $!pclaScom
+        if  !scomCate eq 'NPHS-TA(U型)' then
+            var !allScyl coll all scyl for $!scomGmse
+            !scylPheight = pheight of $!allScyl[1]
+            !scylPoint = paxis of $!allScyl[1]
+            !startPoint = $!scylPoint pos of $!pcla
+            !startDir = $!scylPoint dir of $!pcla
+            !scylLength = !pcla.Dbref().evaluate(object block(!scylPheight))
+            !endPoint =  !startPoint.offset(!startDir,!scylLength)
+            !poss = array()
+            !poss.append(!startPoint)
+            !poss.append(!endPoint)
+            !dimline = object dimline(!startDir,!poss,2,!uniquepoints)
+            --!dimline.axis.Draw(1,2,3)
+            !dimlines.append(!dimline)
+        endif
+    enddo
+
+
+
+    --modify by jyg 20250212 解决相交型钢之间夹角标注的问题
+    !suppName = !this.mbdstru.name
+    var !Allsctn coll all sctn for $!suppName
+    !needDrawAngleSctn = array()
+    !allSctnline = array()
+    do  !sctn values !Allsctn
+        var !sctnZdir  zdir of $!sctn
+        if  not !sctnZdir inset('E','W','N','S','U','D') then
+            !sctnPoss = poss of $!sctn
+            !sctnPose = pose of $!sctn
+            !sctnline = !sctnPoss.line(!sctnPose)
+            --q var !sctnline.direction().angle(U)
+            --jyg 处理型钢与水平面的夹角，
+            --q var !sctn !sctnline.direction().angle(U)
+            --modify by jyg 20250316 因设置了倾斜角计算，所以导致支架型钢水平有偏差，和型钢竖直有偏差报错，修改判断范围，临时解决该问题。
+            if  (!sctnline.direction().angle(U) le 100 and !sctnline.direction().angle(U) gt 80) or (!sctnline.direction().angle(U) le 190 and !sctnline.direction().angle(U) gt 170) then
+                skip
+            else
+                !needDrawAngleSctn.append(!sctn)
+            endif
+        else
+            !sctnPoss = poss of $!sctn
+            !sctnPose = pose of $!sctn
+            !sctnline = !sctnPoss.line(!sctnPose)
+            !allSctnline.append(!sctnline)
+        endif
+	enddo
+    --q var !needDrawAngleSctn
+    if  !needDrawAngleSctn.size() gt 0 then
+        do  !angleSctn values !needDrawAngleSctn
+            --q var !angleSctn
+            !sctnSpref = name of spref of $!angleSctn
+            --q var !sctnSpref
+            if  !sctnSpref.match('[') ne 0 then
+                var !posstartstring1 pos ppli FOC prop 0 of $!angleSctn wrt/*
+                var !posendstring1 pos ppli FOC prop 1 of $!angleSctn wrt/*
+                var !posstartstring2 pos ppli LBOC prop 0 of $!angleSctn wrt/*
+			    var !posendstring2 pos ppli LBOC prop 1 of $!angleSctn wrt/*
+                var !posstartstring3 pos ppli LTOC prop 0 of $!angleSctn wrt/*
+			    var !posendstring3 pos ppli LTOC prop 1 of $!angleSctn wrt/*
+                !allDist = array()
+                !dist1 = !posstartstring1.position().Distance(!posendstring1.position())
+                !dist2 = !posstartstring2.position().Distance(!posendstring2.position())
+                !dist3 = !posstartstring3.position().Distance(!posendstring3.position())
+                !allDist.append(!dist1)
+                !allDist.append(!dist2)
+                !allDist.append(!dist3)
+                !allDistindex = !allDist.sortedindices()
+                if  !allDistindex[1] eq 1 then
+                    !posstart = !posstartstring1.position()
+                    !posend = !posendstring1.position()
+                elseif !allDistindex[1] eq 2 then
+                    !posstart = !posstartstring2.position()
+                    !posend = !posendstring2.position()
+                elseif !allDistindex[1] eq 3 then
+                    !posstart = !posstartstring3.position()
+                    !posend = !posendstring3.position()
+                endif
+
+            elseif !sctnSpref.match('WH') ne 0  or !sctnSpref.match('HW') ne 0  or !sctnSpref.match('D1') ne 0 or !sctnSpref.match('D2') ne 0 then	$*For cn company
+                var !posstartstring1 pos ppli LTOS prop 0 of $!angleSctn wrt/*
+                var !posendstring1 pos ppli LTOS prop 1 of $!angleSctn wrt/*
+                var !posstartstring2 pos ppli LBOS prop 0 of $!angleSctn wrt/*
+                var !posendstring2 pos ppli LBOS prop 1 of $!angleSctn wrt/*
+                var !posstartstring3 pos ppli RBOS prop 0 of $!angleSctn wrt/*
+                var !posendstring3 pos ppli RBOS prop 1 of $!angleSctn wrt/*
+                var !posstartstring4 pos ppli RTOS prop 0 of $!angleSctn wrt/*
+                var !posendstring4 pos ppli RTOS prop 1 of $!angleSctn wrt/*
+                !allDist = array()
+                !dist1 = !posstartstring1.position().Distance(!posendstring1.position())
+                !dist2 = !posstartstring2.position().Distance(!posendstring2.position())
+                !dist3 = !posstartstring3.position().Distance(!posendstring3.position())
+                !dist4 = !posstartstring4.position().Distance(!posendstring4.position())
+                !allDist.append(!dist1)
+                !allDist.append(!dist2)
+                !allDist.append(!dist3)
+                !allDist.append(!dist4)
+                !allDistindex = !allDist.sortedindices()
+                --Q VAR !allDistindex
+                if  !allDistindex[1] eq 1 then
+                    !posstart = !posstartstring1.position()
+                    !posend = !posendstring1.position()
+                elseif !allDistindex[1] eq 2 then
+                    !posstart = !posstartstring2.position()
+                    !posend = !posendstring2.position()
+                elseif !allDistindex[1] eq 3 then
+                    !posstart = !posstartstring3.position()
+                    !posend = !posendstring3.position()
+                elseif !allDistindex[1] eq 4 then
+                    !posstart = !posstartstring4.position()
+                    !posend = !posendstring4.position()
+                endif
+            endif
+            --Q VAR !angleSctn !sctnSpref
+            --Q VAR !posstart
+            !posstartUp = !posstart.up
+            !posendUp = !posend.up
+            !posstartEast = !posstart.east
+            !posendEast = !posend.east
+            !posstartNorth = !posstart.north
+            !posendNorth = !posend.north
+            !startMin = 1000
+            !endMin = 1000
+            do  !i index !allSctnline
+                !dist1 = !allSctnline[!i].near(!posstart).Distance(!posstart)
+                !dist2 = !allSctnline[!i].near(!posend).Distance(!posend)
+                if  !dist1 lt !startMin then
+                    !startMin = !dist1
+                endif
+                if  !dist2 lt !endMin then
+                    !endMin = !dist2
+                endif
+            enddo
+            --Q VAR !startMin  !endMin
+            if  !startMin lt !endMin then
+                var !sctnDir drns of $!angleSctn
+                !pos1 = !posstart
+                !pos2 = !posend
+                !pos3 = !posend
+                if !sctnDir inset('N','S')then
+                    !pos3.north =  !posstartNorth
+                elseif !sctnDir inset('E','W')then
+                    !pos3.east =  !posstartEast
+                elseif !sctnDir inset('U','D')then
+                    !pos3.up =  !posstartUp
+                endif
+
+            else
+                var !sctnDir drne of $!angleSctn
+                !pos1 = !posend
+                !pos2 = !posstart
+                !pos3 = !posstart
+                if !sctnDir inset('N','S')then
+                    !pos3.north =  !posendNorth
+                elseif !sctnDir inset('E','W')then
+                    !pos3.east =  !posendEast
+                elseif !sctnDir inset('U','D')then
+                    !pos3.up =  !posendUp
+                else
+                    var !sctnDir drns of $!angleSctn
+                    !pos1 = !posstart
+                    !pos2 = !posend
+                    !pos3 = !posend
+                    if !sctnDir inset('N','S')then
+                        !pos3.north =  !posstartNorth
+                    elseif !sctnDir inset('E','W')then
+                        !pos3.east =  !posstartEast
+                    elseif !sctnDir inset('U','D')then
+                        !pos3.up =  !posstartUp
+                    endif
+                    --modify by jyg 20250325
+                    !pos1 = !posend
+                    !pos2 = !posstart
+                endif
+            endif
+            --$p 123456789
+            --q var !this.mbdstru
+            --pin1 at $!pos1
+            --pin2 at $!pos2
+            --pin3 at $!pos3
+
+            !line1 = !pos1.line(!pos2)
+            !line2 = !pos1.line(!pos3)
+            !radius = !line1.length() / 2
+            !ydir = !pos1.Direction(!pos3)
+            --q var !pos2 !pos3
+            !xdir = !pos2.Direction(!pos3)
+
+            !angle1 = 90
+            !angle2 = !pos1.angle(!pos2,!pos3) + !angle1
+            --q var !angle1 !angle2
+            !angleOri = y is $!ydir and x is $!xdir
+            !arc = object arc(!pos1,!angleOri,!angle1,!angle2,!radius,true)
+            !functiontext = '型钢斜角'
+            !aidline1 = object mbdaidline(!this.mbdstru.aidgro,!line1,!functiontext,'node:' + !this.nodename)
+            !aidline2 = object mbdaidline(!this.mbdstru.aidgro,!line2,!functiontext,'node:' + !this.nodename)
+            !aidarc = object aidarc(!this.mbdstru.aidgro,!arc,!functiontext,'node:' + !this.nodename)
+
+            if  !ydir.up eq -1 then
+                !ydir = !angleOri.ydir().opposite()
+                !zdir = !angleOri.zdir().opposite()
+                !angleOri = y is $!ydir and z is $!zdir
+            endif
+            !textpos = !arc.angleposition(!angle1 + 5 * (!arc.angle() / 6))
+
+            !angle = !arc.angle().value().nint().string() + '°'
+            !aidtext = object aidtext(!this.mbdstru.aidgro,!textpos,!angleOri,!angle,!this.cheight  * 0.8,!functiontext,'node:' + !this.nodename)
+
+            --modify by jyg 20250310处理斜钢没有标注相对位置的关系的问题
+            --q var !angleSctn
+            var !allSctnAngle coll all sctn within vol $!angleSctn
+            do  !sctnAngle values !allSctnAngle
+                !sctnSpref = name of spref of $!sctnAngle
+                if  !angleSctn neq !sctnAngle then
+                    if  !sctnSpref.match('[') ne 0 then
+                        var !posstartstring1 pos ppli FOC prop 0 of $!sctnAngle wrt/*
+                        var !posendstring1 pos ppli FOC prop 1 of $!sctnAngle wrt/*
+                        var !posstartstring2 pos ppli LBOC prop 0 of $!sctnAngle wrt/*
+                        var !posendstring2 pos ppli LBOC prop 1 of $!sctnAngle wrt/*
+                        var !posstartstring3 pos ppli LTOC prop 0 of $!sctnAngle wrt/*
+                        var !posendstring3 pos ppli LTOC prop 1 of $!sctnAngle wrt/*
+
+                        !pointToLine = 0
+                        !ponitPos = object position()
+                        !line = object line()
+
+                        !possEndLine1 = !posstartstring1.position().line(!posendstring1.position())
+                        !pointToLine = !possEndLine1.Distance(!posstart)
+                        !ponitPos = !posstart
+                        !line = !possEndLine1
+
+                        if  !possEndLine1.Distance(!posend) le !pointToLine then
+                            !pointToLine = !possEndLine1.Distance(!posend)
+                            !ponitPos = !posend
+                            !line = !possEndLine1
+                        endif
+
+                        !possEndLine2 = !posstartstring2.position().line(!posendstring2.position())
+                        if  !possEndLine2.Distance(!posstart) le !pointToLine  then
+                            !pointToLine = !possEndLine2.Distance(!posstart)
+                            !ponitPos = !posstart
+                            !line = !possEndLine2
+                        endif
+                        if  !possEndLine2.Distance(!posend) le !pointToLine then
+                            !pointToLine = !possEndLine2.Distance(!posend)
+                            !ponitPos = !posend
+                            !line = !possEndLine2
+                        endif
+
+                        !possEndLine3 = !posstartstring3.position().line(!posendstring3.position())
+                        if  !possEndLine3.Distance(!posstart) le !pointToLine  then
+                            !pointToLine = !possEndLine3.Distance(!posstart)
+                            !ponitPos = !posstart
+                            !line = !possEndLine3
+                        endif
+                        if  !possEndLine3.Distance(!posend) le !pointToLine then
+                            !pointToLine = !possEndLine3.Distance(!posend)
+                            !ponitPos = !posend
+                            !line = !possEndLine3
+                        endif
+
+                        !poss = array()
+                        !poss.append(!line.StartPosition)
+                        !poss.append(!ponitPos)
+                        !poss.append(!line.endPosition)
+                        !dimline = object dimline(!line.Direction(),!poss,2,!uniquepoints)
+                        !dimlines.append(!dimline)
+
+                    elseif !sctnSpref.match('WH') ne 0  or !sctnSpref.match('HW') ne 0  or !sctnSpref.match('D1') ne 0 or !sctnSpref.match('D2') ne 0 then	$*For cn company
+                        --Q VAR !sctnAngle
+                        var !posstartstring1 pos ppli LTOS prop 0 of $!sctnAngle wrt/*
+                        var !posendstring1 pos ppli LTOS prop 1 of $!sctnAngle wrt/*
+                        var !posstartstring2 pos ppli LBOS prop 0 of $!sctnAngle wrt/*
+                        var !posendstring2 pos ppli LBOS prop 1 of $!sctnAngle wrt/*
+                        var !posstartstring3 pos ppli RBOS prop 0 of $!sctnAngle wrt/*
+                        var !posendstring3 pos ppli RBOS prop 1 of $!sctnAngle wrt/*
+                        var !posstartstring4 pos ppli RTOS prop 0 of $!sctnAngle wrt/*
+                        var !posendstring4 pos ppli RTOS prop 1 of $!sctnAngle wrt/*
+
+                        !pointToLine = 0
+                        !ponitPos = object position()
+                        !line = object line()
+
+                        !possEndLine1 = !posstartstring1.position().line(!posendstring1.position())
+                        !pointToLine = !possEndLine1.Distance(!posstart)
+                        !ponitPos = !posstart
+                        !line = !possEndLine1
+
+                        if  !possEndLine1.Distance(!posend) le !pointToLine then
+                            !pointToLine = !possEndLine1.Distance(!posend)
+                            !ponitPos = !posend
+                            !line = !possEndLine1
+                        endif
+
+                        !possEndLine2 = !posstartstring2.position().line(!posendstring2.position())
+                        if  !possEndLine2.Distance(!posstart) le !pointToLine  then
+                            !pointToLine = !possEndLine2.Distance(!posstart)
+                            !ponitPos = !posstart
+                            !line = !possEndLine2
+                        endif
+                        if  !possEndLine2.Distance(!posend) le !pointToLine then
+                            !pointToLine = !possEndLine2.Distance(!posend)
+                            !ponitPos = !posend
+                            !line = !possEndLine2
+                        endif
+
+                        !possEndLine3 = !posstartstring3.position().line(!posendstring3.position())
+                        if  !possEndLine3.Distance(!posstart) le !pointToLine  then
+                            !pointToLine = !possEndLine3.Distance(!posstart)
+                            !ponitPos = !posstart
+                            !line = !possEndLine3
+                        endif
+                        if  !possEndLine3.Distance(!posend) le !pointToLine then
+                            !pointToLine = !possEndLine3.Distance(!posend)
+                            !ponitPos = !posend
+                            !line = !possEndLine3
+                        endif
+
+                        !possEndLine4 = !posstartstring4.position().line(!posendstring4.position())
+                        if  !possEndLine4.Distance(!posstart) le !pointToLine  then
+                            !pointToLine = !possEndLine4.Distance(!posstart)
+                            !ponitPos = !posstart
+                            !line = !possEndLine4
+                        endif
+                        if  !possEndLine4.Distance(!posend) le !pointToLine then
+                            !pointToLine = !possEndLine4.Distance(!posend)
+                            !ponitPos = !posend
+                            !line = !possEndLine4
+                        endif
+
+                        !poss = array()
+                        !poss.append(!line.StartPosition)
+                        !poss.append(!ponitPos)
+                        !poss.append(!line.endPosition)
+                        !dimline = object dimline(!line.Direction(),!poss,2,!uniquepoints)
+                        !dimlines.append(!dimline)
+                    endif
+
+                endif
+            enddo
+        enddo
+
+    endif
+    --q var !dimlines[1].axis.Draw(1,2,3)
+	return !dimlines
+endmethod
+
+
+define method .getlocationposition() is position
+	!attas = !this.attas
+	!names = array()
+	do !atta values !attas
+		!attaname = name of $!atta
+		!names.append(!attaname)
+	enddo
+	if !names.unset() then
+		!pos = object position()
+		return !pos
+	endif
+	!attas.reindex(!names.sortedindices())
+	!pos = pos of $!attas[1] wrt/*
+
+
+	----------------------
+	----------------------Step x:如果离得太远的ATTA，一般都是写错名字了，报错
+	!mainatta = name of $!attas[1]
+	do !x from 2 to !attas.size()
+		!oneatta = !attas[!x]
+		!onepos = pos of $!oneatta wrt/*
+		if !onepos.distance(!pos) gt 2500 then
+			!attaname = name of $!oneatta
+			$p $!attaname 离 $!mainatta 太远
+			!this.wronglines.append(!attaname & ' 离 ' & !mainatta & ' 太远')
+		endif
+	enddo
+
+	return !pos
+endmethod
+
+define method .drawwithnewway()
+
+	!this.setprogress(1)
+	!dimlines = !this.getdimlines()
+    --return
+    --q var !dimlines
+    --q var !dimlines[1].diss
+	--return
+	!this.setprogress(10)
+	!partobjects = !this.getparts()
+    --q var !partobjects[1].poss
+    --q var !partobjects
+	!this.setprogress(20)
+    --q var !partobjects
+	!textindexs = !this.gettextindexs(!partobjects)
+    --q var !textindexs
+    --$p 123
+	!this.setprogress(30)
+	!emptyarr = array()
+
+
+	!lookdir = !this.mbdlocation.getlookdir()
+	--Q VAR !lookdir
+    --Q VAR !THIS.ATTAS
+
+	if !!marksuppform.suppdatas.size() ne 1 then
+		!startprogress = 0
+		!endprogress = 0
+	else
+		!startprogress = 30
+		!endprogress = 80
+	endif
+	--q var !lookdir
+	--!this.cheight = 30
+    --q var !partobjects !emptyarr !textindexs !this.cheight !dimlines !lookdir !startprogress !endprogress
+    --q var !dimlines
+    --$p 1
+	!planeSystem = object planesystem(!partobjects,!emptyarr,!textindexs,!this.cheight,!dimlines,!lookdir,!startprogress,!endprogress)
+	--!this.setprogress(80)
+    --q var !planeSystem.realshapes[1]
+	--return
+
+
+	if !this.cheight eq 0 then
+		!this.cheight = !planesystem.cheight
+	endif
+	!shapes = !planeSystem.realShapes
+    --q var !shapes[1] !shapes[2] !shapes[3] !shapes[4] !shapes[5] !shapes[6] !shapes[7] !shapes[8]
+    --q var !shapes
+    --q var !shapes[7] !shapes[8] !shapes[9]
+	!dimlines = !planeSystem.dimlines
+	--q var !dimlines
+    --$p 2
+	!horiori = z is u
+	!horiplane = object plane(!planeSystem.dirobject.cenpoint,!horiori)
+	!horilookdir = !planesystem.dirobject.threeddir.projected(!horiplane)
+	handle any
+	endhandle
+
+	!dimsize = !dimlines.size()
+    --q var !dimlines[1].diss
+    --q var !dimlines
+	do !x indices !dimlines
+		!dimline = !dimlines[!x]
+        --q var !dimline
+		do !shape values !shapes
+			if !shape.dimlineindex eq !x then
+                --q var !x
+				!poss = !shape.poss
+				!ori = !shape.planeori
+				!ydir = !ori.ydir()
+
+				!tempangle = !ydir.angle(u)
+				if !tempangle gt 85 and defined(!horilookdir) then	$*几乎水平的要考虑视角
+					if !ydir.angle(!horilookdir) gt 90 then
+						!ydir = !ydir.opposite()
+					endif
+				endif
+
+				!zdir = !ori.zdir().opposite()
+
+				--$(
+				if !zdir.angle(u) gt 91 then
+					!zdir = !zdir.opposite()
+
+					!tempposs = array()
+					!tempposs[1] = !poss[2]
+					!tempposs[2] = !poss[1]
+					!tempposs[3] = !poss[4]
+					!tempposs[4] = !poss[3]
+
+					!poss = !tempposs
+				endif
+				--$)
+				!ori = y is $!ydir and z is $!zdir
+				break
+			endif
+		enddo
+
+		!tempdir = !poss[1].direction(!poss[4])
+
+		!move = false
+		if !move then
+			if !tempdir.angle(!ydir) lt 90 then
+				!dimpos = !poss[4].offset(!tempdir.opposite(),!this.cheight * 1.5 * 1.25)
+			else
+				!dimpos = !poss[4].offset(!ydir,!this.cheight * 1.5 * 0.25)
+			endif
+		else
+			if !tempdir.angle(!ydir) lt 90 then
+				!dimpos = !poss[4].offset(!tempdir.opposite(),!this.cheight * 1.5)
+			else
+				!dimpos = !poss[4]
+			endif
+		endif
+
+
+
+
+		if !dimline.class eq 1 then
+			!functiontext = '一级尺寸'
+		elseif !dimline.class eq 2 then
+			!functiontext = '二级尺寸'
+		elseif !dimline.class eq 3 then
+			!functiontext = '三级尺寸'
+		elseif !dimline.class eq 4 then
+			!functiontext = '四级尺寸'
+		elseif !dimline.class eq 5 then
+			!functiontext = '定位尺寸'
+		endif
+
+		!temparr = array()
+		!temparr.append(!this.changecheightauto)
+		!temparr.append(!this.changecheightautobili)
+		!temparr.append(!this.sepSmallDim)
+		!temparr.append(!this.plusstringcheightbili)
+
+		--q var !dimlines[!x].adlongth
+		if !dimlines[!x].adlongth.set() and !dimlines[!x].adlongth ne 0 then
+			!objects = array()
+			!isoadjustweld = object isoadjustweld()
+			!isoadjustweld.name = ''
+			!isoadjustweld.pos = !dimlines[!x].poss[1].midpoint(!dimlines[!x].poss.last())
+			!isoadjustweld.dirup = true	$* or false, it doesnt matter, only keep it not unset
+			!isoadjustweld.adjustlen = !dimlines[!x].adlongth
+			!isoadjustweld.aod = 0
+			!isoadjustweld.tubi = ''
+			!objects.append(!isoadjustweld)
+			--q var !objects
+		else
+			!objects = array()
+		endif
+
+		--Q VAR !dimpos
+		!lindim = object lindim(!this.mbdstru.dimgro,!dimpos, !ori, !dimline.poss, !this.cheight,!functiontext,'node:' + !this.nodename,!temparr,!objects)
+		if !lindim.plus then
+			!this.plusAdjustLenInDim(!lindim)
+		endif
+
+		!this.setprogress(80 + 0.08 * nint(100 * !x / !dimsize))
+	enddo
+
+
+	!textsize = !textindexs.size()
+	do !x indices !textindexs
+		!textindex = !textindexs[!x]
+		!functiontext = !textindex[3]
+		--q var !textindex[1] !textindex[2] !textindex[3]
+		!find = false
+        --q var !shapes
+		do !shape values !shapes
+
+			if !shape.mlabelindex eq !x then
+                --$p ------------
+                --  q var !shape.mlabelindex !x
+                --$p ------------
+				!poss = !shape.poss
+
+				!ori = !shape.planeori
+
+				!ydir = !ori.ydir()
+
+				!tempangle = !ydir.angle(u)
+				if !tempangle gt 85 and defined(!horilookdir) then	$*几乎水平的要考虑视角
+					if !ydir.angle(!horilookdir) gt 90 then
+						!ydir = !ydir.opposite()
+						!tempposs = array()
+						!tempposs[1] = !poss[3]
+						!tempposs[2] = !poss[4]
+						!tempposs[3] = !poss[1]
+						!tempposs[4] = !poss[2]
+
+						!poss = !tempposs
+					endif
+				endif
+
+				!zdir = !ori.zdir()
+				!ori = y is $!ydir and z is $!zdir
+
+				!linepos = !shape.mlabellinepos
+
+				!find = true
+				break
+			endif
+		enddo
+
+		--q var !find
+		if !find then
+			!frame = false
+			--$p 123
+			if !textindex[1].objecttype() eq 'STRING' then
+				!textindex[1] = !textindex[1].trim()	$*text for weld is start with blanks, so trim it
+                --q var !textindex[1]
+				!mlabelpos = !poss[1].offset(!ori.xdir(),!this.cheight * 0.5).offset(!ori.ydir(),!this.cheight * 1)
+				!mlabel = object mlabel(!this.mbdstru.dimgro,!mlabelpos,!ori,!textindex[1],!this.cheight,!frame,!functiontext,!linepos,'node:' + !this.nodename)
+			else
+				!texts = !textindex[1]
+
+				!mlabelpos = !poss[4].offset(!ori.xdir(),!this.cheight * 0.5)
+
+				!mindiss = array()
+				!currentpos = !mlabelpos
+				do !temptextindex indices !texts
+					!temppos1 = !currentpos.offset(!ori.ydir(), - !this.cheight * 0.6)
+					--!temppos2 = !temppos1.offset(!ori.xdir(),!!mbdtextlen(!texts[!temptextindex]) * !this.cheight * 0.75)
+					!temppos2 = !temppos1.offset(!ori.xdir(),!!mbdtextlen(!texts[!temptextindex]) * !this.cheight)
+					!mindiss.append(min(!temppos1.distance(!linepos),!temppos2.distance(!linepos)))
+				enddo
+				!linex = !mindiss.sortedindices()[1]
+
+				$(
+				if !poss[1].distance(!linepos) lt !poss[4].distance(!linepos) then
+					!linex = !texts.size()
+				else
+					!linex = 1
+				endif
+
+				$)
+				do !y indices !texts
+					!text = !texts[!y]
+                    --q var !text
+					!mlabelpos = !mlabelpos.offset(!ori.ydir(), - !this.cheight * 1.2)
+					if !linex eq !y then
+						!mlabel = object mlabel(!this.mbdstru.dimgro,!mlabelpos,!ori,!text,!this.cheight,!frame,!functiontext,!linepos,'node:' + !this.nodename)
+					else
+						!mlabel = object mlabel(!this.mbdstru.dimgro,!mlabelpos,!ori,!text,!this.cheight,!frame,!functiontext,'','node:' + !this.nodename)
+					endif
+					if !y eq 1 then
+						--!textlen = !!mbdtextlen(!text) * !this.cheight * 0.6
+						!textlen = !!mbdtextlen(!text) * !this.cheight
+						!circlepos = !mlabelpos.offset(!ori.xdir(),!textlen / 2).offset(!ori.ydir(),!this.cheight / 3)
+						if !this.mbdstru.toaid() and !textindex[3] eq '管道信息' and !textindex[1].size() eq 3 then
+							!aidcircle1 = object aidcircle(!this.mbdstru.aidgro, !circlepos, !ori, !textlen / 2 + !this.cheight / 4,'管道信息','node:' + !this.nodename)
+						endif
+					endif
+				enddo
+
+
+			endif
+		endif
+		!this.setprogress(88 + 0.07 * nint(100 * !x / !textsize))
+	enddo
+
+	!this.mbdstru.tostru()
+	$!this.suppname
+	handle any
+		$!this.struname
+		handle any
+		endhandle
+	endhandle
+
+	if !this.generatejson then
+		!this.generatejsonattrvm()
+	endif
+	return
+endmethod
+
+
+define method .plusAdjustLenInDim(!lindim is lindim)
+	do !plusarr values !lindim.plusarrs
+		!dimname = !plusarr[1]
+		!pluss = !plusarr[2]		$*plusstring in every point
+
+
+		var !dimposs coll all dimpos for $!dimname
+		!poss = array()
+		!diss = array()
+		do !dimpos values !dimposs
+			!pos = pos of $!dimpos wrt/*
+			!poss.append(!pos)
+			--!diss.append(!!suidirdis(!this.pos,!this.pipedir,!pos)
+		enddo
+
+		--!lindimpos = pos of $!lindim wrt/*
+		!lindimpos = pos of $!dimname wrt/*
+
+
+		!ori = ori of $!dimname wrt/*
+		!cheight = cheight of $!dimname
+		!dir = !ori.xdir()
+		!line = !lindimpos.line(!lindimpos.offset(!dir,1000))
+		do !x from 1 to !poss.size() - 1
+			!plusstring = !pluss[!x]
+			if !plusstring ne '' then
+				!pos1 = !line.near(!poss[!x])
+				!pos2 = !line.near(!poss[!x + 1])
+				!dis = !pos1.distance(!pos2)
+				!string = !dis.string('D2').replace('.00','')
+				!notindex = !string.match('.')
+				if !notindex ne 0 then
+					if !string.length() ge !notindex + 2 then
+						if !string.substring(!notindex + 2,1) eq '0' then
+							!string = !string.substring(1,!notindex + 1) & !string.substring(!notindex + 3)	  $*remove 0 when .x0
+						endif
+					endif
+				endif
+				--!textlen = !!mbdtextlen(!string) * !cheight * 0.75
+				--!textlen = !!mbdtextlen(!string) * !cheight * 0.8
+				!textlen = !!mbdtextlen(!string) * !cheight
+
+				!midpoint = !pos1.midpoint(!pos2).offset(!ori.ydir(),!cheight * 0.25).offset(!ori.ydir(),!cheight * (1 - !this.plusstringcheightbili))
+				!startpos = !midpoint.offset(!dir,!textlen / 2)
+				!plusadjustweldtext = object aidtext(!this.mbdstru.aidgro,!startpos,!ori,!plusstring,!cheight * !this.plusstringcheightbili,'调整焊附加长度','node:' + !this.nodename)
+			endif
+		enddo
+	enddo
+endmethod
+
+
+define method .drawlocation()
+	!attas = !this.attas
+	!names = array()
+	do !atta values !attas
+		!attaname = name of $!atta
+		!names.append(!attaname)
+	enddo
+	if !names.unset() then
+		return
+	endif
+	!attas.reindex(!names.sortedindices())
+	!pos = pos of $!attas[1] wrt/*
+	!this.mbdlocation = object mbdlocation(!pos,!this.suppname)
+	!this.mbdlocation.draw(!this.cheight,0,true,false,false,false)
+endmethod
+
+define method .setprogress(!persent is real)
+	if !!marksuppform.suppdatas.size() eq 1 then
+		!!fmsys.setProgress(!persent)
+	endif
+endmethod
+
+define method .getjsonarray() is array
+	return !this.getjsondata(!!marksuppform.materialAttS, !!marksuppform.materialAttShow,!!marksuppform.elematerialAttS, !!marksuppform.elematerialAttShow, !!marksuppform.suppAtts ,!!marksuppform.suppAttShow)
+endmethod
+
+define method .generatejsonattrvm() is array
+	!filepaths = array()
+	!filepath = !this.filepath
+	!folder = object file(!filepath)
+	if !folder.exists().not() then
+		$p 存储路径不对 $!filepath
+		return !filepaths
+	endif
+    --q var !this.suppName
+	!filename = !!getmbdfilename(!this.suppName)
+    --q var !filename
+    --$p 123456
+	--!filename = !this.suppName.replace('=','_').replace('/','_').replace('\','_')
+	--!result = !this.getjsondata(!!marksuppform.materialAttS, !!marksuppform.materialAttShow, !!marksuppform.suppAtts ,!!marksuppform.suppAttShow)
+	!result = !this.getjsondata(!!marksuppform.materialAttS, !!marksuppform.materialAttShow,!!marksuppform.elematerialAttS, !!marksuppform.elematerialAttShow, !!marksuppform.suppAtts ,!!marksuppform.suppAttShow)
+	!result = !this.getjsonarray()
+	!!marksuppform.instore(!result,!filename,!filepath)
+
+	!newitems = array()
+	!remitems = array()
+	!newitems.append(!this.suppName)
+	--!!getrvm(!newitems,!remitems,'D:\' & !filename & '.rvm')
+	--!!getatt(!newitems,!remitems,'D:\' & !filename & '.att')
+
+	!!getrvm(!newitems,!remitems,!filepath & !filename & '.rvm')
+	!!getatt(!newitems,!remitems,!filepath & !filename & '.att')
+	!!gettxt(!newitems,!filepath & !filename & '.txt')
+
+
+	!filepaths.append(!filepath & !filename & '.json')
+	!filepaths.append(!filepath & !filename & '.rvm')
+	!filepaths.append(!filepath & !filename & '.att')
+	!filepaths.append(!filepath & !filename & '.txt')
+	return !filepaths
+endmethod
+
+define method .totplant()
+	!filepaths = !this.generatejsonattrvm()
+	!up = object updatefiles(!filepaths,'MBD-EM4SUPP')
+endmethod
+
+define method .drawpadlugleg()
+	do !pipeatta values !this.pipeattas
+		do !tag values !pipeatta.tags
+			!name = !tag.name
+			do !oneobject values !pipeatta.attaobjects
+				if !oneobject.name eq !name then
+					!object = !oneobject
+					break
+				endif
+			enddo
+
+			if !object.objecttype() inset ('ISOLUG','ISOPAD') then
+				!p3dir = !object.dir
+			else
+				!p3dir = !object.attapos.direction(!object.pos)
+			endif
+			if !object.objecttype() inset ('ISOPAD','ISOLUG') then
+				!pos = !object.pos.offset(!object.dir,!object.routside)
+			else
+				!pos = !object.pos
+			endif
+			!infoarr = !tag.infoarr
+
+			!mlabelpos = !pos.offset(!p3dir,!this.cheight * 2)
+			if !object.objecttype() eq 'ISOPAD' then
+				!function = '护板'
+			elseif !object.objecttype() eq 'ISOLUG' then
+				!function = '挡块'
+			elseif !object.objecttype() eq 'ISOLEG' then
+				!function = '支腿'
+			endif
+
+			if !object.objecttype() ne 'ISOLUG' then
+				!tempdir = ldir of $!object.name
+				!aod = aod of $!object.name
+				if !aod eq 0 then
+					!aod = !pos.distance(!object.attapos)
+				endif
+				!mlabelpos = !mlabelpos.offset(!tempdir,!aod / 2)
+			endif
+
+			!tempangle = !p3dir.angle(u)
+			if !tempangle lt 30 or !tempangle gt 150 then
+				do !dir values !this.dirObject.lookDirs
+					!angle = !dir.angle(u)
+					if !angle gt 45 and !angle lt 135 then
+						!gooddir = !dir
+						break
+					endif
+				enddo
+				!xdir = !gooddir.orthogonal(u)
+				!ori = x is $!xdir and y is u
+
+				!dir = !xdir.bisect(u)
+			else
+				!tempdir = !p3dir.orthogonal(u)
+				!dir = !p3dir.bisect(u)
+				!ori = z is $!tempdir and y is u
+			endif
+			!mlabelpos = !mlabelpos.offset(!ori.ydir(),!this.cheight)
+			!mlabel = object mlabel(!this.mbdstru.dimgro,!mlabelpos,!ori,!infoarr[1],!this.cheight,false,!function,!pos,'node:' + !this.nodename)
+			!mlabelpos = !mlabelpos.offset(!ori.ydir(), - !this.cheight)
+			--!mlabel = object mlabel(!this.mbdstru.dimgro,!mlabelpos,!ori,!infoarr[2],!this.cheight,false,'标高',!pos,'node:' + !this.nodename)
+			!mlabel = object mlabel(!this.mbdstru.dimgro,!mlabelpos,!ori,!infoarr[2],!this.cheight,false,!function,!pos,'node:' + !this.nodename)
+			!object.delete()
+		enddo
+	enddo
+
+
+	$(
+	!types = split('PAD LUG LEG')
+	do !type values !types
+		!index = !this.parttypes.findfirst(!type)
+		!indices = !this.parttypeindices[!index]
+		if !indices.unset() then
+			skip
+		endif
+
+
+
+		do !index values !indices
+			-----------------------
+			-----------------------copy form .gettags() of isobran
+			!object = !this.partobjects[!index].objects[1]
+			--!object = !this.attadatas[!temparr[1]]
+			--if !object.objecttype() inset ('ISOLUG','ISOLEG') and !object.onpad then	$*  unnecessary if leg or lug is on pad
+			--	!object.delete()
+			--	skip
+			--endif
+
+			if !object.objecttype() inset ('ISOLUG','ISOPAD') then
+				!p3dir = !object.dir
+			else
+				!p3dir = !object.attapos.direction(!object.pos)
+			endif
+			if !object.objecttype() inset ('ISOPAD','ISOLUG') then
+				!pos = !object.pos.offset(!object.dir,!object.routside)
+				--.offset(!object.ori.zdir(),!object.height / 2)
+			else
+				!pos = !object.pos
+			endif
+			--!infoarr = !this.getattatagtext(!this.partobjects[!index].objects)
+			!infoarr = !!getattatagtext(!this.partobjects[!index].objects)
+
+
+			!mlabelpos = !pos.offset(!p3dir,!this.cheight * 2)
+			if !object.objecttype() eq 'ISOPAD' then
+				!function = '护板'
+			elseif !object.objecttype() eq 'ISOLUG' then
+				!function = '挡块'
+			elseif !object.objecttype() eq 'ISOLEG' then
+				!function = '支腿'
+			endif
+
+			if !object.objecttype() ne 'ISOLUG' then
+				!tempdir = ldir of $!object.name
+				!aod = aod of $!object.name
+				if !aod eq 0 then
+					!aod = !pos.distance(!object.attapos)
+				endif
+				!mlabelpos = !mlabelpos.offset(!tempdir,!aod / 2)
+			endif
+
+			!tempangle = !p3dir.angle(u)
+			if !tempangle lt 30 or !tempangle gt 150 then
+				do !dir values !this.dirObject.lookDirs
+					!angle = !dir.angle(u)
+					if !angle gt 45 and !angle lt 135 then
+						!gooddir = !dir
+						break
+					endif
+				enddo
+				!xdir = !gooddir.orthogonal(u)
+				!ori = x is $!xdir and y is u
+
+				!dir = !xdir.bisect(u)
+			else
+				!tempdir = !p3dir.orthogonal(u)
+				!dir = !p3dir.bisect(u)
+				!ori = z is $!tempdir and y is u
+			endif
+			!mlabelpos = !mlabelpos.offset(!ori.ydir(),!this.cheight)
+			!mlabel = object mlabel(!this.mbdstru.dimgro,!mlabelpos,!ori,!infoarr[1],!this.cheight,false,!function,!pos,'node:' + !this.nodename)
+			!mlabelpos = !mlabelpos.offset(!ori.ydir(), - !this.cheight)
+			!mlabel = object mlabel(!this.mbdstru.dimgro,!mlabelpos,!ori,!infoarr[2],!this.cheight,false,'标高',!pos,'node:' + !this.nodename)
+
+
+
+
+			!object.delete()
+		enddo
+	enddo
+	$)
+endmethod
+
+$(
+define method .gettubeinthick(!name is string) is string
+	!premem = !!getpremem(!name)
+	if !premem eq '' then
+		return ''
+	else
+		!tube = name of ileave tube of $!premem
+		handle any
+			return ''
+		elsehandle none
+			!spref = name of spref of $!tube
+			!pspec = name of spec of $!spref
+			!itemcode = !spref.after(!pspec).substring(2).before(':')
+			return !itemcode
+		endhandle
+	endif
+endmethod
+$)
+
+$(
+define method .getAttaTagText(!attadatas is array) is array
+	!size = !attadatas.size()
+	!object = !attadatas[1]
+
+	!spref = !object.nsAndSpref[2]
+	!pspec = name of spec of $!spref
+	!itemcode = !spref.after(!pspec).substring(2).before(':')
+
+
+	!ot = !object.objecttype()
+
+	!SCH = !!mbdmaterialdata.getmaterialinonetype(!itemcode,'PIPE','压力(壁厚)')
+	!in = !!mbdmaterialdata.getmaterialinonetype(!itemcode,'PIPE','公称直径')
+	if !ot eq 'ISOPAD' then
+		!tubeinfo = !size & '护板 ф' & !in & |" Sch| & !SCH
+	elseif !ot eq 'ISOLUG' then
+		!pipeitemcode = !this.gettubeinthick(!object.name)
+		if !pipeitemcode eq '' then
+			!tubeinfo = ''
+		else
+			!pipeSCH = !!mbdmaterialdata.getmaterialinonetype(!pipeitemcode,'PIPE','压力(壁厚)')
+			!pipein = !!mbdmaterialdata.getmaterialinonetype(!pipeitemcode,'PIPE','公称直径')
+
+			------------------------------------------------------
+			!tempposs = array()
+			do !tempobject values !attadatas
+				!attapos = !tempobject.attapos
+				!find = false
+				do !temppos values !tempposs
+					if !temppos.distance(!attapos) lt 1 then
+						!find = true
+						break
+					endif
+				enddo
+				if !find.not() then
+					!tempposs.append(!attapos)
+				endif
+			enddo
+			!groupsize = !tempposs.size()
+			------------------------------------------------------
+
+			do !x from 1 to 4
+				if abs(!object.height - 25 * !x) lt 1 then
+					!shapetype = !x & '型'
+					break
+				endif
+			enddo
+
+			--need to confirm
+
+			!tubeinfo = !groupsize & ' TD ф' & !pipein & |" Sch| & !pipeSCH & ' ' & !shapetype
+		endif
+	elseif !ot eq 'ISOLEG' then
+		if !size eq 1 then
+			!tubeinfo = '管支撑 ф' & !in & |" Sch| & !SCH
+		else
+			!tubeinfo = !size & '管支撑 ф' & !in & |" Sch| & !SCH
+		endif
+	endif
+
+	------------------------------------------------------useless start
+	!premem = !!getpremem(!object.name)
+	if !premem eq '' then
+		!tubeinfo = ''
+	else
+		!tube = name of ileave tube of $!premem
+		handle any
+			!tubeinfo = ''
+		elsehandle none
+			!abore = abore of $!tube
+			!dtxr = dtxr of $!tube
+			!in = !!changemmtoin(!abore.real())
+			if !ot eq 'ISOPAD' then
+				!tubeinfo = !size & '护板 ф' & !in & |" SCH| & !dtxr.after('SCH').before(' ')
+			elseif !ot eq 'ISOLUG' then
+				--need to confirm
+				--------------------------------------
+				--------------------------------------Step x:lug has more than one situation: one group and two groups
+				!tempposs = array()
+				do !tempobject values !attadatas
+					!attapos = !tempobject.attapos
+					!find = false
+					do !temppos values !tempposs
+						if !temppos.distance(!attapos) lt 1 then
+							!find = true
+							break
+						endif
+					enddo
+					if !find.not() then
+						!tempposs.append(!attapos)
+					endif
+				enddo
+				!groupsize = !tempposs.size()
+
+				!tubeinfo = !groupsize & ' TE ф' & !in & |" SCH| & !dtxr.after('SCH').before(' ')
+			elseif !ot eq 'ISOLEG' then
+				if !size eq 1 then
+					!tubeinfo = '管支撑 ф' & !in & |" SCH| & !dtxr.after('SCH').before(' ')
+				else
+					!tubeinfo = !size & '管支撑 ф' & !in & |" SCH| & !dtxr.after('SCH').before(' ')
+				endif
+			endif
+		endhandle
+	endif
+	if !ot eq 'ISOPAD' then
+		!selfinfo = 'L=' & !object.height & 'mm  ' & 'α='& !object.angle
+	elseif !ot eq 'ISOLUG' then
+		--q var !object.nsAndSpref
+		!in = !!changemmtoin(!object.nsAndSpref[1])
+		!selfinfo = !size & 'LUGS ф' & !in & '   L=' & !object.height & 'mm'
+	else
+		!selfinfo = 'L=' & !object.height & 'mm'
+	endif
+	------------------------------------------------------useless end
+
+	if !ot eq 'ISOPAD' then
+		!selfinfo = 'L=' & !object.height & 'mm  ' & 'α='& !object.angle
+	elseif !ot eq 'ISOLUG' then
+		!in = !!changemmtoin(!object.nsAndSpref[1])
+		!selfinfo = !size & '挡块 ф' & !in & |" Sch| & !SCH & '   L=' & !object.height & 'mm'
+	elseif !ot eq 'ISOLEG' then
+		!selfinfo = 'L=' & !object.height & 'mm'
+	endif
+
+
+	!result = array()
+	!result.append(!tubeinfo)
+	!result.append(!selfinfo)
+	return !result
+endmethod
+$)
+
+define method .drawpipeEL()
+	!attas = !this.attas
+	!brans = array()
+	!branposs = array()
+	!brandirs = array()
+	!branaods = array()
+	!brandns = array()
+	!abcs = array()
+
+	!names = array()
+	do !atta values !attas
+		!attaname = name of $!atta
+		!names.append(!attaname)
+	enddo
+	!attas.reindex(!names.sortedindices())	$* mark sure the A atta is in front of other ATTA like B C
+
+	do !atta values !attas
+		!bran = namn of bran of $!atta
+		!bran = !bran.part(1,'-')
+		!pos = pos of $!atta
+		!dir = ldir of $!atta
+		!aod = aod of $!atta
+		!abore = abore of $!atta
+		!aborereal = !abore.real()
+		!index = !brans.findfirst(!bran)
+		if !index.unset() or !branposs[!index].distance(!pos) gt 1 then
+			!brans.append(!bran)
+			!branposs.append(!pos)
+			!brandirs.append(!dir)
+			!branaods.append(!aod)
+			!brandns.append(!!changemmtoin(!aborereal))
+			!attaname = name of $!atta
+			!abc = !attaname.part(-2,'-').substring(-1,1)
+			!abcs.append(!abc)
+		endif
+	enddo
+
+	do !x indices !brans
+		!tempdir1 = !brandirs[!x].orthogonal(u)
+		handle any
+			!onedir1 = e 45 n
+			!onedir2 = e 45 s
+		elsehandle none
+			!tempdir2 = !brandirs[!x].orthogonal(!tempdir1)
+			!onedir1 = !tempdir1.bisect(!tempdir2)
+			!onedir2 = !onedir1.orthogonal(!brandirs[!x])
+		endhandle
+		!pos1 = !branposs[!x].offset(!onedir1,!branaods[!x] / 2)
+		!pos2 = !branposs[!x].offset(!onedir1, - !branaods[!x] / 2)
+		!aidline = object mbdaidline(!this.mbdstru.aidgro,!pos1,!pos2,'管道中心标识','node:' + !this.nodename)
+		!pos1 = !branposs[!x].offset(!onedir2,!branaods[!x] / 2)
+		!pos2 = !branposs[!x].offset(!onedir2, - !branaods[!x] / 2)
+		!aidline = object mbdaidline(!this.mbdstru.aidgro,!pos1,!pos2,'管道中心标识','node:' + !this.nodename)
+	enddo
+	!attasize = !brans.size()
+	do !xx indices !brans
+		$(
+		!nbbm = :zd_nbbm of $!brans[$!xx]
+		handle any
+		elsehandle none
+			if !nbbm.trim() ne '' then
+				!brans[!xx] = !nbbm
+			endif
+		endhandle
+		$)
+		!pos = !branposs[!xx]
+
+		!tempangle = !brandirs[!xx].angle(u)
+		if !tempangle lt 30 or !tempangle gt 150 then
+			do !dir values !this.dirObject.lookDirs
+				!angle = !dir.angle(u)
+				if !angle gt 45 and !angle lt 135 then
+					!gooddir = !dir
+					break
+				endif
+			enddo
+			!xdir = !gooddir.orthogonal(u)
+			!ori = x is $!xdir and y is u
+
+			!dir = !xdir.bisect(u)
+		else
+			!tempdir = !brandirs[!xx].orthogonal(u)
+			!dir = !brandirs[!xx].bisect(u)
+			!ori = z is $!tempdir and y is u
+		endif
+
+		$(
+		--label /getoriagain
+		!tempdir = !brandirs[!xx].orthogonal(u)
+		handle any
+			--!brandirs[!xx] = e
+			--golabel /getoriagain
+			do !dir values !this.dirObject.lookDirs
+				!angle = !dir.angle(u)
+				if !angle gt 45 and !angle lt 135 then
+					!gooddir = !dir
+					break
+				endif
+			enddo
+			!xdir = !gooddir.orthogonal(u)
+			!ori = x is $!xdir and y is u
+
+			!dir = !xdir.bisect(u)
+		elsehandle none
+			--!tempdir = !tempdir.opposite()
+			--!dir = !tempdir.bisect(!brandirs[!xx])
+			--!ori = x is $!brandirs[$!xx] and y is $!tempdir
+			!dir = !brandirs[!xx].bisect(u)
+			!ori = z is $!tempdir and y is u
+		endhandle
+		$)
+
+		!branstring = !brans[!xx] + '-' + !brandns[!xx].string()
+		!mlabelpos = !pos.offset(!dir,!branaods[!xx] * 0.8)
+		!mlabel = object mlabel(!this.mbdstru.dimgro,!mlabelpos,!ori,!branstring,!this.cheight,false,'管道名称',!pos,'node:' + !this.nodename)
+		!mlabelpos = !mlabelpos.offset(!ori.ydir(),!this.cheight)
+		if !xx eq 1 then
+			!xpos = !pos.east.string('D0')
+			!ypos = !pos.north.string('D0')
+			!zpos = !pos.up.string('D0')
+			!text = 'X ' & !xpos & ' Y ' & !ypos & ' Z ' & !zpos
+			!mlabel = object mlabel(!this.mbdstru.dimgro,!mlabelpos,!ori,!text,!this.cheight,false,'定位坐标',!pos,'node:' + !this.nodename)
+		else
+			!tempup = !pos.up / 1000
+			if !tempup gt 0 then
+				!text = 'PE +' + !tempup.string('D3').upcase().before('MM') + 'm'
+			else
+				!text = 'PE ' + !tempup.string('D3').upcase().before('MM') + 'm'
+			endif
+			!mlabel = object mlabel(!this.mbdstru.dimgro,!mlabelpos,!ori,!text,!this.cheight,false,'标高',!pos,'node:' + !this.nodename)
+			--!mlabel = object mlabel(!this.mbdstru.dimgro,!mlabelpos,!ori,'EL ' & !pos.up.string('D0').before('mm'),!this.cheight,false,'标高',!pos,'node:' + !this.nodename)
+		endif
+		if !attasize gt 1 then
+			!mlabelpos = !mlabelpos.offset(u,!this.cheight * 1.2)
+			!mlabel = object mlabel(!this.mbdstru.dimgro,!mlabelpos,!ori,!abcs[!xx],!this.cheight,false,'管夹标号',!pos,'node:' + !this.nodename)
+			--!textlen = !!mbdtextlen(!abcs[!xx]) * !this.cheight * 0.6
+			!textlen = !!mbdtextlen(!abcs[!xx]) * !this.cheight
+			!circlepos = !mlabelpos.offset(!ori.xdir(),!textlen / 2).offset(!ori.ydir(),!this.cheight / 3)
+			if !this.mbdstru.toaid() then
+				!aidcircle1 = object aidcircle(!this.mbdstru.aidgro, !circlepos, !ori, !textlen / 2 + !this.cheight / 4,'管夹标号','node:' + !this.nodename)
+			endif
+		endif
+	enddo
+endmethod
+
+
+define method .deletestru()
+	!this.mbdstru.deletestru()
+endmethod
+
+$(
+define method .drawMain()
+	if !this.toDimGro().not() then
+		!!alert.warning('No right to create new Zone at current Site')
+		return
+	endif
+	!this.deleteOldDim('MAIN')
+	!this.lines.evaluate(object block('!this.drawOneLine(!evalindex)'))
+endmethod
+
+define method .drawSub()
+	if !this.toDimGro().not() then
+		!!alert.warning('No right to create new Zone at current Site')
+		return
+	endif
+	!this.deleteOldDim('SUB')
+	!this.dimspsXY()
+	!this.dimpaneSctnXY()
+endmethod
+$)
+
+$(
+define method .deleteOldDim(!type is string)
+	if !type eq 'MAIN' then
+		var !lindims1 coll all lindim with(desc eq 'MAIN') for $!this.dimGro
+		handle any
+			$p this.dimGro is unset
+			return
+		endhandle
+		--q var !lindims1
+		if !lindims1.set() then
+			do !lindim values !lindims1
+				$!lindim
+				delete lindim
+				handle any
+					return
+					--elsehandle none
+					--$p asfd
+				endhandle
+			enddo
+		endif
+		--var !lindims1 coll all lindim with(desc eq 'MAIN') for $!this.dimGro
+		--q var !lindims1
+	elseif !type eq 'SUB' then
+		var !lindims2 coll all lindim with(desc eq 'SUB') for $!this.dimGro
+		handle any
+			$p this.dimGro is unset
+			return
+		endhandle
+		if !lindims2.set() then
+			do !lindim values !lindims2
+				$!lindim
+				delete lindim
+				handle any
+					return
+				endhandle
+			enddo
+		endif
+	endif
+endmethod
+$)
+$(
+define method .drawCE()
+
+	!this.getLineData()
+
+
+
+	--return
+	!this.getCenPos()
+	!this.lines.evaluate(object block('!this.drawOneLine(!evalindex)'))
+	!this.dimXYlen()
+	return
+endmethod
+$)
+
+define method .clear()
+	return
+	--$p 1
+	$(
+	!this.suppName = object string()
+	!this.struName = object string()
+	!this.restName = object String()
+	$)
+
+	--!this.mainDimName = object string()
+	--!this.subDimName = object string()
+	--!this.dimZone = object string()
+	--!this.dimGro = object string()
+
+	!this.mbdstru = object mbdstru()
+
+	--!this.attas = array()
+	!this.attaPoints = array()
+	!this.attatubes = array()
+	!this.supportSctns = array()
+	!this.paneSctns = array()
+	!this.sps = array()
+	!this.hangMems = array()
+	!this.supppanepads = array()
+	!this.allsupportpanes = array()
+
+	!this.lines = array()
+	!this.linePoss = array()
+	!this.lineMaxDiss = array()
+	--!this.dirObject = object suiLookDirections()
+	!this.cenpoint = object position()
+
+	!this.paneMaxDiss = array()
+
+	!this.freeSps = array()
+	!this.lineDimSps = array()
+	!this.notDimSps = array()
+
+	!this.gottypedata = false
+endmethod
+
+define method .getName() is boolean
+	!result = !!getsuppname(!this.inputref)
+	if !result.set() then
+		!this.suppname = !result[1]
+		!this.struname = !result[2]
+		!this.restname = !result[3]
+		--!result = !this.getDimName()
+		--return !result
+        --q var !this.inputref
+		!this.mbdstru = object mbdstru(!this.inputref)  $*构建存放层
+
+		if !this.mbdstru.mbdstru.unset() then
+			return false
+		else
+			!this.getnodenameforsupp()   $*获取支架主名（:supp 或 stru的name）
+			return true
+		endif
+	else
+		return false
+	endif
+
+	$(
+	!item = name of $!this.inputref
+	!struname = name of stru of $!item
+	handle any
+		!restname = name of rest of $!item
+		handle any
+			return false
+		endhandle
+		!struname = !restname.before('/REST') + '/STRU'
+	elsehandle none
+		!restname = !struname.before('/STRU') + '/REST'
+	endhandle
+	!this.struName = !struName
+	!this.restName = !restName
+	!this.suppName = !this.struName.before('/STRU')
+
+	if !this.suppname.substring(1,1) ne '/' or !this.struname.substring(1,1) ne '/' or !this.restname.substring(1,1) ne '/' then
+		return false
+	endif
+
+	!result = !this.getDimName()
+	return !result
+	$)
+endmethod
+
+define method .getDimName() is boolean
+	!site = name of site of $!this.inputref
+	!zone = name of zone of $!this.inputref
+	!this.dimZone = !zone + '-Dim'
+	!this.dimGro = !this.suppName + '-Dim'
+	add $!this.dimgro
+	handle any
+	endhandle
+	return true
+	$(
+	-------------------------------------------
+	!site = name of site of $!this.inputref
+	!zone = name of zone of $!this.inputref
+	!dimZone = !zone + '-Dim'
+
+
+	$!dimZone
+	handle any
+		var !ref ref of $!zone
+		!dimzone = '/' + !ref.replace('=','_').replace('/','_') + '-Dim'
+		$!dimzone
+		handle any
+			$!site
+			new zone
+			handle any
+				return false
+			endhandle
+			name $!dimZone
+			handle any
+				return false
+			endhandle
+		endhandle
+	endhandle
+	!this.dimZone = name
+
+	!dimGro = !this.suppName + '-Dim'
+	$!dimGro
+	handle any
+		var !ref ref of $!this.suppName
+		handle any
+			var !ref ref of $!this.struname
+			handle any
+				var !ref ref of $!this.restname
+				handle any
+					return false
+				endhandle
+			endhandle
+		endhandle
+
+		!dimGro = '/' + !ref.replace('=','_').replace('/','_') + '-Dim'
+		$!dimgro
+		handle any
+			$!this.dimZone
+			new DimGro
+			handle any
+				return false
+			endhandle
+			name $!dimGro
+			handle any
+				return false
+			endhandle
+			else
+				add $!dimgro
+			endif
+		elsehandle none
+			add $!dimGro
+		endhandle
+		!this.dimGro = name
+
+
+		return true
+	$)
+endmethod
+
+$(
+define method .toDimGro() is boolean
+	!createzone = false
+	q var !this.dimzone
+	$!this.dimZone
+	handle any
+		!site = name of site of $!this.inputref
+		$!site
+		new zone name $!this.dimzone
+		handle any
+			return false
+		elsehandle none
+			!createzone = true
+		endhandle
+	endhandle
+
+	$!this.dimGro
+	handle any
+		new DimGro name $!this.dimGro
+		handle any
+			if !createzone then
+				delete zone
+			endif
+			return false
+		endhandle
+	endhandle
+	return true
+endmethod
+$)
+
+$(
+define method .deleteDim() is boolean
+	$!this.dimGro
+	handle any
+		return true
+	elsehandle none
+
+		--var !lindims coll all lindim for $!this.dimgro
+		--do !lindim values !lindims
+		--	$!lindim
+		--	delete lindim
+		--	handle any
+		--		return false
+		--	endhandle
+		--enddo
+
+		delete dimgro
+		handle any
+			return false
+		endhandle
+	endhandle
+	return true
+endmethod
+$)
+
+define method .updateDim() is boolean
+	var !lindims1 coll all lindim with(desc eq 'MAIN') for $!this.dimGro
+	handle any
+		--$p this.dimGro is unset
+		return false
+	endhandle
+	var !lindims2 coll all lindim with(desc eq 'SUB') for $!this.dimGro
+
+
+	if !lindims1.set() then
+		!this.drawMain()
+	endif
+	if !lindims2.set() then
+		!this.drawSub()
+	endif
+	return true
+endmethod
+
+define method .getTypeData()
+	if !this.gottypedata then
+		return
+	endif
+	!this.getattaData()					$* atta data(attatubes attapoints)
+
+	!this.getSupportSctns()				$*sctns
+
+	!temparr = !!getpanesctns(!this.suppname)
+
+    --q var !temparr
+	--!temparr = !!getpanesctns(!this.struname)
+    --q var !temparr[2] !temparr[3]
+
+	!this.panesctns = !temparr[1]		$*fake sctn which made of panes
+	!this.sps = !temparr[2]				$*free panes
+	!this.allsupportpanes = !temparr[3]	$*all supportpane
+	!this.supppanepads = !temparr[4]
+
+    --q var !this.sps[1]  !this.allsupportpanes[1]
+	!fittsps = !this.getfittpaneinsctn()
+	!this.sps.appendarray(!fittsps)
+	!this.allsupportpanes.appendarray(!fittsps)
+
+	!this.getHangMems()
+	!this.gottypedata = true
+endmethod
+
+define method .getfittpaneinsctn() is array
+	var !sctns coll all (sctn gensec) for $!this.suppname
+	!fitts = array()
+	do !sctn values !sctns
+		var !fitts append coll all fitt for $!sctn
+	enddo
+	!sps = array()
+	!atts = split('px py pz pxlen pylen pzlen')
+	do !fitt values !fitts
+		!gm = name of gstref of catref of $!fitt
+		handle any
+			!gm = name of gmre of catref of $!fitt
+			handle any
+				skip
+			endhandle
+		endhandle
+		!dbref = object dbref(!fitt)
+		!pos = pos of $!fitt wrt/*
+		!ori = ori of $!fitt wrt/*
+		!mems = mem of $!gm
+		do !mem values !mems
+			!memtype = type of $!mem
+			if !memtype eq 'SBOX' and !this.checkvalid(!mem) then
+				!values = array()
+				do !x indices !atts
+					!att = !atts[!x]
+					!com = '!string = ' + !att + ' of $' + '!mem'
+					$!com
+					handle any
+						--$p $!com
+						--q var !dbref.string()
+					elsehandle none
+						!values[!x] = !!evalCata(!dbref,!string)
+						handle any
+						endhandle
+					endhandle
+				enddo
+				!pos = !pos.offset(!ori.xdir(),!values[!atts.findfirst('px')]).offset(!ori.ydir(),!values[!atts.findfirst('py')]).offset(!ori.zdir(),!values[!atts.findfirst('pz')])
+				!px = !values[!atts.findfirst('px')]
+				handle any
+					skip
+				endhandle
+				!py = !values[!atts.findfirst('py')]
+				handle any
+					skip
+				endhandle
+				!pz = !values[!atts.findfirst('pz')]
+				handle any
+					skip
+				endhandle
+
+				!xlen = !values[!atts.findfirst('pxlen')]
+				!ylen = !values[!atts.findfirst('pylen')]
+				!zlen = !values[!atts.findfirst('pzlen')]
+				if !xlen eq 0 or !ylen eq 0 or !zlen eq 0 then
+					skip
+				endif
+
+				!supportpane = object supportpane(!fitt,!px,!py,!pz,!xlen,!ylen,!zlen)
+				!sps.append(!supportpane)
+
+				break
+			endif
+		enddo
+	enddo
+    --q var !sps
+	return !sps
+endmethod
+
+define method .checkvalid(!mem is any) is boolean
+	!tuflag = tuflag of $!mem
+	handle any
+	elsehandle none
+		if !tuflag.not() then
+			return false
+		endif
+	endhandle
+
+	!level = level of $!mem
+	if !level[1] gt 6 or !level[2] lt 6 then
+		return false
+	endif
+
+	!obst = obstruction of $!mem
+	if !obst ne 2 and !obst ne 0 then
+		return false
+	endif
+	return true
+endmethod
+
+define method .getAttaData()
+	!this.addattatopartobjects()
+	return
+	$(
+	!type = type of $!this.suppname
+	if !type eq 'SUPPO' then
+		var !attas coll all anci for $!this.suppname
+		!this.attas.appendarray(!attas)
+		!this.attas.unique()
+		do !atta values !this.attas
+			!attapos = pos of $!atta wrt/*
+			!this.attapoints.append(!attapos)
+		enddo
+	else
+	$)
+
+
+	!tempstring = !this.suppName + '*'
+	--q var !tempstring
+    --$p 5698
+	var !attas coll all atta with(matchwild(name,!tempstring))
+	--var !attas coll all atta with(matchwild(name,!this.suppName + '*'))
+	--q var !attas
+
+	!this.attas.appendarray(!attas)
+	!this.attas.unique()
+	do !atta values !this.attas
+		!attapos = pos of $!atta wrt/*
+		!p3pos = p3 pos of $!atta wrt/*
+		handle any
+			!this.attapoints.append(!attapos)
+		elsehandle none
+			if !attapos.distance(!p3pos) gt 1 then
+				!this.attaTubes.append(object attaTube(!atta))
+			else
+				!this.attapoints.append(!attapos)
+			endif
+		endhandle
+	enddo
+	--!this.attapoints.unique()
+
+
+
+	$(
+	return
+	!attaName = !this.suppName + '-BV'
+	!attaPos = pos of $!attaName wrt/*
+	handle any
+	elsehandle none
+		!this.attaPoints = array()
+		!this.attaPoints.append(!attapos)
+	endhandle
+	$)
+	--endif
+endmethod
+
+
+
+
+--------------------------------------
+--------------------------------------Step 1:
+define method .addattatopartobjects() $*add atta to partobjects
+	--$p 123
+	!pointattas = array()
+	!tempstring = !this.suppName + '*'
+	var !allattas coll all atta with(matchwild(name,!tempstring)) $*获取支架对应管道上逻辑支吊架点等
+
+	!brans = array()
+	!branattas = array()
+	do !atta values !allattas
+		!spref = name of spref of $!atta
+		handle any
+			skip
+		endhandle
+		!onebran = name of bran of $!atta
+		!index  = !brans.findfirst(!onebran)
+		if !index.set() then
+			!branattas[!index].append(!atta)
+		else
+			!brans.append(!onebran)
+			!temparr = array()
+			!temparr.append(!atta)
+			!branattas.append(!temparr)
+		endif
+	enddo
+
+	do !attas values !branattas
+		--q var !attas
+        --遍历计算atta点的数据
+		!pipeatta = object pipeatta(!attas,'supp')
+        --q var !pipeatta
+		----!pipeatta = object pipeatta(!attas,'pipe')
+		!this.pipeattas.append(!pipeatta)					$* all atta belong to pipe according to new rule
+		--$p 5487
+		!this.attas.appendarray(!pipeatta.pointattas)
+        --q var !this.attas
+	enddo
+
+
+	!this.attas.unique()
+    --处理没有型集的逻辑支吊点 jyg理解
+	do !atta values !this.attas
+		!attapos = pos of $!atta wrt/*
+		!this.attapoints.append(!attapos)
+	enddo
+	--q var !this.attapoints
+	!this.addattatube()
+	$(
+	return
+
+	!considerattas = array()
+
+	do !atta values !allattas
+
+		if !considerattas.findfirst(!atta).set() then
+			skip
+		endif
+		--------------------------------------
+		--------------------------------------Step 1:get data of all atta with suppname from bran of curren atta, it
+		!temparr = !this.getattadatas(!atta)	$* it is data of all atta from bran of current atta, instead of one atta
+		!geoattas = !temparr[3]
+		!attadatas = !temparr[1]
+		!attaclass = !temparr[2]
+		!onebranpointattas = !temparr[4]
+
+		!pointattas.appendarray(!onebranpointattas)
+
+		--
+		--do !atta values !onebranpointattas
+		--	!this.dealparttype(!atta,'POINT')
+		--enddo
+		--
+		!considerattas.appendarray(!geoattas)
+		!considerattas.appendarray(!onebranpointattas)
+
+		do !oneattaclass values !attaclass
+			!this.dealattaparttype(!oneattaclass,!attadatas)
+		enddo
+	enddo
+
+
+
+	!this.attas.appendarray(!pointattas)
+	!this.attas.unique()
+	do !atta values !this.attas
+		!attapos = pos of $!atta wrt/*
+		!this.attapoints.append(!attapos)
+	enddo
+	$)
+endmethod
+
+define method .addattatube()
+    --一根管道上的所有atta数据整体（集合），多根管道可以有多个集合，收集完成后放入pipeattas
+	do  !pipeatta values !this.pipeattas
+        --q var !pipeatta
+		do !ao values !pipeatta.attaobjects
+			if !ao.objecttype() eq 'ISOLEG' then
+				!attatube = object attatube(!ao)
+				!this.attatubes.append(!attatube)
+			endif
+		enddo
+	enddo
+endmethod
+
+$(
+define method .dealattaparttype(!attaclass is array, !inputattadatas is array) $*put attadata into partobjects
+	!attadatas = array()
+	!attanames = array()
+	do !index values !attaclass
+		!attadatas.append(!inputattadatas[!index])
+		!attanames.append(!inputattadatas[!index].name)
+	enddo
+
+	!ot = !attadatas[1].objecttype()
+	if !ot eq 'ISOPAD' then
+		!type = 'PAD'
+	elseif  !ot eq 'ISOLUG' then
+		!type = 'LUG'
+	elseif  !ot eq 'ISOLEG' then
+		!type = 'TUBE'
+		do !attaname values !attanames
+			!this.attaTubes.append(object attaTube(!attaname))
+		enddo
+	endif
+	!index = !this.parttypes.findfirst(!type)
+	!com = '!object = object supp' & !type & '(!attadatas)'
+	--q var !com
+	$!com
+	!this.partobjects.append(!object)
+	!this.parttypeindices[!index].append(!this.partobjects.maxindex())
+endmethod
+$)
+
+$(
+define method .getattadatas(!atta is string) is array $*get attadata from bran which is relevant to suppport
+	!a = object isobran()
+	!tempstring = '*' + !this.suppName + '*'
+	var !mems coll all atta with(matchwild(name,!tempstring)) for bran of $!atta
+	--var !mems1 coll all atta  for bran of $!atta
+	--q var !mems1 !atta !this.suppname
+	--------------------------------------
+	--------------------------------------Step 1:got attas with suppname from bran
+
+	!pointattas = array()
+	!geoattas = array()
+
+	!padvolumes = array()
+	!attadatas = array()
+	do !mem values !mems
+		!attadata = !a.getattageo(!mem)
+		--q var !attadata
+		--------------------------------------
+		--------------------------------------Step 1:if atta is point, add into pointattas, or if it is pad/lug/leg, then add into geoattas
+		if !attadata.set() then
+			!geoattas.append(!mem)
+			!attadatas.appendarray(!attadata)
+
+			--------------------------------------
+			--------------------------------------Step 1:if atta is pad, get array of padvolume, in order to identify group for attas
+			if !attadata[1].objecttype() eq 'ISOPAD' then
+				!ob = !attadata[1]
+				!padline = !ob.attapos.offset(!ob.ori.zdir(),!ob.height / 2).line(!ob.pos.offset(!ob.ori.zdir(), - !ob.height / 2))
+
+				!exists = false
+				do !x indices !padvolumes
+					if !padline.startposition.distance(!padvolumes[!x][1].startposition) lt 1 and !padline.endposition.distance(!padvolumes[!x][1].endposition) lt 1 $
+						and abs(!ob.routside - !padvolumes[!x][2]) lt 1 then
+						!exists = true
+						break
+					endif
+				enddo
+				if !exists.not() then
+					!onearr = array()
+					!onearr[1] = !padline
+					!onearr[2] = !ob.routside
+
+					!padvolumes.append(!onearr)
+				endif
+			endif
+		else
+			!pointattas.append(!mem)
+		endif
+	enddo
+
+
+	--------------------------------------
+	--------------------------------------Step 2:check if lug/leg is on pad
+	!onpadattas = array()
+	!onpadnums = array()
+
+	!attaPadNums = array()
+	do !x indices !attadatas
+		if !attadatas[!x].objecttype() inset ('ISOLUG','ISOLEG') then
+			!atta = !attadatas[!x].name
+			!tempindex = !onpadattas.findfirst(!atta)
+			if !tempindex.set() then
+				!attaPadNums[!x] = !onpadnums[!tempindex]
+				!onpad = true
+			else
+				--!attapos = pos of $!atta wrt/*
+				!attapos = !attadatas[!x].attapos
+				!onpad = false
+				do !padindex indices !padvolumes
+					!padvolume = !padvolumes[!padindex]
+					if !padvolume[1].onprojected(!attapos) and !padvolume[1].distance(!attapos) lt !padvolume[2] then
+						!onpadattas.append(!atta)
+						!onpadnums.append(!padindex)
+
+						!onpad = true
+						!attaPadNums[!x] = !padindex
+						break
+					endif
+				enddo
+			endif
+			!attadatas[!x].onpad = !onpad
+		endif
+	enddo
+
+	--------------------------------------
+	--------------------------------------Step 3:start to identify group
+	!padposs = array()
+	!padangles = array()
+	!padheights = array()
+	!padradius = array()
+	!paditemcodes = array()
+	!padindices = array()
+
+
+	-----------------------
+	-----------------------no need to check onpad, since radius is checked
+	!lugposs = array()
+	--!lugPadNums = array()
+	!lugangles = array()
+	!lugheights = array()
+	!lugradius = array()
+	!lugitemcodes = array()
+	!lugindices = array()
+
+
+	!legposs = array()
+	--!legPadNums = array()	$* not sure about leg if padnum is needed
+	!legheights = array()
+	!legdias = array()
+	!legitemcodes = array()
+	!legonpads = array()
+	!legindices = array()
+
+
+	do !index indices !attadatas
+		--------------------------------------
+		--------------------------------------Step 1:check attsdata one by one, , it means they sould be in one group that their some attributes are some
+		--------------------------------------
+		--------------------------------------Step 2:if some of them are in one group, put them into one element(array) of indices, like padindices/lugindices/legindices
+		--$P INDEX $!INDEX
+		--!attadata = !attadatas[!index]
+		--do !attadata values !attadatas
+		if !attadatas[!index].objecttype() eq 'ISOPAD' then
+			!pos = !attadatas[!index].attapos
+			!angle = !attadatas[!index].angle
+			!height = !attadatas[!index].height
+			!radius = !attadatas[!index].rinside
+			!itemcode = !attadatas[!index].itemcode
+
+			!find = false
+			do !x indices !padposs
+				if !paditemcodes[!x] eq !itemcode and !padposs[!x].distance(!pos) lt 1 and abs(!padangles[!x] - !angle) lt 0.1 and abs(!padheights[!x] - !height) lt 0.1 and abs(!padradius[!x] - !radius) lt 0.1 then
+					!padindices[!x].append(!index)
+					!find = true
+					break
+				endif
+			enddo
+			if !find.not() then
+				!padposs.append(!pos)
+				!padangles.append(!angle)
+				!padheights.append(!height)
+				!padradius.append(!radius)
+				!paditemcodes.append(!itemcode)
+
+				!temparr = array()
+				!temparr.append(!index)
+				!padindices.append(!temparr)
+			endif
+		elseif !attadatas[!index].objecttype() eq 'ISOLUG' then
+			!pos = !attadatas[!index].attapos
+			--!onpadnum =
+			!angle = !attadatas[!index].angle
+			!height = !attadatas[!index].height
+			!radius = !attadatas[!index].rinside
+			!itemcode = !attadatas[!index].itemcode
+
+			--!padnum = !attaPadNums[!index]
+			--handle any
+			--	!padnum = 0
+			--endhandle
+
+			!find = false
+			do !x indices !lugposs
+				if !lugitemcodes[!x] eq !itemcode and !lugposs[!x].distance(!pos) lt 1 and abs(!lugangles[!x] - !angle) lt 0.1 and abs(!lugheights[!x] - !height) lt 0.1 and abs(!lugradius[!x] - !radius) lt 0.1 then
+					--if !lugitemcodes[!x] eq !itemcode and (!lugposs[!x].distance(!pos) lt 1 or (!padnum eq ne 0 and !padnum eq !lugpadnums[!x])) and abs(!lugangles[!x] - !angle) lt 0.1 and abs(!lugheights[!x] - !height) lt 0.1 and abs(!lugradius[!x] - !radius) lt 0.1 then
+					!lugindices[!x].append(!index)
+					!find = true
+					break
+				endif
+			enddo
+			if !find.not() then
+				!lugposs.append(!pos)
+				!lugangles.append(!angle)
+				!lugheights.append(!height)
+				!lugradius.append(!radius)
+				!lugitemcodes.append(!itemcode)
+				--!lugpadnums.append(!padnum)
+
+
+				!temparr = array()
+				!temparr.append(!index)
+				!lugindices.append(!temparr)
+			endif
+		elseif !attadatas[!index].objecttype() eq 'ISOLEG' then
+			!pos = !attadatas[!index].attapos
+			!height = !attadatas[!index].height
+			!dia = !attadatas[!index].india
+			!onpad = !attadatas[!index].onpad
+			!itemcode = !attadatas[!index].itemcode
+
+			--!padnum = !attaPadNums[!index]
+			--handle any
+			--	!padnum = 0
+			--endhandle
+
+			!find = false
+			do !x indices !legposs
+				if !legitemcodes[!x] eq !itemcode and !legposs[!x].distance(!pos) lt 1 and abs(!legheights[!x] - !height) lt 0.1 and abs(!legdias[!x] - !dia) lt 0.1 and !legonpads[!x ] eq !onpad then
+					--if !legitemcodes[!x] eq !itemcode and (!legposs[!x].distance(!pos) lt 1 or (!padnum eq ne 0 and !padnum eq !legpadnums[!x])) and abs(!legheights[!x] - !height) lt 0.1 and abs(!legdias[!x] - !dia) lt 0.1 and !legonpads[!x ] eq !onpad then
+					!legindices[!x].append(!index)
+					!find = true
+					break
+				endif
+			enddo
+			if !find.not() then
+				!legposs.append(!pos)
+				!legheights.append(!height)
+				!legdias.append(!dia)
+				!legonpads.append(!onpad)
+				!legitemcodes.append(!itemcode)
+				--!legpadnums.append(!padnum)
+
+				!temparr = array()
+				!temparr.append(!index)
+				!legindices.append(!temparr)
+			endif
+		endif
+	enddo
+
+
+	--------------------------------------
+	--------------------------------------Step 4:each element in padindices/legindices generate a element of attaclass
+	!attaClass = array()
+	if !padindices.set() then
+		!attaclass.appendarray(!padindices)
+	endif
+	if !legindices.set() then
+		!attaclass.appendarray(!legindices)
+	endif
+
+	--------------------------------------
+	--------------------------------------Step 5:check if two element in lugindices should in one group
+	if !lugindices.set() then
+		--------------------------------------
+		--------------------------------------Step 1:if two element in lugindices are on one pad, these two element generate one group attaclass
+		!padnums = array()
+		!groupnums = array()
+		do !x indices !lugindices
+			!padnum = !attapadnums[!lugindices[!x][1]]
+			handle any
+			elsehandle none
+				!tempindex = !padnums.findfirst(!padnum)
+				if !tempindex.unset() then
+					!padnums.append(!padnum)
+					!groupnums[!padnums.size()] = array()
+					!groupnums[!padnums.size()].append(!x)
+				else
+					!groupnums[!tempindex].append(!x)
+				endif
+			endhandle
+		enddo
+
+
+		-----------------------
+		-----------------------merge groups with same pad number
+		!consideredIndices = array()
+		do !x indices !padnums
+			if !groupnums[!x].size() ge 2 then
+				do !y from 2 to !groupnums[!x].size()
+					!lugindices[!groupnums[!x][1]].appendarray(!lugindices[!groupnums[!x][!y]])
+					!lugindices[!groupnums[!x][!y]].delete()
+					!consideredIndices.append(!groupnums[!x][1])
+				enddo
+			endif
+		enddo
+
+		!indices = !lugindices.indices()
+		!difindices = !indices.difference(!consideredIndices)
+		-----------------------
+		-----------------------difindices is indices of rest groups which without same pad number with other groups
+
+
+
+		--------------------------------------
+		--------------------------------------Step 2:if there are some lugs not sure they are in one group or not with other lugs
+		--------------------------------------
+		--------------------------------------Step 3:use dir,bore and distance to identify
+		-----------------------
+		-----------------------get dir bore and line for each group
+		!lines = array()
+		!bores = array()
+		!poss = array()
+		!dirs = array()
+
+		!tolerancetimes = 2.5
+		do !index values !difindices
+			!object = !attadatas[!lugindices[!index][1]]
+			!attapos = !object.attapos
+			!atta = !object.name
+
+			--!bore = abore of pre tubi of $!atta
+			--!dn = !bore.real().value()
+			--!dir = dir of pre tubi of $!atta
+			!temparr = !a.getattatube(!atta)
+			!dn = !temparr[1]
+			!dir = !temparr[2]
+			!line = !attapos.offset(!dir, !tolerancetimes * !dn).line(!attapos.offset(!dir, - !tolerancetimes * !dn))
+			!lines.append(!line)
+			!bores.append(!dn)
+			!poss.append(!attapos)
+			!dirs.append(!dir)
+		enddo
+
+
+		--------------------------------------
+		--------------------------------------Step 4:find group with same dir bore and distance is near than tolerance distance
+		!groups = array()
+		do !x from 1 to !difindices.size() - 1
+			if !groups.findfirst(!x).set() then
+				skip
+			endif
+			do !y from !x + 1 to !difindices.size()
+				if !groups.findfirst(!y).set() then
+					skip
+				endif
+				if !bores[!x] eq !bores[!y] and abs(!dirs[!x].angle(!dirs[!y]) - 90) gt 89.9 and !lines[!x].distance(!poss[!y]) lt !bores[!x] / 3 and !lines[!x].onprojected(!poss[!y]) then
+					!groups.append(!x)
+					!groups.append(!y)
+					break
+				endif
+			enddo
+		enddo
+
+		-----------------------
+		-----------------------merge groups
+		do !x from 1 to !groups.size() by 2
+			!lugindices[!difindices[!groups[!x]]].appendarray(!lugindices[!difindices[!groups[!x + 1]]])
+			!lugindices[!difindices[!groups[!x + 1]]].delete()
+		enddo
+
+		--------------------------------------
+		--------------------------------------Step 5:consider each one ofrest lug as one group
+		--------------------------------------
+		--------------------------------------Step 6:generate attaclass for each group
+		!lugindices.compress()
+		!attaclass.appendarray(!lugindices)
+	endif
+
+	--------------------------------------
+	--------------------------------------Step 6:return result: attadatas contains data for each atta,attaclass is group of indices of atta
+	--------------------------------------
+	--------------------------------------Step 7:geoattas: all atta with geo, pointattas: all atta without geo
+	!result = array()
+	!result.append(!attadatas)
+	!result.append(!attaclass)
+	!result.append(!geoattas)
+	!result.append(!pointattas)
+	return !result
+endmethod
+$)
+--------------------------------------
+--------------------------------------Step 2:
+
+define method .getSupportSctns()
+	var !sctns coll all (sctn gensec) for $!this.suppName
+	do !sctn values !sctns
+        --!AAAA = object supportSctn(!sctn)
+        --Q VAR !AAAA
+		!this.supportSctns.append(object supportSctn(!sctn))
+	enddo
+    --q var !this.supportSctns[1]
+endmethod
+
+define method .getHangMems()
+	!tolerance = 1
+	!type = type of $!this.suppname
+	if !type eq 'SUPPO' then
+		var !mems coll all anci for $!this.suppname
+		do !mem values !mems
+			!pclapos = pos of $!mem wrt/*
+			!memname = name of $!mem
+			!this.pclas.append(!memname)
+
+			!samepoint = false
+			do !point values !this.attapoints
+				if !point.distance(!pclapos) lt !tolerance then
+					!samepoint = true
+					break
+				endif
+			enddo
+			if !samepoint.not() then
+				!this.attapoints.append(!pclapos)
+			endif
+		enddo
+	else
+		var !mems coll all (hang mem) for $!this.restname
+		handle any
+		elsehandle none
+			do !mem values !mems
+                --modify by jyg 20250306 解决管卡没有标注尺寸信息的问题（之前有，现在么有了）
+				if type of $!mem eq 'PCLA' then
+					!pclapos = pos of $!mem wrt/*
+					!memname = name of $!mem
+					!this.pclas.append(!memname)
+
+					!samepoint = false
+					do !point values !this.attapoints
+						if !point.distance(!pclapos) lt !tolerance then
+							!samepoint = true
+							break
+						endif
+					enddo
+					if !samepoint.not() then
+						!this.attapoints.append(!pclapos)
+					endif
+                    --Q VAR !this.attapoints
+
+                    --modify by jyg 20250306 解决管卡没有标注尺寸信息的问题（之前有，现在么有了）
+                    !hangobject = object supportHangMem(!mem)
+                    --q var !hangobject
+                    --$P 456
+					--if !hangobject.axis.set() then
+                    --$P 123
+					--	!this.hangMems.append(!hangobject)
+					--else
+                        --modify by jyg 记录管卡标记关键点信息.用于标注管卡位置
+						!this.otherpoints.append(!hangobject.posstart)
+					--endif
+
+				else
+
+                --modify by jyg 20250310 解决管卡材料没有提取到的问题
+                --if  type of $!mem eq 'PCLA' then
+				--	!pclapos = pos of $!mem wrt/*
+				--	!memname = name of $!mem
+                --
+				--	!this.pclas.append(!memname)
+				--
+				--	!samepoint = false
+				--	do !point values !this.attapoints
+				--		if !point.distance(!pclapos) lt !tolerance then
+				--			!samepoint = true
+				--			break
+				--		endif
+				--	enddo
+				--	if !samepoint.not() then
+				--		!this.attapoints.append(!pclapos)
+				--	endif
+                --    --Q VAR !this.attapoints
+                --
+				--endif
+                --q var !this.pclas
+
+                    --$P 123
+					!hangobject = object supportHangMem(!mem)
+                    --q var !hangobject
+                    --$P 456
+					if !hangobject.axis.set() then
+                    --$P 123
+						!this.hangMems.append(!hangobject)
+					else
+						!this.otherpoints.append(!hangobject.posstart)
+					endif
+
+                    --modify by jyg 20241214 处理弹簧没有标注直径的问题
+                    !heleName = !mem.Dbref().spref.name
+                    if  !heleName.matchwild('*SPRI/SVV*') then
+                        !diamposs = array()
+                        !heleDesp = !mem.Dbref().desp[3]
+                        if  !heleDesp eq 0 then
+                            !heleDesp = !mem.Dbref().para[1]
+                        endif
+                        --q var !mem
+                        !diamems = !hangobject.getvalidmems(!mem)
+                        --q var !diamems
+                        !item = name of $!mem
+                        do  !diamem values !diamems
+                            !memtype = type of $!diamem
+                            !memstring = !diamem.string()
+                            if !memtype eq 'SCYL' then
+                                !memPdiaEx = pdia of $!diamem
+                                !memPdia = !hangobject.ref.Dbref().evaluate(object block(!memPdiaEx) )
+                                if  !memPdia eq !heleDesp then
+                                    !object = object supptube(!item,!memstring)
+                                    !ydir = !object.ori.ydir()
+                                    !pos1 = !object.pos.Offset(!ydir,!heleDesp / 2)
+                                    !pos2 = !object.pos.Offset(!ydir.opposite(),!heleDesp / 2)
+                                    --pin1 at $!pos1
+                                    --pin2 at $!pos2
+                                    !hangobject.axis = !pos1.line(!pos2)
+                                    !diamposs.append(!pos1)
+                                    !diamposs.append(!pos2)
+                                    !hangobject.poss = !diamposs
+                                    !hangobject.posstart = !pos1
+                                    !hangobject.posend = !pos2
+                                    !this.hangMems.append(!hangobject)
+                                    break
+                                endif
+                            endif
+                        enddo
+                    endif
+
+				endif
+			enddo
+		endhandle
+	endif
+endmethod
+
+
+
+define method .tryToPutObjectIntoOneLine(!object is any)
+    --q var !object
+	if !object.objecttype() eq 'SUPPORTHANGMEM' then
+		!boltgaskthick = 5
+		!volume = object volume(object dbref(!object.ref))
+		----------------------
+		----------------------Step 1:螺栓垫片不需要标注
+		if abs(!volume.to.up - !volume.from.up) le !boltgaskthick or abs(!volume.to.east - !volume.from.east) le !boltgaskthick or abs(!volume.to.north - !volume.from.north) le !boltgaskthick then
+			return
+		endif
+	endif
+	--q var !object
+
+	--!this.dirObject.dirs.append(!object.zdir)
+	!pos1 = !object.posstart
+	!pos2 = !object.posend
+
+    --q var !object
+	!poss = !object.poss
+	handle any
+		!poss = array()
+		!poss.append(!pos1)
+		!poss.append(!pos2)
+	endhandle
+	!addNewLine = true
+
+
+	--q var !this.lines
+	do !x indices !this.lines
+		!line = !this.lines[!x]
+
+		!tempangle = !line.direction().angle(!object.zdir)
+		!tempangle = min(!tempangle,180 - !tempangle)
+		if !tempangle le !this.toleranceAngle then
+			!templine = !line.extendstart(!this.tolerancedis).extendend(!this.tolerancedis)
+			if (!pos1.distance(!line) le 1 or !pos2.distance(!line) le 1) or ((!pos1.distance(!line) le !this.toleranceDis or !pos2.distance(!line) le !this.toleranceDis) and (!templine.onprojected(!pos1) or !templine.onprojected(!pos2))) then
+				--if !pos1.distance(!line) le !this.toleranceDis or !pos2.distance(!line) le !this.toleranceDis then
+				!addNewLine = false
+				--if !object.objecttype() eq 'SUPPORTHANGMEM' then
+				--	!this.linePoss[!x].appendarray(!object.poss)
+				--else
+				!this.linePoss[!x].appendarray(!poss)
+				--endif
+				!this.lineMaxDiss[!x] = max(!this.lineMaxDiss[!x],!object.maxdis)
+
+				if defined(!object.adlongth) and !object.adlongth.set() and !object.adlongth ne 0 then
+					--!index = !this.lines.maxindex()
+					!tempdis1 = !!suidirdis(!line.startposition,!line.direction(),!pos1)
+					!tempdis2 = !!suidirdis(!line.startposition,!line.direction(),!pos2)
+					--insure two lines are not overlapped
+
+					if (!tempdis1 lt 0 and !tempdis2 lt 0) or (!tempdis1 gt !line.length() and !tempdis2 gt !line.length()) then
+						if defined(!this.lineadlongths[!x]) and !this.lineadlongths[!x].set() then
+							!this.lineadlongths[!x] = !this.lineadlongths[!x] + !object.adlongth
+						else
+							!this.lineadlongths[!x] = !object.adlongth
+						endif
+					endif
+				endif
+
+				if !object.objecttype() eq 'SUPPORTHANGMEM' and !object.type eq 'HELE' then
+					!this.lineforheles[!x] = true
+				endif
+
+				do !temppos values !poss
+					if !this.lines[!x].onprojected(!temppos).not() then
+						!nearpos = !this.lines[!x].near(!temppos)
+						if !this.lines[!x].startposition.distance(!nearpos) le !this.lines[!x].endposition.distance(!nearpos) then
+							!this.lines[!x] = !this.lines[!x].from(!nearpos)
+						else
+							!this.lines[!x] = !this.lines[!x].to(!nearpos)
+						endif
+					endif
+				enddo
+				break
+			endif
+		endif
+	enddo
+    --q var !this.lines
+	--q var !addNewLine
+	if !addNewLine then
+        --q var !object
+		!axis = !object.axis
+
+		$(
+		if !object.objecttype() eq 'SUPPORTSCTN' then
+			!newposs = array()
+			!diss = array()
+
+			!allposs = !object.startposs
+			!allposs.appendarray(!object.endposs)
+			do !onepos values !allposs
+				!newposs.append(!axis.near(!onepos))
+				!diss.append(!!suidirdis(!axis.startposition,!axis.direction(),!onepos))
+			enddo
+			!newposs.reindex(!diss.sortedindices())
+
+			!poss = array()
+			!poss.append(!newposs[1])
+			!poss.append(!newposs.last())
+			!axis = !newposs[1].line(!newposs.last())
+		endif
+		$)
+
+		$(
+		!this.lines.append(!object.axis)
+		--if !object.objecttype() eq 'SUPPORTHANGMEM' then
+		--	!this.linePoss.appendarray(!object.poss)
+		--else
+		!this.linePoss.append(!poss)
+		--endif
+		$)
+		!this.lines.append(!axis)
+		!this.lineposs.append(!poss)
+		!this.lineMaxDiss.append(!object.maxdis)
+
+		!index = !this.lines.maxindex()
+		if defined(!object.adlongth) and !object.adlongth ne 0 then
+			!this.lineadlongths[!index] = !object.adlongth
+		endif
+		if !object.objecttype() eq 'SUPPORTHANGMEM' and !object.type eq 'HELE' then
+			!this.lineforheles[!index] = true
+		endif
+	endif
+    --q var !this.lines
+	--!this.dirObject.poss.appendarray(!poss)
+endmethod
+
+define method .tryToPutPaneIntoOneLine(!sp is supportpane)
+    --q var !sp
+	------------------------------------------------------add pane which  one sctn go through
+	!catch = false
+    --q var !this.lines
+    --$p 111
+
+	do !x indices !this.lines
+
+		!line = !this.lines[!x]
+        --!line.draw(1,1,1)
+		!add = false
+		!tempangle = !line.direction().angle(!sp.zdir)
+		!tempangle = min(!tempangle,180 - !tempangle)
+		--q var !tempangle !this.toleranceAngle
+		if !tempangle le !this.toleranceAngle then
+			!interpos = !line.intersection(!sp.plane)
+			if !!posinprofile(!interpos,!sp.profile) then		$*line through the pane
+				--if !sp.profile.iswithout(!interpos).not() then		$*line through the pane
+				!paneMidPoint = !sp.axis1.startposition.midpoint(!sp.axis1.endposition).offset(!sp.zdir,!sp.height / 2)
+                --pin6 at $!paneMidPoint
+				if !line.onprojected(!paneMidPoint) then										$*pane in the line
+					--$p kk
+                    !add = true
+				else
+					!tempdis1 = !!suidirdis(!panemidpoint,!line.direction(),!line.startposition)
+                    --q  var !tempdis1
+					!tempdis2 = !!suidirdis(!line.endposition,!line.direction(),!panemidpoint)
+                    --q  var !tempdis2
+					if !tempdis1 lt !this.paneThick or !tempdis2 lt !this.paneThick then		$*pane at the end of line
+						if !sp.maxDis gt !this.lineMaxDiss[!x] then
+							!add = true
+						else
+							!catch = true
+							!this.notDimSps.append(!sp)
+                            --$p 11
+							break
+						endif
+					endif
+				endif
+			endif
+		endif
+		if !add then
+			!poss = array()
+			!poss[1] = !interpos
+			!poss[2] = !interpos.offset(!sp.zdir,!sp.height)
+			!this.linePoss[!x].appendarray(!poss)
+			--!this.lineMaxDiss[!x] = max(!this.lineMaxDiss[!x],!object.maxdis)
+			do !temppos values !poss
+				if !this.lines[!x].onprojected(!temppos).not() then
+					!nearpos = !this.lines[!x].near(!temppos)
+					if !this.lines[!x].startposition.distance(!nearpos) le !this.lines[!x].endposition.distance(!nearpos) then
+						!this.lines[!x] = !this.lines[!x].from(!nearpos)
+					else
+						!this.lines[!x] = !this.lines[!x].to(!nearpos)
+					endif
+				endif
+			enddo
+			if undefined(!this.paneMaxDiss[!x]) then
+				!this.paneMaxDiss[!x] = !sp.maxDis
+			else
+				!this.paneMaxDiss[!x] = max(!this.paneMaxDiss[!x],!sp.maxDis)
+			endif
+			!this.lineDimSps.append(!sp)
+			--!this.dirObject.poss.appendarray(!poss)
+			!catch = true
+            --$p 22
+			break
+		endif
+	enddo
+	--q var !this.lines
+	if !catch.not() then
+		!this.freeSps.append(!sp)
+	endif
+
+    --modify by jyg 20250210 处理pane没有标注的问题Abs()
+    if  !this.freeSps.empty() then
+        !this.freeSps.append(!sp)
+    endif
+endmethod
+
+define method .tryToPutFreePaneIntoOneLine(!sp is supportpane)
+	--q var !sp
+    --$p 123
+	!find1 = false
+
+	$(
+	do !x indices !this.lines
+		!line = !this.lines[!x]
+		!tempangle = !line.direction().angle(!sp.zdir)
+		!tempangle = min(!tempangle,180 - !tempangle)
+		if !tempangle le !this.toleranceAngle then
+			!near = false
+			do !midpos values !sp.midposs
+				if !line.onprojected(!midpos) and !line.distance(!midpos) lt !this.lineMaxDiss[!x] then
+					!near = true
+					break
+				endif
+			enddo
+			if !near then
+				!paneMidPoint = !sp.axis1.startposition.midpoint(!sp.axis1.endposition).offset(!sp.zdir,!sp.height / 2)
+				!this.linePoss[!x].append(!paneMidPoint)
+
+				--!this.dirObject.poss.append(!paneMidPoint)
+				!find1 = true
+				break
+			endif
+		endif
+	enddo
+	$)
+	--q var !this.lines
+	if !find1.not() then
+		do !x indices !this.lines
+			!line = !this.lines[!x]
+			!tempangle = !line.direction().angle(!sp.zdir)
+			!tempangle = abs(!tempangle - 90)
+			if !tempangle le !this.toleranceAngle then
+				!near = false
+				do !midpos values !sp.midposs
+					if !line.onprojected(!midpos) and !line.distance(!midpos) lt !this.lineMaxDiss[!x] then
+						!near = true
+						break
+					endif
+				enddo
+				if !near then
+
+					!paneMidPoint = !sp.axis1.startposition.midpoint(!sp.axis1.endposition).offset(!sp.zdir,!sp.height / 2)
+					!this.linePoss[!x].append(!paneMidPoint)
+					--!this.dirObject.poss.append(!paneMidPoint)
+					break
+				endif
+			endif
+		enddo
+	endif
+endmethod
+
+
+define method .regetMaxDiss()
+	!this.getmaxsctndis()
+	do !x indices !this.paneMaxDiss
+		!this.lineMaxDiss[!x] = max(!this.lineMaxDiss[!x],!this.paneMaxDiss[!x])
+	enddo
+endmethod
+
+define method .getDirObjectAndLines()
+    --$p 236
+    --q var !this.supportSctns[1]
+    --q var !this.panesctns
+	!tempObjects = array()
+	!tempObjects.appendarray(!this.attaTubes)			$* add leg of support
+	!tempObjects.appendarray(!this.supportSctns)		$* add sctn gensec
+	!tempObjects.appendarray(!this.panesctns)			$* add fake sctn
+	!tempObjects.appendarray(!this.HangMems)			$* add hang
+    --q var !tempObjects
+
+	----got object which is possible to generate a line
+
+	--try to put object into an exist line, if fail, generate a new line.finally got all lines
+	!tempObjects.evaluate(object block('!this.tryToPutObjectIntoOneLine(!tempObjects[!EvalIndex])'))
+	--q var !tempObjects[3].poss
+
+	--q var !this.sps[1]
+	--try to put pane into an exist line, and separate pane into linedimsps freesps notdimsps
+	!this.sps.evaluate(object block('!this.tryToPutPaneIntoOneLine(!this.sps[!EvalIndex])'))
+
+	----for cheight
+	--!this.getmaxsctndis()
+
+	--compare current max radius of line and max radius of pane in this line, use the bigger one
+	--!this.reGetMaxDiss()
+
+	--actually it could be merge into previous function
+	!this.freeSps.evaluate(object block('!this.tryToPutFreePaneIntoOneLine(!this.freeSps[!EvalIndex])'))
+
+	--sort points according distance in the direction of line
+
+	!this.lines.evaluate(object block('!this.sortOneLinePoss(!evalindex)'))	$*sort poss in the line
+    --q var !this.lines
+	--!this.lines.evaluate(object block('!this.ExtendOneLine(!evalindex)'))	$* extend two end points of the line
+	--!this.sortLinePoss()
+	--!this.extendLines()
+
+	--!this.dirObject.dirs.unique()
+	--!this.dirObject.poss.unique()
+	--!this.dirObject.getLookDirs()
+	--!this.dirObject.getThreeDdir()
+
+
+	--------------------------------------------------------------------------------------------------------------------got all dirs,points,lines,linePoss
+endmethod
+
+define method .getmaxsctndis()
+	!maxdis = 0
+	do !eachmaxdis values !this.lineMaxDiss
+		!maxdis = max(!eachmaxdis,!maxdis)
+	enddo
+	!this.maxsctndis = !maxdis
+	--if !this.maxsctndis eq 0 then
+	--	!this.maxsctndis = 30
+	--endif
+endmethod
+
+
+
+
+define method .SortOneLinePoss(!x is real)
+	!line = !this.lines[!x]
+	!diss = array()
+	!this.lineposs[!x].unique()
+	do !pos values !this.linePoss[!x]
+		!diss.append(!!suidirdis(!line.startposition,!line.direction(),!pos))
+	enddo
+	!indices = !diss.sortedindices()
+	!this.linePoss[!x].reindex(!indices)
+endmethod
+
+$(
+define method .ExtendOneLine(!x is real)
+	!this.lines[!x].extendStart(!!suidirdis(!this.lines[!x].startposition,!this.lines[!x].direction().opposite(),!this.linePoss[!x][1]))
+	!this.lines[!x].extendEnd(!!suidirdis(!this.lines[!x].endposition,!this.lines[!x].direction(),!this.linePoss[!x].last()))
+endmethod
+$)
+
+$(
+define method .sortLinePoss()
+	-------------------------------sort linePoss
+	do !x indices !this.lines
+		!line = !this.lines[!x]
+		!diss = array()
+		do !pos values !this.linePoss[!x]
+			!diss.append(!!suidirdis(!line.startposition,!line.direction(),!pos))
+		enddo
+		!indices = !diss.sortedindices()
+		!this.linePoss[!x].reindex(!indices)
+	enddo
+
+endmethod
+$)
+
+$(
+define method .extendLines()
+	do !x indices !this.lines
+		!this.lines[!x].extendStart(!!suidirdis(!this.lines[!x].startposition,!this.lines[!x].direction().opposite(),!this.linePoss[!x][1]))
+		!this.lines[!x].extendEnd(!!suidirdis(!this.lines[!x].endposition,!this.lines[!x].direction(),!this.linePoss[!x].last()))
+	enddo
+endmethod
+$)
+
+
+
+define method .getCenPos()
+	-- is position
+	--------------------------get middle point, in order to get a good availabel orientation for DIMENSION
+	--$p asdfas
+	if !this.cenpoint.set() then
+		return
+	endif
+	!points = !this.dirObject.poss
+	if !points.unset() then
+		return
+	endif
+	!pos = !points[1]
+	!size = !points.size()
+	do !x from 2 to !size
+		!pos.east = !pos.east + !points[!x].east
+		!pos.north = !pos.north + !points[!x].north
+		!pos.up = !pos.up + !points[!x].up
+	enddo
+	!pos.east = !pos.east / !size
+	!pos.north = !pos.north / !size
+	!pos.up = !pos.up / !size
+	!this.cenPoint = !pos
+	--return !pos
+	------------
+endmethod
+
+
+define method .addInterPointToLine()
+	!toleAngle = 20
+
+	!tolerancedis = 10
+    --q var !this.lines
+	!lines = !this.lines
+
+	!newway = true
+	if !newway then
+		!changeindices = array()
+		do !x from 1 to !lines.size() - 1
+            -- modify by jyg 20240112 处理弹簧标注尺寸增加了pos点信息的问题（不需要添加pos点信息）。
+            !isSVV =  false
+            do  !hangmem values !this.hangmems
+                !heleName = !hangmem.ref.Dbref().spref.name
+                --q var !heleName
+                if  !heleName.matchwild('*SPRI/SVV*') then
+                    if !lines[!x].StartPosition.east eq !hangmem.axis.StartPosition.east and  !lines[!x].StartPosition.north eq !hangmem.axis.StartPosition.north then
+                        !isSVV = true
+                        break
+                    endif
+                endif
+            enddo
+            if !isSVV then
+                skip
+            endif
+
+
+			do !y from !x + 1 to !lines.size()
+				!clash = !this.checkxyinterpoint(!x, !y)
+				if !clash.not() then
+					!clash = !this.checkxyinterpoint(!y, !x)
+				endif
+				if !clash.not() then
+
+					!interpos = !lines[!x].intersection(!lines[!y])
+					handle any	$*paralle---impossible
+						skip
+					endhandle
+
+					if !lines[!x].distance(!lines[!y]) gt (!this.linemaxdiss[!x] + !this.linemaxdiss[!y]) then
+						skip
+					endif
+					if !lines[!x].onprojected(!interpos).not() or !lines[!y].onprojected(!interpos).not() then
+						skip
+					endif
+
+					!this.lineposs[!x].append(!interpos)
+					!this.lineposs[!y].append(!interpos)
+					!clash = true
+				endif
+				if !clash then
+					!changeindices.append(!x)
+					!changeindices.append(!y)
+				endif
+			enddo
+		enddo
+		!changeindices.unique()
+		do !index values !changeindices
+			!this.sortonelinePoss(!index)
+		enddo
+	else
+		do !x indices !lines
+			!change = false
+			do !y indices !lines
+				if !x ne !y then
+					!tempangle = !lines[!x].direction().angle(!lines[!y].direction())
+					if !tempangle lt !toleAngle or !tempangle gt 180 - !toleAngle then
+						skip
+					endif
+					!endclash = false
+					-----------------------------------------------way two start,put the endpos of small dim line into the big dim line
+					do !times from 1 to 2
+						if !times eq 1 then
+							!point = !lines[!y].startposition
+						else
+							!point = !lines[!y].endposition
+						endif
+						--$p $!x $!y ab
+
+						if !lines[!x].distance(!point) lt !this.lineMaxDiss[!x] and !lines[!x].onprojected(!point) then
+
+							--if !tempangle gt 91 or !tempangle lt 89 then
+							--	!interpos = !point
+							--else
+							!interpos = !lines[!x].intersection(!lines[!y])
+							handle any	$*paralle---impossible
+								break
+							endhandle
+							--endif
+
+							--$p $!x $!y ab
+							if !lines[!y].onprojected(!interpos) then
+								!tempdis1 = !!suidirdis(!this.lineposs[!y][1],!lines[!y].direction(),!interpos)
+								!tempdis2 = !!suidirdis(!this.lineposs[!y][2],!lines[!y].direction().opposite(),!interpos)
+								if !tempdis1 gt !tolerancedis and !tempdis2 gt !tolerancedis then
+									break		$* ensure linex do not add end point of liney when liney add end of linex
+								endif
+							endif
+							--$p $!x $!y a
+							!this.lineposs[!x].append(!point)
+							!change = true
+							!endclash = true
+
+							if !lines[!y].startposition.distance(!interpos) le !lines[!y].endposition.distance(!interpos) then
+								!tempdis = !!suidirdis(!this.lineposs[!y][1],!lines[!y].direction(),!this.lineposs[!y][2])
+								if !tempdis gt !this.paneThick and (undefined(!this.lineforheles[!y]) or !this.lineforheles[!y].not())  then
+									!this.lineposs[!y][1] = !interpos
+								else
+									!this.lineposs[!y].insert(1,!interpos)
+								endif
+								!this.lines[!y] = !this.lines[!y].from(!this.lines[!y].near(!interpos))
+							else
+								!tempsize = !this.lineposs[!y].size()
+								!tempdis = !!suidirdis(!this.lineposs[!y][!tempsize - 1],!this.lines[!y].direction(),!this.lineposs[!y][!tempsize])
+
+								if !tempdis gt !this.paneThick and (undefined(!this.lineforheles[!y]) or !this.lineforheles[!y].not()) then
+									!this.lineposs[!y][!tempsize] = !interpos
+								else
+									!this.lineposs[!y].append(!interpos)
+								endif
+
+								!this.lines[!y] = !this.lines[!y].to(!this.lines[!y].near(!interpos))
+							endif
+							break
+						endif
+					enddo
+
+					--$(
+					if !endclash.not() then
+						do !times from 1 to 2
+							if !times eq 1 then
+								!point = !lines[!x].startposition
+							else
+								!point = !lines[!x].endposition
+							endif
+							if !lines[!y].distance(!point) lt !this.lineMaxDiss[!y] and !lines[!y].onprojected(!point) then
+								!endclash = true
+								break
+							endif
+						enddo
+						if !endclash.not() then
+							!interpos = !lines[!x].intersection(!lines[!y])
+							handle any	$*paralle---impossible
+								skip
+							endhandle
+
+							if !lines[!x].distance(!lines[!y]) gt (!this.linemaxdiss[!x] + !this.linemaxdiss[!y]) then
+
+								skip
+							endif
+							if !lines[!x].onprojected(!interpos).not() or !lines[!y].onprojected(!interpos).not() then
+								skip
+							endif
+
+							!this.lineposs[!x].append(!interpos)
+							!change = true
+						endif
+					endif
+					--$)
+				endif
+			enddo
+			if !change then
+				!this.sortonelinePoss(!x)
+			endif
+		enddo
+	endif
+endmethod
+
+define method .checkxyinterpoint(!x is real, !y is real) is boolean
+	!endclash = false
+	!toleAngle = 20
+
+    !tolerancedis = 10
+    --q var !this.lines
+    --$p 110
+	!lines = !this.lines
+	--q var !lines !x  !y !lines[!x] !lines[!y]
+    --$p 1111111111111
+	!tempangle = !lines[!x].direction().angle(!lines[!y].direction())
+	if !tempangle lt !toleAngle or !tempangle gt 180 - !toleAngle then
+		return !endclash
+	endif
+
+	-----------------------------------------------way two start,put the endpos of small dim line into the big dim line
+	do !times from 1 to 2
+		if !times eq 1 then
+			!point = !lines[!y].startposition
+		else
+			!point = !lines[!y].endposition
+		endif
+
+		if !lines[!x].distance(!point) lt !this.lineMaxDiss[!x] and !lines[!x].onprojected(!point) then
+			!interpos = !lines[!x].intersection(!lines[!y])
+			handle any	$*paralle---impossible
+				break
+			endhandle
+
+			if !lines[!y].onprojected(!interpos) then
+				!tempdis1 = !!suidirdis(!this.lineposs[!y][1],!lines[!y].direction(),!interpos)
+				!tempdis2 = !!suidirdis(!this.lineposs[!y][2],!lines[!y].direction().opposite(),!interpos)
+				if !tempdis1 gt !tolerancedis and !tempdis2 gt !tolerancedis then
+					break		$* ensure linex do not add end point of liney when liney add end of linex
+				endif
+			endif
+			!this.lineposs[!x].append(!point)
+			!endclash = true
+
+			if !lines[!y].startposition.distance(!interpos) le !lines[!y].endposition.distance(!interpos) then
+				!tempdis = !!suidirdis(!this.lineposs[!y][1],!lines[!y].direction(),!this.lineposs[!y][2])
+				if !tempdis gt !this.paneThick and (undefined(!this.lineforheles[!y]) or !this.lineforheles[!y].not())  then
+					!this.lineposs[!y][1] = !interpos
+				else
+					!this.lineposs[!y].insert(1,!interpos)
+				endif
+				!this.lines[!y] = !this.lines[!y].from(!this.lines[!y].near(!interpos))
+			else
+				!tempsize = !this.lineposs[!y].size()
+				!tempdis = !!suidirdis(!this.lineposs[!y][!tempsize - 1],!this.lines[!y].direction(),!this.lineposs[!y][!tempsize])
+
+				if !tempdis gt !this.paneThick and (undefined(!this.lineforheles[!y]) or !this.lineforheles[!y].not()) then
+					!this.lineposs[!y][!tempsize] = !interpos
+				else
+					!this.lineposs[!y].append(!interpos)
+				endif
+
+				!this.lines[!y] = !this.lines[!y].to(!this.lines[!y].near(!interpos))
+			endif
+			break
+		endif
+	enddo
+    --q var !this.lines
+	return !endclash
+endmethod
+
+$(
+define method .addInterPointToLine()
+
+	!toleAngle = 20
+	do !x indices !this.lines
+		!change = false
+		do !y indices !this.lines
+			if !x ne !y then
+				!tempangle = !this.lines[!x].direction().angle(!this.lines[!y].direction())
+				if !tempangle lt !toleAngle or !tempangle gt 180 - !toleAngle then
+					skip
+				endif
+				-----------------------------------------------way two start,put the endpos of small dim line into the big dim line
+				do !times from 1 to 2
+					if !times eq 1 then
+						!point = !this.lines[!y].startposition
+					else
+						!point = !this.lines[!y].endposition
+					endif
+					if !this.lines[!x].distance(!point) lt !this.lineMaxDiss[!x] and !this.lines[!x].onprojected(!point) then
+						!interpos = !this.lines[!x].intersection(!this.lines[!y])
+						handle any	$*parallel
+							break
+						endhandle
+						!this.lineposs[!x].append(!point)
+						!change = true
+						if !this.lines[!y].startposition.distance(!interpos) le !this.lines[!y].endposition.distance(!interpos) then
+							!tempdis = !!suidirdis(!this.lineposs[!y][1],!this.lines[!y].direction(),!this.lineposs[!y][2])
+							if !tempdis gt !this.paneThick then
+								!this.lineposs[!y][1] = !interpos
+							else
+								!this.lineposs[!y].insert(1,!interpos)
+							endif
+
+
+
+
+
+							!this.lines[!y] = !this.lines[!y].from(!this.lines[!y].near(!interpos))
+
+						else
+							!tempsize = !this.lineposs[!y].size()
+							!tempdis = !!suidirdis(!this.lineposs[!y][!tempsize - 1],!this.lines[!y].direction(),!this.lineposs[!y][!tempsize])
+
+							if !tempdis gt !this.paneThick then
+								!this.lineposs[!y][!tempsize] = !interpos
+							else
+								!this.lineposs[!y].append(!interpos)
+							endif
+
+							!this.lines[!y] = !this.lines[!y].to(!this.lines[!y].near(!interpos))
+						endif
+						break
+					endif
+				enddo
+				-----------------------------------way two end
+
+
+
+				---------way one, put the interpos into the big dim line
+				if !this.lines[!x].distance(!this.lines[!y].startposition) lt !this.lineMaxDiss[!x] and !this.lines[!x].onprojected(!this.lines[!y].startposition) or $
+					!this.lines[!x].distance(!this.lines[!y].endposition) lt !this.lineMaxDiss[!x] and !this.lines[!x].onprojected(!this.lines[!y].endposition) then
+					!interpos = !this.lines[!x].intersection(!this.lines[!y])
+					handle any	$*parallel
+						--!this.lineposs.append(!this.lines[!y].startposition)
+						--!this.lineposs.append(!this.lines[!y].endposition)
+					elsehandle none
+						if !this.lines[!y].onprojected(!interpos).not() then
+							!this.lineposs[!x].append(!interpos)
+							!change = true
+
+
+
+							if !this.lines[!y].startposition.distance(!interpos) le !this.lines[!y].endposition.distance(!interpos) then
+								--!this.linePoss[!y].insert(1,!interpos)
+								!tempdis = !!suidirdis(!this.lineposs[!y][1],!this.lines[!y].direction(),!this.lineposs[!y][2])
+
+								if !tempdis gt !this.paneThick then
+									!this.lineposs[!y][1] = !interpos
+								else
+									!this.lineposs[!y].insert(1,!interpos)
+								endif
+								!this.lines[!y] = !this.lines[!y].from(!this.lines[!y].near(!interpos))
+
+							else
+
+								!tempsize = !this.lineposs[!y].size()
+								!tempdis = !!suidirdis(!this.lineposs[!y][!tempsize - 1],!this.lines[!y].direction(),!this.lineposs[!y][!tempsize])
+
+								if !tempdis gt !this.paneThick then
+									!this.lineposs[!y][!tempsize] = !interpos
+								else
+									!this.lineposs[!y].append(!interpos)
+								endif
+								--!this.linePoss[!y].append(!interpos)
+								!this.lines[!y] = !this.lines[!y].to(!this.lines[!y].near(!interpos))
+							endif
+
+						endif
+					endhandle
+				endif
+				---------way one end
+
+
+			endif
+		enddo
+		if !change then
+			!this.sortonelinePoss(!x)
+		endif
+	enddo
+endmethod
+$)
+
+
+define method .addrestattapoints()
+    --$p 4444
+	!tolerance = 1
+	!attas = !this.attas
+	!attas.appendarray(!this.pclas)
+    --!attas.Unique()
+    --Q VAR !attas !this.restattapoints
+	do !point values !this.restattapoints
+		!findatta = false
+		!findpcla = false
+		do !atta values !this.attas
+			!attapos = pos of $!atta wrt/*
+			if !attapos.distance(!point) lt !tolerance then
+				!p3pos = p3pos of $!atta
+				handle any
+					!findatta = true
+					!item = !atta
+					!attadir = adir of $!atta wrt/*
+					!maxdis = aod of $!atta
+					break
+				endhandle
+				if !p3pos.distance(!attapos) lt !tolerance then
+					!findatta = true
+					!item = !atta
+					!attadir = adir of $!atta wrt/*
+					!maxdis = aod of $!atta
+					break
+				endif
+			endif
+		enddo
+        --$p 1111
+		--q var !this.pclas
+		do !pcla values !this.pclas
+			!pclapos = pos of $!pcla wrt/*
+			if !pclapos.distance(!point) lt !tolerance then
+				!findpcla = true
+				!item = !pcla
+				!p1pos = p1 pos of $!pcla wrt/*
+				!p2pos = p2 pos of $!pcla wrt/*
+				if !findatta.not() then
+					!attadir = !p1pos.direction(!p2pos)
+					handle any
+						if type of $!pcla eq 'ANCI' then
+							!attadir = p1 dir of $!pcla wrt/*
+						endif
+					endhandle
+				endif
+				!volume = object volume(!pcla.dbref())
+				!volumepos1 = !volume.from
+				!volumepos2 = !volume.to
+
+				--q var !volume
+
+				if defined(!attadir) then
+					!uangle = !attadir.angle(u)
+					!eangle = !attadir.angle(e)
+					!nangle = !attadir.angle(n)
+					!xlen = abs(!volume.from.east - !volume.to.east)
+					!ylen = abs(!volume.from.north - !volume.to.north)
+					!zlen = abs(!volume.from.up - !volume.to.up)
+					if !uangle lt 10 or !uangle gt 170 then
+						!maxdis = max(!xlen,!ylen) / 2
+					elseif !eangle lt 10 or !eangle gt 170 then
+						!maxdis = max(!zlen,!ylen) / 2
+					elseif !nangle lt 10 or !nangle gt 170 then
+						!maxdis = max(!xlen,!zlen) / 2
+					endif
+				endif
+				if undefined(!maxdis) then
+					!maxdis = !volumepos1.distance(!volumepos2) / 2
+				endif
+				break
+			endif
+		enddo
+
+
+
+
+		$(
+		do !atta values !attas
+			--$p $!atta
+			!attapos = pos of $!atta wrt/*
+			--q var !attapos
+			if !attapos.distance(!point) lt 1 then
+				--$p in
+				!attatype = type of $!atta
+				--q var !attatype
+				--$p $!atta
+				!item = !atta
+				if !attatype eq 'ATTA' then
+					!p3pos = p3pos of $!atta
+					if !p3pos.distance(!attapos) lt 1 then
+						!attadir = adir of $!atta wrt/*
+						!maxdis = aod of $!atta
+						break
+					endif
+				elseif !attatype eq 'PCLA' then
+					!p1pos = p1 pos of $!atta wrt/*
+					!p2pos = p2 pos of $!atta wrt/*
+					!attadir = !p1pos.direction(!p2pos)
+					handle any
+
+					endhandle
+					!volume = object volume(!atta.dbref())
+					!volumepos1 = !volume.from
+					!volumepos2 = !volume.to
+
+					if defined(!attadir) then
+						!uangle = !attadir.angle(u)
+						!eangle = !attadir.angle(e)
+						!nangle = !attadir.angle(n)
+						!xlen = abs(!volume.from.east - !volume.to.east)
+						!ylen = abs(!volume.from.north - !volume.to.north)
+						!zlen = abs(!volume.from.up - !volume.to.up)
+						if !uangle lt 10 or !uangle gt 170 then
+							!maxdis = max(!xlen,!ylen) / 2
+						elseif !eangle lt 10 or !eangle gt 170 then
+							!maxdis = max(!zlen,!ylen) / 2
+						elseif !nangle lt 10 or !nangle gt 170 then
+							!maxdis = max(!xlen,!zlen) / 2
+						endif
+					endif
+					if undefined(!maxdis) then
+						!maxdis = !volumepos1.distance(!volumepos2) / 2
+					endif
+					break
+				endif
+			endif
+			--$p $!atta
+		enddo
+		$)
+
+		-------got direction of pipe and max radius of pcla or atta
+		--q var !maxdis
+
+		--q var !attadir
+
+		if undefined(!attadir) then	$* in case
+			!attadir = u
+		endif
+		--$P 888
+		!attaline = !point.line(!point.offset(!attadir,1000))
+		--q var !attaline
+		$(
+		!tempminangle = 10000
+		do !tempdir values !this.dirobject.lookdirs
+			!tempangle = !attadir.angle(!tempdir)
+			!tempangle = min(!tempangle,180 - !tempangle)
+			if !tempangle lt !tempminangle then
+				!tempminangle = !tempangle
+				!showdir = !tempdir
+			endif
+		enddo
+		$)
+		!showdir = !attadir
+
+		--!uangle = !attadir.angle(u)
+		--!uangle = min(!uangle,180 - !uangle)
+
+		!mindis = 100000
+		!lineNums = array()
+		!linenearposs = array()
+		!lineDiss = array()
+		!linedirs = array()
+		!lineinterpoints = array()
+		!lineoffsetpoints = array()
+
+		!objects = array()
+		!objects.appendarray(!this.supportSctns)
+		!objects.appendarray(!this.panesctns)
+		--Q VAR !objects
+		do !sctn values !objects
+            --q var !sctn
+			!line = !sctn.axis
+            --q var !point !line.onprojected(!point)
+			if !line.onprojected(!point).not() then		$* this sctn is not needed to consider
+				skip
+			endif
+
+
+
+			!tempangle = !line.direction().angle(!showdir)
+			--q var !tempangle
+			if !tempangle lt 85 or !tempangle gt 95 then	$* no need to consider
+				skip
+			endif
+			--$p $!tempangle
+
+
+			!tempdir = !line.direction().orthogonal(!showdir)
+
+			!planedir = !line.direction().orthogonal(!tempdir)
+
+			!offsetpos = !point.line(!point.offset(!planedir,1000)).intersection(!line)
+
+
+
+			!plane = object plane(!line.startposition,object orientation('z is $!planedir'))
+
+			!interpoint = !attaline.intersection(!plane)
+			handle any
+				skip	$*impossible
+			endhandle
+			--pin3 at $!interpoint
+
+
+			!tempdiss = array()
+			do !temppos values !sctn.startposs
+				!tempdiss.append(!temppos.distance(!interpoint))
+			enddo
+
+
+			!tempindices = !tempdiss.sortedindices()	$*use first two points
+
+
+			if !sctn.startposs.size() ge 4 then
+				!tempdir = !sctn.startposs[!tempindices[1]].direction(!sctn.startposs[!tempindices[2]])
+			else
+				-----------------------
+				-----------------------angle sctn
+				!tempdir = !planedir
+			endif
+
+
+			!planedir = !line.direction().orthogonal(!tempdir)
+
+			!plane = object plane(!sctn.startposs[!tempindices[1]],object orientation('z is $!planedir'))
+			!nearpos = !plane.near(!interpoint)
+
+
+
+			!dis = !interpoint.distance(!nearpos)
+            --!dis = 1
+			--!dis = !line.distance(!interpoint)
+			--!nearpos = !line.near(!interpoint)
+			!dir = !interpoint.direction(!nearpos)
+			handle any
+                --$P 78
+                --modify  by jyg 20250316 处理单管卡没有标注尺寸的问题
+                --!dir = !point.direction(!interpoint)
+                --!dir = !interpoint.direction(!point)
+                --!dir = !point.direction(!interpoint)
+                --handle any
+                    --$p 456
+                    skip
+                --endhandle
+			endhandle
+            --q var !dir
+            --!dir = D WRT /*
+			if !findpcla then
+				!volume = object volume(!item.dbref())
+				--q var !volume
+				!temppos = !nearpos.offset(!dir, - 10)
+                --pin1 at $!temppos
+				--q var !temppos
+				if type of $!this.suppname ne 'SUPPO' then
+					-----------------------
+					-----------------------anci is too thin, it is too easy to be outside
+					!st = !sctn.maxdis / 2	$*skip tolerance
+					if !temppos.east lt !volume.from.east - !st or !temppos.north lt !volume.from.north - !st or !temppos.up lt !volume.from.up - !st $
+						or !temppos.east gt !volume.to.east + !st or !temppos.north gt !volume.to.north + !st or !temppos.up gt !volume.to.up + !st then
+                        skip		$*ensure the item attached to this line
+					endif
+				endif
+			endif
+
+			-----------------------
+			-----------------------find index in array of lines
+            --q var !this.lines
+			do !x indices !this.lines
+				if !this.lines[!x].distance(!sctn.posstart) lt 0.1 then
+					!tempangle = !this.lines[!x].direction().angle(!line.direction())
+					if !tempangle lt 0.1 or !tempangle gt 179.9 then
+						!linex = !x
+						break
+					endif
+				endif
+			enddo
+
+			!linenums.append(!linex)
+			!lineinterpoints.append(!interpoint)
+			!linenearposs.append(!nearpos)
+			!linediss.append(!dis)
+			!linedirs.append(!dir)
+			!lineoffsetpoints.append(!offsetpos)
+		enddo
+        --q var !linenums
+		if !linenums.unset() then
+			return
+		endif
+
+		$(
+		do !x indices !this.lines
+			!line = !this.lines[!x]
+			if !line.onprojected(!point).not() then		$* this line is not needed to consider
+				skip
+			endif
+
+			!tempangle = !line.direction().angle(!showdir)
+			--q var !tempangle
+			if !tempangle lt 85 or !tempangle gt 95 then	$* no meed to consider
+				skip
+			endif
+			--$p $!tempangle
+
+			!tempdir = !line.direction().orthogonal(!showdir)
+			!planedir = !line.direction().orthogonal(!tempdir)
+
+			!plane = object plane(!line.startposition,object orientation('z is $!planedir'))
+
+			!interpoint = !attaline.intersection(!plane)
+			handle any
+				skip	$*impossible
+			endhandle
+
+
+			!dis = !line.distance(!interpoint)
+			!nearpos = !line.near(!interpoint)
+			!dir = !interpoint.direction(!nearpos)
+
+			!linenums.append(!x)
+			!lineinterpoints.append(!interpoint)
+			!linenearposs.append(!nearpos)
+			!linediss.append(!dis)
+			!linedirs.append(!dir)
+		enddo
+		$)
+		--q var !linenums
+		--got data between point and each line, data include: distance interpoint(attaline with show plane) nearpos direction
+
+
+
+
+		$(
+		---cant do this, because some U clmb
+		if !uangle gt 30 then				$*if atta dir is vertical or not horizontal, update line arrays(dir dis point)
+			!uangles = array()
+			!minangle = 10000
+			do !x indices !linedirs
+				!dir = !linedirs[!x]
+				!tempuangle = !dir.angle(u)
+				!tempuangle = min(!tempuangle,180 - !tempuangle)
+				!uangles.append(!tempuangle)
+				if !tempuangle lt !minangle then
+					!minangle = !tempangle
+				endif
+			enddo
+
+			-- got minangle with u
+
+
+
+
+			!newlinediss = array()
+			!newlinenums = array()
+			!newlinenearposs = array()
+			!newlinedirs = array()
+			!newlineinterpoints = array()
+			do !x indices !uangles
+				if !uangles[!x] lt !minangle + 2 then
+					!newlinenums.append(!linenums[!x])
+					!newlinediss.append(!linediss[!x])
+					!newlinedirs.append(!linedirs[!x])
+					!newlinenearposs.append(!linenearposs[!x])
+					!newlineinterpoints.append(!lineinterpoints[!x])
+				endif
+			enddo
+
+			!linenums = !newlinenums
+			!linediss = !newlinediss
+			!linedirs = !newlinedirs
+			!linenearposs = !newlinenearposs
+			!lineinterpoints = !newlineinterpoints
+		endif
+		--------------------updated line arrays end
+		$)
+
+		--q var !linenums
+
+
+
+		!indices = !linediss.sortedindices()
+		!nearlineindex = !linenums[!indices[1]]
+		!this.linePoss[!nearlineindex].append(!lineinterpoints[!indices[1]])
+		!this.SortOneLinePoss(!nearlineindex)
+
+		!poss = array()
+		!poss.append(!linenearposs[!indices[1]])
+		!poss.append(!lineinterpoints[!indices[1]])
+		--!addline = !poss[1].line(!poss.last())
+
+		!offsetpos = !lineoffsetpoints[!indices[1]]
+
+		!dir = !linedirs[!indices[1]].opposite()
+		!mindis = 1000000
+		!oppositeLineX = 0
+
+
+		-----------------------
+		-----------------------find nearest line in opposite direction
+		do !x indices !linenums
+			if !linedirs[!x].angle(!dir) lt 1 then
+				!tempdis = !linediss[!x]
+				--!tempdis = !!suidirdis(!point,!dir,!linenearposs[!x])
+				if !tempdis lt !mindis then
+					!mindis = !tempdis
+					!oppositeLineX = !linenums[!x]
+					!oppoInterpoint = !lineinterpoints[!x]
+					!nearestpos = !linenearPoss[!x]
+					--!poss.append(!linenearPoss[!x])
+				endif
+			endif
+		enddo
+
+		--$p here $!oppositeLineX
+
+		--if !oppositeLineX ne 0 then
+		if !oppositeLineX ne 0 and !mindis lt 1.2 * !poss[1].distance(!poss[2]) then
+			!this.linePoss[!oppositeLineX].append(!nearestpos)
+			!this.SortOneLinePoss(!oppositeLineX)
+			if !nearestpos.distance(!lineinterpoints[!indices[1]]) lt 1 then
+				!poss.append(!nearestpos)
+				!this.addoneline(!poss,!maxdis)
+			else
+				!this.addoneline(!poss,!maxdis)
+
+				!poss = array()
+				!poss[1] = !nearestpos
+				!poss[2] = !oppoInterpoint
+				!this.addoneline(!poss,!maxdis)
+			endif
+		else
+			!this.addoneline(!poss,!maxdis)
+		endif
+		if !offsetpos.distance(!point) gt 1 then
+			!poss[1] = !offsetpos
+			!poss[2] = !point
+			!this.addoneline(!poss,!maxdis)
+		endif
+	enddo
+    --$P 2222
+    --Q VAR !this.linePoss
+    --Q VAR  !this.linePoss
+
+
+endmethod
+
+define method .addotherpoints()
+    --q var !this.otherpoints
+	do !point values !this.otherpoints
+		!mindis = 100000
+
+
+		do !x indices !this.lines
+			if !this.lines[!x].onprojected(!point) then
+				!dis = !this.lines[!x].distance(!point)
+				if !dis lt !mindis then
+					!mindis = !dis
+					!goodx = !x
+				endif
+			endif
+		enddo
+
+		if defined(!goodx) then
+			!this.linePoss[!goodx].append(!point)
+			!this.SortOneLinePoss(!goodx)
+		endif
+
+	enddo
+    --Q VAR !this.linePoss
+endmethod
+
+define method .addoneline(!poss is array, !maxdis is real)
+    --q var !this.lines
+    --$p 102
+    --q var !poss !maxdis
+	if !poss[1].distance(!poss.last()) gt 1 then
+		!this.lines.append(!poss[1].line(!poss.last()))
+		!this.linePoss.append(!poss)
+		!this.lineMaxDiss.append(!maxdis)
+		--!this.dirObject.poss.appendarray(!poss)
+	endif
+    --q var !this.lines
+endmethod
+
+define method .addATTApointToLine()
+	--!this.getATTApoints()
+    --$P 1111
+    --Q VAR !this.attapoints
+	do !point values !this.attapoints
+		!mindis = 100000
+		!lineNums = array()
+		!lineEnds = array()
+
+		!offsetmindis = 10000
+        --Q VAR !this.lines
+		do !x indices !this.lines
+			!oneoffsetmindis = !this.lines[!x].distance(!point)
+			if !oneoffsetmindis lt !this.lineMaxDiss[!x] / 10 then
+				if !this.lines[!x].onprojected(!point).not() then
+					!startDis = !this.lines[!x].startposition.distance(!point)
+					!endDis = !this.lines[!x].endposition.distance(!point)
+					!onemindis = min(!startdis,!enddis)
+					!onprojected = false
+				else
+					!onemindis = !oneoffsetmindis
+					!onprojected = true
+				endif
+				if !onemindis lt !mindis * 1.2 then
+					if !onemindis le !mindis then
+						!mindis = !onemindis
+						!lineNums = array()
+						!lineEnds = array()
+					endif
+					!lineNums.append(!x)
+					if !onprojected then
+						!lineEnds.append(3)
+					else
+						if !startdis le !enddis then
+							!lineEnds.append(1)
+						else
+							!lineEnds.append(2)
+						endif
+					endif
+
+					if !oneoffsetmindis lt !offsetmindis then
+						!offsetmindis = !oneoffsetmindis
+						!offsetx = !x
+					endif
+				endif
+			endif
+		enddo
+
+		$(
+		if !offsetmindis gt 1 then
+			!offsetposs = array()
+			!offsetposs.append(!point)
+			!offsetposs.append(!this.lines[!offsetx].near(!point))
+
+			!this.addoneline(!offsetposs, !this.lineMaxDiss[!offsetx])
+		endif
+		$)
+
+
+		if !offsetmindis lt 1 and !linenums.set() then
+		--if !linenums.set() then
+			do !x indices !lineNums
+				!linenum = !lineNums[!x]
+				if !lineEnds[!x] eq 3 then
+					!this.linePoss[!linenum].append(!point)
+					!this.SortOneLinePoss(!linenum)
+				elseif !lineEnds[!x] eq 1 then
+					!this.linePoss[!linenum].insert(1,!point)
+					!this.lines[!linenum].from(!this.lines[!linenum].near(!point))
+					--!this.lines[!linenum].extendStart(!!suidirdis(!this.lines[!lineNum].startPosition,!this.lines[!lineNum].direction().opposite(),!point))
+				else
+					!this.linePoss[!linenum].append(!point)
+					!this.lines[!linenum].to(!this.lines[!linenum].near(!point))
+					--!this.lines[!linenum].extendEnd(!!suidirdis(!this.lines[!lineNum].endPosition,!this.lines[!lineNum].direction(),!point))
+				endif
+			enddo
+		else
+			!this.restattapoints.append(!point)
+		endif
+	enddo
+    --q var !this.restattapoints
+endmethod
+
+
+$(
+define method .getDimPosAndOri(!x is real) is array
+	!line = !this.lines[!x]
+	!linedir = !line.direction()
+	!midpoint = !line.startposition.midpoint(!line.endposition)
+
+	!dimDir = !this.getDimDirWithLine(!line,!this.cenpoint)
+
+
+	!temparr = !this.getTextOri(!dimDir,!linedir)
+	!ori = !temparr[1]
+	!invert = !temparr[2]
+	if !invert then
+		!this.lines[!x] = !this.lines[!x].endposition.line(!this.lines[!x].startposition)
+		!this.lineposs[!x].invert()
+	endif
+
+	if !ori.ydir().angle(!dimDir) lt 90 then
+		--!dimpos = !midpoint.offset(!dimDir,Max(!lineMaxDiss[!x] * 1.3, !lineMaxDiss[!x] + !cheight * 1.5))
+		!dimpos = !midpoint.offset(!dimDir,!this.lineMaxDiss[!x] + !this.cheight * 1.5)
+	else
+		!dimpos = !midpoint.offset(!dimDir,!this.lineMaxDiss[!x] + !this.cheight * 3)
+	endif
+	!result = array()
+	!result.append(!dimpos)
+	!result.append(!ori)
+
+	return !result
+endmethod
+
+define method .getDimPosAndOriForSp(!inputLine is line) is array
+	!line = !inputline
+	!linedir = !line.direction()
+	!midpoint = !line.startposition.midpoint(!line.endposition)
+	!dimDir = !this.getDimDirWithLine(!line)
+	!dimDir = !dimDir.opposite()
+
+	!temparr = !this.getTextOri(!dimDir,!linedir)
+	!ori = !temparr[1]
+	!invert = !temparr[2]
+	if !invert then
+		!line = !line.endposition.line(!line.startposition)
+	endif
+
+
+	if !ori.ydir().angle(!dimDir) lt 90 then
+		--!dimpos = !midpoint.offset(!dimDir,Max(!lineMaxDiss[!x] * 1.3, !lineMaxDiss[!x] + !cheight * 1.5))
+		!dimpos = !midpoint.offset(!dimDir,!line.length() / 2 + !this.cheight * 1)
+	else
+		!dimpos = !midpoint.offset(!dimDir,!line.length() / 2 + !this.cheight * 2.5)
+	endif
+	!result = array()
+	!result.append(!dimpos)
+	!result.append(!ori)
+	!result.append(!line)
+
+	return !result
+endmethod
+
+
+
+define method .getDimDirWithLine(!line is line, !cenpos is position) is direction
+	!linedir = !line.direction()
+	!midpoint = !line.startposition.midpoint(!line.endposition)
+	!cenDir = !cenpos.direction(!midpoint)
+	handle any
+		!dimDir = !this.getDimdirFromLookDir(!linedir)
+	elsehandle none
+		!tempdir = !linedir.orthogonal(!cendir)
+		handle any
+			!dimDir = !this.getDimdirFromLookDir(!linedir)
+		elsehandle none
+			!dimDir = !tempdir.orthogonal(!linedir)
+		endhandle
+	endhandle
+	return !dimDir
+endmethod
+
+define method .getDimdirFromLookDir(!dir is direction) is direction
+	!dir = !line.direction()
+
+	!toleAngle = 20
+
+	!find = false
+	!angles = array()
+	do !onedir values !this.dirObject.lookDirs
+		!angle = !dir.angle(!onedir)
+		!angle = min(!angle,180 - !angle)
+		!angles.append(!angle)
+		if !angle le !toleAngle then
+			!ydir = !dir.orthogonal(!onedir)
+			!find = true
+			break
+		endif
+	enddo
+
+	if !find.not() then
+		!indices = !angles.sortedindices()
+		!bestLookDir = !this.dirobject.lookdirs[!indices[1]]
+		!ydir = !dir.orthogonal(!bestLookDir)
+	endif
+	return !ydir
+endmethod
+
+define method .getTextOri(!dimDir is direction, !linedir is direction) is result
+	if !dimDir.angle(d) lt 90 then
+		!textDir = !dimDir.opposite()
+	else
+		!textDir = !dimDir
+	endif
+
+	!zdir = !linedir.orthogonal(!textdir)
+	!tempangle = !zdir.angle(d)					$*angle between D and direction of CHAR
+
+
+	!invert = false
+	!toleAngle = 5
+
+	if !tempangle lt 90 - !toleAngle then
+		!xdir = !linedir.opposite()
+		!invert = true
+		--!this.lines[!x] = !this.lines[!x].endposition.line(!this.lines[!x].startposition)
+		--!this.lineposs[!x].invert()
+	elseif !tempangle gt 90 + !toleAngle then
+		!xdir = !linedir
+	else
+		!invert = !this.checkIfReverseTextLookDir(!zdir)
+		if !invert then
+			!xdir = !linedir.opposite()
+		else
+			!xdir = !linedir
+		endif
+	endif
+
+	!ori = object orientation('X is $!xdir and Y is $!textdir')
+
+	!result = array()
+	!result.append(!ori)
+	!reuslt.append(!invert)
+	return !result
+endmethod
+
+define method .checkIfReverseTextLookDir(!textDir is direction) is boolean
+	!invert = false
+	!toleAngle = 30
+	do !onedir values !this.dirObject.lookDirs
+		!angle = !zdir.angle(!onedir)
+		if !angle le !toleAngle then					$*zdir of text is similar with dir in lookdirs, the zdir of text should change to opposite direction
+			!invert = true
+			break
+		endif
+	enddo
+	return !invert
+endmethod
+$)
+
+define method .uniquePoss(!poss is array) is array
+	!dels = array()
+	do !x from 1 to !poss.size() - 1
+		if !dels.findfirst(!x).set() then
+			skip
+		endif
+		do !y from !x + 1 to !poss.size()
+			if !dels.findfirst(!y).set() then
+				skip
+			endif
+			if !poss[!x].distance(!poss[!y]) lt 0.1 then
+				!dels.append(!y)
+				!poss[!y].delete()
+			endif
+		enddo
+	enddo
+	!poss.compress()
+	return !poss
+endmethod
+
+
+
+define method .drawOneLine(!x is real)
+
+	--!dimOriPos = object dimOriPos(!this.lines[!x],!this.cenpoint,!this.dirObject.lookDirs,!this.lineMaxDiss[!x],!this.cheight,121)
+	!dimOriPos = object dimOriPos(!this.lines[!x],!this.cenpoint,!this.dirObject.lookDirs,!this.lineMaxDiss[!x],!this.cheight,211)
+
+	!dimpos = !dimOriPos.dimpos
+	!ori = !dimOriPos.ori
+
+	$(
+	--no need to sort points
+	if !dimOriPos.invert then
+		!this.lines[!x] = !this.lines[!x].endposition.line(!this.lines[!x].startposition)
+		!this.lineposs[!x].invert()
+	endif
+	$)
+
+	!this.linePoss[!x] = !this.uniquePoss(!this.linePoss[!x])
+
+	--!this.drawDim(!dimpos,!ori,!this.cheight,!this.linePoss[!x],'MAIN')
+
+	!lindim = object lindim(!this.mbdstru.dimgro,!dimpos, !ori, !this.linePoss[!x], !this.cheight,'一级尺寸','node:' + !this.nodename,!this.changeCheightAuto,!this.sepSmallDim)
+	--q var !lindim
+	if !this.lineposs[!x].size() gt 2 then
+		!movedir = !ori.ydir()
+		!tempdir = !this.lineposs[!x][1].direction(!dimpos)
+		if !movedir.angle(!tempdir) gt 90 then
+			!movedir = !movedir.opposite()
+		endif
+		!dimpos = !dimpos.offset(!movedir,!this.cheight * 1.2)
+		!poss = array()
+		!poss.append(!this.lineposs[!x][1])
+		!poss.append(!this.lineposs[!x].last())
+		!lindim = object lindim(!this.mbdstru.dimgro,!dimpos, !ori, !Poss, !this.cheight,'一级尺寸','node:' + !this.nodename,!this.changeCheightAuto,!this.sepSmallDim)
+	endif
+endmethod
+
+
+
+define method .dimSpsXY()
+	$(
+	!spsrefs = !this.sps.evaluate(object block('!this.sps[!evalindex].ref'))
+	!notDimSpsrefs = !this.notdimsps.evaluate(object block('!this.notdimsps[!evalindex].ref'))
+	!lineDimSpsrefs = !this.lineDimsps.evaluate(object block('!this.lineDimsps[!evalindex].ref'))
+	!dimsps = !this.sps
+
+
+
+
+	!lineDimsIndices = array()
+	do !ref values !notDimSpsrefs
+		!index = !spsrefs.findfirst(!ref)
+		if !index.set() then
+			!dimsps[!index].delete()
+		endif
+	enddo
+	!dimsps.compress()
+	$)
+
+	!dimSps = !this.LineDimSps
+	!dimSps.appendarray(!this.freeSps)
+
+	!reverseSize = !this.LineDimSps.size()
+	do !times indices !dimSps
+		!sp = !dimSps[!times]
+		if !sp.poss.size() ne 4 then	$* notfourpointspane, deal with it in new way
+			skip
+		endif
+		--do !sp values !dimSps
+		--if !lineDimSpsrefs.findfirst(!sp.ref).set() then
+		--	!dimDirRule = 212
+		--else
+		--	!dimDirRule = 211
+		--endif
+
+		if !times le !reverseSize then
+			!dimDirRule = 212
+		else
+			!dimDirRule = 211
+		endif
+
+		!line1 = !sp.axis1
+		!line2 = !sp.axis2
+		!lookdirs = array()
+		!lookdirs.append(!sp.zdir)
+		do !x from 1 to 2
+			!line = !sp.axis$!x
+			if !x eq 1 then
+				!maxDis = !line2.length() / 2
+			else
+				!maxDis = !line1.length() / 2
+			endif
+			!dimOriPos = object dimOriPos(!line,!this.cenpoint,!lookDirs,!maxdis,!this.cheight,!dimDirRule)
+			!dimpos = !dimOriPos.dimpos
+			!ori = !dimOriPos.ori
+			!line = !dimOriPos.line
+			!poss = array()
+			!poss.append(!line.startposition)
+			!poss.append(!line.endposition)
+			--!this.drawDim(!dimpos,!ori,!this.cheight,!poss,'SUB')
+			!lindim = object lindim(!this.mbdstru.dimgro,!dimpos, !ori, !Poss, !this.cheight,'二级尺寸','node:' + !this.nodename,!this.changeCheightAuto,!this.sepSmallDim)
+		enddo
+	enddo
+endmethod
+
+define method .dimpaneSctnXY()
+	do !paneSctn values !this.paneSctns
+		!lookdirs = array()
+		!lookdirs.append(!paneSctn.zdir)
+
+		!midpoint = !paneSctn.posstart.midpoint(!paneSctn.posend)
+		!lines = array()
+		!lines[1] = !midpoint.offset(!paneSctn.ori.xdir(), - !paneSctn.xlen / 2).line(!midpoint.offset(!paneSctn.ori.xdir(), !paneSctn.xlen / 2))
+		!lines[2] = !midpoint.offset(!paneSctn.ori.ydir(), - !paneSctn.ylen / 2).line(!midpoint.offset(!paneSctn.ori.ydir(), !paneSctn.ylen / 2))
+		do !x from 1 to 2
+			!line = !lines[!x]
+			if !x eq 1 then
+				!maxDis = !lines[2].length() / 2
+			else
+				!maxDis = !lines[1].length() / 2
+			endif
+			!dimOriPos = object dimOriPos(!line,!this.cenpoint,!lookDirs,!maxdis,!this.cheight,212)
+			!dimpos = !dimOriPos.dimpos
+			!ori = !dimOriPos.ori
+			!line = !dimOriPos.line
+
+			!poss = array()
+			!poss.append(!line.startposition)
+			!poss.append(!line.endposition)
+			--!this.drawDim(!dimpos,!ori,!this.cheight,!poss,'SUB')
+			!lindim = object lindim(!this.mbdstru.dimgro,!dimpos, !ori, !Poss, !this.cheight,'二级尺寸','node:' + !this.nodename,!this.changeCheightAuto,!this.sepSmallDim)
+		enddo
+	enddo
+endmethod
+
+define method .drawmaterial()
+	!functiontext = '材料'
+
+	do !material values !this.materials
+		if !material.uniquecode.set() and (!material.uniquecode.matchwild('*ATTA') or !material.uniquecode.matchwild('*ISOLEG')) then
+			skip
+		endif
+		if !material.specialnum.match('_') ne 0 then
+			!materialtext = !material.order.string() + '(' + !material.specialnum.after('_').real().string() + ')'
+		else
+			!materialtext = !material.order.string() + '(' + !material.specialnum.real().string() + ')'
+		endif
+		!name = !material.name
+		!pos = pos of $!name wrt/*
+		--$(
+		if type of $!name eq 'SCTN' then
+			var !posstring ppli na prop 0.5 of $!name wrt/*
+			!pos = !posstring.position()
+			!pos1 = posstart of $!name wrt/*
+			!pos2 = posend of $!name wrt/*
+			!dir = !pos1.direction(!pos2)
+		else
+			!pos = pos of $!name wrt/*
+			!dir = object direction()
+		endif
+		--$)
+		--$p $!pos
+
+		!mindis = 100000
+		do !x indices !this.lines
+			!line = !this.lines[!x]
+			--$(
+			if !dir.set() then
+				!angle = !line.direction().angle(!dir)
+				if !angle gt 20 and !angle lt 160 then
+					skip
+				endif
+			endif
+			--$)
+			!dis = !line.distance(!pos)
+			if !dis lt !mindis then
+				!goodx = !x
+				!mindis = !dis
+			endif
+		enddo
+		!dimOriPos = object dimOriPos(!this.lines[!goodx],!this.cenpoint,!this.dirObject.lookDirs,!this.lineMaxDiss[!goodx],!this.cheight,211)
+		!mlabelpos = !dimOriPos.dimpos
+		!nearpos = !this.lines[!goodx].near(!mlabelpos)
+		!tempdir = !nearpos.direction(!mlabelpos)
+
+		!textori = !dimOriPos.ori
+		if !tempdir.angle(!textori.ydir()) lt 90 then
+			!mlabelpos = !mlabelpos.offset(!textori.ydir(), 3 * !this.cheight)
+		else
+			!mlabelpos = !mlabelpos.offset(!textori.ydir(), - 3 * !this.cheight)
+		endif
+
+
+		------------------------------------------------------202311141043 s
+		!ydir = !textori.ydir()
+		!line = !pos.line(!pos.offset(!ydir,1000))
+		!mlabelpos = !line.near(!mlabelpos)
+		------------------------------------------------------202311141043 e
+
+		--!frame = true
+		!frame = false
+
+		--!mlabel = object mlabel(!this.mbdstru.dimgro,!mlabelpos,!textori,!materialtext,!this.cheight,false,!functiontext,!name,'node:' + !this.nodename)
+		--!mlabel = object mlabel(!this.mbdstru.dimgro,!mlabelpos,!textori,!materialtext,!this.cheight,true,!functiontext,!nearpos,'node:' + !this.nodename)
+		!mlabel = object mlabel(!this.mbdstru.dimgro,!mlabelpos,!textori,!materialtext,!this.cheight,!frame,!functiontext,!pos,'node:' + !this.nodename)
+	enddo
+endmethod
+
+define method .drawDim(!dimpos is position, !ori is orientation, !cheight is real, !poss is array, !currentDimType is string) is boolean
+	--if !currentDimType.upcase() eq 'MAIN' then
+	--	$!this.mainMainName
+	--else
+	--	$!this.mainSubName
+	--endif
+
+	--!lindim = object lindim(!this.dimgro,!dimpos,!ori,!poss,!cheight,'support dim',!currentDimType,true,true)
+	--return true
+
+	$!this.dimGro
+
+	new lindim
+	handle any
+		return false
+	endhandle
+	desc '$!currentDimType'
+
+	pos $!dimpos
+	ori $!ori
+	cheight $!cheight
+
+	!poss = !this.uniquePoss(!Poss)
+	do !pos values !Poss
+		new dimpos
+		pos $!pos
+	enddo
+
+	if !poss.size() gt 2 then
+		!tempdis = !!suidirdis(!dimpos,!ori.ydir(),!poss[1])
+		if !tempdis lt 0 then
+			!point = !dimpos.offset(!ori.ydir(),!cheight * 1.5)
+		else
+			!point = !dimpos.offset(!ori.ydir(), - !cheight * 1.5)
+		endif
+		new lindim
+		desc '$!currentDimType'
+		pos $!point
+		ori $!ori
+		cheight $!cheight
+		new dimpos
+		pos $!Poss[1]
+		new dimpos
+		!temppos = !poss.last()
+		pos $!temppos
+	endif
+endmethod
+
+-------------------get json data
+define method .getJsonData(!materialAttS is array, !materialAttShow is array, !elematerialAttS is array, !elematerialAttShow is array, !suppAtts is array ,!suppAttShow is array) is array
+	!jsonmem = object jsonmem()
+
+	!jsonmem.node = !this.nodename
+    !jsonmem.refno = !this.nodename.Dbref().ref.string()
+	--!jsonmem.code = !this.nodename
+	!nbbm = :zd_nbbm of $!this.suppname
+	handle any
+		!jsonmem.code = !this.nodename
+	elsehandle none
+		if !nbbm.unset() or !nbbm eq '' then
+			!jsonmem.code = !this.nodename
+		else
+			!jsonmem.code = !nbbm
+		endif
+	endhandle
+	!jsonmem.rev = !this.rev
+
+    --modify by jyg 20250218 添加项目号
+	var !E3DProject  pro num
+    !jsonmem.E3DProject = !E3DProject
+
+
+	!jsonmem.type = 'EM4SUPP'
+	!jsonmem.content = !this.getDimJson()
+	!jsonmem.material = !this.materialsJson(!materialAttS, !materialAttShow,!this.nodename)
+	!jsonmem.separateMaterial = !this.specialmaterialsJson(!elematerialAttS, !elematerialAttShow,!this.nodename)
+	!jsonmem.suppatt = !this.suppAttJson(!suppAtts, !suppAttShow,!this.nodename)
+	!jsonmem.weld = !this.weldJson(!this.nodename)
+
+	!jsonmem.drawingInfo = !this.getDrawingInfoJson(!this.nodename)
+	!jsonmem.proofreading = !this.getproofreadingjson(!this.nodename)
+	return !jsonmem.getjsontext()
+endmethod
+
+define method .getnodenameforsupp()
+	!tryname = name of $!this.suppname
+	handle any
+		!tryname = name of $!this.struname
+		handle any
+			!tryname = name of $!this.restname
+		endhandle
+	endhandle
+	!this.nodename = !tryname
+endmethod
+
+define method .getDimJson() is array
+	!json = object json(!this.mbdstru.mbdstru)
+	return !json.getJson()
+endmethod
+
+define method .materialsJson(!materialAttS is array, !materialAttShow is array, !tryname is string) is array
+	!result = array()
+	!materials = !this.sumMaterials(!materialAttS)
+	do !y indices !materials
+		!rowarr = !materials[!y]
+		!onearr = array()
+		!onearr.append(|{|)
+		do !x indices !rowarr
+			!onearr.append(|"| + !materialAttShow[!x] + |": "| + !rowarr[!x].string().replace(|\|,|\\|).replace(|"|,|\"|) + |",|)
+			handle any
+				!onearr.append(|"| + !materialAttShow[!x] + |": "| + '' + |",|)
+			endhandle
+			if !x eq !rowarr.size() then
+				!onearr[!onearr.size()] = !onearr[!onearr.size()].substring(1,!onearr[!onearr.size()].length() - 1)
+			endif
+		enddo
+
+		!onearr.insert(2,|"type":"suppMaterial",|)
+		!onearr.insert(2,|"nodeNames":["| + !tryname + |"],|)
+		!onearr.append(|},|)
+		!result.appendarray(!onearr)
+	enddo
+	return !result
+endmethod
+
+define method .specialmaterialsJson(!materialAttS is array, !materialAttShow is array, !tryname is string ) is array
+	!result = array()
+	!materials = !this.getspecialMaterials(!materialAttS)
+    --q var !this.materials[1] !this.materials[7]
+    --q var !materials[1]   !materials[7]
+	do !y indices !materials
+		!rowarr = !materials[!y]
+		!onearr = array()
+		!onearr.append(|{|)
+		do !x indices !rowarr
+			!onearr.append(|"| + !materialAttShow[!x] + |": "| + !rowarr[!x].string().replace(|\|,|\\|).replace(|"|,|\"|) + |",|)
+			handle any
+				!onearr.append(|"| + !materialAttShow[!x] + |": "| + '' + |",|)
+			endhandle
+			if !x eq !rowarr.size() then
+				!onearr[!onearr.size()] = !onearr[!onearr.size()].substring(1,!onearr[!onearr.size()].length() - 1)
+			endif
+		enddo
+
+		!onearr.insert(2,|"type":"suppSpecialMaterial",|)
+		!onearr.insert(2,|"nodeNames":["| + !tryname + |"],|)
+
+        !onearr.insert(2,|"refno特殊说明":["| + |"],|)
+        !onearr.insert(2,|"refno":["| + !this.materials[!y].name.dbref().ref.string() + |"],|)
+		!onearr.append(|},|)
+		!result.appendarray(!onearr)
+	enddo
+	return !result
+endmethod
+
+
+define method .suppAttJson(!suppAtts is array, !suppAttShow is array, !tryname is string ) is array
+	!rowarr = !this.getsuppAttArr(!suppAtts)
+	--!rowarr[1].delete()  $*no need suppname	   show need to delete, but the table would be different
+	--!rowarr.compress()
+	!row = array()
+	!row.append(|{|)
+	do !x indices !rowarr
+		!row.append(|"| + !suppAttShow[!x] + |": "| + !rowarr[!x].string().replace(|\|,|\\|).replace(|"|,|\"|) + |",|)
+		handle any
+			!row.append(|"| + !suppAttShow[!x] + |": "| + '' + |",|)
+		endhandle
+		if !x eq !rowarr.size() then
+			!row[!row.size()] = !row[!row.size()].substring(1,!row[!row.size()].length() - 1)
+		endif
+	enddo
+	--!row.append(|}|)
+	!row.append(|},|)
+
+	!row.insert(2,|"type":"suppAttribution",|)
+	!row.insert(2,|"nodeNames":["| + !tryname + |"],|)
+	return !row
+endmethod
+
+define method .weldJson(!tryname is string) is array
+	!maxnum = 16
+	!arrs = !this.getweldlist()
+	!rows = array()
+	do !arr values !arrs
+		!temparr = array()
+		do !x indices !arr
+			!temparr.append(!arr[!x])
+			if !x / !maxnum eq int(!x / !maxnum) then
+				!rows.append(!temparr)
+				!temparr = array()
+			elseif !x eq !arr.size() then
+				!rows.append(!temparr)
+			endif
+		enddo
+	enddo
+
+	!resultarr = array()
+	do !welds values !rows
+		!result = array()
+		!result.append(|{|)
+		!result.append(|"weldText":[|)
+		do !x indices !welds
+			if !x ne !welds.size() then
+				!result.append(|"| + !welds[!x] + |",|)
+			else
+				!result.append(|"| + !welds[!x] + |"|)
+			endif
+		enddo
+		!result.append(|]|)
+		!result.append(|},|)
+
+		!result.insert(2,|"type":"suppWeld",|)
+		!result.insert(2,|"nodeNames":["| + !tryname + |"],|)
+
+		!resultarr.appendarray(!result)
+	enddo
+	return !resultarr
+endmethod
+
+define method .getProofreadingJson(!tryname is string) is array
+	!row = !!getProofreadingJson(!this,!tryname)
+	return !row
+endmethod
+
+$(
+define method .getproofreadinginfo()
+	if !this.compliation.unset() then
+		!this.compliation = 'xxx'
+		!this.compliationtime = '2022.4.27'
+		!this.verification = 'xxx'
+		!this.verificationtime = '2022.4.27'
+		!this.review = 'xxx'
+		!this.reviewtime = '2022.4.27'
+		!this.approval = 'xxx'
+		!this.approvaltime = '2022.4.27'
+	endif
+endmethod
+$)
+
+define method .getdrawinfo()
+	if !this.drawgroup.unset() then
+		--!this.drawmajor = '布置'
+		--!this.drawname = '管道支吊架设计模型（一）'
+		!this.drawname = !this.suppname
+		if !this.drawname.substring(1,1) eq '/' then
+			!this.drawname = !this.drawname.after('/')
+		endif
+		!!getdrawinginfo(!this)     $*获取图纸信息
+	endif
+endmethod
+
+define method .getDrawingInfoJson(!tryname is string) is array
+	!row = !!getdrawinginfojson(!this,!tryname)
+	return !row
+endmethod

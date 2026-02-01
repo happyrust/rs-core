@@ -1,0 +1,729 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= April 17th 2023
+--[Function]:	get btse data
+--
+--[REV]
+--Revision		= 1.1
+--Date			= May 8th 2023
+--[Function]:	changed logic
+------------------------------------------
+
+--Method:
+--Public method:
+--btsedata(!inputbtse is any)   											$*get basic information
+--getspecdata(!inputboltspec is any)										$* to get more detail information for other program to use
+--btsedata(!inputbtse is any, !boltspec is any) 							$*get basic and detail information
+--setRealLenWei(!dis is real)		$* dis is sum of all elements between two flans(or valv and so on)	$* get real length weight
+
+--Private method:
+--getData(!seletype is string) is array 									$*
+--getseles()																$*
+
+
+
+---------old start
+--Method:
+--public:
+--btsedata(!inputbtse is any)   											$*get basic information
+--getspecdata(!inputboltspec is any)										$* to get more detail information for other program to use
+--btsedata(!inputbtse is any, !boltspec is any) 							$*get basic and detail information
+--setRealLenWei(!dis is real)		$* dis is sum of all elements between two flans(or valv and so on)	$* get real length weight
+
+--private:
+--getCapData()  															$*get cap data
+--getNutData()  															$*get nut data
+--getseles()																$*get sele data
+--getStudData() 															$*get stud data
+--getWashData() 															$*get wash data
+--------old end
+
+define object btsedata
+	--------------------------------------------------basic information
+	--member .name is string
+	----btse data
+	member .btse is string
+	member .bltps is array
+	member .bltpsize is real
+	member .bltp is string
+	member .bdiameter is real
+	member .bthkness is string
+	member .btype is string
+
+	-----------------------------------------------------------detail information
+	----bolt spec data and sele
+	member .boltspec is string
+	member .bdiasele is string
+	member .studsele is string
+	member .nutsele is string
+	member .washsele is string
+	member .capsele is string
+	member .jacksele is string
+
+	---studsele data
+	member .studspco is string
+	$(
+	member .studDetref is string
+	member .studMatxt is string
+	member .studCmpref is string
+	member .studBltref is string
+	member .studWeight is real		$* from Cmpref
+
+
+	member .studRtext is string		$* from detref
+	member .studStext is string		$* from detref
+	member .studTtext is string		$* from detref
+
+	member .studMaxtext is string	$* from Matxt
+	member .studMaytext is string	$* from Matxt
+	member .studMaztext is string	$* from Matxt
+
+	member .studXtralength is real
+
+	member .studBitems is array			$* from Bltref
+	member .studBitlength is array		$* from Bltref
+
+	member .studnstdblength is string
+	member .studBlength is array		$* from nstdblength of Bltref
+	member .studBweight is array		$* from nstdblength of bltref
+	$)
+
+	----Capsele data
+	member .Capspco is string
+	$(
+	member .CapDetref is string
+	member .CapMatxt is string
+	member .CapCmpref is string
+	member .CapBltref is string
+
+	member .CapWeight is real		$* from Cmpref
+
+
+	member .CapRtext is string		$* from detref
+	member .CapStext is string		$* from detref
+	member .CapTtext is string		$* from detref
+
+	member .CapMaxtext is string	$* from Matxt
+	member .CapMaytext is string	$* from Matxt
+	member .CapMaztext is string	$* from Matxt
+
+	member .CapXtralength is real
+
+	member .CapBitems is array			$* from Bltref
+	member .CapBitlength is array		$* from Bltref
+
+	member .Capnstdblength is string
+	member .CapBlength is array		$* from nstdblength of Bltref
+	member .CapBweight is array		$* from nstdblength of bltref
+	$)
+
+	----nutsele data
+	member .nutspco is string
+	$(
+	member .nutDetref is string
+	member .nutMatxt is string
+	member .nutCmpref is string
+	member .nutBltref is string
+
+	member .nutWeight is real		$* from Cmpref
+
+
+	member .nutRtext is string		$* from detref
+	member .nutStext is string		$* from detref
+	member .nutTtext is string		$* from detref
+
+	member .nutMaxtext is string	$* from Matxt
+	member .nutMaytext is string	$* from Matxt
+	member .nutMaztext is string	$* from Matxt
+
+	member .nutXtralength is real
+
+	member .nutBitems is array			$* from Bltref
+	member .nutBitlength is array		$* from Bltref
+
+	member .nutnstdblength is string
+	member .nutBlength is array		$* from nstdblength of Bltref
+	member .nutBweight is array		$* from nstdblength of bltref
+	$)
+
+	--washsele data
+	member .washspco is string
+
+	$(
+	member .washDetref is string
+	member .washMatxt is string
+	member .washCmpref is string
+	member .washBltref is string
+
+	member .washWeight is string	$* from Cmpref
+
+
+	member .washRtext is string		$* from detref
+	member .washStext is string		$* from detref
+	member .washTtext is string		$* from detref
+
+	member .washMaxtext is string	$* from Matxt
+	member .washMaytext is string	$* from Matxt
+	member .washMaztext is string	$* from Matxt
+
+
+
+
+	member .washXtralength is real
+
+	member .washBitems is array			$* from Bltref
+	member .washBitlength is array		$* from Bltref
+
+	member .washnstdblength is string
+	member .washBlength is array		$* from nstdblength of Bltref
+	member .washBweight is array		$* from nstdblength of bltref
+	$)
+
+	member .jackspco is string
+
+
+	------------------------------------------ for bolt
+	member .spco is string
+
+	member .Detref is string
+	member .Matxt is string
+	member .Cmpref is string
+	member .Bltref is string
+	member .Weight is string	$* from Cmpref
+
+
+	member .Rtext is string		$* from detref
+	member .Stext is string		$* from detref
+	member .Ttext is string		$* from detref
+
+	member .Maxtext is string	$* from Matxt
+	member .Maytext is string	$* from Matxt
+	member .Maztext is string	$* from Matxt
+
+	member .Xtralength is real
+
+	member .Bitems is array			$* from Bltref
+	member .Bitlength is array		$* from Bltref
+
+	member .nstdblength is string
+	member .Blength is array		$* from nstdblength of Bltref
+	member .Bweight is array		$* from nstdblength of bltref
+
+	-------only for real bolt
+	member .realboltweight is real
+	member .realboltlength is real
+endobject
+
+define method .btsedata(!inputbtse is any, !boltspec is any)
+	!this.btsedata(!inputbtse)
+	if !this.bltpsize ne 0 then
+		!this.getspecdata(!boltspec)
+	endif
+endmethod
+
+define method .btsedata(!inputbtse is any)
+	if type of $!inputbtse ne 'BTSE' then
+		return
+	endif
+	!this.btse = name of $!inputbtse
+	--q var !this.btse
+	var !bltps coll all bltp for $!this.btse
+	if !bltps.unset() then
+		return
+	endif
+	--q var !bltps
+	!this.bltps = !bltps
+	!this.bltpsize = !bltps.size()
+	!this.bltp = !bltps[1]
+
+	!bdiastring = bdiam of $!this.bltp
+	!this.bdiameter = !bdiastring.replace('(','').replace(')','').trim().real()
+
+	--!bthkstring = bthk of $!this.bltp
+	--!this.bthkness = !!evalCata(!this.name,!bthkstring)
+	!this.bthkness = bthk of $!this.bltp
+	--$p $!this.bltp
+	!this.btype = btype of $!this.bltp
+endmethod
+
+define method .getspecdata(!inputboltspec is any)			$* to get more detail information for other program to use
+	if type of $!inputboltspec ne 'SPEC' then
+		return
+	endif
+	!this.boltspec = name of $!inputboltspec
+	!this.getseles()
+
+	if !this.btype.set() and !this.btype ne '' then
+		var !seles coll all sele with(tanswer eq !this.btype) for $!this.bdiasele
+		if !seles.set() then
+			!this.getdata(!this.btype)
+			return
+		endif
+	endif
+
+
+	!tdefault = tdefault of $!this.bdiasele
+	handle any
+		!this.getdata('STUD')
+	elsehandle none
+		--!com = |!this.get| + !tdefault + |Data()|
+		--$!com
+
+		--!this.getStudData()
+		!this.getdata(!tdefault)
+	endhandle
+endmethod
+
+
+define method .getseles()
+	--q var !this.bdiameter
+	--q var !this.boltspec
+	--$p $!this.boltspec
+
+	--var !seles coll all sele with(tanswer eq 'BOLT' and question eq 'BDIA') for $!this.boltspec
+	--var !seles coll all sele with(real(answer) eq !this.bdiameter) for $!seles[1]
+	--if !seles.size() ne 1 then
+	--	return
+	--endif
+
+	!seles = member of $!this.boltspec
+	do !sele values !seles
+		if tanswer of $!sele eq 'BOLT' and question of $!sele eq 'BDIA' then
+			!boltsele = name of $!sele
+			break
+		endif
+	enddo
+	if undefined(!boltsele) then
+		return
+	endif
+
+	--var !seles coll all sele for $!seles[1]
+	!seles = member of $!boltsele
+	do !sele values !seles
+		!answer = answer of $!sele
+		if !answer.real() eq !this.bdiameter then
+			!bdiasele = name of $!sele
+			break
+		endif
+		--q var !answer
+	enddo
+	if undefined(!bdiasele) then
+		return
+	endif
+
+
+	!this.bdiasele = !bdiasele
+	var !seles coll all sele for $!this.bdiasele
+	do !sele values !seles
+		!tanswer = tanswer of $!sele
+		if !tanswer eq 'STUD' then
+			!this.studsele = !sele
+		elseif !tanswer eq 'NUT' then
+			!this.nutsele = !sele
+		elseif !tanswer eq 'WASH' then
+			!this.washsele = !sele
+		elseif !tanswer eq 'CAP' then
+			!this.capsele = !sele
+		elseif !tanswer eq 'JACK' then
+			!this.jacksele = !sele
+		endif
+	enddo
+endmethod
+
+define method .getData(!seletype is string) is array
+	!com = |!sele = !this.| + !seletype + |sele|
+	$!com
+	if !sele.unset() then		$*ÂÝ¸Ë
+		return
+	endif
+	!tdefault = tdefault of $!sele
+	if !tdefault ne '' then
+		var !spcos coll all spco with(tanswer eq !tdefault) for $!sele
+		!spco = name of $!spcos[1]
+		handle any
+			!spco = name of first spco of $!sele
+		endhandle
+	else
+		!spco = name of first spco of $!sele
+	endif
+	!Detref = name of detref of $!spco
+	handle any
+	elsehandle none
+		!Rtext = rtext of $!detref		$*´øÖÐÎÄÃèÊö
+		!Stext = stext of $!detref		$*²»´øÖÐÎÄÃèÊö
+		!Ttext = ttext of $!detref		$*²»´øÖÐÎÄÃèÊö
+	endhandle
+
+	--$p $!spco
+
+	!Matxt = name of matxt of $!spco
+	handle any
+	elsehandle none
+		!Maxtext = xtext of $!Matxt
+		!Maytext = ytext of $!Matxt
+		!Maztext = ztext of $!Matxt
+	endhandle
+	--$P $!SPCO
+
+	!Cmpref = name of cmpref of $!spco
+	handle any
+		!Weight = 0
+	elsehandle none
+		!Weightstring = cweight of $!cmpref		$*ÖØÁ¿
+		!Weight = !Weightstring.replace('(','').replace(')','').trim().real()
+	endhandle
+
+	!Bltref = name of bltref of $!spco
+	handle any
+
+	elsehandle none
+		!Bitems = bitems of $!bltref		$*Õ¼ÂÝË¨³¤¶ÈµÄ²¿¼þ
+		!Bitlength = bitlength of $!bltref	$*¸÷²¿¼þ³¤¶È
+
+		!Xtralength = xtralength of $!bltref
+
+		!nstdblength = name of nstdblength of $!bltref	$*´æ·ÅÔ²ÕûÊý×éµÄµØ·½
+		!Blength = blength of $!nstdblength			$*Ô²ÕûÊý×é
+		!bweight = bweight of $!nstdblength
+	endhandle
+
+	!selewords = split('spco')
+
+	!commonWords = split('spco detref matxt cmpref bltref rtext stext ttext maxtext maytext maztext weight xtralength bitems bitlength nstdblength blength bweight')
+	do !word values !selewords
+		!com = |!this.| + !seletype + !word + | = !| + !word
+		$!com
+		handle any
+		endhandle
+	enddo
+
+	do !word values !commonwords
+		!com = |!this.| + !word + | = !| + !word
+		$!com
+		handle any
+			--$p $!com
+		endhandle
+	enddo
+endmethod
+
+define method .setRealLenWei(!dis is real)		$* dis is sum of all elements between two flans(or valv and so on)
+	!netlength = 0
+	!plusNutNum = 0
+	do !x indices !this.Bitems
+		!netlength = !netlength + !this.Bitlength[!x]
+		if !this.Bitems[!x] eq 'NUT' then
+			!plusNutNum = !plusNutNum + 1
+			!nutlen = !this.Bitlength[!x]
+		endif
+	enddo
+
+
+	$(
+	if !this.xtralength eq 0 then
+		!this.xtralength = !nutlen
+
+		--!this.xtralength = Max(0,(2 - !plusNutnum)) * !nutlen
+		--!this.xtralength = !plusNutnum * !nutlen
+	endif
+	$)
+	!reallength = !netlength + !this.Xtralength + !dis
+
+
+
+
+
+	do !x indices !this.Blength
+		!len = !this.Blength[!x]
+		if !len ge !reallength then
+			--$p $!len
+			!reallength = !len
+			!goodx = !x
+			break
+		endif
+	enddo
+
+
+	--q var !goodx
+
+	----no consider weight of cap nut wash
+
+	if undefined(!goodx) then
+		!this.realboltweight = 0
+		--!maxlen = !this.Blength.last()
+		--$p this bolt is too long $!reallength ( maxlen $!maxlen)
+		--!this.realboltweight = !this.weight * !reallength / !netlength		$*ÐÞÕûÖØÁ¿
+	else
+		--q var !this.Bweight
+		if defined(!this.Bweight[!goodx]) and !this.Bweight[!goodx] ne 0 then
+			!this.realboltweight = !this.Bweight[!goodx]
+
+		else
+			!this.realboltweight = 0
+
+
+			--!this.realboltweight = !this.weight * !reallength / !netlength		$*ÐÞÕûÖØÁ¿
+
+			--$p real $!reallength   net $!netlength
+			--$p weight $!this.weight
+			--$p realweight $!this.realboltweight
+		endif
+	endif
+	!this.realboltlength = !reallength									$*ÐÞÕû³¤¶È
+endmethod
+
+$(
+--202305081843
+define method .getStudData()
+	if !this.studsele.unset() then		$*ÂÝ¸Ë
+		return
+	endif
+	!tdefault = tdefault of $!this.studsele
+	if !tdefault ne '' then
+		var !spcos coll all spco with(tanswer eq !tdefault) for $!this.studsele
+		!this.studspco = name of $!spcos[1]
+		handle any
+			!this.studspco = name of first spco of $!this.studsele
+		endhandle
+	else
+		!this.studspco = name of first spco of $!this.studsele
+	endif
+	!this.studDetref = name of detref of $!this.studspco
+	handle any
+	elsehandle none
+		!this.studRtext = rtext of $!this.studdetref		$*´øÖÐÎÄÃèÊö
+		!this.studStext = stext of $!this.studdetref		$*²»´øÖÐÎÄÃèÊö
+	endhandle
+
+	!this.studMatxt = name of matxt of $!this.studspco
+	handle any
+	elsehandle none
+		!this.studMaxtext = xtext of $!this.studMatxt
+		!this.studMaytext = ytext of $!this.studMatxt
+		!this.studMaztext = ztext of $!this.studMatxt
+	endhandle
+
+	!this.studCmpref = name of cmpref of $!this.studspco
+	handle any
+		!this.studWeight = 0
+	elsehandle none
+		!studWeightstring = cweight of $!this.studcmpref		$*ÖØÁ¿
+		!this.studWeight = !studWeightstring.replace('(','').replace(')','').trim().real()
+	endhandle
+
+	!this.studBltref = name of bltref of $!this.studspco
+	handle any
+
+	elsehandle none
+		!this.studBitems = bitems of $!this.studbltref		$*Õ¼ÂÝË¨³¤¶ÈµÄ²¿¼þ
+		!this.studBitlength = bitlength of $!this.studbltref	$*¸÷²¿¼þ³¤¶È
+
+		!this.studXtralength = xtralength of $!this.studbltref
+
+		!nstdblength = nstdblength of $!this.studbltref	$*´æ·ÅÔ²ÕûÊý×éµÄµØ·½
+		!this.studBlength = blength of $!nstdblength			$*Ô²ÕûÊý×é
+		!this.studbweight = bweight of $!nstdblength
+	endhandle
+endmethod
+
+
+define method .getNutData()
+	if !this.Nutsele.unset() then		$*ÂÝÄ¸
+		return
+	endif
+	!tdefault = tdefault of $!this.nutsele
+	if !tdefault ne '' then
+		var !spcos coll all spco with(tanswer eq !tdefault) for $!this.nutsele
+		!this.nutspco = name of $!spcos[1]
+		handle any
+			!this.nutspco = name of first spco of $!this.nutsele
+		endhandle
+	else
+		!this.nutspco = name of first spco of $!this.nutsele
+	endif
+
+	!this.nutspco = name of first spco of $!this.nutsele
+	!this.nutDetref = name of detref of $!this.nutspco
+	handle any
+	elsehandle none
+		!this.nutRtext = rtext of $!this.nutdetref
+		!this.nutStext = stext of $!this.nutdetref
+	endhandle
+
+	!this.nutMatxt = name of matxt of $!this.nutspco
+	!this.nutCmpref = name of cmpref of $!this.nutspco
+	handle any
+	elsehandle none
+		!nutWeightstring = cweight of $!this.nutcmpref
+		!this.nutWeight = !nutWeightstring.replace('(','').replace(')','').trim().real()
+	endhandle
+
+	!this.nutBltref = name of bltref of $!this.nutspco
+	handle any
+
+	elsehandle none
+		!this.nutBitems = bitems of $!this.nutbltref		$*Õ¼ÂÝË¨³¤¶ÈµÄ²¿¼þ
+		!this.nutBitlength = bitlength of $!this.nutbltref	$*¸÷²¿¼þ³¤¶È
+
+		!this.nutXtralength = xtralength of $!this.nutbltref
+
+		!nstdblength = nstdblength of $!this.nutbltref	$*´æ·ÅÔ²ÕûÊý×éµÄµØ·½
+		!this.nutBlength = blength of $!nstdblength			$*Ô²ÕûÊý×é
+		!this.nutbweight = bweight of $!nstdblength
+	endhandle
+endmethod
+
+define method .getCapData()
+	if !this.Capsele.unset() then		$*CAP
+		return
+	endif
+	!tdefault = tdefault of $!this.capsele
+	if !tdefault ne '' then
+		var !spcos coll all spco with(tanswer eq !tdefault) for $!this.capsele
+		!this.capspco = name of $!spcos[1]
+		handle any
+			!this.capspco = name of first spco of $!this.capsele
+		endhandle
+	else
+		!this.capspco = name of first spco of $!this.capsele
+	endif
+
+	--!this.Capspco = name of first spco of $!this.Capsele
+	!this.CapDetref = name of detref of $!this.Capspco
+	handle any
+	elsehandle none
+		!this.CapRtext = rtext of $!this.Capdetref
+		!this.CapStext = stext of $!this.Capdetref
+	endhandle
+
+	!this.CapMatxt = name of matxt of $!this.Capspco
+	!this.CapCmpref = name of cmpref of $!this.Capspco
+	handle any
+	elsehandle none
+		!CapWeightstring = cweight of $!this.Capcmpref
+		!this.CapWeight = !CapWeightstring.replace('(','').replace(')','').trim().real()
+	endhandle
+
+	!this.CapBltref = name of bltref of $!this.Capspco
+	handle any
+
+	elsehandle none
+		!this.CapBitems = bitems of $!this.Capbltref		$*Õ¼ÂÝË¨³¤¶ÈµÄ²¿¼þ
+		!this.CapBitlength = bitlength of $!this.Capbltref	$*¸÷²¿¼þ³¤¶È
+
+		!this.CapXtralength = xtralength of $!this.Capbltref
+
+		!nstdblength = nstdblength of $!this.Capbltref	$*´æ·ÅÔ²ÕûÊý×éµÄµØ·½
+		!this.CapBlength = blength of $!nstdblength			$*Ô²ÕûÊý×é
+		!this.Capbweight = bweight of $!nstdblength
+	endhandle
+endmethod
+
+
+define method .getWashData()
+	if !this.washsele.unset() then		$*µæÈ¦
+		return
+	endif
+	!tdefault = tdefault of $!this.washsele
+	if !tdefault ne '' then
+		var !spcos coll all spco with(tanswer eq !tdefault) for $!this.washsele
+		!this.washspco = name of $!spcos[1]
+		handle any
+			!this.washspco = name of first spco of $!this.washsele
+		endhandle
+	else
+		!this.washspco = name of first spco of $!this.washsele
+	endif
+
+	--!this.washspco = name of first spco of $!this.washsele
+	!this.washDetref = name of detref of $!this.washspco
+	handle any
+	elsehandle none
+		!this.washRtext = rtext of $!this.washdetref
+		!this.washStext = stext of $!this.washdetref
+	endhandle
+
+	!this.washMatxt = name of matxt of $!this.washspco
+	!this.washCmpref = name of cmpref of $!this.washspco
+	handle any
+
+	elsehandle none
+		!washWeightstring = cweight of $!this.washcmpref
+		!this.washWeight = !washWeightstring.replace('(','').replace(')','').trim().real()
+	endhandle
+
+	!this.washBltref = name of bltref of $!this.washspco
+	handle any
+
+	elsehandle none
+		!this.washBitems = bitems of $!this.washbltref		$*Õ¼ÂÝË¨³¤¶ÈµÄ²¿¼þ
+		!this.washBitlength = bitlength of $!this.washbltref	$*¸÷²¿¼þ³¤¶È
+
+		!this.washXtralength = xtralength of $!this.washbltref
+
+		!nstdblength = nstdblength of $!this.washbltref	$*´æ·ÅÔ²ÕûÊý×éµÄµØ·½
+		!this.washBlength = blength of $!nstdblength			$*Ô²ÕûÊý×é
+		!this.washbweight = bweight of $!nstdblength
+	endhandle
+endmethod
+
+
+define method .setRealLenWei(!dis is real)		$* dis is sum of all elements between two flans(or valv and so on)
+	!netlength = 0
+	!plusNutNum = 0
+	do !x indices !this.studBitems
+		!netlength = !netlength + !this.studBitlength[!x]
+		if !this.studBitems[!x] eq 'NUT' then
+			!plusNutNum = !plusNutNum + 1
+			!nutlen = !this.studBitlength[!x]
+		endif
+	enddo
+
+	--!addNutLen = Max(0,(2 - !plusNutnum)) * !nutlen
+	--!addNutLen = !plusNutnum * !nutlen
+	--!addNutLen = !plusNutnum * 5
+	--!reallength = !netlength + !addNutlen + !dis
+	!reallength = !netlength + !this.studXtralength + !dis
+
+	--$p $!reallength
+	--q var !this.studblength
+
+	do !x indices !this.studBlength
+		!len = !this.studBlength[!x]
+		if !len ge !reallength then
+			--$p $!len
+			!reallength = !len
+			!goodx = !x
+			break
+		endif
+	enddo
+
+
+	--q var !goodx
+
+	----no consider weight of cap nut wash
+
+	if undefined(!goodx) then
+		!maxlen = !this.studBlength.last()
+		$p this bolt is too long $!reallength ( maxlen $!maxlen)
+		!this.realboltweight = !this.studweight * !reallength / !netlength		$*ÐÞÕûÖØÁ¿
+	else
+		--q var !this.studBweight
+		if defined(!this.studBweight[!goodx]) and !this.studBweight[!goodx] ne 0 then
+			!this.realboltweight = !this.studBweight[!goodx]
+
+		else
+			!this.realboltweight = !this.studweight * !reallength / !netlength		$*ÐÞÕûÖØÁ¿
+
+			--$p real $!reallength   net $!netlength
+			--$p studweight $!this.studweight
+			--$p realweight $!this.realboltweight
+		endif
+	endif
+	!this.realboltlength = !reallength									$*ÐÞÕû³¤¶È
+endmethod
+$)
+Ê

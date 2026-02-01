@@ -1,0 +1,23 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= October 31st 2023
+--[Function]:
+------------------------------------------
+
+define function !!mergerange(!ranges is array) is array
+	!newranges = array()
+	do !newrange values !ranges
+		!newranges = !!addonerangetoranges(!newrange,!newranges)
+	enddo
+	!starts = array()
+	do !range values !newranges
+		!starts.append(!range[1])
+	enddo
+	!newranges.reindex(!starts.sortedindices())
+	return !newranges
+endfunction
+Û

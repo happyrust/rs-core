@@ -1,0 +1,1432 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= November 30th 2023
+--[Function]:
+------------------------------------------
+
+--
+--<<Method>>:
+--<<Public method>>:
+--pipeatta(!attas is array,!mbdtype is string)  							$*
+--pipeatta(!attas is array) 												$*
+--
+--<<Private method>>:
+--getattaobjects()  														$*
+-----Step 1:get array of attaobjects , element is isoleg isolug isopad
+-----Step 2:get all unique line and outside radius of isopad
+--getobjectPadnums()														$*
+-----Step 1: set attribute: onpad
+--classisopadobject()   													$*
+--classisolegobject()   													$*
+--classisolugobject()   													$*
+--mergelugnotonpad(!lugindices is array,!difindices is array) is array  	$*
+-----Step 1:use dir,bore and distance
+--mergelugonpad(!lugindices is array) is array  							$*
+-----Step 1:use pad number first
+--classattaobjects()														$*
+--getattageo(!atta is string) is array  									$*
+--getattatube(!atta is string) is array 									$*
+--getcatamemdata(!mem is string, !atta is string) is any					$*
+--getAttaAod(!atta is string) is real   									$*
+--gettags() 																$*
+--getattatagtext(!attaobjects is array) is array							$*
+-------------------------------------
+
+define object pipeatta
+	member .branname is string
+
+	member .attas is array
+	member .dns is array			$*for all attas
+	member .aods is array			$*for all attas
+	member .dirs is array			$*for all attas
+	member .elbos is array			$*for all attas
+
+	member .pointattas is array
+	member .geoattas is array
+
+
+	member .attaobjects is array	$*element is isoleg isolug isopad
+	member .padVolumes is array		$*element is array that element is line and radius
+	member .objectPadNums is array	$*element is index of padvolumes or unset for each attaobject
+
+	member .attaClass is array		$*element is array what instore indices in one group
+	member .tags is array
+
+	member .mbdpipe is boolean		$*true for pipe, false for support
+
+	member .newway is boolean		$*true means all atta belong to pipe
+
+	member .errors is array
+endobject
+
+define method .pipeatta(!attas is array,!mbdtype is string)
+	if !mbdtype.trim().upcase() eq 'PIPE' then
+		!this.mbdpipe = true		$*if pipe, only draw pad and lug/leg without pad
+	else
+		!this.mbdpipe = false		$*if supp, only draw lug/leg without pad
+	endif
+	!this.pipeatta(!attas)
+endmethod
+define method .pipeatta(!attas is array)
+
+	!this.newway = true    $*true means all atta belong to pipe
+
+	!this.attas = !attas
+	!this.branname = name of bran of $!attas[1]
+	handle any
+		--q var !!error
+		return
+	endhandle
+	--$p asdf
+	if !this.mbdpipe.unset() then
+		!this.mbdpipe = true
+	endif
+	--$p asdf
+	--$p 1
+	!this.getdndiraod()
+	--$p 2
+	!this.getattaobjects()
+
+    --$p 3
+	!this.getobjectPadnums()
+
+	--$p 4
+	!this.classattaobjects()
+	--$p 5
+	!this.gettags()
+	--$p 6
+endmethod
+
+define method .getdndiraod()
+	do !atta values !this.attas
+		!this.getattatube(!atta)
+	enddo
+endmethod
+
+
+define method .getattaobjects()
+	--------------------------------------
+	--------------------------------------Step 1:get array of attaobjects , element is isoleg isolug isopad
+	--------------------------------------
+	--------------------------------------Step 2:get all unique line and outside radius of isopad
+	!padvolumes = array()
+	!attaobjects = array()
+	do !atta values !this.attas
+        --Q VAR !ATTA
+		!oneattaobjects = !this.getattageo(!atta) $*»ñÈ¡attaÀàÐÍµÄ¶ÔÏóÊý¾Ý£¨ÊÇ¸ö¼¯ºÏ°üº¬ÎïÏîµÄ¶àÖÖ²ÎÊý£©
+        --q var !oneattaobjects
+        --Q VAR !oneattaobjects[1] !oneattaobjects[2]
+		if !oneattaobjects.set() then
+			!this.geoattas.append(!atta)
+			--!this.getattatube(!atta)
+			!attaobjects.appendarray(!oneattaobjects)
+			if !oneattaobjects[1].objecttype() eq 'ISOPAD' then
+				!ob = !oneattaobjects[1]
+				!padline = !ob.attapos.offset(!ob.ori.zdir(),!ob.height / 2).line(!ob.pos.offset(!ob.ori.zdir(), - !ob.height / 2))
+				--q var !ob.height
+                --!padline.Draw(1,2,3)
+				!exists = false
+                --ÓÃÀ´ÅÐ¶ÏÇ°ºóattµÄÎ»ÖÃÊÇ·ñºÍµ±Ç°attaÖØµþ
+				do !x indices !padvolumes
+					if !padline.startposition.distance(!padvolumes[!x][1].startposition) lt 1 and !padline.endposition.distance(!padvolumes[!x][1].endposition) lt 1 $
+						and abs(!ob.routside - !padvolumes[!x][2]) lt 1 then
+						!exists = true
+						break
+					endif
+				enddo
+				if !exists.not() then
+					!onearr = array()
+					!onearr[1] = !padline
+					!onearr[2] = !ob.routside
+
+					!padvolumes.append(!onearr)
+				endif
+			endif
+		else
+            --$p 123
+            --q var !oneattaobjects
+            --´¦ÀíÃ»ÓÐÐÍ¼¯µÄÂß¼­Ö§µõµã
+			!this.pointattas.append(!atta)
+		endif
+	enddo
+    --q var !attaobjects[1] !attaobjects[2]
+	!this.attaobjects = !attaobjects
+	!this.padvolumes = !padvolumes
+    --q var !this.attaobjects  !this.padvolumes
+endmethod
+
+define method .getobjectPadnums()
+	-----------------------------------------------------------------------------------
+	-----------------------------------------------------------------------------------Step 1: set attribute: onpad
+	!attaobjects = !this.attaobjects
+
+	!objectPadNums = array()
+
+	!onpadattas = array()
+	!onpadnums = array()
+
+	do !x indices !attaobjects
+	--$p $!x
+		if !attaobjects[!x].objecttype() inset ('ISOLUG','ISOLEG') then
+			!atta = !attaobjects[!x].name
+			!tempindex = !onpadattas.findfirst(!atta)	$* because one atta maybe have more than one attaobject
+			if !tempindex.set() then
+				!objectPadNums[!x] = !onpadnums[!tempindex]
+				!onpad = true
+			else
+				--!attapos = pos of $!atta wrt/*
+				!attapos = !attaobjects[!x].attapos
+				!onpad = false
+				do !padindex indices !this.padvolumes
+					!padvolume = !this.padvolumes[!padindex]
+
+					if !padvolume[1].onprojected(!attapos) and !padvolume[1].distance(!attapos) lt !padvolume[2] then
+						!onpadattas.append(!atta)
+						!onpadnums.append(!padindex)
+
+						!onpad = true
+						!objectPadNums[!x] = !padindex
+						break
+					endif
+				enddo
+			endif
+			!attaobjects[!x].onpad = !onpad
+
+			if !onpad then
+				!attaobjects[!x].touchitemradius = !this.padvolumes[!objectPadNums[!x]][2]
+				!touchradius = !this.padvolumes[!objectPadNums[!x]][2]
+			else
+				if !attaobjects[!x].objecttype() eq 'ISOLEG' and !attaobjects[!x].elboname.set() then
+					do !tempobject values !attaobjects
+						if !tempobject.objecttype() eq 'ISOELBOPAD' and !tempobject.elboname eq !attaobjects[!x].elboname then
+							!attaobjects[!x].onpad = true
+							!elbopad = !tempobject
+							break
+						endif
+					enddo
+					if !attaobjects[!x].onpad then
+						!arc = !elbopad.axisarc
+						--!arc = object arc(!elbopad.pos,!elbopad.ori,0,!elbopad.axisangle,!elbopad.routside,true)
+					else
+						!arc = !this.getelboarc(!attaobjects[!x].elboname)
+					endif
+					!zdir = !attaobjects[!x].ori.zdir()
+					!legradiusdir = !zdir.orthogonal(!arc.orientation.zdir())
+					!tempdir2 = !attaobjects[!x].pos.direction(!arc.position)
+
+					if !legradiusdir.angle(!tempdir2) lt 90 then
+						!legradiusdir = !legradiusdir.opposite()
+					endif
+					!temppos = !attaobjects[!x].pos.offset(!legradiusdir,!attaobjects[!x].outdia / 2)
+					!templine = !temppos.line(!temppos.offset(!zdir,1000))
+
+					--!legaxis = !attaobjects[!x].pos.line(!attaobjects[!x].attapos)
+					!interpoints = !templine.intersections(!arc)
+					do !interpoint values !interpoints
+						if !arc.onprojected(!interpoint) then
+							!goodpoint = !interpoint
+							break
+						endif
+					enddo
+
+					!pos1 = !templine.near(!goodpoint).offset(!legradiusdir, - !attaobjects[!x].outdia / 2)
+
+					!tempdir = !attaobjects[!x].ori.zdir()
+					--!tempdir = !attaobjects[!x].attapos.direction(!attaobjects[!x].pos)
+					if !tempdir.angle(!tempdir2) lt 90 then
+						!tempdir = !tempdir.opposite()
+					endif
+
+					!pos2 = !attaobjects[!x].pos.offset(!tempdir,!attaobjects[!x].height / 2)
+
+
+					!attaobjects[!x].height = !pos1.distance(!pos2)
+					!attaobjects[!x].pos = !pos1.midpoint(!pos2)
+
+					!attaobjects[!x].weldpos = !goodpoint
+				else
+					!tempindex = !this.attas.findfirst(!atta)
+					!attaobjects[!x].touchitemradius = !this.aods[!tempindex] / 2
+					!touchradius = !this.aods[!tempindex] / 2
+				endif
+			endif
+
+			if !attaobjects[!x].objecttype() eq 'ISOLEG' and !attaobjects[!x].elboname.unset() then
+					----------------------
+					----------------------Step 2:normal leg
+					!cutlen = sqrt(power(!touchradius,2) - power(!attaobjects[!x].outdia / 2,2))
+					handle any
+						--q var !!error
+						!cutlen = 0
+					endhandle
+					--q var !cutlen
+					if !cutlen gt 0.1 then
+						!attaobjects[!x].height = !attaobjects[!x].height - !cutlen
+						!attaobjects[!x].pos = !attaobjects[!x].pos.offset(!attaobjects[!x].attapos.direction(!attaobjects[!x].pos),!cutlen / 2)
+					endif
+			endif
+		endif
+	enddo
+
+	!this.attaobjects = !attaobjects
+	!this.objectPadNums = !objectPadNums
+    --q var !this.attaobjects !this.objectPadNums
+endmethod
+
+define method .getelboarc(!elbo is string) is arc
+	!gm = name of gstref of catref of $!elbo
+	handle any
+		!gm = name of gmre of catref of $!elbo
+		handle any
+			!arc = object arc()
+			return !arc
+		endhandle
+	endhandle
+
+
+	!considertypes = split('SCTO')
+	!allarrs = array()
+
+	!mems = mem of $!gm
+
+	do !onemem values !mems
+		!mem = name of $!onemem
+		!memtype = type of $!mem
+
+		if !considertypes.findfirst(!memtype).unset() then
+			skip
+		endif
+
+		!tuflag = tuflag of $!mem
+		handle any
+			skip
+		elsehandle none
+			if !tuflag.not() then
+				skip
+			endif
+		endhandle
+
+		!level = level of $!mem
+		if !level[1] gt 6 or !level[2] lt 6 then
+			skip
+		endif
+		!obst = obstruction of $!mem
+		if !obst ne 2 and !obst ne 0 then
+			skip
+		endif
+
+		!arc = !this.getelboarc2(!mem,!elbo)
+
+		return !arc
+	enddo
+endmethod
+
+define method .getelboarc2(!mem is string, !elbo is string) is arc
+	!arc = object arc()
+	!elbopos = pos of $!elbo wrt/*
+	!atts = split('paax pbax pdia')
+
+	do !x indices !atts
+		!att = !atts[!x]
+		!com = '!string = ' + !att + ' of $' + '!mem'
+		$!com
+		handle any
+			return !arc
+		elsehandle none
+			!values[!x] = !!evalCata(!elbo,!string)
+			handle any
+				return !arc
+			endhandle
+		endhandle
+	enddo
+
+	!dirpos1 = !values[!atts.findfirst('paax')]
+	!dir1 = !dirpos1[1]
+	!pos1 = !dirpos1[2]
+
+	!dirpos2 = !values[!atts.findfirst('pbax')]
+	!dir2 = !dirpos2[1]
+	!pos2 = !dirpos2[2]
+
+
+	--!diameter = !values[!atts.findfirst('pdia')]
+	!diameter = aod of $!elbo
+
+
+	!angle = 180 - !dir1.angle(!dir2)
+	!zdir = !dir1.orthogonal(!dir2)
+	handle any
+		!zdir = !dir1.orthogonal(!pos1.direction(!pos2))
+	endhandle
+
+	!tocendir1 = !zdir.orthogonal(!dir1)
+	!tocendir2 = !dir2.orthogonal(!zdir)
+
+	!radiusline1 = !pos1.line(!pos1.offset(!tocendir1,1000))
+	!radiusline2 = !pos2.line(!pos2.offset(!tocendir2,1000))
+
+	!pos = !radiusline1.intersection(!radiusline2)
+	handle any
+		!pos = !pos1.midpoint(!pos2)
+	endhandle
+	!radius = !pos1.distance(!pos)
+
+	!rinside = !radius - !diameter / 2
+	!routside = !radius + !diameter / 2
+
+	!xdir = !pos.direction(!pos2)
+	!ori = x is $!xdir and z is $!zdir
+
+	!arc = object arc(!pos,!ori,0,!angle,!routside,true)
+	return !arc
+endmethod
+
+define method .classisopadobject()
+	!padindices = array()
+
+	!padposs = array()
+	!padangles = array()
+	!padheights = array()
+	!padradius = array()
+	!paditemcodes = array()
+
+	!attaobjects = !this.attaobjects
+	do !index indices !attaobjects
+		if !attaobjects[!index].objecttype() eq 'ISOPAD' then
+            --q var !attaobjects[!index]
+			!pos = !attaobjects[!index].attapos
+			!angle = !attaobjects[!index].angle
+			!height = !attaobjects[!index].height
+			!radius = !attaobjects[!index].rinside
+			!itemcode = !attaobjects[!index].itemcode
+
+			!find = false
+            --ÓÃÀ´ÅÐ¶ÏÇ°ºó»¤°åºÍµ±Ç°»¤°åµÄÎ»ÖÃÊÇ·ñÒ»ÖÂ
+			do !x indices !padposs
+				if !paditemcodes[!x] eq !itemcode and !padposs[!x].distance(!pos) lt 1 and abs(!padangles[!x] - !angle) lt 0.1 and abs(!padheights[!x] - !height) lt 0.1 then	$*sometimes radius is not same . K104.002/ATTA-03
+					--if !paditemcodes[!x] eq !itemcode and !padposs[!x].distance(!pos) lt 1 and abs(!padangles[!x] - !angle) lt 0.1 and abs(!padheights[!x] - !height) lt 0.1 and abs(!padradius[!x] - !radius) lt 0.1 then
+					--$p 2
+                    --q var !index
+                    !padindices[!x].append(!index)
+					!find = true
+					break
+				endif
+			enddo
+			if !find.not() then
+				!padposs.append(!pos)
+				!padangles.append(!angle)
+				!padheights.append(!height)
+				!padradius.append(!radius)
+				!paditemcodes.append(!itemcode)
+
+				!temparr = array()
+				!temparr.append(!index)
+                --$p 1
+                --q var !index
+				!padindices.append(!temparr)
+			endif
+            --q var !padindices
+		endif
+	enddo
+	--q var !padindices[1] !padindices[2]
+	if !padindices.set() then
+		!this.attaclass.appendarray(!padindices)
+	endif
+endmethod
+
+define method .classisolegobject()
+	!legindices = array()
+
+	!legposs = array()
+	--!legPadNums = array()	$* not sure about leg if padnum is needed
+	!legheights = array()
+	!legdias = array()
+	!legitemcodes = array()
+	!legonpads = array()
+
+	!attaobjects = !this.attaobjects
+	do !index indices !attaobjects
+		if !attaobjects[!index].objecttype() eq 'ISOLEG' then
+            --q var !attaobjects[1]
+			!pos = !attaobjects[!index].attapos
+			!height = !attaobjects[!index].height
+			!dia = !attaobjects[!index].india
+			!onpad = !attaobjects[!index].onpad
+			!itemcode = !attaobjects[!index].itemcode
+
+			!find = false
+			do !x indices !legposs
+				if !legitemcodes[!x] eq !itemcode and !legposs[!x].distance(!pos) lt 1 and abs(!legheights[!x] - !height) lt 0.1 and abs(!legdias[!x] - !dia) lt 0.1 and !legonpads[!x ] eq !onpad then
+					--if !legitemcodes[!x] eq !itemcode and (!legposs[!x].distance(!pos) lt 1 or (!padnum eq ne 0 and !padnum eq !legpadnums[!x])) and abs(!legheights[!x] - !height) lt 0.1 and abs(!legdias[!x] - !dia) lt 0.1 and !legonpads[!x ] eq !onpad then
+					!legindices[!x].append(!index)
+					!find = true
+					break
+				endif
+			enddo
+			if !find.not() then
+				!legposs.append(!pos)
+				!legheights.append(!height)
+				!legdias.append(!dia)
+				!legonpads.append(!onpad)
+				!legitemcodes.append(!itemcode)
+
+				!temparr = array()
+				!temparr.append(!index)
+				!legindices.append(!temparr)
+			endif
+		endif
+	enddo
+	if !legindices.set() then
+		!this.attaclass.appendarray(!legindices)
+	endif
+endmethod
+
+define method .classisolugobject()
+	!lugindices = array()
+
+	!lugposs = array()
+	--!lugPadNums = array()
+	!lugangles = array()
+	!lugheights = array()
+	!lugradius = array()
+	!lugitemcodes = array()
+	!lugindices = array()
+
+
+	!attaobjects = !this.attaobjects
+	do !index indices !attaobjects
+		if !attaobjects[!index].objecttype() eq 'ISOLUG' then
+            --q var !attaobjects[!index]
+			!pos = !attaobjects[!index].attapos
+			--!onpadnum =
+			!angle = !attaobjects[!index].angle
+			!height = !attaobjects[!index].height
+			!radius = !attaobjects[!index].rinside
+			!itemcode = !attaobjects[!index].itemcode
+
+			--!padnum = !objectPadNums[!index]
+			--handle any
+			--	!padnum = 0
+			--endhandle
+
+			!find = false
+			do !x indices !lugposs
+				if !lugitemcodes[!x] eq !itemcode and !lugposs[!x].distance(!pos) lt 1 and abs(!lugangles[!x] - !angle) lt 0.1 and abs(!lugheights[!x] - !height) lt 0.1 and abs(!lugradius[!x] - !radius) lt 0.1 then
+					--if !lugitemcodes[!x] eq !itemcode and (!lugposs[!x].distance(!pos) lt 1 or (!padnum eq ne 0 and !padnum eq !lugpadnums[!x])) and abs(!lugangles[!x] - !angle) lt 0.1 and abs(!lugheights[!x] - !height) lt 0.1 and abs(!lugradius[!x] - !radius) lt 0.1 then
+					!lugindices[!x].append(!index)
+					!find = true
+					break
+				endif
+			enddo
+			if !find.not() then
+				!lugposs.append(!pos)
+				!lugangles.append(!angle)
+				!lugheights.append(!height)
+				!lugradius.append(!radius)
+				!lugitemcodes.append(!itemcode)
+				--!lugpadnums.append(!padnum)
+
+				!temparr = array()
+				!temparr.append(!index)
+				!lugindices.append(!temparr)
+			endif
+		endif
+	enddo
+	if !lugindices.set() then
+		--q var !lugindices[1] !lugindices[2]
+		!temparr = !this.mergelugonpad(!lugindices)
+        --q var !temparr[1]
+		!lugindices = !temparr[1]
+		!difindices = !temparr[2]
+
+		!lugindices = !this.mergelugnotonpad(!lugindices,!difindices)
+		--q var !lugindices[1] !lugindices[2]
+		!this.attaclass.appendarray(!lugindices)
+	endif
+endmethod
+
+define method .classisoelbopadobject()
+	!elbopadindices = array()
+	!index = 0
+	do !tempobject values !this.attaobjects
+		!index = !index + 1
+		if !tempobject.objecttype() eq 'ISOELBOPAD' then
+			!temparr = array()
+			!temparr.append(!index)
+			!elbopadindices.append(!temparr)
+		endif
+	enddo
+	!this.attaclass.appendarray(!elbopadindices)
+endmethod
+
+define method .mergelugnotonpad(!lugindices is array,!difindices is array) is array
+	!attaobjects = !this.attaobjects
+	-----------------------------------------------------------------------------------
+	-----------------------------------------------------------------------------------Step 1:use dir,bore and distance
+	-----------------------
+	-----------------------get dir bore and line for each group
+	!lines = array()
+	!bores = array()
+	!poss = array()
+	!dirs = array()
+
+	!tolerancetimes = 2.5
+	do !index values !difindices
+		!object = !attaobjects[!lugindices[!index][1]]
+		--handle any
+		--q var !lugindices
+
+		--	!object = !attaobjects[!lugindices[!index][1]]
+		--endhandle
+		!attapos = !object.attapos
+		!atta = !object.name
+
+		--!bore = abore of pre tubi of $!atta
+		--!dn = !bore.real().value()
+		--!dir = dir of pre tubi of $!atta
+
+		--!temparr = !this.getattatube(!atta)
+		--!dn = !temparr[1]
+		--!dir = !temparr[2]
+		!dn = !this.dns[!this.attas.findfirst(!atta)]
+		!dir = !this.dirs[!this.attas.findfirst(!atta)]
+
+		!line = !attapos.offset(!dir, !tolerancetimes * !dn).line(!attapos.offset(!dir, - !tolerancetimes * !dn))
+		!lines.append(!line)
+		!bores.append(!dn)
+		!poss.append(!attapos)
+		!dirs.append(!dir)
+	enddo
+
+
+	-----------------------
+	-----------------------find group with same dir bore and distance is near than tolerance distance
+	!groups = array()
+	do !x from 1 to !difindices.size() - 1
+		if !groups.findfirst(!x).set() then
+			skip
+		endif
+		do !y from !x + 1 to !difindices.size()
+			if !groups.findfirst(!y).set() then
+				skip
+			endif
+			if !bores[!x] eq !bores[!y] and abs(!dirs[!x].angle(!dirs[!y]) - 90) gt 89.9 and !lines[!x].distance(!poss[!y]) lt !bores[!x] / 3 and !lines[!x].onprojected(!poss[!y]) then
+				!groups.append(!x)
+				!groups.append(!y)
+				break
+			endif
+		enddo
+	enddo
+
+	-----------------------
+	-----------------------merge groups
+	do !x from 1 to !groups.size() by 2
+		!lugindices[!difindices[!groups[!x]]].appendarray(!lugindices[!difindices[!groups[!x + 1]]])
+		!lugindices[!difindices[!groups[!x + 1]]].delete()
+	enddo
+
+
+
+	!lugindices.compress()
+	return !lugindices
+endmethod
+
+define method .mergelugonpad(!lugindices is array) is array
+	!objectPadNums = !this.objectPadNums
+    --q var !objectPadNums
+	-----------------------------------------------------------------------------------
+	-----------------------------------------------------------------------------------Step 1:use pad number first
+	-----------------------
+	-----------------------find groups with same pad number
+	!padnums = array()
+	!groupnums = array()
+	do !x indices !lugindices
+		!padnum = !objectPadNums[!lugindices[!x][1]]
+		handle any
+		elsehandle none
+			!tempindex = !padnums.findfirst(!padnum)
+			if !tempindex.unset() then
+				!padnums.append(!padnum)
+				!groupnums[!padnums.size()] = array()
+				!groupnums[!padnums.size()].append(!x)
+			else
+				!groupnums[!tempindex].append(!x)
+			endif
+		endhandle
+	enddo
+
+
+	-----------------------
+	-----------------------merge groups with same pad number
+	!consideredIndices = array()
+	do !x indices !padnums
+		if !groupnums[!x].size() ge 2 then
+			do !y from 2 to !groupnums[!x].size()
+				!lugindices[!groupnums[!x][1]].appendarray(!lugindices[!groupnums[!x][!y]])
+				!lugindices[!groupnums[!x][!y]].delete()
+				!consideredIndices.append(!groupnums[!x][1])
+			enddo
+		endif
+	enddo
+
+	!indices = !lugindices.indices()
+	!difindices = !indices.difference(!consideredIndices)
+	-----------------------
+	-----------------------difindices is indices of rest groups which without same pad number with other groups
+
+	!result = array()
+	--!result[1] = !indices
+	!result[1] = !lugindices
+	!result[2] = !difindices
+	return !result
+endmethod
+
+define method .classattaobjects()
+	!this.attaClass = array()
+	!this.classisopadobject()
+	!this.classisolegobject()
+	!this.classisolugobject()
+	!this.classisoelbopadobject()
+    --q var !this.attaclass[1]
+endmethod
+
+define method .getattageo(!atta is string) is array
+    --q var !atta
+    --q var !this.elbos
+	if !this.elbos[!this.attas.findfirst(!atta)] ne '' then
+		!radiusanglestring = prop bang of $!atta  $*ÅÐ¶ÏÊÇ·ñÊÇÍäÍ·µæ°å
+		handle any
+		elsehandle none
+			!p3 = p3 pos of $!atta wrt/*
+			!p4 = p4 pos of $!atta wrt/*
+			!p5 = p5 pos of $!atta wrt/*
+			!dir1 = !p3.direction(!p4)
+			!dir2 = !p3.direction(!p5)
+			!axisangle = !dir1.angle(!dir2).string('d1').real()
+			!zdir = !dir1.orthogonal(!dir2)
+			!ori = x is $!dir1 and z is $!zdir
+			!rinside = rpro dod of $!atta
+			!rinside = !rinside / 2 + !p3.distance(!p4)
+			!thick = rpro dthi of $!atta
+			!routside = !rinside + !thick
+			!radiusangle = !radiusanglestring.real()
+
+			!elbo = !this.elbos[!this.attas.findfirst(!atta)]
+			!object = object isoelbopad(!elbo,!atta,!p3,!ori,!rinside,!routside,!axisangle,!radiusangle)
+
+			!spconame = name of spref of $!elbo
+			!qa = !!getquestionanswer(!spconame)
+
+			do !x indices !qa
+				if !qa[1][!x].lowcase().match('bor') ne 0 then
+					!answer = !qa[2][!x]
+					break
+				endif
+			enddo
+			!nsAndSpref = array()
+			!nsAndSpref[1] = !answer.real().value().string()
+			!nsAndSpref[2] = !spconame
+			!object.nsAndSpref = !nsAndSpref
+			!resultarr = array()
+			!resultarr.append(!object)
+			return !resultarr
+		endhandle
+	endif
+
+
+	!gm = name of gstref of catref of $!atta
+	handle any
+		!gm = name of gmre of catref of $!atta
+		handle any
+			!result = array()
+			return !result
+		endhandle
+	endhandle
+	--q var !gm
+
+	!considertypes = split('SRTO LCYL SCYL SSCY')
+	!allarrs = array()
+	--!aod = aod of $!atta
+
+	!nsandsprefs = array()
+	!nss = array()
+	!mems = mem of $!gm
+
+	!partlegs = array()
+	--!aod = !this.getattaaod(!atta)
+	!aod = !this.aods[!this.attas.findfirst(!atta)]
+	do !onemem values !mems
+		--$p $!onemem
+		!mem = name of $!onemem
+		!memtype = type of $!mem
+
+		if !considertypes.findfirst(!memtype).unset() then
+			skip
+		endif
+
+        --tuflagµÄ×÷ÓÃÊÇ·ñÔÚÉè¼ÆÄ£¿éÏÔÊ¾
+		!tuflag = tuflag of $!mem
+		handle any
+			skip
+		elsehandle none
+			if !tuflag.not() then
+				skip
+			endif
+		endhandle
+
+		!level = level of $!mem
+		if !level[1] gt 6 or !level[2] lt 6 then
+			skip
+		endif
+		!obst = obstruction of $!mem
+		if !obst ne 2 and !obst ne 0 then
+			skip
+		endif
+		--$p mem $!mem
+
+        --$p 1111111111
+        --q var !mem !atta
+		!object = !this.getcatamemdata(!mem,!atta)
+        --q var !object
+        --$p 555555
+        --Q VAR !object.objecttype()
+        --$p 111111
+		if !object.objecttype() ne 'ARRAY' then
+			if !object.objecttype() eq 'ISOLEG' then
+             --$P 1
+             --q var !this.elbos
+				if !this.elbos[!this.attas.findfirst(!atta)] ne '' then
+					!object.elboname = !this.elbos[!this.attas.findfirst(!atta)]
+				endif
+				!dia = !object.outdia
+			else
+             --$P 2
+				!dia = !object.rinside * 2
+			endif
+			!tempindex = !nss.findfirst(!dia)
+			if !tempindex.unset() then
+             --$P 3
+				--q var !dia !atta
+				if !this.mbdpipe then
+					!usecalvalue = false
+				else
+					!usecalvalue = true
+				endif
+				!nsAndSpref = !!gettubespco(!dia,!atta,!usecalvalue)
+				if !nsandspref.size() le 1 then
+					!this.errors.append(!nsAndSpref[1])
+					!this.errors.unique()
+					skip
+				endif
+				!nsandsprefs.append(!nsandspref)
+				!nss.append(!dia)
+			else
+             --$P 4
+				!nsAndSpref = !nsAndSprefs[!tempindex]
+			endif
+			!object.nsAndSpref = !nsAndSpref
+			if !object.objecttype() eq 'ISOLEG' and !dia gt !aod + 1 then
+             --$P 5
+				!partlegs.append(!object)
+			else
+             --$P 6
+				!allarrs.append(!object)
+			endif
+		endif
+        --q var !object.nsAndSpref
+        --q var !allarrs
+		!object.delete()
+	enddo
+
+	--Q VAR !partlegs !allarrs
+	------------------------------------------------------for big leg that pipe go through it
+
+    --modify by jyg 20241204 ÐÞ¸ÄÖ§³Å¹ÜµÀº¸µã±ê×¢²»È«µÄÎÊÌâ
+	--if !partlegs.size() eq 2 then
+	--	!leg1 = !partlegs[1]
+	--	!leg2 = !partlegs[2]
+    --    --Q VAR !leg1 !leg2
+	--	if !leg1.attapos.distance(!leg2.attapos) lt 1 and abs(!leg1.outdia - !leg2.outdia) lt 1 and abs(!leg1.india - !leg2.india) lt 1 then
+	--		if !leg1.attapos.direction(!leg1.pos).angle(!leg2.attapos.direction(!leg2.pos)) gt 179 then
+	--			!newleg = !leg1
+	--			!dir = !leg1.pos.direction(!leg2.pos)
+	--			!newleg.pos = !leg1.pos.offset(!dir, - !leg1.height / 2).midpoint(!leg2.pos.offset(!dir,!leg2.height / 2))
+	--			!newleg.height = !leg1.height + !leg2.height
+	--			!allarrs.append(!newleg)
+	--
+	--			--!pos1 = !leg1.pos.offset(!dir, - !leg1.height / 2)
+	--			--!pos2 = !leg2.pos.offset(!dir, !leg2.height / 2)
+	--			golabel /nopartlegs
+	--		endif
+	--	endif
+	--endif
+
+    --Q VAR !partlegs !allarrs
+
+	!allarrs.appendarray(!partlegs)
+	label /nopartlegs
+	return !allarrs
+endmethod
+
+define method .getattatube(!atta is string)
+	!elboatta = false
+	do !temptimes from 1 to 2
+		if !temptimes eq 1 then
+			!com = |!elbo = name of pre elbo of | & !atta
+		else
+			!com = |!elbo = name of next elbo of | & !atta
+		endif
+		$!com
+		handle any
+		elsehandle none
+			!elbopos = pos of $!elbo wrt/*
+			!attapos = pos of $!atta wrt/*
+			if !elbopos.distance(!attapos) lt 1 then
+				!elboatta = true
+				break
+			endif
+		endhandle
+	enddo
+
+	if !elboatta then
+		!this.dns.append(0)
+		!this.dirs.append(u)
+		!this.aods.append(0)
+		!this.elbos.append(!elbo)
+		return
+	endif
+
+	!bore = abore of $!atta
+	handle any
+	endhandle
+	!aod = aod of $!atta
+	handle any
+		!aod = 0
+	endhandle
+
+	if undefined(!bore) or !bore.unset() or !aod.unset() or !bore eq 0 or !aod eq 0 then
+		var !mode mode
+		if !mode eq 'Forwards' then
+			!tube = pre tubi of $!atta
+			handle any
+			elsehandle none
+				golabel /gottube
+			endhandle
+		else
+			!tube = next tubi of $!atta
+			handle any
+			elsehandle none
+				golabel /gottube
+			endhandle
+		endif
+
+		!tube = !!getpremem(!atta)
+		if !tube eq '' then
+			!tube = !!getnextmem(!atta)
+		endif
+
+		label /gottube
+		!bore = abore of $!tube
+		--!dir = ldir of $!tube
+		!aod = aod of $!tube
+	endif
+	!dir = ldir of $!atta
+
+	!dn = !bore.real().value()
+
+	!this.dns.append(!dn)
+	!this.dirs.append(!dir)
+	!this.aods.append(!aod)
+	!this.elbos.append('')
+
+    --Q VAR !this.dns !this.dirs !this.aods !this.elbos
+endmethod
+
+define method .getcatamemdata(!mem is string, !atta is string) is any
+
+	!result = array()
+	!attapos = pos of $!atta wrt/*
+	--!aod = aod of $!atta
+	--!temparr = !this.getattatube(!atta)
+	--!aod = !temparr[3]
+	!aod = !this.aods[!this.attas.findfirst(!atta)]
+
+
+	!memtype = type of $!mem
+	if !memtype eq 'SRTO' then
+		!atts = split('paax pbax pdia phei')
+	else
+		if !memtype eq 'LCYL' or !memtype eq 'NLCY' then
+			!atts = split('paxi pdia pbdi ptdi')
+		elseif !memtype eq 'SCYL' or !memtype eq 'NSCY' then
+			!atts = split('paxi phei pdia pdis')
+		elseif !memtype eq 'SSCY' or !memtype eq 'NSSC' then
+			!atts = split('paxi phei pdia pdis')
+		else
+			return !result
+		endif
+	endif
+	do !x indices !atts
+		!att = !atts[!x]
+		!com = '!string = ' + !att + ' of $' + '!mem'
+        --$p $!com
+		$!com
+		handle any
+			return !result
+		elsehandle none
+            --q var !string
+			!values[!x] = !!evalCata(!atta,!string) $*ÓÃÔª¼þ¿âµÄ¹«Ê½¼ÆËãÉè¼ÆÄ£¿éÎïÏîµÄÊµ¼Ê³ß´çÐÅÏ¢
+			handle any
+				return !result
+			endhandle
+		endhandle
+	enddo
+
+	if !memtype eq 'SRTO' then
+		!dirpos1 = !values[!atts.findfirst('paax')]
+		!dir1 = !dirpos1[1]
+		!pos1 = !dirpos1[2]
+
+		!dirpos2 = !values[!atts.findfirst('pbax')]
+		!dir2 = !dirpos2[1]
+		!pos2 = !dirpos2[2]
+
+		!diameter = !values[!atts.findfirst('pdia')]
+
+		!angle = 180 - !dir1.angle(!dir2)
+		!zdir = !dir1.orthogonal(!dir2)
+		handle any
+			!zdir = !dir1.orthogonal(!pos1.direction(!pos2))
+		endhandle
+
+		!tocendir1 = !zdir.orthogonal(!dir1)
+		!tocendir2 = !dir2.orthogonal(!zdir)
+
+		!radiusline1 = !pos1.line(!pos1.offset(!tocendir1,1000))
+		!radiusline2 = !pos2.line(!pos2.offset(!tocendir2,1000))
+
+		!pos = !radiusline1.intersection(!radiusline2)
+		handle any
+			!pos = !pos1.midpoint(!pos2)
+		endhandle
+		!radius = !pos1.distance(!pos)
+
+		!rinside = !radius - !diameter / 2
+		!routside = !radius + !diameter / 2
+
+		!xdir = !pos.direction(!pos2)
+		!ori = x is $!xdir and z is $!zdir
+
+		!arc = object arc(!pos,!ori,0,!angle / 2,!routside,true)
+		!dir = !arc.angledirection(!arc.endangle)
+
+		!height = !values[!atts.findfirst('phei')]
+		if !height eq 0 or !angle eq 0 or $!routside eq 0 or !rinside eq !routside then
+			return !result
+		endif
+
+		if !routside gt !aod / 2 then
+			!object = object isopad(!atta,!pos,!ori,!rinside,!routside,!angle,!height,!dir)
+		else
+			!object = object isolug(!atta,!pos,!ori,!rinside,!routside,!angle,!height,!dir)
+
+		endif
+	else
+		if !memtype eq 'LCYL' or !memtype eq 'NLCY' then
+            --q var !mem !atta
+            --$p 11111111
+            !AttaSprefName = name of spref of $!atta
+			!dirpos = !values[!atts.findfirst('paxi')] $*Èç¹ûpaxi¶ÔÓ¦µÄÊÇ¸ö³¯Ïò£¬Ôò·µ»ØÒ»¸ö³¯Ïò£¨µ¥¸öÖµ£©£¬Èç¹ûpaxi¶ÔÓ¦µÄÊÇÒ»¸öµã¼¯Ôò·µ»ØµÄÊÇÒ»¸öÊý×é£¨µãµÄ³¯Ïò+×ø±ê£©
+            --q var !dirpos
+			if !dirpos.objecttype() eq 'ARRAY' then
+				!dir = !dirpos[1]
+				!ppos = !dirpos[2]
+			else
+				!dir = !dirpos
+				!ppos = !attapos
+			endif
+
+			!theight = !values[!atts.findfirst('ptdi')]
+			!bheight = !values[!atts.findfirst('pbdi')]
+			!height = abs(!theight - !bheight)
+			!diameter = !values[!atts.findfirst('pdia')]
+			!pos = !ppos.offset(!dir,(!bheight + !theight) / 2)
+
+            --modify by jyg 20250109 µ¥¶À´¦Àí¹ÜµÀ²¹Ç¿°å
+            if !AttaSprefName.Matchwild('*ATTA/JQ*') then
+                --²¹Ç¿°åµÄÔª¼þ¿âµÄaxisºÍÖ§³Å¹Ü²»Ò»Ñù£¬ÐèÒªµ¥¶À´¦Àí¡£
+                !ori = x is $!dir
+            else
+                !ori = z is $!dir
+            endif
+		elseif !memtype eq 'SCYL' or !memtype eq 'NSCY' then
+			!dirpos = !values[!atts.findfirst('paxi')]
+			if !dirpos.objecttype() eq 'ARRAY' then
+				!dir = !dirpos[1]
+				!ppos = !dirpos[2]
+			else
+				!dir = !dirpos
+				!ppos = !attapos
+			endif
+			!bdis = !values[!atts.findfirst('pdis')]
+			!height = abs(!values[!atts.findfirst('phei')])
+			!diameter = !values[!atts.findfirst('pdia')]
+			!pos = !ppos.offset(!dir,!bdis + !height / 2)
+			!ori = z is $!dir
+			if !height lt 0 then
+				!height = - !height
+			endif
+		elseif !memtype eq 'SSCY' or !memtype eq 'NSSC' then
+			!dirpos = !values[!atts.findfirst('paxi')]
+			if !dirpos.objecttype() eq 'ARRAY' then
+				!dir = !dirpos[1]
+				!ppos = !dirpos[2]
+			else
+				!dir = !dirpos
+				!ppos = !attapos
+			endif
+			!bdis = !values[!atts.findfirst('pdis')]
+			!height = !values[!atts.findfirst('phei')]
+			!diameter = !values[!atts.findfirst('pdia')]
+			!pos = !ppos.offset(!dir,!bdis + !height / 2)
+			!ori = z is $!dir
+		else
+			return !result
+		endif
+		if !height eq 0 or !diameter eq 0 then
+			return !result
+		endif
+
+		--$P $!mem $!atta
+		!memtype = type of $!mem
+		if not(!memtype inset ('NLCY','NSCY','NSSL')) then
+			var !nmems coll all (nlcy nscy nssl) for $!mem
+		else
+			!nmems = array()
+		endif
+		if !nmems.set() then
+			do !nmem values !nmems
+				--$p $!nmem $!atta nmem
+				!leg = !this.getcatamemdata(!nmem,!atta)
+				handle any
+					skip
+				endhandle
+
+				if !leg.objecttype() ne 'ISOLEG' then
+					skip
+				endif
+
+				!tempangle = !leg.ori.zdir().angle(!ori.zdir())
+				if !tempangle lt 1 or !tempangle gt 179 then
+					!india = !leg.outdia
+				else
+					$(
+					--unnecessary to consider part which is inside of pipe
+					if !aod lt !diameter then		$*it means the atta is large than pipe
+						skip
+					else
+						!cutlen = sqrt(!aod.power(2) / 4 - !diameter.power(2) / 4)	$*inside part should not be counted
+						!tempdir = !leg.pos.direction(!pos)
+						if !tempdir.angle(!ori.zdir()) lt 90 then
+							!offdir = !ori.zdir()
+						else
+							!offdir = !ori.zdir().opposite()
+						endif
+						!pos = !pos.offset(!offdir,!cutlen / 2)
+						!height = !height - !cutlen
+						--q var !height
+					endif
+					$)
+				endif
+				!leg.delete()
+			enddo
+		else
+			!line = !pos.offset(!ori.zdir(),!height / 2).line(!pos.offset(!ori.zdir(), - !height / 2))
+
+			$(
+
+
+			!attadir = adir of $!atta
+			!tempangle = !ori.zdir().angle(!attadir)
+			if !tempangle lt 1 or !tempangle gt 179 then
+				return !result
+			endif
+			$)
+
+			if !memtype.substring(1,1) ne 'N' and !line.onprojected(!attapos) then
+				!adir = adir of $!atta wrt/*
+				!ldir = ldir of $!atta wrt/*
+				if !adir.angle(!ldir) gt 179 then
+					--if  !line.onprojected(!attapos) then
+					-----------------------------------------------------------------------------------
+					-----------------------------------------------------------------------------------remove normal ATTA which is like X
+					return !result
+				else
+					--leg on elbo
+				endif
+			endif
+
+		endif
+		if undefined(!india) then
+			!india = 0
+		endif
+		--q var !diameter
+        --Q VAR !atta !pos !ori !height !india !diameter
+
+		!object = object isoleg(!atta,!pos,!ori,!height,!india,!diameter)
+
+	endif
+	--q var !atta !object
+	return !object
+endmethod
+
+$(
+define method .getAttaAod(!atta is string) is real
+	!aod = aod of $!atta
+	if !aod eq 0 then
+		!anothermem = !!getpremem(!atta)
+		if !anothermem eq '' then
+			!anothermem = !!getnextmem(!atta)
+			if !anothermem eq '' then
+				!aod = hbore of bran of $!atta	$*not accurate
+			else
+				!aod = aod of $!anothermem
+			endif
+		else
+			!aod = lod of $!anothermem
+		endif
+	endif
+	return !aod
+endmethod
+$)
+define method .gettags()
+    --q var !this.attaclass[1] !this.attaclass[2]
+	do !temparr values !this.attaclass
+		!object = !this.attaobjects[!temparr[1]]
+		--q var !object
+		if !this.newway.not() then
+			if !this.mbdpipe then
+				if !object.objecttype() inset ('ISOLUG','ISOLEG') and !object.onpad then	$*  unnecessary if leg or lug is on pad
+					!object.delete()
+					skip
+				endif
+			else
+				if !object.objecttype() inset ('ISOPAD','ISOELBOPAD') or !object.onpad then
+					!object.delete()
+					skip
+				endif
+			endif
+		endif
+
+		$(
+		if !object.objecttype() inset ('ISOLUG','ISOPAD') then
+			!p3dir = !object.dir
+		else
+			!p3dir = !object.attapos.direction(!object.pos)
+			handle any
+				!p3dir = !object.ori.zdir()	$*for big leg that pipe go through it
+			endhandle
+		endif
+		$)
+
+
+		!isotag = object isotag()
+
+		!isotag.branname = !this.branname
+		!isotag.name = !object.name
+		!isotag.tagType = 'pos'
+		--»ñÈ¡Íâ¾¶×ø±êÖµ
+		if !object.objecttype() inset ('ISOPAD','ISOLUG') then
+			!pos = !object.pos.offset(!object.dir,!object.routside)
+			--.offset(!object.ori.zdir(),!object.height / 2)
+		elseif !object.objecttype() eq 'ISOELBOPAD' then
+			!pos = !object.axisarc.position.offset(!object.axisarc.angledirection(!object.axisangle / 4),!object.routside)
+		else
+			!pos = !object.pos
+		endif
+
+		!isotag.pos = !pos
+		!isotag.ref = ''
+		--!isotag.function = 'AttaTag'
+		!isotag.function = 'AttaMaterialTag'
+
+		!infoarr = !this.getattatagtext(!temparr)
+        --q var !infoarr
+		--!infoarr = array()
+		--!infoarr.append(!size & 'xxxxxxx')
+		!isotag.infoarr = !infoarr
+
+		--!this.objects.append(!isotag)
+		!this.tags.append(!isotag)
+		!object.delete()
+
+	enddo
+endmethod
+
+define method .getattatagtext(!objectindices is array) is array
+	!attaobjects = array()
+	do !index values !objectindices
+		!attaobjects.append(!this.attaobjects[!index])
+	enddo
+    --q var !attaobjects[1] !attaobjects[2]
+
+	!size = !attaobjects.size()
+	!object = !attaobjects[1]
+
+	!spref = !object.nsAndSpref[2]
+	!pspec = name of spec of $!spref
+	!itemcode = !spref.after(!pspec).substring(2).before(':')
+
+
+	!ot = !object.objecttype()
+
+	--if !ot eq 'ISOPAD' or !ot eq 'ISOLEG'  or !ot eq 'ISOELBOPAD' then
+		!SCH = !!mbdmaterialdata.getdata(!itemcode,'PIPE','Ñ¹Á¦(±Úºñ)')
+		!in = !!mbdmaterialdata.getdata(!itemcode,'PIPE','¹«³ÆÖ±¾¶')
+	--endif
+
+	--$P SCH $!SCH IN $!IN
+	if !ot eq 'ISOPAD' then
+		!tubeinfo = !size & '»¤°å §æ' & !in & | | & !SCH
+	elseif !ot eq 'ISOLUG' then
+		!pipeitemcode = ''
+
+		var !mode mode
+		forward
+		!tubi = name of pre tubi of $!object.name
+		handle any
+			!tubi = name of next tubi of $!object.name
+			handle any
+
+			endhandle
+		endhandle
+		$!mode
+
+		if defined(!tubi) then
+			!spref = name of spref of $!tubi
+			!pspec = name of spec of $!spref
+			!pipeitemcode = !spref.after(!pspec).substring(2).before(':')
+		endif
+		$(
+		!premem = !!getpremem(!object.name)
+		if !premem ne '' then
+			!tube = name of ileave tube of $!premem
+			handle any
+			elsehandle none
+				!spref = name of spref of $!tube
+				!pspec = name of spec of $!spref
+				!pipeitemcode = !spref.after(!pspec).substring(2).before(':')
+			endhandle
+		endif
+		$)
+
+		if !pipeitemcode eq '' then
+			!tubeinfo = ''
+		else
+			!pipeSCH = !!mbdmaterialdata.getdata(!pipeitemcode,'PIPE','Ñ¹Á¦(±Úºñ)')
+			!pipein = !!mbdmaterialdata.getdata(!pipeitemcode,'PIPE','¹«³ÆÖ±¾¶')
+			------------------------------------------------------
+			!tempposs = array()
+			do !tempobject values !attaobjects
+				!attapos = !tempobject.attapos
+				!find = false
+				do !temppos values !tempposs
+					if !temppos.distance(!attapos) lt 1 then
+						!find = true
+						break
+					endif
+				enddo
+				if !find.not() then
+					!tempposs.append(!attapos)
+				endif
+			enddo
+			!groupsize = !tempposs.size()
+			------------------------------------------------------
+			do !x from 1 to 4
+                --modify by jyg 20241218 ½â¾öµ²¿é4ÐÍ¼ÆËã±¨´íµÄÎÊÌâ£¨25¡¢50¡¢75¡¢150£©£¬150µÄ³¤¶È²»·ûºÏÏÂÃæµÄÅÐ¶ÏÌõ¼þ£¬×öÁËÌØÊâ´¦Àí¡£
+                if  !x le 3 then
+                  if abs(!object.height - 25 * !x) lt 1 then
+                      !shapetype = !x & 'ÐÍ'
+                      break
+                  endif
+                else
+                 if abs(!object.height - 150) lt 1 then
+                      !shapetype = !x & 'ÐÍ'
+                      break
+                  endif
+                endif
+			enddo
+			--need to confirm
+			!spref = name of spref of $!object.name
+
+			if !spref.match('/1/2') ne 0 then
+				!spref = !spref.replace('/1/2','xxxx')
+			endif
+
+			!usepart = !spref.part(-2,'/')
+			!usepart = !usepart.replace('xxxx','/1/2')
+
+			!lugtype = !usepart.substring(1,2)
+			--!in = !usepart.substring(3).lowcase().before('sch') + |"|		$*ÕâÊÇ´íÎóµÄÈ¡Öµ·½Ê½
+			--!sch = 'Sch' & !usepart.lowcase().after('sch')				$*ÕâÊÇ´íÎóµÄÈ¡Öµ·½Ê½
+			$(
+			if !sch.substring(-1,1).upcase() eq 'S' then
+				!lugtype = 'TD'
+			else
+				!lugtype = 'TC'
+			endif
+			$)
+			!tubeinfo = !groupsize & ' ' & !lugtype & ' §æ' & !pipein & | | & !pipeSCH & ' ' & !shapetype
+		endif
+	elseif !ot eq 'ISOLEG' then
+        !attasprefname = !object.name.dbref().spref.name
+        --modify by jyg 20250109 µ¥¶À´¦Àí¹ÜµÀ²¹Ç¿°å
+        if  !AttaSprefName.Matchwild('*ATTA/JQ*') then
+            !attacatapara6 = !object.name.dbref().para[6]
+            !tubeinfo = '²¹Ç¿°å L=' & !attacatapara6 * 2  & | | & !SCH
+        else
+            if !size eq 1 then
+                !tubeinfo = '¹ÜÖ§³Å §æ' & !in & | | & !SCH
+            else
+                !tubeinfo = !size & '¹ÜÖ§³Å §æ' & !in & | | & !SCH
+            endif
+        endif
+	elseif !ot eq 'ISOELBOPAD' then
+		!tubeinfo = 'ÓÉ' & '§æ' & !in & | | & !SCH & |ÍäÍ·ÖÆ³ÉµÄ»¤°å |
+	endif
+
+	if !ot eq 'ISOPAD' then
+		--!anglestring = !object.angle.string('D2').replace('.00','') & '¡ã'
+		--if !anglestring.match('.') ne 0 then
+		--	!anglestring = !anglestring.replace('0¡ã','¡ã')
+		--endif
+
+		!anglestring = !object.angle.string('D1').replace('.0','') & '¡ã'
+
+		!selfinfo = 'L=' & !object.height.string('D0').upcase().before('MM').before('IN') & 'mm  ' & '¦Á='& !anglestring
+	elseif !ot eq 'ISOLUG' then
+		!selfinfo = !size & 'µ²¿é §æ' & !in & | | & !SCH & '   L=' & !object.height.string('D0').upcase().before('MM').before('IN') & 'mm'
+    elseif !ot eq 'ISOLEG' then
+
+        !attasprefname = !object.name.dbref().spref.name
+        --modify by jyg 20250109 µ¥¶À´¦Àí¹ÜµÀ²¹Ç¿°å
+        if  !AttaSprefName.Matchwild('*ATTA/JQ*') then
+            --Ã»ÓÐ³¤¶ÈÐÅÏ¢£¬²»×ö´¦Àí
+            !selfinfo = ' '
+        else
+            !len = !object.height + !object.adlongth
+            !selfinfo = 'L=' & !len.string('D0').upcase().before('MM').before('IN') & 'mm'
+        endif
+	elseif !ot eq 'ISOELBOPAD' then
+		!selfinfo = 'Aangle=' & !object.axisangle & ' Bangle=' & !object.radiusangle
+	endif
+	!result = array()
+	!result.append(!tubeinfo)
+	!result.append(!selfinfo)
+	return !result
+endmethod
+Ý

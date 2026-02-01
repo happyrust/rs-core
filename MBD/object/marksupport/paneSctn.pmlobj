@@ -1,0 +1,892 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= June 26th 2023
+--[Function]:	get data of a fake sctn whick is made of panes, and get rest panes which does not belong to this fake sctn
+------------------------------------------
+
+--Method:
+--Public method:
+--panesctn(!group is array,!zdir is direction)  							$*
+--panesctn(!group is array)	$*get zdir / sctn pane / restsupportpanes   	$*
+
+--Private method:
+--addOnedir(!inputdirs is array, !dir is direction) is array				$*
+--checkIfTogether() is boolean  											$*
+--clearAtts()   															$*
+--draw()																	$*
+--getAllPossibleSctnDirs(!zdirs is array) is array  						$*
+--getCornerPoints(!dir1 is direction, !dir2 is direction, !poss is array, !originpos is position) is array  	$*
+--getEndFourPoints(!sctndir is direction, !endposs is array) is array   	$*
+--getMaxPossibleSctnDirs(!sctndirs is array, !zdirs is array) is array  	$*
+--getmidpoint(!poss is array) is position   								$*
+--getOtherAtts(!sctnDir is direction, !sctnNums is array) is boolean 	$*zlen posstart posend	$*
+--getplane(!poss is array, !isstart is boolean) is boolean  				$*
+--getStartFourPoints(!sctndir is direction, !startposs is array, !inputonestartdir is direction) is array   	$*
+--getTwoEndPointsAndDirs(!zdir is direction, !sctnNums is array) is array   	$*
+--setAttByOneSctnDir(!oneSctnDir is direction,!sctnNums is array) is boolean	$*
+--setRestSupportPanes(!sctnNums is array)   								$*
+--timesUnique(!inputarr is array) is array  								$*
+--tryToGetSctnDir() is array												$*
+
+define object paneSctn
+	member .group is array
+	member .restSupportPanes is array	$*rest supportpanes except these made of sctn
+	member .zdir is direction
+
+	member .posstart is position
+	member .posend is position
+	member .drnstart is direction
+	member .drnend is direction
+	member .axis is line
+
+
+	member .ori is orientation
+	member .xlen is real
+	member .ylen is real
+	member .zlen is real
+
+	member .startposs is array
+	member .endposs is array
+
+	member .startplane is plane
+	member .endplane is plane
+
+	member .maxDis is real		$* the dis between the farest point and cen axis
+endobject
+define method .panesctn(!group is array,!zdir is direction)
+	!this.zdir = !zdir
+	!this.paneSctn(!group)
+endmethod
+define method .panesctn(!group is array)	$*get zdir / sctn pane / restsupportpanes
+	!this.group = !group
+	if !this.group.size() lt 2 then
+		!this.restSupportPanes = !group
+		!this.clearAtts()
+	else
+		if !this.zdir.unset() then					$* if the direction of SCTN is given
+			!result = !this.tryToGetSctnDir()
+--q var !result
+			!maxTimes = !result[1]
+			!allSctnDirs = !result[2]
+			!allSctnNums = !result[3]
+		else
+			!maxTimes = !this.group.size()
+			!allsctndirs = array()
+			!allsctndirs.append(!this.zdir)
+			!allsctnNums = array()
+			!allsctnNums.append(!this.group.indices())
+		endif
+
+		if !maxtimes lt 2 then
+			!this.restSupportPanes = !group
+		else
+			!success = false
+			do !x indices !allsctnDirs
+				if !this.setAttByOneSctnDir(!allSctnDirs[!x],!allSctnNums[!x]) then
+					!bilixy = max(!this.xlen / !this.ylen,!this.ylen / !this.xlen)
+					!biliz = max(!this.xlen / !this.zlen,!this.ylen / !this.zlen)
+					!biliz = max(!biliz,!this.zlen / !this.xlen)
+					!biliz = max(!biliz,!this.zlen / !this.ylen)
+					--ensure a good sctn shape
+					--the difference between xlen and ylen is must lt then the difference between (xlen and zlen) and (ylen and zlen)
+					if !bilixy lt !biliz then
+						!success = true
+						break
+					endif
+				endif
+			enddo
+
+			if !success.not() then
+				!this.clearAtts()
+				!this.restSupportPanes = !group
+			endif
+		endif
+	endif
+endmethod
+
+define method .clearAtts()
+	!this.drnEnd = object direction()
+	!this.drnStart = object direction()
+	!this.endplane = object plane()
+	!this.startplane = object plane()
+	!this.endposs = array()
+	!this.startposs = array()
+	!this.ori = object orientation()
+	!this.posend = object position()
+	!this.posstart = object position()
+	!this.xlen = object real()
+	!this.ylen = object real()
+	!this.zlen = object real()
+	!this.zdir = object direction()
+endmethod
+
+define method .draw()
+	--aid clear line 1234
+	--handle any
+	--endhandle
+	!lines = array()
+	do !x from 1 to 2
+		if !x eq 1 then
+			!poss = !this.startposs
+		else
+			!poss = !this.endposs
+		endif
+		do !y from 1 to 4
+			!pos1 = !poss[!y]
+			handle any
+				return
+			endhandle
+			if !y eq 4 then
+				!pos2 = !poss[1]
+			else
+				!pos2 = !poss[!y + 1]
+			endif
+			!lines.append(!pos1.line(!pos2))
+		enddo
+		!lines.append(!poss[1].line(!poss[3]))
+		!lines.append(!poss[2].line(!poss[4]))
+
+	enddo
+	!lines.append(!this.posstart.line(!this.posend))
+	do !x from 1 to 4
+		!lines.append(!this.startposs[!x].line(!this.endposs[!x]))
+	enddo
+
+	do !line values !lines
+		!line.draw(1234,1,2)
+	enddo
+endmethod
+
+define method .tryToGetSctnDir() is array
+	!group = !this.group
+	!zdirs = array()
+	do !suppPane values !group
+		!zdirs.append(!suppPane.zdir)				$*get all direction of plane of pane
+	enddo
+	!sctnDirs = !this.getAllPossibleSctnDirs(!zdirs)
+	return !this.getMaxPossibleSctnDirs(!sctnDirs,!zdirs)
+endmethod
+
+define method .getMaxPossibleSctnDirs(!sctndirs is array, !zdirs is array) is array
+	!maxtimes = 0
+	!allsctnNums = array()
+	!allsctnDirs = array()
+	do !tempsctndir values !sctndirs
+		!times = 0
+		!tempsctnNums = array()
+		do !x indices !zdirs
+			!zdir = !zdirs[!x]
+			!tempangle = !zdir.angle(!tempsctndir)
+			if abs(!tempangle - 90) lt 0.5 then
+				!times = !times + 1
+				!tempsctnNums.append(!x)
+			endif
+		enddo
+
+		if !times gt !maxtimes then
+			!maxtimes = !times
+			!alltimes = array()
+			!allsctnNums = array()
+			!allsctnDirs = array()
+			!allsctnNums.append(!tempsctnNums)
+			!allsctnDirs.append(!tempsctnDir)
+		elseif !times eq !maxtimes then
+			!allsctnNums.append(!tempsctnNums)
+			!allsctnDirs.append(!tempsctnDir)
+		endif
+	enddo
+
+	!result = array()
+	!result.append(!maxtimes)
+	!result.append(!allsctnDirs)
+	!result.append(!allSctnNums)
+	return !result
+endmethod
+
+define method .getAllPossibleSctnDirs(!zdirs is array) is array
+	!tempdirs = !zdirs
+	!tempdirs.unique()
+	!sctndirs = array()
+	do !x from 1 to !tempdirs.size() - 1
+		do !y from !x + 1 to !tempdirs.size()
+			!tempdir = !tempdirs[!x].orthogonal(!tempdirs[!y])
+			handle any
+			elsehandle none
+				!sctndirs.append(!tempdir)
+--$p $!tempdir		$!tempdirs[$!x]    $!tempdirs[$!y]		   $!x    $!y
+			endhandle
+		enddo
+	enddo
+
+	!sctndirs.unique()
+
+	do !x from 1 to !sctnDirs.size() - 1
+		do !y from !x + 1 to !sctnDirs.size()
+			if !sctnDirs[!x].angle(!sctnDirs[!y]) eq 180 then
+				!sctnDirs[!x].delete()
+				break
+			endif
+		enddo
+	enddo
+	!sctnDirs.compress()
+	return !sctnDirs
+endmethod
+
+define method .setAttByOneSctnDir(!oneSctnDir is direction,!sctnNums is array) is boolean
+	--q var !oneSctnDir
+	!result = !this.getOtherAtts(!oneSctnDir,!sctnNums)
+--q var !result
+	handle any
+		return false
+	elsehandle none
+
+		if !result.not() then
+			return false
+		else
+			!this.setRestSupportPanes(!sctnNums)
+			return true
+		endif
+	endhandle
+endmethod
+
+define method .setRestSupportPanes(!sctnNums is array)
+	!indices = !this.group.indices()
+	!restIndices = !indices.difference(!SctnNums)
+	!this.restSupportPanes = array()
+	do !index values !restIndices
+		!this.restSupportPanes.append(!this.group[!index])
+	enddo
+endmethod
+
+define method .getOtherAtts(!sctnDir is direction, !sctnNums is array) is boolean 	$*zlen posstart posend
+	!result = !this.getTwoEndPointsAndDirs(!sctnDir,!sctnNums)
+--q var !result
+	!startposs = !result[1]
+	!startdirs = !result[2]
+	!endposs = !result[3]
+	--!enddirs = !result[4]
+--$p asdfadsf 2
+	!this.posstart = !this.getmidpoint(!startposs)
+	!this.posend = !this.getmidpoint(!endposs)
+
+	!startdirs = !this.timesunique(!startdirs)
+	--!enddirs = !this.timesunique(!enddirs)
+
+	--!this.startposs = !this.getFourPoints(!startposs,!startdirs,true)
+	--!this.endposs = !this.getFourPoints(!endposs,!enddirs,false)
+
+	!this.startposs = !this.getStartFourPoints(!sctndir,!startposs,!startdirs[1])
+	--if !this.getplane(!this.startposs,true).not() then
+	if !this.getplane(!startposs,true).not() then
+		--$p startplane failed
+		return false
+	endif
+$(
+	!!suitool.transarr = array()
+	!!suitool.transarr.append(!this.startposs)
+	$m d:\test\functions\textatpos.txt
+
+
+$)
+
+	!this.endposs = !this.getEndFourPoints(!sctndir,!endposs)
+
+
+
+
+
+	--if !this.getplane(!this.endposs,false).not() then
+	if !this.getplane(!endposs,false).not() then
+		--$p endplane failed
+		return false
+	endif
+
+
+	!this.posstart = !this.getmidpoint(!this.startposs)
+	!this.posend = !this.getmidpoint(!this.endposs)
+
+	!eights = !this.startposs
+	!eights.appendarray(!this.endposs)
+
+	!diss = array()
+	do !pos values !eights
+		!dis = !!suidirdis(!eights[1],!sctnDir,!pos)
+		!diss.append(!dis)
+	enddo
+	!diss.sort()
+	!this.zdir = !this.posstart.direction(!this.posend)
+	--!this.zdir = !sctndir
+	!this.zlen = !diss.last() - !diss[1]
+	!this.axis = !this.posstart.line(!this.posend)
+	return true
+endmethod
+
+define method .getplane(!poss is array, !isstart is boolean) is boolean
+	if !isstart then
+		!endposs = !this.startposs
+		!planepos = !this.posstart
+	else
+		!endposs = !this.endposs
+		!planepos = !this.posend
+	endif
+
+	!dir1 = !endposs[1].direction(!endposs[2])
+	!dir2 = !endposs[1].direction(!endposs[4])
+
+	!planedir = !dir1.orthogonal(!dir2)
+
+	!plane = object plane(!planepos, object orientation('z is $!planedir'))
+
+	if !isstart then
+		!this.startplane = !plane
+	else
+		!this.endplane = !plane
+	endif
+	!tolerance = !this.ylen / 20
+	do !pos values !poss
+		if !pos.distance(!plane) gt !tolerance then
+			return false
+		endif
+	enddo
+	return true
+endmethod
+define method .getTwoEndPointsAndDirs(!zdir is direction, !sctnNums is array) is array
+	!startdirs = array()
+	!enddirs = array()
+
+	!startposs = array()
+	!endposs = array()
+	!originpos = !this.group[!sctnNums[1]].poss[1]
+	do !num values !sctnNums
+		!sp = !this.group[!num]	$*supportPane
+--$p $!sp
+		!diss = array()
+		do !x indices !sp.poss
+			!pos = !sp.poss[!x]
+			!dis = !!suidirdis(!originpos,!zdir,!pos)
+			!diss.append(!dis)
+		enddo
+--$p $!sp
+		!indices = !diss.sortedindices()
+
+		!pos1 = !sp.poss[!indices[1]]
+		!pos2 = !sp.poss[!indices[2]]
+		!pos5 = !pos1.offset(!sp.zdir,!sp.height)
+		!pos6 = !pos2.offset(!sp.zdir,!sp.height)
+
+		!pos3 = !sp.poss[!indices[3]]
+		!pos4 = !sp.poss[!indices[4]]
+		!pos7 = !pos3.offset(!sp.zdir,!sp.height)
+		!pos8 = !pos4.offset(!sp.zdir,!sp.height)
+
+		!startposs.append(!pos1)
+		!startposs.append(!pos2)
+		!startposs.append(!pos5)
+		!startposs.append(!pos6)
+
+		!endposs.append(!pos3)
+		!endposs.append(!pos4)
+		!endposs.append(!pos7)
+		!endposs.append(!pos8)
+--$p 11
+		!tempdir = !pos1.direction(!pos2)
+		!startdirs = !this.addOneDir(!startdirs,!tempdir)
+--$p 22
+		!tempdir = !pos3.direction(!pos4)
+--q var !tempdir
+		!enddirs = !this.addOneDir(!enddirs,!tempdir)
+	enddo
+	!result = array()
+	!result.append(!startPoss)
+	!result.append(!startDirs)
+	!result.append(!endPoss)
+	!result.append(!endDirs)
+	return !result
+endmethod
+
+define method .addOnedir(!inputdirs is array, !dir is direction) is array
+	!dirs = !inputdirs
+--$p kkkk
+	if !dirs.findfirst(!dir).set() then
+		!dirs.append(!dir)
+	else
+		!oppodir = !dir.opposite()
+		if !dirs.findfirst(!oppodir).set() then
+			!dirs.append(!oppodir)
+		else
+			!dirs.append(!dir)
+		endif
+	endif
+--$p kkkkkkkkkk
+	return !dirs
+endmethod
+
+
+define method .getStartFourPoints(!sctndir is direction, !startposs is array, !inputonestartdir is direction) is array
+
+	!ydir = !inputonestartdir.orthogonal(!sctndir)
+	!xdir = !ydir.orthogonal(!sctndir)
+
+	--!!suitool.transarr = array()
+	--!!suitool.transarr.append(!startposs)
+	--$m d:\test\functions\textatpos.txt
+--$P 111
+	!temparr = !this.getCornerPoints(!xdir,!ydir,!startposs,!this.posstart)
+	!dir1len = !temparr[1]
+	!dir2len = !temparr[2]
+	!this.maxDis = !temparr[3]
+	!poss = !temparr[4]
+
+	$(
+	if !dir1len gt !dir2len then
+		!poss.insert(1,!poss.last())
+		!poss[!poss.size()].delete()
+		!poss.compress()
+	endif
+	$)
+
+	$(
+	!allIndices = !this.getCornerPoints(!startdir1,!startDir2,!startposs,!this.posstart)
+
+
+	--way 1
+	!indices1 = !allIndices[1]
+	!indices2 = !allIndices[2]
+	!indices3 = !allIndices[3]
+	!indices4 = !allIndices[4]
+	$)
+
+	$(
+	--way 2
+	!dir1diss = !allIndices[5]
+	!dir2diss = !allIndices[6]
+
+	!poss = array()
+
+
+
+
+	!dir1len = !dir1diss.last() - !dir1diss[1]
+	!dir2len = !dir2diss.last() - !dir2diss[1]
+--$p sadf
+	if !dir1len lt !dir2len then		$*if the length in dir 1 is larger than the length in dir 2
+		--!this.ylen = !dir1len
+		--!this.xlen = !dir2len
+
+		!ydir = !startdir1
+		!xdir = !startdir2
+
+		do !x !from 1 to !allindices.size() - 2		$* the size of allindices is possible 3 or other number
+			!poss[!x] = !startposs[!allindices[!x].last()]
+		enddo
+
+		--way 1
+		--!poss[1] = !startposs[!indices1.last()]		$* about 45 degree
+		--!poss[2] = !startposs[!indices2.last()]		$* about -45 degree
+		--!poss[3] = !startposs[!indices3.last()]		$* about -135 degree
+		--!poss[4] = !startposs[!indices4.last()]		$* about 135 degree
+
+	else
+		do !x !from 1 to !allindices.size() - 2		$* the size of allindices is possible 3 or other number
+			if !x eq 1 then
+				!poss[!x] = !startposs[!allindices[!allindices.size() - 2].last()]
+			else
+				!poss[!x] = !startposs[!allindices[!x + 1].last()]
+			endif
+		enddo
+
+		--way 1
+		--!poss[2] = !startposs[!indices1.last()]		$* about 45 degree
+		--!poss[3] = !startposs[!indices2.last()]		$* about -45 degree
+		--!poss[4] = !startposs[!indices3.last()]		$* about -135 degree
+		--!poss[1] = !startposs[!indices4.last()]		$* about 135 degree
+
+		--!this.ylen = !dir2len
+		--!this.xlen = !dir1len
+		!ydir = !startdir2
+		!xdir = !startdir1
+	endif
+	!this.setXlenYlen(!poss,!xdir,!ydir)
+	$)
+
+	if !dir1len lt !dir2len then		$*if the length in dir 1 is larger than the length in dir 2
+		!tempdir = !ydir.opposite()
+		!ydir = !xdir
+		!xdir = !tempdir
+		!this.xlen = !dir2len
+		!this.ylen = !dir1len
+
+		!poss.insert(1,!poss.last())
+		!poss[!poss.size()].delete()
+		!poss.compress()
+	else
+		!this.xlen = !dir1len
+		!this.ylen = !dir2len
+	endif
+
+
+
+
+
+	!tempdir1 = !poss[1].direction(!poss[2])
+	!tempdir2 = !poss[1].direction(!poss[3])
+
+	!this.drnstart = !tempdir1.orthogonal(!tempdir2)
+	!this.ori = Y is $!ydir and Z is $!sctndir
+$(
+
+
+
+!!suitool.transarr = array()
+!!suitool.transarr.append(!poss)
+$m d:\test\functions\textatpos.txt
+$)
+	return !poss
+endmethod
+define method .getEndFourPoints(!sctndir is direction, !endposs is array) is array
+	!endDir1 = !this.ori.xdir()
+	!endDir2 = !this.ori.ydir()
+
+
+
+
+	!temparr = !this.getCornerPoints(!enddir1,!endDir2,!endposs,!this.posend)
+	!poss = !temparr[4]
+
+	$(
+	--way 2
+	!endDir1 = !this.ori.ydir()
+	!endDir2 = !this.ori.xdir()
+	!allindices = !this.getCornerPoints(!enddir1,!endDir2,!endposs,!this.posend)
+	!poss = array()
+	do !x !from 1 to !allindices.size() - 2		$* the size of allindices is possible 3 or other number
+		!poss[!x] = !endposs[!allindices[!x].last()]
+	enddo
+	$)
+
+	$(
+	--way 1
+	!poss[1] = !endposs[!allindices[1].last()]		$* about 45 degree
+	!poss[2] = !endposs[!allindices[2].last()]		$* about -45 degree
+	!poss[3] = !endposs[!allindices[3].last()]		$* about -135 degree
+	!poss[4] = !endposs[!allindices[4].last()]		$* about 135 degree
+	$)
+
+	!tempdir1 = !poss[1].direction(!poss[2])
+	!tempdir2 = !poss[1].direction(!poss[3])
+
+	!this.drnend = !tempdir1.orthogonal(!tempdir2)
+
+	return !poss
+endmethod
+
+$(
+define method .setXlenYlen(!poss is array,!xdir is direction,!ydir is direction)
+	do !pos values !poss
+		!xdis = !!suidirdis(!poss[1],!xdir,!pos)
+		if undefined(!xmindis) then
+			!xmindis = !xdis
+			!xmaxdis = !xdis
+		else
+			!xmindis = min(!xmindis,!xdis)
+			!xmaxdis = max(!xmaxdis,!xdis)
+		endif
+		!ydis = !!suidirdis(!poss[1],!ydir,!pos)
+		if undefined(!ymindis) then
+			!ymindis = !ydis
+			!ymaxdis = !ydis
+		else
+			!ymindis = min(!ymindis,!ydis)
+			!ymaxdis = max(!ymaxdis,!ydis)
+		endif
+	enddo
+	!this.xlen = !xmaxdis - !xmindis
+	!this.ylen = !ymaxdis - !ymindis
+endmethod
+$)
+define method .getCornerPoints(!dir1 is direction, !dir2 is direction, !poss is array, !originpos is position) is array
+	$(
+	!diss1 = array()
+	!diss2 = array()
+	!diss3 = array()
+	!diss4 = array()
+
+	!dir1diss = array()
+	!dir2diss = array()
+	do !pos values !poss
+		!dis1 = !!suidirdis(!originpos,!dir1,!pos)
+		!dis2 = !!suidirdis(!originpos,!dir2,!pos)
+		!dir1diss.append(!dis1)
+		!dir2diss.append(!dis2)
+
+		!diss1.append(!dis1 + !dis2)
+		!diss2.append(!dis1 - !dis2)
+		!diss3.append( - !dis1 - !dis2)
+		!diss4.append( - !dis1 + !dis2)
+	enddo
+
+	!dir1diss.sort()
+	!dir2diss.sort()
+
+	!allindices = array()
+	!allindices[1] = !diss1.sortedindices()
+	!allindices[2] = !diss2.sortedindices()
+	!allindices[3] = !diss3.sortedindices()
+	!allindices[4] = !diss4.sortedindices()
+	!allindices[5] = !dir1diss
+	!allindices[6] = !dir2diss
+	return !allindices
+	$)
+
+	!maxdis1 = 0
+	!maxdis2 = 0
+	!maxdis3 = 0
+	!maxdis4 = 0
+
+	!dir1diss = array()
+	!dir2diss = array()
+	do !x indices !poss
+		!pos = !poss[!x]
+		!dis1 = !!suidirdis(!originpos,!dir1,!pos)
+		!dis2 = !!suidirdis(!originpos,!dir2,!pos)
+		!dir1diss.append(!dis1)
+		!dir2diss.append(!dis2)
+
+		!dis = sqrt(power(!dis1,2) + power(!dis2,2))
+
+		if !dis1 gt 0 and !dis2 gt 0 then
+			if !dis gt !maxdis1 then
+				!maxdis1 = !dis
+				!max1 = !x
+			endif
+		elseif !dis1 lt 0 and !dis2 gt 0 then
+			if !dis gt !maxdis2 then
+				!maxdis2 = !dis
+				!max2 = !x
+			endif
+		elseif !dis1 lt 0 and !dis2 lt 0 then
+			if !dis gt !maxdis3 then
+				!maxdis3 = !dis
+				!max3 = !x
+			endif
+		elseif !dis1 gt 0 and !dis2 lt 0 then
+			if !dis gt !maxdis4 then
+				!maxdis4 = !dis
+				!max4 = !x
+			endif
+		endif
+	enddo
+
+	!dir1diss.sort()
+	!dir2diss.sort()
+
+	!dir1len = !dir1diss.last() - !dir1diss[1]
+	!dir2len = !dir2diss.last() - !dir2diss[1]
+
+
+
+	!maxdis = 0
+	!points = array()
+	do !x from 1 to 4
+		if defined(!max$!x) then
+			!Points.append(!poss[!max$!x])
+			!maxdis = max(!maxdis,!maxdis$!x)
+		endif
+	enddo
+
+	!result = array()
+	!result.append(!dir1len)
+	!result.append(!dir2len)
+	!result.append(!maxdis)
+	!result.append(!points)
+    --Q VAR !result
+	return !result
+endmethod
+
+$(
+define method .getFourPoints(!startposs is array, !startdirs is array, !isstart is boolean) is array	$*xlen ylen ori drnstart drnend startposs endposs
+	if !isstart then
+		!startdir1 = !startdirs[1]
+		!startdir2 = !startdirs[2]
+		handle any
+			!startdir2 = !this.zdir.orthogonal(!startdir1)
+		endhandle
+
+		!tempdir = !startdir1.orthogonal(!this.zdir)
+		!startdir1 = !this.zdir.orthogonal(!tempdir)
+
+		!tempdir = !startdir2.orthogonal(!this.zdir)
+		!startdir2 = !this.zdir.orthogonal(!tempdir)
+	else
+		!startdir1 = !this.ori.ydir()
+		!startdir2 = !this.ori.xdir()
+	endif
+
+	!diss = array()
+	do !pos values !startposs
+		!dis = !!suidirdis(!this.posstart,!startdir1,!pos)
+		!diss.append(!dis)
+	enddo
+	!indices = !diss.sortedindices().invert()
+
+	!tempposs1 = array()
+	!tempposs2 = array()
+	do !x values !indices
+		if !diss[!x] eq !diss[1] then
+			!tempposs1.append(!startposs[!x])
+		elseif !diss[!x] eq !diss.last() then
+			!tempposs2.append(!startposs[!x])
+		endif
+	enddo
+
+	!diss1 = array()
+	do !pos values !tempposs1
+		!dis = !!suidirdis(!this.posstart,!startdir2,!pos)
+		!diss1.append(!dis)
+	enddo
+
+	!indices = !diss1.sortedindices()
+	!pos1 = !tempposs1[!indices.last()]
+	!pos2 = !tempposs1[!indices[1]]
+
+
+	!diss2 = array()
+	do !pos values !tempposs2
+		!dis = !!suidirdis(!this.posstart,!startdir2,!pos)
+		!diss2.append(!dis)
+	enddo
+	!indices = !diss2.sortedindices()
+	!pos3 = !tempposs2[!indices.last()]
+	!pos4 = !tempposs2[!indices[1]]
+
+
+	!poss = array()
+
+	if !isstart then
+		!dir1dis = !diss[!indices[1]] + !diss[!indices.last()]
+		!dir2dis1 = !diss1[!indices[1]] + !diss1[!indices.last()]
+		!dir2dis2 = !diss2[!indices[1]] + !diss2[!indices.last()]
+		!dir2dis = max(!dir2dis1,!dir2dis2)
+		if !dir1dis ge !dir2dis then
+			!poss.append(!pos1)
+			!poss.append(!pos3)
+			!poss.append(!pos4)
+			!poss.append(!pos2)
+
+			!tempdir = !startdir1
+			!this.ylen = !dir1dis
+			!this.xlen = !dir2dis
+		else
+			!poss.append(!pos1)
+			!poss.append(!pos2)
+			!poss.append(!pos4)
+			!poss.append(!pos3)
+
+			!tempdir = !startdir2
+			!this.ylen = !dir2dis
+			!this.xlen = !dir1dis
+		endif
+
+		!tempdir = !tempdir.orthogonal(!this.zdir)
+		!ydir = !this.zdir.orthogonal(!tempdir)
+		!this.ori = Y is $!ydir and Z is $!this.zdir
+
+		!tempdir1 = !pos1.direction(!pos2)
+		!tempdir2 = !pos1.direction(!pos3)
+		!this.drnstart = !tempdir1.orthogonal(!tempdir2)
+	else
+		!poss.append(!pos1)
+		!poss.append(!pos3)
+		!poss.append(!pos4)
+		!poss.append(!pos2)
+
+		!tempdir1 = !pos1.direction(!pos2)
+		!tempdir2 = !pos1.direction(!pos3)
+		!this.drnend = !tempdir1.orthogonal(!tempdir2)
+	endif
+	return !poss
+endmethod
+$)
+define method .timesUnique(!inputarr is array) is array
+	!arr = !inputarr
+	!brr = !arr
+	!brr.unique()
+	!timess = array()
+	do !aaa values !brr
+		!times = !arr.find(!aaa).size()
+		!timess.append(!times)
+	enddo
+	!indices = !timess.sortedindices().invert()
+
+	!arr.reindex(!indices)
+	return !arr
+endmethod
+
+
+define method .getmidpoint(!poss is array) is position
+	!pos = !poss[1]
+	!size = !poss.size()
+	do !x from 2 to !size
+		!pos.east = !pos.east + !poss[!x].east
+		!pos.north = !pos.north + !poss[!x].north
+		!pos.up = !pos.up + !poss[!x].up
+	enddo
+	!pos.east = !pos.east / !size
+	!pos.north = !pos.north / !size
+	!pos.up = !pos.up / !size
+	return !pos
+endmethod
+
+
+define method .checkIfTogether() is boolean
+	!sps = !this.group
+
+	!ins = array()
+	!ins.append(!sps[1])
+	!rests = !sps.from(2)
+
+	!adds = array()
+	!adds.append(!sps[1])
+
+
+
+
+	do
+		!newadds = array()
+		do !add values !adds
+			do !x indices !rests
+				if !!checkIfTouch(!add,!rests[!x]) then
+					!newadds.append(!rests[!x])
+
+
+					!rests[!x].delete()
+				else
+
+
+				endif
+			enddo
+		enddo
+
+		!ins.appendarray(!newadds)
+		if !newadds.unset() or !rests.unset() then
+			break
+		else
+			!adds = !newadds
+		endif
+	enddo
+
+
+
+
+	if !ins.size() eq !sps.size() then
+		return true
+	else
+		return false
+	endif
+endmethod
+
+

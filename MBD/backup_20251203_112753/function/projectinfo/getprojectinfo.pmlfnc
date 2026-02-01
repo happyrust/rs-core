@@ -1,0 +1,87 @@
+------------------------------------------
+--[Information of Author]
+--Author	=	Sui Hehuan
+--
+--[REV]
+--Revision		= 1.0
+--Date			= December 22nd 2023
+--[Function]:
+------------------------------------------
+
+define function !!getprojectinfo(!company is string, !major is string, !nodename is string, !drawname is string, !drawnum is string ) is array
+	!projectdata = object projectdata()
+	!row = array()
+	!row.append(|{|)
+	!row.append(|"项目": "| + !projectdata.project + |",|)
+	!row.append(|"设计公司": "| & !company & |",|)
+	!row.append(|"图名": "| & !drawname & |",|)
+	!row.append(|"图号": "| & !drawnum & |",|)
+	!row.append(|"工程号": "| + !projectdata.number + |",|)
+
+	!nbbm = :zd_nbbm of $!nodename
+	!projectdata.name = !nbbm.substring(6,2)
+	handle any
+		!projectdata.name = ''
+	endhandle
+
+	!projectdata.group = !nbbm.substring(5,1)
+	handle any
+		!projectdata.group = ''
+	endhandle
+
+
+	!row.append(|"子项号": "| + !projectdata.name + |",|)
+	!row.append(|"机组": "| + !projectdata.group + |",|)
+	!row.append(|"专业": "| & !major & |"|)
+	!row.append(|},|)
+
+	!row.insert(2,|"type":"drawing",|)
+	!row.insert(2,|"nodeNames":["| + !nodename + |"],|)
+    --q var !row
+	return !row
+
+
+$(
+	var !projectnum project number
+	var !projectname project name
+	var !projectdescription project description
+	var !projectmessage project message
+	var !projectid project id
+
+	!tempstring = !projectmessage
+	if !tempstring.match('号机组') ne 0 then
+		!tempstring = !tempstring.before('号机组')
+	elseif !tempstring.match('机组') ne 0 then
+		!tempstring = !tempstring.before('机组')
+	endif
+
+	!group = ''
+	do !x from 1 to !tempstring.length()
+		!letter = !tempstring.substring(- !x ,1)
+		if !letter inset ('1','2','3','4','5','6','7','8','9','、') then
+			!group = !letter + !group
+		else
+			break
+		endif
+	enddo
+
+
+	!project = !tempstring.before(!group)
+
+
+
+	!arr1 = split('number name description message id group project')
+	!arr2 = array()
+	!arr2.append(!projectnum)
+	!arr2.append(!projectname)
+	!arr2.append(!projectdescription)
+	!arr2.append(!projectmessage)
+	!arr2.append(!projectid)
+	!arr2.append(!group)
+	!arr2.append(!project)
+	!result = array()
+	!result.append(!arr1)
+	!result.append(!arr2)
+	return !result
+$)
+endfunction
