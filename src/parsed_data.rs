@@ -441,6 +441,14 @@ pub mod geo_params_data {
             }
         }
 
+        /// 语义别名：将几何参数转换为“单位参数”。
+        ///
+        /// 约定：仅在上层 `unit_flag=true` 时使用；否则可能改变几何语义（例如非可缩放体）。
+        #[inline]
+        pub fn to_unit_param(&self) -> Self {
+            self.convert_to_unit_param()
+        }
+
         pub fn convert_to_unit_param(&self) -> Self {
             use std::any::Any;
             match self {
@@ -469,15 +477,13 @@ pub mod geo_params_data {
                     PdmsGeoParam::PrimLPyramid(*s.gen_unit_shape().downcast::<LPyramid>().unwrap())
                 }
                 PdmsGeoParam::PrimSCylinder(s) => {
-                    let is_sscl = s.is_sscl();
-                    let out_param = if is_sscl || !s.unit_flag {
-                        // SSCL/倾斜圆柱或尚未单位化的圆柱保留全量参数
-                        PdmsGeoParam::PrimSCylinder(s.clone())
-                    } else {
-                        // 已标记为 unit_flag 的普通圆柱可复用单位网格
+                    let out_param = if s.is_reuse_unit() {
                         PdmsGeoParam::PrimSCylinder(
                             *s.gen_unit_shape().downcast::<SCylinder>().unwrap(),
                         )
+                    } else {
+                        // SSCL/倾斜圆柱保留全量参数
+                        PdmsGeoParam::PrimSCylinder(s.clone())
                     };
                     out_param
                 }
@@ -498,6 +504,26 @@ pub mod geo_params_data {
                 }
                 PdmsGeoParam::CompoundShape => PdmsGeoParam::CompoundShape,
                 _ => PdmsGeoParam::Unknown,
+            }
+        }
+
+        /// 判断几何参数是否可作为单位几何体复用
+        ///
+        /// 返回 `true` 表示该几何体可以通过 transform.scale 还原真实尺寸，
+        /// 从而复用同一个单位网格（unit mesh）。
+        pub fn is_reuse_unit(&self) -> bool {
+            match self {
+                PdmsGeoParam::PrimBox(s) => s.is_reuse_unit(),
+                PdmsGeoParam::PrimSphere(s) => s.is_reuse_unit(),
+                PdmsGeoParam::PrimLCylinder(s) => s.is_reuse_unit(),
+                PdmsGeoParam::PrimSCylinder(s) => s.is_reuse_unit(),
+                PdmsGeoParam::PrimDish(s) => s.is_reuse_unit(),
+                PdmsGeoParam::PrimCTorus(s) => s.is_reuse_unit(),
+                PdmsGeoParam::PrimRTorus(s) => s.is_reuse_unit(),
+                PdmsGeoParam::PrimLSnout(s) => s.is_reuse_unit(),
+                PdmsGeoParam::PrimExtrusion(s) => s.is_reuse_unit(),
+                PdmsGeoParam::PrimLoft(s) => s.is_reuse_unit(),
+                _ => false,
             }
         }
 

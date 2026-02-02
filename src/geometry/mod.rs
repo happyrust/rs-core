@@ -96,7 +96,7 @@ pub struct EleGeosInfo {
     #[serde(default)]
     pub flow_pt_indexs: Vec<i32>,
 
-    #[serde(skip, default)]
+    #[serde(default)]
     pub ptset_map: BTreeMap<i32, CateAxisParam>,
     pub has_cata_neg: bool,
     pub is_solid: bool,
@@ -105,6 +105,18 @@ pub struct EleGeosInfo {
     /// 用于 BRAN/HANG 下元件的 arrive/leave 点复用
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tubi_info_id: Option<String>,
+    /// TUBI 段的世界坐标起点（leave 端）
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tubi_start_pt: Option<Vec3>,
+    /// TUBI 段的世界坐标终点（arrive 端）
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tubi_end_pt: Option<Vec3>,
+    /// ARRIVE 轴点世界坐标 [x, y, z]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub arrive_axis_pt: Option<[f32; 3]>,
+    /// LEAVE 轴点世界坐标 [x, y, z]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub leave_axis_pt: Option<[f32; 3]>,
 }
 
 impl EleGeosInfo {
@@ -243,9 +255,9 @@ impl EleGeosInfo {
     pub fn get_geo_world_transform(&self, geo: &EleInstGeo) -> Transform {
         let ele_trans = self.get_ele_world_transform();
         if geo.is_tubi {
-            geo.transform
+            geo.geo_transform
         } else {
-            ele_trans * geo.transform
+            ele_trans * geo.geo_transform
         }
     }
 }
@@ -302,12 +314,11 @@ impl ShapeInstancesData {
                     geo_param: PdmsGeoParam::PrimSCylinder(SCylinder::default()),
                     pts: vec![],
                     aabb: Some(unit_cyli_aabb),
-                    transform: Default::default(),
+                    geo_transform: Default::default(),
                     visible: true,
                     is_tubi: true,
                     geo_type: GeoBasicType::Tubi,
                     cata_neg_refnos: vec![],
-                    unit_flag: false, // 标准几何体，非 unit mesh
                 }],
                 aabb: Some(unit_cyli_aabb),
                 type_name: "TUBI".to_string(),
@@ -329,7 +340,6 @@ impl ShapeInstancesData {
                     is_tubi: true,
                     geo_type: GeoBasicType::Tubi,
                     cata_neg_refnos: vec![],
-                    unit_flag: false, // 标准几何体，非 unit mesh
                 }],
                 aabb: Some(unit_box_aabb),
                 type_name: "BOXI".to_string(),
@@ -700,7 +710,7 @@ pub struct EleInstGeo {
     pub aabb: Option<Aabb>,
     //相对于自身的坐标系变换
     #[serde(default)]
-    pub transform: Transform,
+    pub geo_transform: Transform,
     pub visible: bool,
     pub is_tubi: bool,
     #[serde(default)]
@@ -709,10 +719,6 @@ pub struct EleInstGeo {
     //元件库里的负实体
     #[serde(default)]
     pub cata_neg_refnos: Vec<RefnoEnum>,
-
-    /// 是否为单位 mesh：true=通过 transform 缩放，false=通过 mesh 顶点缩放
-    #[serde(default)]
-    pub unit_flag: bool,
 }
 
 impl EleInstGeo {
@@ -753,20 +759,25 @@ impl EleInstGeo {
             }
             _ => self.geo_param.convert_to_unit_param(),
         };
+        let unit_flag = self.geo_param.is_reuse_unit();
         json_string.push_str(&format!(
             "{{'id': inst_geo:⟨{}⟩, 'param': {}, 'unit_flag': {} }}",
             self.geo_hash,
             serde_json::to_string(&param).unwrap(),
-            self.unit_flag
+            unit_flag
         ));
         json_string
     }
 
     pub fn build_csg_shape(&self) -> anyhow::Result<crate::prim_geo::basic::CsgSharedMesh> {
         let mut shape = self.geo_param.build_csg_shape(self.refno)?;
-        //scale 不能要，已经包含在CSG的真实参数里
+        let unit_flag = self.geo_param.is_reuse_unit();
+        // unit_flag=true：几何为单位 mesh，尺寸由 transform.scale 还原
+        // unit_flag=false：几何顶点已包含真实尺寸，避免重复缩放
         let mut new_transform = self.transform;
-        new_transform.scale = Vec3::ONE;
+        if !unit_flag {
+            new_transform.scale = Vec3::ONE;
+        }
         let transform_mat = new_transform.to_matrix().as_dmat4();
         shape = shape.transformed(&transform_mat)?;
         Ok(shape)

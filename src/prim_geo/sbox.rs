@@ -44,6 +44,10 @@ impl VerifiedShape for SBox {
 
 //#[typetag::serde]
 impl BrepShapeTrait for SBox {
+    fn is_reuse_unit(&self) -> bool {
+        true
+    }
+
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
         Box::new(self.clone())
     }

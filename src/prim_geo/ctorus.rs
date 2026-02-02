@@ -206,6 +206,10 @@ impl VerifiedShape for CTorus {
 }
 
 impl BrepShapeTrait for CTorus {
+    fn is_reuse_unit(&self) -> bool {
+        true
+    }
+
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
         Box::new(self.clone())
     }
@@ -248,10 +252,16 @@ impl BrepShapeTrait for CTorus {
     }
 
     fn hash_unit_mesh_params(&self) -> u64 {
+        // unit torus：仅由截面比例与旋转角度决定；绝对尺寸由 transform.scale 还原。
         let mut hasher = DefaultHasher::new();
-        hash_f32(self.rins / self.rout, &mut hasher);
+        let ratio = if self.rout.abs() > f32::EPSILON {
+            self.rins / self.rout
+        } else {
+            0.0
+        };
+        hash_f32(ratio, &mut hasher);
         hash_f32(self.angle, &mut hasher);
-        "ctorus".hash(&mut hasher);
+        "ctorus_unit".hash(&mut hasher);
         hasher.finish()
     }
 
@@ -267,6 +277,7 @@ impl BrepShapeTrait for CTorus {
 
     #[inline]
     fn get_scaled_vec3(&self) -> Vec3 {
+        // unit mesh（rout=1）通过整体缩放还原到真实半径
         Vec3::splat(self.rout)
     }
 

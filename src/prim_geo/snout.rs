@@ -84,6 +84,10 @@ impl VerifiedShape for LSnout {
 
 //#[typetag::serde]
 impl BrepShapeTrait for LSnout {
+    fn is_reuse_unit(&self) -> bool {
+        self.poff.abs() <= f32::EPSILON
+    }
+
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
         Box::new(self.clone())
     }
@@ -174,23 +178,38 @@ impl BrepShapeTrait for LSnout {
     }
 
     fn hash_unit_mesh_params(&self) -> u64 {
+        // unit mesh 复用策略：
+        // - 当 poff == 0：LSnout 可被视为“可缩放基本体”
+        //   * mesh 顶点由单位参数（见 gen_unit_shape）生成
+        //   * 绝对尺寸由实例 transform.scale 还原
+        //   * geo_hash 应只取“单位形状参数”（比例/退化形态），以便复用
+        // - 当 poff != 0：当前 unit 化不可安全复用（顶面侧向偏移会改变局部几何）
+        //   * 退回“按绝对参数”区分，避免错误复用
         let mut hasher = DefaultHasher::new();
-        //对于有偏移的，直接不复用，后面看情况再考虑复用
+
         if self.poff.abs() > f32::EPSILON {
-            let bytes = bincode::serialize(self).unwrap();
-            let mut hasher = DefaultHasher::default();
-            bytes.hash(&mut hasher);
+            // 非 unit：按绝对参数区分
+            hash_f32(self.pbdm, &mut hasher);
+            hash_f32(self.ptdm, &mut hasher);
+            hash_f32((self.ptdi - self.pbdi).abs(), &mut hasher);
+            hash_f32(self.poff, &mut hasher);
+            self.btm_on_top.hash(&mut hasher);
+            "snout_off_abs".hash(&mut hasher);
             return hasher.finish();
         }
-        let pheight = (self.ptdi - self.pbdi) > 0.0;
-        let alpha = if self.pbdm != 0.0 {
-            self.ptdm / self.pbdm
+
+        // unit 形状参数：与 gen_unit_shape 保持一致
+        let (unit_pbdm, unit_ptdm) = if self.ptdm < 0.001 {
+            (1.0f32, 0.0f32)
+        } else if self.pbdm < 0.001 {
+            (0.0f32, 1.0f32)
         } else {
-            0.0
+            (1.0f32, self.ptdm / self.pbdm)
         };
-        hash_f32(alpha, &mut hasher);
-        pheight.hash(&mut hasher);
-        "snout".hash(&mut hasher);
+        hash_f32(unit_pbdm, &mut hasher);
+        hash_f32(unit_ptdm, &mut hasher);
+        self.btm_on_top.hash(&mut hasher);
+        "snout_unit".hash(&mut hasher);
         hasher.finish()
     }
 
@@ -229,17 +248,17 @@ impl BrepShapeTrait for LSnout {
 
     #[inline]
     fn get_scaled_vec3(&self) -> Vec3 {
-        let pheight = (self.ptdi - self.pbdi).abs();
-        //有偏心的时候，不缩放
+        // 与 gen_unit_shape 约定一致：
+        // - poff == 0：网格按单位参数生成，尺寸由 transform.scale 还原
+        //   * X/Y: 以“较大的端面直径”作为缩放基准（对应 unit_pbdm/unit_ptdm 的 1.0）
+        //   * Z: 使用真实高度（ptdi - pbdi）
+        // - poff != 0：当前视为非 unit，可由上层把 scale 置为 1（避免重复缩放）
         if self.poff.abs() > f32::EPSILON {
-            Vec3::ONE
-        } else {
-            if self.pbdm < 0.001 {
-                Vec3::new(self.ptdm, self.ptdm, pheight)
-            } else {
-                Vec3::new(self.pbdm, self.pbdm, pheight)
-            }
+            return Vec3::ONE;
         }
+        let height = (self.ptdi - self.pbdi).abs();
+        let scale_xy = if self.pbdm < 0.001 { self.ptdm } else { self.pbdm };
+        Vec3::new(scale_xy, scale_xy, height)
     }
 
     fn convert_to_geo_param(&self) -> Option<PdmsGeoParam> {

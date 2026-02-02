@@ -749,6 +749,19 @@ pub fn eval_str_to_f64(
             if INTERNAL_PDMS_EXPRESS.contains(&s) {
                 continue;
             }
+            // 重要：re 允许“空格 + 数字”作为可选索引，这会把前缀函数误匹配成变量，
+            // 例如在替换完 PARAM 后，"SUM 26.700 0" 可能被捕获为 "SUM 26.700"，
+            // 进而被当作未知变量替换为 0，导致表达式最终变成 "0 0"。
+            //
+            // 这里做一个最小侵入的兜底：若本次匹配包含空格，且首 token 是内置函数名，则跳过替换。
+            // （带括号的函数调用已由下方 starts_with('(') 规则处理，这里专门覆盖前缀函数风格）
+            if s.contains(char::is_whitespace) {
+                if let Some(first) = s.split_whitespace().next() {
+                    if INTERNAL_PDMS_EXPRESS.contains(&first) {
+                        continue;
+                    }
+                }
+            }
             // 兜底：若该 token 后面直接跟着 '('，更像函数调用而非属性引用。
             // 这能避免“内置函数未入白名单”时被误替换（如 SQRT(...)）。
             if new_exp[m0.end()..].trim_start().starts_with('(') {
@@ -1252,5 +1265,17 @@ mod tests {
         .unwrap();
 
         assert!((v - 3.464).abs() < 1e-6, "v={}", v);
+    }
+
+    #[test]
+    fn test_prefix_sum_not_misparsed_as_attr_with_index() {
+        // 回归：在替换完 PARAM/IPARAM 后，表达式会变成 "SUM 26.700 0"，
+        // 旧逻辑可能把 "SUM 26.700" 误当作“属性 SUM 的索引=26.700”，进而替换为 0，导致结果错误。
+        let context = CataContext::default();
+        context.insert("PARA4", "26.700");
+        context.insert("IPARA1", "0");
+
+        let v = eval_str_to_f64("SUM PARAM 4 IPARAM 1", &context, "DIST").unwrap();
+        assert!((v - 26.7).abs() < 1e-6, "v={}", v);
     }
 }

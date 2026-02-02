@@ -78,6 +78,10 @@ impl VerifiedShape for Dish {
 
 /// dish的实现 shape trait
 impl BrepShapeTrait for Dish {
+    fn is_reuse_unit(&self) -> bool {
+        true
+    }
+
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
         Box::new(self.clone())
     }
@@ -231,25 +235,15 @@ impl BrepShapeTrait for Dish {
     }
 
     fn hash_unit_mesh_params(&self) -> u64 {
-        let r = self.pdia / 2.0;
-        let h = self.pheig;
-        let radius = (r * r + h * h) / (2.0f32 * h);
-        let sinval = (r / radius).max(-1.0f32).min(1.0f32);
-        let mut theta = (sinval).asin();
-        if radius < f32::EPSILON {
-            return 0;
-        }
-        let mut beta = (h / radius / 2.0).atan();
-        if r < h {
-            theta = PI - theta;
-            beta = PI + beta;
-        }
+        // unit dish：单位参数按“直径=1”归一化；绝对尺寸由 transform.scale 还原。
+        // 形状由高度/直径与 prad/直径（椭圆近似参数）决定。
         let mut hasher = DefaultHasher::new();
-
-        hash_f32(theta, &mut hasher);
-        hash_f32(self.prad, &mut hasher);
-        hash_f32(beta, &mut hasher);
-        "dish".hash(&mut hasher);
+        let dia = self.pdia.abs().max(f32::EPSILON);
+        let h_ratio = self.pheig / dia;
+        let prad_ratio = self.prad / dia;
+        hash_f32(h_ratio, &mut hasher);
+        hash_f32(prad_ratio, &mut hasher);
+        "dish_unit".hash(&mut hasher);
         hasher.finish()
     }
 
@@ -267,8 +261,8 @@ impl BrepShapeTrait for Dish {
     }
 
     fn get_scaled_vec3(&self) -> Vec3 {
-        // Unit Dish 的高度已经按直径归一化，因此统一使用直径缩放即可还原真实尺寸
-        Vec3::new(self.pdia, self.pdia, self.pdia)
+        // unit mesh（pdia=1）整体缩放到真实直径
+        Vec3::splat(self.pdia)
     }
 
     fn convert_to_geo_param(&self) -> Option<PdmsGeoParam> {

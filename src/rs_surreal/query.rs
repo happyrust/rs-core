@@ -89,7 +89,19 @@ pub async fn get_pe(refno: RefnoEnum) -> anyhow::Result<Option<SPdmsElement>> {
         r#"select * omit id from only {} limit 1;"#,
         refno.to_pe_key()
     );
-    SUL_DB.query_take::<Option<SPdmsElement>>(&sql, 0).await
+    let pe: Option<SPdmsElement> = SUL_DB.query_take::<Option<SPdmsElement>>(&sql, 0).await?;
+
+    // 仅在 debug-model 场景输出：用于定位“TreeIndex 有节点但 SurrealDB 无 pe 记录”的情况
+    if pe.is_none() && crate::debug_macros::is_debug_model_enabled() {
+        crate::debug_model_debug!(
+            "[DBG][PE_MISS] get_pe=None refno={} pe_key={}",
+            refno,
+            refno.to_pe_key()
+        );
+        crate::debug_model_debug!("  sql={}", sql);
+    }
+
+    Ok(pe)
 }
 
 /// 获取元素的默认名称
@@ -1123,6 +1135,70 @@ pub async fn get_ui_named_attmap(refno_enum: RefnoEnum) -> anyhow::Result<NamedA
 pub async fn get_named_attmap(refno: RefnoEnum) -> anyhow::Result<NamedAttrMap> {
     let sql = format!(r#"(select * from {}.refno)[0];"#, refno.to_pe_key());
     let named_attmap: Option<NamedAttrMap> = SUL_DB.query_take(&sql, 0).await?;
+
+    // 仅在 debug-model 场景输出：用于定位“pe 存在但 pe.refno 链接缺失/指向异常”的情况
+    if named_attmap.is_none() && crate::debug_macros::is_debug_model_enabled() {
+        use serde::Deserialize;
+        use surrealdb::types as surrealdb_types;
+        use surrealdb_types::SurrealValue;
+        use crate::utils::RecordIdExt;
+
+        #[derive(Debug, Clone, Deserialize, SurrealValue)]
+        struct PeLinkRow {
+            noun: Option<String>,
+            owner: Option<surrealdb_types::Value>,
+            // 注意：此处字段名就是 pe 表里的 `refno` 字段（可能是 RecordId / NONE / 缺失）
+            refno: Option<surrealdb_types::Value>,
+        }
+
+        crate::debug_model_debug!(
+            "[DBG][ATTMAP_MISS] get_named_attmap=None refno={} pe_key={}",
+            refno,
+            refno.to_pe_key()
+        );
+        crate::debug_model_debug!("  sql={}", sql);
+
+        let pe_sql = format!("SELECT noun, owner, refno FROM {} LIMIT 1;", refno.to_pe_key());
+        match SUL_DB.query_take::<Option<PeLinkRow>>(&pe_sql, 0).await {
+            Ok(row) => {
+                let refno_field = row.as_ref().and_then(|r| r.refno.clone());
+                crate::debug_model_debug!(
+                    "  pe_fields: noun={:?} owner={:?} refno_field={:?}",
+                    row.as_ref().and_then(|r| r.noun.clone()),
+                    row.as_ref().and_then(|r| r.owner.clone()),
+                    refno_field.clone()
+                );
+
+                // 进一步验证：pe.refno 指向的“noun 记录”是否真的存在
+                if let Some(surrealdb_types::Value::RecordId(rid)) = refno_field {
+                    let rid_raw = rid.to_raw();
+                    let rid_sql = format!("(select * from only {} limit 1)[0];", rid_raw);
+                    match SUL_DB.query_take::<Option<NamedAttrMap>>(&rid_sql, 0).await {
+                        Ok(noun_row) => {
+                            crate::debug_model_debug!(
+                                "  noun_record: id={} exists={} has(CATR/SPRE/ARRI/LEAV)={}/{}/{}/{}",
+                                rid_raw,
+                                noun_row.is_some(),
+                                noun_row.as_ref().map(|m| m.contains_key("CATR")).unwrap_or(false),
+                                noun_row.as_ref().map(|m| m.contains_key("SPRE")).unwrap_or(false),
+                                noun_row.as_ref().map(|m| m.contains_key("ARRI")).unwrap_or(false),
+                                noun_row.as_ref().map(|m| m.contains_key("LEAV")).unwrap_or(false),
+                            );
+                        }
+                        Err(e) => {
+                            crate::debug_model_debug!("  noun_record query failed: {e}");
+                            crate::debug_model_debug!("  rid_sql={}", rid_sql);
+                        }
+                    }
+                }
+            }
+            Err(e) => {
+                crate::debug_model_debug!("  pe_fields query failed: {e}");
+                crate::debug_model_debug!("  pe_sql={}", pe_sql);
+            }
+        }
+    }
+
     Ok(named_attmap.unwrap_or_default())
 }
 

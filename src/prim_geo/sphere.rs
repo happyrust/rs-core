@@ -51,6 +51,10 @@ impl VerifiedShape for Sphere {
 }
 
 impl BrepShapeTrait for Sphere {
+    fn is_reuse_unit(&self) -> bool {
+        true
+    }
+
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
         Box::new(self.clone())
     }

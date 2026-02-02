@@ -2679,7 +2679,14 @@ fn generate_torus_mesh(
     refno: RefnoEnum,
     manifold: bool,
 ) -> Option<GeneratedMesh> {
+    // 调试日志：打印 CTorus 参数
+    println!(
+        "[DEBUG] generate_torus_mesh: rins={}, rout={}, angle={}, refno={}",
+        torus.rins, torus.rout, torus.angle, refno
+    );
+
     if !torus.check_valid() {
+        println!("[DEBUG] generate_torus_mesh: check_valid() failed");
         return None;
     }
 

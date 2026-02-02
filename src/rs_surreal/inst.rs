@@ -220,7 +220,7 @@ pub async fn query_tubi_insts_by_flow(refnos: &[RefnoEnum]) -> anyhow::Result<Ve
 pub struct ModelHashInst {
     pub geo_hash: String,
     #[serde(default)]
-    pub transform: PlantTransform,
+    pub geo_transform: PlantTransform,
     #[serde(default)]
     pub is_tubi: bool,
     /// 是否为单位 mesh：true=通过 transform 缩放，false=通过 mesh 顶点缩放

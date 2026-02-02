@@ -70,6 +70,10 @@ impl VerifiedShape for LCylinder {
 }
 
 impl BrepShapeTrait for LCylinder {
+    fn is_reuse_unit(&self) -> bool {
+        true
+    }
+
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
         Box::new(self.clone())
     }
@@ -104,7 +108,7 @@ impl BrepShapeTrait for LCylinder {
     }
 
     fn hash_unit_mesh_params(&self) -> u64 {
-        // 确保返回正确的圆柱体哈希值，用于 unit_flag 判断
+        // 确保返回正确的圆柱体哈希值，用于 unit mesh 复用
         CYLINDER_GEO_HASH
     }
 
@@ -242,8 +246,6 @@ pub struct SCylinder {
     // y shear
     pub negative: bool,
     pub center_in_mid: bool,
-    /// 标识是否为单位化几何体（通过 transform 缩放而非 mesh 顶点缩放）
-    pub unit_flag: bool,
     /// 当需要固定剪切方向的切向基时，可传入世界坐标系下的 (u, v) 基向量
     /// 用于避免 orthonormal_basis 选择不一致导致的 roll 跳变
     pub basis_hint: Option<[Vec3; 2]>,
@@ -261,7 +263,6 @@ impl Default for SCylinder {
             top_shear_angles: [0.0f32; 2],
             negative: false,
             center_in_mid: true,
-            unit_flag: false,
             basis_hint: None,
         }
     }
@@ -285,6 +286,10 @@ impl VerifiedShape for SCylinder {
 }
 
 impl BrepShapeTrait for SCylinder {
+    fn is_reuse_unit(&self) -> bool {
+        !self.is_sscl()
+    }
+
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
         Box::new(self.clone())
     }
@@ -395,9 +400,7 @@ impl BrepShapeTrait for SCylinder {
 
     fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
         // 斜切圆柱不复用，但需要返回单位化版本
-        let mut unit_shape = Self::default();
-        unit_shape.unit_flag = true;
-        Box::new(unit_shape)
+        Box::new(Self::default())
     }
 
     #[inline]
@@ -411,11 +414,17 @@ impl BrepShapeTrait for SCylinder {
 
     #[inline]
     fn get_trans(&self) -> Transform {
+        // unit_cylinder_mesh 的 z 范围为 [0..1]（底面在 z=0）。
+        // 但 SCylinder/NCYL 在数据语义上常以“中心点”为参考（center_in_mid=true），
+        // 因此需要把单位圆柱沿 z 方向下移 half-height，使其中心对齐到原点。
+        let height = self.phei.abs();
         Transform {
             rotation: Default::default(),
-            // SCylinder 始终以中心点为基准，paxi_pt 是中心点
-            translation: Vec3::ZERO,
-            // translation: Vec3::new(0.0, 0.0, -self.phei / 2.0),
+            translation: if self.center_in_mid {
+                Vec3::new(0.0, 0.0, -height / 2.0)
+            } else {
+                Vec3::ZERO
+            },
             scale: self.get_scaled_vec3(),
         }
     }
@@ -631,7 +640,6 @@ impl From<&AttrMap> for SCylinder {
             pdia,
             negative: false,
             center_in_mid: true,
-            unit_flag: false,
             ..Default::default()
         }
     }
@@ -655,7 +663,6 @@ impl From<&NamedAttrMap> for SCylinder {
             pdia,
             negative: false,
             center_in_mid: true,
-            unit_flag: false,
             ..Default::default()
         }
     }

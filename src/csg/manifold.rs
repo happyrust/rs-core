@@ -211,7 +211,28 @@ impl ManifoldRust {
             (vertices, indices) = build_welded(retry_precision);
         }
 
-        Ok(Self::from_mesh(&ManifoldMeshRust { vertices, indices }))
+        let mut manifold = Self::from_mesh(&ManifoldMeshRust {
+            vertices: vertices.clone(),
+            indices: indices.clone(),
+        });
+
+        // 兼容：若输入网格是“开口壳体”（常见于 RTOR/管件为减面而省略端盖），Manifold::to_manifold
+        // 往往会直接输出空 mesh。这里尝试自动为边界环加端盖后重试一次。
+        //
+        // 设计原则：
+        // - 仅当 to_manifold 结果为空时触发（避免影响正常闭合体）
+        // - 仅处理“边界顶点度数=2”的简单环（复杂边界/非闭环直接跳过）
+        // - 端盖用简单扇形三角化；绕序按“远离几何中心”推断外向
+        if manifold.get_mesh().indices.is_empty() && !indices.is_empty() && !vertices.is_empty() {
+            if let Some(capped) = try_cap_boundary_loops(&vertices, &indices) {
+                manifold = Self::from_mesh(&ManifoldMeshRust {
+                    vertices,
+                    indices: capped,
+                });
+            }
+        }
+
+        Ok(manifold)
     }
 
     /// 导出到 GLB 文件
@@ -530,6 +551,201 @@ impl ManifoldRust {
     pub fn destroy(&self) {
         // manifold-rs 使用 RAII，无需手动释放
     }
+}
+
+/// 尝试为简单边界环自动补端盖（用于把开口壳体变成可用于布尔运算的闭合体）。
+///
+/// 返回：若成功则返回新的 indices（包含追加的端盖三角形）；否则返回 None。
+fn try_cap_boundary_loops(vertices_xyz: &[f32], indices: &[u32]) -> Option<Vec<u32>> {
+    use std::collections::{HashMap, HashSet};
+
+    if vertices_xyz.len() % 3 != 0 {
+        return None;
+    }
+    let vert_count = (vertices_xyz.len() / 3) as u32;
+    if vert_count < 3 {
+        return None;
+    }
+
+    // 1) 统计无向边出现次数
+    let mut edge_count: HashMap<(u32, u32), u32> = HashMap::new();
+    for tri in indices.chunks_exact(3) {
+        let a = tri[0];
+        let b = tri[1];
+        let c = tri[2];
+        if a >= vert_count || b >= vert_count || c >= vert_count {
+            continue;
+        }
+        for (u, v) in [(a, b), (b, c), (c, a)] {
+            let (x, y) = if u < v { (u, v) } else { (v, u) };
+            *edge_count.entry((x, y)).or_insert(0) += 1;
+        }
+    }
+
+    // 2) 收集边界边（count==1），构造邻接
+    let mut adj: HashMap<u32, Vec<u32>> = HashMap::new();
+    let mut boundary_edges: Vec<(u32, u32)> = Vec::new();
+    for ((u, v), cnt) in edge_count {
+        if cnt == 1 {
+            boundary_edges.push((u, v));
+            adj.entry(u).or_default().push(v);
+            adj.entry(v).or_default().push(u);
+        }
+    }
+    if boundary_edges.is_empty() {
+        return None;
+    }
+
+    // mesh 中心（AABB center）
+    let mut min = Vec3::splat(f32::MAX);
+    let mut max = Vec3::splat(f32::MIN);
+    for i in (0..vertices_xyz.len()).step_by(3) {
+        let p = Vec3::new(vertices_xyz[i], vertices_xyz[i + 1], vertices_xyz[i + 2]);
+        min = min.min(p);
+        max = max.max(p);
+    }
+    let mesh_center = (min + max) * 0.5;
+
+    let pos_of = |idx: u32| -> Vec3 {
+        let base = (idx as usize) * 3;
+        Vec3::new(
+            vertices_xyz[base + 0],
+            vertices_xyz[base + 1],
+            vertices_xyz[base + 2],
+        )
+    };
+
+    // 4) 提取所有边界环（按“边”遍历；允许少量非理想情况，但要求最终形成闭环）
+    let mut visited_edges: HashSet<(u32, u32)> = HashSet::new();
+    let mut loops: Vec<Vec<u32>> = Vec::new();
+    let norm_edge = |a: u32, b: u32| if a < b { (a, b) } else { (b, a) };
+
+    for &(eu, ev) in &boundary_edges {
+        let ekey = norm_edge(eu, ev);
+        if visited_edges.contains(&ekey) {
+            continue;
+        }
+
+        let mut ring: Vec<u32> = Vec::new();
+        let start_u = eu;
+        let start_v = ev;
+        ring.push(start_u);
+        ring.push(start_v);
+        visited_edges.insert(ekey);
+
+        let mut prev = start_u;
+        let mut curr = start_v;
+
+        loop {
+            let neigh = adj.get(&curr)?;
+            // 优先选“不是 prev 且该边尚未访问”的邻居
+            let mut next: Option<u32> = None;
+            for &cand in neigh {
+                if cand == prev {
+                    continue;
+                }
+                let k = norm_edge(curr, cand);
+                if !visited_edges.contains(&k) {
+                    next = Some(cand);
+                    break;
+                }
+            }
+
+            let Some(nxt) = next else {
+                // 若已经回到起点则视为闭合，否则失败
+                if curr == start_u {
+                    break;
+                }
+                return None;
+            };
+
+            // 若闭合
+            if nxt == start_u {
+                ring.push(nxt);
+                visited_edges.insert(norm_edge(curr, nxt));
+                break;
+            }
+
+            ring.push(nxt);
+            visited_edges.insert(norm_edge(curr, nxt));
+            prev = curr;
+            curr = nxt;
+
+            // 防止异常：环长度不能无限增长
+            if ring.len() > boundary_edges.len() + 2 {
+                return None;
+            }
+        }
+
+        // ring 形如 [v0, v1, ..., v0]，去掉末尾重复点
+        if ring.len() >= 4 && *ring.last()? == ring[0] {
+            ring.pop();
+        }
+        // 去重检查：简单环不应出现重复顶点
+        let mut uniq: HashSet<u32> = HashSet::new();
+        if ring.iter().all(|&v| uniq.insert(v)) && ring.len() >= 3 {
+            loops.push(ring);
+        }
+    }
+
+    if loops.is_empty() {
+        return None;
+    }
+
+    // 5) 给每个环加端盖
+    let mut out = indices.to_vec();
+    let mut added_tris = 0usize;
+
+    for mut ring in loops {
+        // 去掉闭环末尾重复的 start（提取时我们以 curr==start 结束，但未 push start 第二次）
+        if ring.len() < 3 {
+            continue;
+        }
+
+        // Newell 法求环法线
+        let mut n = Vec3::ZERO;
+        let mut center = Vec3::ZERO;
+        for &vid in &ring {
+            center += pos_of(vid);
+        }
+        center /= ring.len() as f32;
+        for i in 0..ring.len() {
+            let p0 = pos_of(ring[i]);
+            let p1 = pos_of(ring[(i + 1) % ring.len()]);
+            n.x += (p0.y - p1.y) * (p0.z + p1.z);
+            n.y += (p0.z - p1.z) * (p0.x + p1.x);
+            n.z += (p0.x - p1.x) * (p0.y + p1.y);
+        }
+        if n.length_squared() <= 1e-12 {
+            // 退化：用两条边叉乘
+            let p0 = pos_of(ring[0]);
+            let p1 = pos_of(ring[1]);
+            let p2 = pos_of(ring[2]);
+            n = (p1 - p0).cross(p2 - p0);
+        }
+        if n.length_squared() <= 1e-12 {
+            continue;
+        }
+        n = n.normalize();
+
+        // 让法线朝外：与 (ring_center - mesh_center) 同向
+        if n.dot(center - mesh_center) < 0.0 {
+            ring.reverse();
+        }
+
+        // 扇形三角化：v0, vi, v(i+1)
+        let v0 = ring[0];
+        for i in 1..(ring.len() - 1) {
+            out.extend_from_slice(&[v0, ring[i], ring[i + 1]]);
+            added_tris += 1;
+        }
+    }
+
+    if added_tris == 0 {
+        return None;
+    }
+
+    Some(out)
 }
 
 /// Mesh 的 Rust 封装

@@ -244,6 +244,10 @@ impl VerifiedShape for RTorus {
 }
 
 impl BrepShapeTrait for RTorus {
+    fn is_reuse_unit(&self) -> bool {
+        true
+    }
+
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
         Box::new(self.clone())
     }
@@ -293,10 +297,17 @@ impl BrepShapeTrait for RTorus {
     }
 
     fn hash_unit_mesh_params(&self) -> u64 {
+        // unit rtorus：由 inner/outer 比例与旋转角度决定；
+        // 绝对尺寸（rout、height）由 transform.scale 分别在 XY/Z 方向还原。
         let mut hasher = DefaultHasher::new();
-        hash_f32(self.rins / self.rout, &mut hasher);
+        let ratio = if self.rout.abs() > f32::EPSILON {
+            self.rins / self.rout
+        } else {
+            0.0
+        };
+        hash_f32(ratio, &mut hasher);
         hash_f32(self.angle, &mut hasher);
-        "rtorus".hash(&mut hasher);
+        "rtorus_unit".hash(&mut hasher);
         hasher.finish()
     }
 
@@ -313,6 +324,9 @@ impl BrepShapeTrait for RTorus {
 
     #[inline]
     fn get_scaled_vec3(&self) -> Vec3 {
+        // unit mesh（rout=1,height=1）通过各向缩放还原：
+        // - XY 按 rout 缩放半径
+        // - Z 按 height 缩放截面高度
         Vec3::new(self.rout, self.rout, self.height)
     }
 

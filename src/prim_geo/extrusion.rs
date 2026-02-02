@@ -56,6 +56,10 @@ impl VerifiedShape for Extrusion {
 }
 
 impl BrepShapeTrait for Extrusion {
+    fn is_reuse_unit(&self) -> bool {
+        true
+    }
+
     fn clone_dyn(&self) -> Box<dyn BrepShapeTrait> {
         Box::new(self.clone())
     }

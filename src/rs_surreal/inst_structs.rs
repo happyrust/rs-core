@@ -61,9 +61,6 @@ pub struct InstGeo {
     pub created_at: Option<NaiveDateTime>,
     /// 更新时间
     pub updated_at: Option<NaiveDateTime>,
-    /// 是否为单位 mesh：true=通过 transform 缩放，false=通过 mesh 顶点缩放
-    #[serde(default)]
-    pub unit_flag: bool,
 }
 
 /// geo_relate 表结构体
@@ -256,7 +253,6 @@ impl InstGeo {
         meshed: bool,
         visible: bool,
         geo_type: String,
-        unit_flag: bool,
     ) -> Self {
         Self {
             id,
@@ -267,7 +263,6 @@ impl InstGeo {
             geo_type,
             created_at: None,
             updated_at: None,
-            unit_flag,
         }
     }
 
@@ -317,8 +312,7 @@ impl InstGeo {
                 trans = {},
                 geo_type = '{}',
                 created_at = {},
-                updated_at = {},
-                unit_flag = {};"#,
+                updated_at = {};"#,
             self.id,
             self.param.to_string(),
             self.meshed,
@@ -326,8 +320,7 @@ impl InstGeo {
             trans_str,
             self.geo_type,
             created_at_str,
-            updated_at_str,
-            self.unit_flag
+            updated_at_str
         )
     }
 
@@ -341,7 +334,6 @@ impl InstGeo {
             "geo_type": self.geo_type,
             "created_at": self.created_at,
             "updated_at": self.updated_at,
-            "unit_flag": self.unit_flag,
         });
 
         // 添加 ID
@@ -1127,7 +1119,6 @@ mod tests {
             true,
             true,
             "Pos".to_string(),
-            true, // 单位 mesh
         );
 
         assert_eq!(inst_geo.id, "geo_123");
@@ -1135,7 +1126,6 @@ mod tests {
         assert_eq!(inst_geo.meshed, true);
         assert_eq!(inst_geo.visible, true);
         assert_eq!(inst_geo.geo_type, "Pos");
-        assert_eq!(inst_geo.unit_flag, true);
     }
 
     #[test]
@@ -1152,15 +1142,13 @@ mod tests {
             true,
             true,
             "Pos".to_string(),
-            true,
-        ); // 单位 mesh
+        );
 
         let sql = inst_geo.to_surql();
         assert!(sql.contains("CREATE inst_geo:geo_123"));
         assert!(sql.contains("meshed = true"));
         assert!(sql.contains("visible = true"));
         assert!(sql.contains("geo_type = 'Pos'"));
-        assert!(sql.contains("unit_flag = true"));
     }
 
     #[test]
