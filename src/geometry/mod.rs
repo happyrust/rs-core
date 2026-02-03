@@ -335,7 +335,7 @@ impl ShapeInstancesData {
                     geo_param: PdmsGeoParam::PrimBox(SBox::default()),
                     pts: vec![],
                     aabb: Some(unit_box_aabb),
-                    transform: Default::default(),
+                    geo_transform: Default::default(),
                     visible: true,
                     is_tubi: true,
                     geo_type: GeoBasicType::Tubi,
@@ -737,7 +737,7 @@ impl EleInstGeo {
         self.geo_param
             .key_points()
             .into_iter()
-            .map(|v| self.transform.transform_point(*v))
+            .map(|v| self.geo_transform.transform_point(*v))
             .collect()
     }
 
@@ -772,9 +772,9 @@ impl EleInstGeo {
     pub fn build_csg_shape(&self) -> anyhow::Result<crate::prim_geo::basic::CsgSharedMesh> {
         let mut shape = self.geo_param.build_csg_shape(self.refno)?;
         let unit_flag = self.geo_param.is_reuse_unit();
-        // unit_flag=true：几何为单位 mesh，尺寸由 transform.scale 还原
+        // unit_flag=true：几何为单位 mesh，尺寸由 geo_transform.scale 还原
         // unit_flag=false：几何顶点已包含真实尺寸，避免重复缩放
-        let mut new_transform = self.transform;
+        let mut new_transform = self.geo_transform;
         if !unit_flag {
             new_transform.scale = Vec3::ONE;
         }

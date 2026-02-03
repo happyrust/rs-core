@@ -75,10 +75,12 @@ impl SCTorus {
                 ctorus.rout = ctorus.rout / 2.0;
             }
             let y_axis = z_axis.cross(x_axis).normalize();
+            // CTorus 使用 unit mesh (rout=1) + scale 方式复用几何体
+            // scale 必须设置为 rout，以便将 unit mesh 缩放到实际尺寸
             let mat = Transform {
                 rotation: Quat::from_mat3(&bevy_math::Mat3::from_cols(x_axis, y_axis, z_axis)),
                 translation,
-                ..Default::default()
+                scale: Vec3::splat(ctorus.rout),
             };
             if mat.translation.is_nan() || mat.rotation.is_nan() || mat.scale.is_nan() {
                 return None;
