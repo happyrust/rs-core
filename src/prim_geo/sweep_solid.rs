@@ -52,7 +52,6 @@ pub struct SweepSolid {
     pub path: SweepPath3D,
     pub lmirror: bool,
     pub spine_segments: Vec<Spine3D>, // 存储原始 Spine3D 段信息（用于变换）
-    pub segment_transforms: Vec<Transform>, // 存储每段起点 POINSP 的 local transform
 }
 
 impl SweepSolid {
@@ -135,7 +134,6 @@ impl Default for SweepSolid {
             path: SweepPath3D::default(),
             lmirror: false,
             spine_segments: Vec::new(),
-            segment_transforms: Vec::new(),
         }
     }
 }
@@ -151,8 +149,9 @@ impl VerifiedShape for SweepSolid {
 
 impl BrepShapeTrait for SweepSolid {
     fn is_reuse_unit(&self) -> bool {
-        // 仅对“简单直线且无倾斜”的 PrimLoft 做单位化复用；
-        // 含 CURVE（Arc）/多段路径的放样直接用真实几何，避免 unit arc + segment_transforms 的复杂度。
+        // 单段直线且无端面倾斜可单位化复用
+        // 有端面倾斜时不复用，因为 scale.z 会导致端面变形
+        // 含 CURVE（Arc）/多段路径的放样直接用真实几何
         self.path.as_single_line().is_some() && !self.is_sloped()
     }
 
@@ -163,8 +162,9 @@ impl BrepShapeTrait for SweepSolid {
     fn hash_unit_mesh_params(&self) -> u64 {
         // 仅对影响几何的参数取哈希：截面 + 归一化路径 + 端面倾斜/镜像，避免位置/缩放导致的缓存失效
         // 说明：
-        // - 简单直线（单位化）路径：bangle 由实例/方位链路表达，不参与单位几何体哈希
-        // - 曲线/多段（非单位化）路径：bangle 会改变几何（截面旋转），应纳入哈希
+        // - 简单直线且无端面倾斜：可复用单位几何，长度/方向由实例 transform 处理
+        // - 有端面倾斜：不复用，因为 scale.z 会导致端面变形，需要包含实际路径
+        // - 曲线/多段路径：bangle 会改变几何（截面旋转），应纳入哈希
         #[derive(Serialize)]
         struct Hashable<'a> {
             profile: &'a CateProfileParam,
@@ -174,24 +174,17 @@ impl BrepShapeTrait for SweepSolid {
             lmirror: bool,
             plax: Vec3,
             bangle: f32,
-            /// 圆弧/多段路径的几何由 segment_transforms 共同决定（用于把单位段还原到真实半径/长度/段位置）
-            /// 单段直线复用单位几何时，为避免长度进入 hash，这里传空 slice。
-            segment_transforms: &'a [Transform],
         }
 
         let mut hasher = DefaultHasher::default();
         "SweepSolid".hash(&mut hasher);
 
+        // 单段直线且无端面倾斜才可单位化复用
         let is_simple_line = self.path.as_single_line().is_some() && !self.is_sloped();
-        let seg_tfs: &[Transform] = if is_simple_line {
-            &[]
-        } else {
-            &self.segment_transforms
-        };
         let bangle = if is_simple_line { 0.0 } else { self.bangle };
 
         let target = if is_simple_line {
-            // 单段直线且无倾斜：复用单位几何，长度/方向由实例 transform 处理，不进入 hash
+            // 单段直线且无端面倾斜：复用单位几何，长度/方向由实例 transform 处理
             Hashable {
                 profile: &self.profile,
                 path: &SweepPath3D::default(),
@@ -200,10 +193,9 @@ impl BrepShapeTrait for SweepSolid {
                 lmirror: self.lmirror,
                 plax: self.plax,
                 bangle,
-                segment_transforms: seg_tfs,
             }
         } else {
-            // 圆弧/多段/倾斜：必须把完整路径与段变换纳入 hash，避免不同半径/段位置误复用
+            // 有端面倾斜/圆弧/多段：不复用，需要包含实际路径和端面方向
             Hashable {
                 profile: &self.profile,
                 path: &self.path,
@@ -212,7 +204,6 @@ impl BrepShapeTrait for SweepSolid {
                 lmirror: self.lmirror,
                 plax: self.plax,
                 bangle,
-                segment_transforms: seg_tfs,
             }
         };
 
@@ -225,20 +216,31 @@ impl BrepShapeTrait for SweepSolid {
 
     fn gen_unit_shape(&self) -> Box<dyn BrepShapeTrait> {
         let mut unit = self.clone();
-        if unit.path.as_single_line().is_some() && !self.is_sloped() {
+        if let Some(line) = unit.path.as_single_line() {
+            let length = line.length();
             unit.extrude_dir = DVec3::Z;
-            unit.path = SweepPath3D::from_line(Line3D {
-                start: Default::default(),
-                end: Vec3::Z * 100.0,
-                is_spine: false,
-            });
-            // 单段直线（非倾斜）视为“标准端面”（与路径正交），避免 drns/drne 的符号差异导致误判/误复用。
-            // 端面倾斜（非 ±Z）仍会走 sloped 分支，不会进入此处。
-            unit.drns = None;
-            unit.drne = None;
+            if self.is_sloped() {
+                // 有端面倾斜：使用实际长度（沿 Z 轴方向），不复用
+                // 这样 scale.z 不会导致端面变形
+                unit.path = SweepPath3D::from_line(Line3D {
+                    start: Default::default(),
+                    end: Vec3::Z * length,
+                    is_spine: false,
+                });
+                // 保留 DRNS/DRNE，端面方向会影响几何
+            } else {
+                // 无端面倾斜：使用单位化路径（Z*100），可复用
+                unit.path = SweepPath3D::from_line(Line3D {
+                    start: Default::default(),
+                    end: Vec3::Z * 100.0,
+                    is_spine: false,
+                });
+                // 清空 DRNS/DRNE，因为无端面倾斜
+                unit.drns = None;
+                unit.drne = None;
+            }
         }
-        // 单位体不应携带原始的段变换，避免重复应用位移/缩放
-        unit.segment_transforms = vec![Transform::IDENTITY];
+        // 清空原始 spine 段信息
         unit.spine_segments.clear();
         // 单位几何体是标准的，不包含 bangle
         unit.bangle = 0.0;
@@ -247,28 +249,14 @@ impl BrepShapeTrait for SweepSolid {
 
     #[inline]
     fn get_scaled_vec3(&self) -> Vec3 {
-        if self.is_sloped() {
-            return Vec3::ONE;
-        }
-        if let Some(l) = self.path.as_single_line() {
-            Vec3::new(1.0, 1.0, l.length() / 100.0)
-        } else {
-            Vec3::ONE
-        }
+        // 重构后：scale 通过 geo_transform 承载，这里返回 ONE
+        Vec3::ONE
     }
 
     #[inline]
     fn get_trans(&self) -> bevy_transform::prelude::Transform {
-        // 使用 segment_transforms 中的第一个变换（如果存在）
-        if let Some(first_transform) = self.segment_transforms.first() {
-            *first_transform
-        } else {
-            Transform {
-                rotation: Quat::IDENTITY,
-                scale: self.get_scaled_vec3(),
-                translation: Vec3::ZERO,
-            }
-        }
+        // 重构后：transform 通过 geo_transform 承载，这里返回 IDENTITY
+        Transform::IDENTITY
     }
 
     fn tol(&self) -> f32 {

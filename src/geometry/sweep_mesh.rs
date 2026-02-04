@@ -1,4 +1,4 @@
-use crate::debug_macros::is_debug_model_enabled;
+﻿use crate::debug_macros::is_debug_model_enabled;
 use crate::mesh_precision::LodMeshSettings;
 use crate::parsed_data::CateProfileParam;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
@@ -39,6 +39,19 @@ fn get_profile_data(profile: &CateProfileParam, _refno: RefnoEnum) -> Option<Pro
             // SPRO: verts 是 Vec<Vec2>，frads 是 Vec<f32>
             // 需要转换为 Vec<Vec3>，其中 z 分量是 FRADIUS
             if spro.verts.len() != spro.frads.len() {
+                if is_debug_model_enabled() {
+                    eprintln!(
+                        "[get_profile_data] SPRO verts/frads 长度不匹配: verts={}, frads={}",
+                        spro.verts.len(),
+                        spro.frads.len()
+                    );
+                }
+                return None;
+            }
+            if spro.verts.is_empty() {
+                if is_debug_model_enabled() {
+                    eprintln!("[get_profile_data] SPRO verts 为空");
+                }
                 return None;
             }
             let wire: Vec<Vec3> = spro
@@ -124,10 +137,31 @@ fn get_profile_data(profile: &CateProfileParam, _refno: RefnoEnum) -> Option<Pro
         frads.push(r);
     }
 
-    let processor = ProfileProcessor::from_wires(verts2d, frads, true).ok()?;
+    let processor = match ProfileProcessor::from_wires(verts2d.clone(), frads.clone(), true) {
+        Ok(p) => p,
+        Err(e) => {
+            if is_debug_model_enabled() {
+                eprintln!(
+                    "[get_profile_data] ProfileProcessor::from_wires 失败: {:?}, verts2d_len={}, first_wire_len={}",
+                    e,
+                    verts2d.len(),
+                    verts2d.first().map(|v| v.len()).unwrap_or(0)
+                );
+            }
+            return None;
+        }
+    };
     let profile_refno_str = profile_refno.map(|r| r.to_string());
     let profile_refno_ref = profile_refno_str.as_deref();
-    let processed = processor.process("SWEEP", profile_refno_ref).ok()?;
+    let processed = match processor.process("SWEEP", profile_refno_ref) {
+        Ok(p) => p,
+        Err(e) => {
+            if is_debug_model_enabled() {
+                eprintln!("[get_profile_data] ProfileProcessor::process 失败: {:?}", e);
+            }
+            return None;
+        }
+    };
 
     // 从 ProcessedProfile 转换为 ProfileData
     // 使用 contour_points 作为轮廓点
@@ -136,6 +170,9 @@ fn get_profile_data(profile: &CateProfileParam, _refno: RefnoEnum) -> Option<Pro
     let n = processed.contour_points.len();
 
     if n < 3 {
+        if is_debug_model_enabled() {
+            eprintln!("[get_profile_data] contour_points 太少: n={}", n);
+        }
         return None;
     }
 
@@ -214,7 +251,7 @@ fn build_profile_transform_matrix(plin_pos: Vec2, bangle: f32, lmirror: bool) ->
     mirror_mat * rotation_mat * translation
 }
 
-/// 对截面应用 plin_pos/lmirror 变换（BANG 已在 segment_transforms 的 Frenet 标架旋转中应用，此处不再重复旋转）
+/// 对截面应用 plin_pos/lmirror 变换
 fn apply_profile_transform(
     mut profile: ProfileData,
     plin_pos: Vec2,
@@ -222,8 +259,7 @@ fn apply_profile_transform(
     lmirror: bool,
 ) -> ProfileData {
     // 说明：
-    // - 直线（单位化）路径：bangle 仍由旧流程在 segment_transforms/方位链路中处理，这里传 0 避免重复旋转。
-    // - 曲线（非单位化）路径：不再使用 segment_transforms 还原/扭转，bangle 需在截面阶段应用。
+    // - 重构后：所有路径使用实际几何坐标，bangle 在截面阶段应用
     let mat = build_profile_transform_matrix(plin_pos, bangle, lmirror);
 
     for v in &mut profile.vertices {
@@ -365,12 +401,12 @@ fn transform_arc(arc: &Arc3D, transform: &Transform) -> SegmentPath {
     }
 }
 
-/// 同步版本的路径采样，使用预计算的变换
+/// 同步版本的路径采样
+/// 重构后：路径段已使用实际几何坐标，不再需要 segment_transforms 变换
 fn sample_path_frames_sync(
     segments: &[SegmentPath],
     arc_segments_per_segment: usize,
     plax: Vec3, // 标准参考方向（调用方应传 Vec3::Z；圆弧分支内部使用 pref_axis/YDIR）
-    segment_transforms: &[Transform], // 预计算的每段变换
 ) -> Option<Vec<PathSample>> {
     if segments.is_empty() {
         return None;
@@ -379,31 +415,13 @@ fn sample_path_frames_sync(
     // 特殊处理：单段圆弧路径使用径向坐标系
     if segments.len() == 1 {
         if let SegmentPath::Arc(arc) = &segments[0] {
-            // 变换圆弧段，安全处理空变换数组
-            let transform = segment_transforms.first().unwrap_or(&Transform::IDENTITY);
-            let transformed_arc = match transform_arc(arc, transform) {
-                SegmentPath::Arc(arc) => arc,
-                _ => return None,
-            };
-
-            // plax 也需要跟随段变换旋转到同一坐标系，否则 ref_up/plax 与切线可能退化为平行，产生 NaN。
-            let plax = (transform.rotation * plax).normalize_or_zero();
-            return sample_arc_frames(&transformed_arc, arc_segments_per_segment, plax);
+            // 重构后：圆弧已使用实际几何坐标，直接使用
+            return sample_arc_frames(arc, arc_segments_per_segment, plax);
         }
     }
 
-    // 1. 变换所有段
-    let mut transformed_segments = Vec::new();
-    for (i, segment) in segments.iter().enumerate() {
-        // 安全获取变换，如果数组为空则使用单位变换
-        let transform = segment_transforms.get(i).unwrap_or(&Transform::IDENTITY);
-
-        let transformed_segment = match segment {
-            SegmentPath::Line(line) => SegmentPath::Line(transform_line(line, transform)),
-            SegmentPath::Arc(arc) => transform_arc(arc, transform),
-        };
-        transformed_segments.push(transformed_segment);
-    }
+    // 重构后：路径段已使用实际几何坐标，直接使用（不再需要变换）
+    let transformed_segments = segments.to_vec();
 
     if is_debug_model_enabled() {
         for (i, seg) in transformed_segments.iter().enumerate() {
@@ -520,9 +538,8 @@ fn sample_path_frames_sync(
     // 2. 计算第一点的坐标系
     let first_tan = raw_samples[0].1;
 
-    // 修复：参考方向必须与 raw_samples 的坐标系一致。
-    // raw_samples 来自 transformed_segments（已应用 segment_transforms），因此 ref_up 也应从
-    // transformed_segments 推导；否则在圆弧/多段路径中，ref_up 可能与切线退化为平行，产生 NaN。
+    // 参考方向必须与 raw_samples 的坐标系一致。
+    // 重构后：路径段已使用实际几何坐标，直接从路径段推导 ref_up
     let ref_up = match transformed_segments.first() {
         Some(SegmentPath::Arc(arc)) => arc.pref_axis,
         Some(SegmentPath::Line(line)) if line.is_spine => transformed_segments
@@ -1199,10 +1216,21 @@ pub fn generate_sweep_solid_mesh(
     refno: RefnoEnum,
 ) -> Option<PlantMesh> {
     // 正常生成截面数据并应用截面自身变换（plin_pos/bangle/lmirror）
-    let profile = get_profile_data(&sweep.profile, refno)?;
+    let profile = match get_profile_data(&sweep.profile, refno) {
+        Some(p) => p,
+        None => {
+            if is_debug_model_enabled() {
+                eprintln!(
+                    "[SweepSolid] get_profile_data 返回 None: profile_type={:?}",
+                    std::mem::discriminant(&sweep.profile)
+                );
+            }
+            return None;
+        }
+    };
     // 仅对“非简单直线”路径在截面阶段应用 bangle，避免与旧的单位化直线链路重复旋转。
-    let is_simple_line = sweep.path.as_single_line().is_some() && !sweep.is_sloped();
-    let bangle = if is_simple_line { 0.0 } else { sweep.bangle };
+    let is_line_path = sweep.path.as_single_line().is_some();
+    let bangle = if is_line_path { 0.0 } else { sweep.bangle };
     let profile = apply_profile_transform(profile, sweep.profile.get_plin_pos(), bangle, sweep.lmirror);
 
     let arc_segments = if sweep.path.is_single_segment() {
@@ -1213,24 +1241,19 @@ pub fn generate_sweep_solid_mesh(
         }
     } else {
         // 多段路径：不能用固定 32 上限，否则当路径半径/缩放很大时会严重折线化。
-        // 这里按每个圆弧段的“真实弧长/半径(含 segment_transforms scale)”计算需要的细分数，取最大值。
+        // 重构后：圆弧已使用实际几何坐标，直接使用其 radius 和 angle
         let mut max_segs = 1usize;
         for (i, seg) in sweep.path.segments.iter().enumerate() {
             let SegmentPath::Arc(arc) = seg else { continue };
-            let tf = sweep
-                .segment_transforms
-                .get(i)
-                .unwrap_or(&Transform::IDENTITY);
-            let plane_scale = arc_plane_max_scale(arc, tf);
-
-            let radius = arc.radius.abs() * plane_scale;
-            let arc_len = arc.angle.abs() * arc.radius.abs() * plane_scale;
+            // 重构后：不再需要 segment_transforms 的缩放校正
+            let radius = arc.radius.abs();
+            let arc_len = arc.angle.abs() * radius;
             let segs = compute_arc_segments(settings, arc_len, radius);
 
             if is_debug_model_enabled() {
                 println!(
-                    "[SweepSolid] multi-path arc seg#{i}: radius_raw={:.6} angle={:.6} plane_scale={:.6} -> radius={:.3} arc_len={:.3} segs={}",
-                    arc.radius, arc.angle, plane_scale, radius, arc_len, segs
+                    "[SweepSolid] multi-path arc seg#{i}: radius={:.3} angle={:.6} -> arc_len={:.3} segs={}",
+                    radius, arc.angle, arc_len, segs
                 );
             }
             max_segs = max_segs.max(segs);
@@ -1238,14 +1261,25 @@ pub fn generate_sweep_solid_mesh(
         max_segs
     };
 
-    // 使用预计算的变换进行路径采样
+    // 使用实际几何坐标进行路径采样
     // plax 由 SweepSolid 提供，决定直线路径的参考朝向
-    let frames = sample_path_frames_sync(
+    let frames = match sample_path_frames_sync(
         &sweep.path.segments,
         arc_segments,
         sweep.plax,
-        &sweep.segment_transforms,
-    )?;
+    ) {
+        Some(f) => f,
+        None => {
+            if is_debug_model_enabled() {
+                eprintln!(
+                    "[SweepSolid] sample_path_frames_sync 返回 None: segments_len={}, plax={:?}",
+                    sweep.path.segments.len(),
+                    sweep.plax
+                );
+            }
+            return None;
+        }
+    };
 
     // 正常生成 mesh（不再需要后处理变换）
     let mesh = generate_mesh_from_frames(&profile, &frames, sweep.drns, sweep.drne);
