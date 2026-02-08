@@ -153,7 +153,7 @@ pub async fn query_room_panel_by_point_v2(point: Vec3) -> anyhow::Result<Option<
             };
 
             let Some(tri_mesh) = mesh.get_tri_mesh_with_flag(
-                (geom_inst.world_trans * &inst.transform).to_matrix(),
+                (geom_inst.world_trans * &inst.geo_transform).to_matrix(),
                 TriMeshFlags::ORIENTED,
             ) else {
                 continue;

@@ -109,7 +109,7 @@ pub async fn connect_with_config(config: &ConnectionConfig) -> Result<Connection
     }
 
     if let (Some(ns), Some(dbname)) = (config.namespace.as_ref(), config.database.as_ref()) {
-        db.use_ns(ns).use_db(dbname).await?;
+        crate::use_ns_db_compat(&db, ns, dbname).await?;
     }
 
     Ok(ConnectionHandle::new(db))
@@ -152,7 +152,7 @@ pub async fn verify_connection(config: &ConnectionConfig) -> Result<()> {
     }
 
     if let (Some(ns), Some(dbname)) = (config.namespace.as_ref(), config.database.as_ref()) {
-        if let Err(e) = db.use_ns(ns).use_db(dbname).await {
+        if let Err(e) = crate::use_ns_db_compat(&db, ns, dbname).await {
             return Err(anyhow!(
                 "切换命名空间/数据库失败 (ns={}, db={}): {}",
                 ns,

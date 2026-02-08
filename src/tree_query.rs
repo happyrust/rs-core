@@ -591,7 +591,7 @@ mod tests {
             refno: child_refno,
             owner: root_refno,
             noun: db1_hash("BRAN"),
-            cata_hash: Some("123456".to_string()),
+            cata_hash: Some(123456),
         });
         root_id.append(child_id, &mut arena);
 
@@ -607,7 +607,7 @@ mod tests {
         let loaded = TreeFile::load(&path).expect("load tree file");
         let index = TreeIndex::from_tree_file(loaded);
         let meta = index.node_meta(child_refno).expect("child meta");
-        assert_eq!(meta.cata_hash.as_deref(), Some("123456"));
+        assert_eq!(meta.cata_hash, Some(123456));
         let _ = std::fs::remove_file(path);
     }
 
@@ -626,7 +626,7 @@ mod tests {
             refno: child_refno,
             owner: root_refno,
             noun: db1_hash("BRAN"),
-            cata_hash: Some("234567".to_string()),
+            cata_hash: Some(234567),
         });
         root_id.append(child_id, &mut arena);
 

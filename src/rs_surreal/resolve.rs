@@ -72,6 +72,10 @@ pub struct CataContext {
     #[deref_mut]
     pub context: DashMap<String, String>,
     pub is_tubi: bool,
+    /// 是否将保温层参数（IPARAM）代入几何计算。
+    /// - false（默认）：IPARAM 全部为 0，生成物理几何模型
+    /// - true：IPARAM 使用实际保温层厚度，生成含保温层的模型
+    pub with_insulation: bool,
 
     // 调试信息字段（使用 RefCell 实现内部可变性，仅在 debug_model 开启时使用）
     pub debug_geo_refno: RefCell<Option<String>>, // 当前几何体参考号
@@ -85,6 +89,7 @@ impl Default for CataContext {
         Self {
             context: DashMap::new(),
             is_tubi: false,
+            with_insulation: false,
             debug_geo_refno: RefCell::new(None),
             debug_geo_type: RefCell::new(None),
             debug_attr_name: RefCell::new(None),
@@ -127,6 +132,12 @@ pub async fn get_or_create_cata_context(
     }
     context.insert("DESI_REFNO".to_string(), desi_refno.to_string());
     let desp = desi_att.get_f32_vec("DESP").unwrap_or_default();
+    crate::debug_model_debug!(
+        "🔍 [DESP] desi_refno={}, DESP array: {:?}, raw_val: {:?}",
+        desi_refno,
+        desp,
+        desi_att.get_val("DESP")
+    );
     for i in 0..desp.len() {
         context.insert(format!("DESI{}", i + 1), desp[i].to_string());
         context.insert(format!("DESP{}", i + 1), desp[i].to_string());
@@ -1277,5 +1288,23 @@ mod tests {
 
         let v = eval_str_to_f64("SUM PARAM 4 IPARAM 1", &context, "DIST").unwrap();
         assert!((v - 26.7).abs() < 1e-6, "v={}", v);
+    }
+
+    #[test]
+    fn test_iparam_should_resolve_to_ipara_even_if_iparam_key_exists() {
+        // 回归：gen_model-dev 会把查询到的 IPARAM 写入 context（IPARAM1/IPARAM 1 等）。
+        // 解析器必须仍然把 "IPARAM 1" 规整为 "IPARA1"（去掉末尾 'M'），否则会误用 IPARAM1 的值。
+        //
+        // 典型现象：SCTO 的 DIAMETERS[0] = SUM PARAM 2 IPARAM 1，
+        // 若 IPARAM1 被误用为 bore=100，则 114 + 100 = 214（错误）。
+        let context = CataContext::default();
+        context.insert("PARA2", "114.0");
+        context.insert("IPARA1", "0");
+
+        // 模拟错误来源：DB 查询结果把 IPARAM1 写成了 100（例如误取 bore/ID）。
+        context.insert("IPARAM1", "100");
+
+        let v = eval_str_to_f64("SUM PARAM 2 IPARAM 1", &context, "DIST").unwrap();
+        assert!((v - 114.0).abs() < 1e-6, "v={}", v);
     }
 }

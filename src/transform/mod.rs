@@ -608,7 +608,6 @@ pub async fn refresh_pe_transform_for_dbnums(dbnums: &[u32]) -> anyhow::Result<u
     const BATCH_SIZE: usize = 500;
     let mut entries: Vec<PeTransformEntry> = Vec::with_capacity(BATCH_SIZE);
     let mut total = 0usize;
-    let mut last_print_count = 0usize;
 
     fn push_entry(
         entries: &mut Vec<PeTransformEntry>,
@@ -667,6 +666,10 @@ pub async fn refresh_pe_transform_for_dbnums(dbnums: &[u32]) -> anyhow::Result<u
 
         println!("🔍 处理 dbnum {}, 找到 {} 个根节点", dbnum, roots.len());
 
+        // 当前 dbnum 的局部计数器（用于进度显示）
+        let mut dbnum_processed = 0usize;
+        let mut dbnum_last_print = 0usize;
+
         for root_refno in roots {
             let mut queue: VecDeque<(RefnoEnum, DMat4)> = VecDeque::new();
 
@@ -686,6 +689,7 @@ pub async fn refresh_pe_transform_for_dbnums(dbnums: &[u32]) -> anyhow::Result<u
                 local_mat,
                 Some(world_mat),
             );
+            dbnum_processed += 1;
             queue.push_back((root_refno, world_mat));
 
             while let Some((parent_refno, parent_world)) = queue.pop_front() {
@@ -712,22 +716,23 @@ pub async fn refresh_pe_transform_for_dbnums(dbnums: &[u32]) -> anyhow::Result<u
                         None => parent_world,
                     };
                     push_entry(&mut entries, &mut total, child, local_mat, Some(world_mat));
+                    dbnum_processed += 1;
                     queue.push_back((child, world_mat));
 
                     // 每处理 10 个节点更新一次进度
-                    if total - last_print_count >= 10 {
+                    if dbnum_processed - dbnum_last_print >= 10 {
                         let percentage = if total_nodes > 0 {
-                            (total as f64 / total_nodes as f64 * 100.0) as usize
+                            (dbnum_processed as f64 / total_nodes as f64 * 100.0) as usize
                         } else {
                             0
                         };
                         print!(
                             "\r📊 进度: {}/{} ({:3}%)...",
-                            total, total_nodes, percentage
+                            dbnum_processed, total_nodes, percentage
                         );
                         use std::io::Write;
                         std::io::stdout().flush().ok();
-                        last_print_count = total;
+                        dbnum_last_print = dbnum_processed;
                     }
 
                     if entries.len() >= BATCH_SIZE {
@@ -735,21 +740,23 @@ pub async fn refresh_pe_transform_for_dbnums(dbnums: &[u32]) -> anyhow::Result<u
                         entries.clear();
                         // 批量保存时也更新进度
                         let percentage = if total_nodes > 0 {
-                            (total as f64 / total_nodes as f64 * 100.0) as usize
+                            (dbnum_processed as f64 / total_nodes as f64 * 100.0) as usize
                         } else {
                             0
                         };
                         print!(
                             "\r📊 进度: {}/{} ({:3}%) [已保存批次]...",
-                            total, total_nodes, percentage
+                            dbnum_processed, total_nodes, percentage
                         );
                         use std::io::Write;
                         std::io::stdout().flush().ok();
-                        last_print_count = total;
+                        dbnum_last_print = dbnum_processed;
                     }
                 }
             }
         }
+        // 当前 dbnum 处理完成，打印换行
+        println!();
     }
 
     if !entries.is_empty() {

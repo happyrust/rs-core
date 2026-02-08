@@ -153,7 +153,7 @@ axum = { version = "0.8.7", optional = true, features = ["json"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 tokio = { version = "1", features = ["rt-multi-thread"] }
-rusqlite = { version = "0.33", features = ["bundled"], optional = true }
+rusqlite = { version = "0.32", features = ["bundled"], optional = true }
 redb = { version = "2.6.0", optional = true }
 manifold-rs = { path = "../manifold-rs", optional = true }
 sqlx = { version = "0.8.6", default-features = false, features = [

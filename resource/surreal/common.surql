@@ -547,6 +547,7 @@ DEFINE FUNCTION fn::children($pe:record) {
 // 获取保温层参数
 REMOVE FUNCTION fn::get_ipara;
 -- 获取保温层参数
+-- 根据 TEMP（温度）筛选 SELE，再根据 HBOR（孔径）筛选 SPCO
 DEFINE FUNCTION fn::get_ipara($pe:record) {
     // 获取父节点的 ISPE 引用
     let $ispe = $pe.refno.ISPE?:$pe.owner.refno.ISPE;
@@ -554,16 +555,27 @@ DEFINE FUNCTION fn::get_ipara($pe:record) {
         // 如果没有 ISPE 引用，返回默认参数 [0]
         return [0.0];
     } else {
-        //温度在 BRAN 上，也就是它的 owner
+        // 温度在 BRAN 上，也就是它的 owner
         let $temp = $pe.owner.refno.TEMP;
+        // 孔径在 BRAN 上
+        let $hbor = $pe.owner.refno.HBOR;
 
-        // 查询符合条件的 CATR 节点的 PARA 参数
-        return (select value (children[0].refno.CATR.refno.PARA)
-             from only $ispe.{2}.children.refno.{children: REFNO.children, MAXA, ANSW, TYPE}
-             where TYPE = 'SELE' and $temp >= ANSW && $temp <= MAXA
-             limit 1)??[0.0]; 
-        --         // 孔径条件：父节点孔径在 ANSW 和 MAXA 范围内
-        --         where $parent.owner.refno.HBOR >=$answ and $parent.owner.refno.HBOR <= $maxa limit 1)
+        // 1. 根据 TEMP 筛选 SELE 节点
+        let $sele = (select * from only $ispe.{2}.children.refno.{children: REFNO.children, MAXA, ANSW, TYPE}
+             where TYPE = 'SELE' and $temp >= ANSW and $temp <= MAXA
+             limit 1);
+
+        // 2. 在 SELE 的 children (SPCO) 中根据 HBOR 筛选
+        let $spco = array::filter($sele.children, |$c| $hbor >= $c.refno.ANSW and $hbor <= $c.refno.MAXA)[0];
+
+        // 3. 返回匹配 SPCO 的 CATR.PARA，如果没有匹配则返回第一个 SPCO 的值
+        return if $spco != none {
+            return $spco.refno.CATR.refno.PARA ?? [0.0];
+        } else if $sele.children[0] != none {
+            return $sele.children[0].refno.CATR.refno.PARA ?? [0.0];
+        } else {
+            return [0.0];
+        };
     };
 };
 

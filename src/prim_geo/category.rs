@@ -437,7 +437,7 @@ pub fn try_convert_cate_geo_to_csg_shape(geom: &CateGeoParam) -> Option<CateCsgS
             let scyl = SCylinder {
                 phei,
                 pdia,
-                // SCylinder 始终以中心点为基准，忽略 centre_line_flag
+                center_in_mid: false,
                 ..Default::default()
             };
             let transform = Transform {

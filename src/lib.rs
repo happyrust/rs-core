@@ -27,7 +27,7 @@ pub mod axis_param;
 
 pub mod basic;
 
-// pub mod parse; // 模块已移动或删除
+pub mod parse; // 兼容下游依赖：保留 aios_core::parse 路径
 
 pub mod bevy_types;
 // pub mod cache; // 模块已删除
@@ -266,11 +266,8 @@ pub async fn init_test_surreal() -> Result<DbOption, HandleError> {
             msg: format!("Failed to sign in: {}", e),
         })?;
 
-    // Set namespace and database
-    let _ = SUL_DB
-        .use_ns(&db_option.surreal_ns)
-        .use_db(&db_option.project_name)
-        .await;
+    // Set namespace and database (兼容 SurrealDB 3.x)
+    let _ = crate::use_ns_db_compat(&SUL_DB, &db_option.surreal_ns, &db_option.project_name).await;
 
     // Define common functions (使用 None 从配置文件自动读取路径)
     define_common_functions(None)
@@ -325,15 +322,13 @@ pub async fn init_surreal() -> anyhow::Result<()> {
     }
 
     SUL_DB
-        .use_ns(&db_option.surreal_ns)
-        .use_db(&db_option.project_name)
-        .await?;
-    SUL_DB
         .signin(Root {
             username: db_option.v_user.clone(),
             password: db_option.v_password.clone(),
         })
         .await?;
+
+    crate::use_ns_db_compat(&SUL_DB, &db_option.surreal_ns, &db_option.project_name).await?;
 
     println!("✅ 数据库连接成功！");
 
@@ -362,15 +357,12 @@ pub async fn init_second_unit_surreal() -> anyhow::Result<()> {
         .with_capacity(1000)
         .await?;
     SECOND_SUL_DB
-        .use_ns(&db_option.surreal_ns)
-        .use_db(&db_option.project_name)
-        .await?;
-    SECOND_SUL_DB
         .signin(Root {
             username: db_option.v_user.clone(),
             password: db_option.v_password.clone(),
         })
         .await?;
+    crate::use_ns_db_compat(&SECOND_SUL_DB, &db_option.surreal_ns, &db_option.project_name).await?;
     Ok(())
 }
 
@@ -413,15 +405,6 @@ pub async fn init_demo_test_surreal() -> Result<DbOption, HandleError> {
             msg: format!("Failed to connect to database: {}", e),
         })?;
 
-    // Set namespace and database
-    SUL_DB
-        .use_ns(&db_option.surreal_ns)
-        .use_db(&db_option.project_name)
-        .await
-        .map_err(|e| HandleError::SurrealError {
-            msg: format!("Failed to set namespace and database: {}", e),
-        })?;
-
     // Sign in
     SUL_DB
         .signin(Root {
@@ -431,6 +414,13 @@ pub async fn init_demo_test_surreal() -> Result<DbOption, HandleError> {
         .await
         .map_err(|e| HandleError::SurrealError {
             msg: format!("Failed to sign in: {}", e),
+        })?;
+
+    // Set namespace and database (兼容 SurrealDB 3.x)
+    crate::use_ns_db_compat(&SUL_DB, &db_option.surreal_ns, &db_option.project_name)
+        .await
+        .map_err(|e| HandleError::SurrealError {
+            msg: format!("Failed to set namespace and database: {}", e),
         })?;
 
     // Define common functions (使用 None 从配置文件自动读取路径)

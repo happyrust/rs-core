@@ -20,6 +20,56 @@ use once_cell::sync::Lazy;
 
 pub static SCOM_INFO_MAP: Lazy<DashMap<RefnoEnum, ScomInfo>> = Lazy::new(DashMap::new);
 
+// #region agent log
+fn agent_now_ms() -> u128 {
+    use std::time::{SystemTime, UNIX_EPOCH};
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_millis())
+        .unwrap_or(0)
+}
+
+fn agent_run_id() -> String {
+    std::env::var("AIOS_AGENT_RUNID").unwrap_or_else(|_| "run1".to_string())
+}
+
+fn agent_match_refno(refno: RefnoEnum) -> bool {
+    let Ok(target) = std::env::var("AIOS_AGENT_DEBUG_GEOM_REFNO") else {
+        return false;
+    };
+    let target = target.trim();
+    if target.is_empty() {
+        return false;
+    }
+    let cur = refno.to_string().replace('/', "_");
+    cur == target
+}
+
+fn agent_log(hypothesis_id: &str, location: &str, message: &str, data: serde_json::Value) {
+    if std::env::var_os("AIOS_AGENT_DEBUG").is_none()
+        && std::env::var_os("AIOS_AGENT_DEBUG_REFNO").is_none()
+        && std::env::var_os("AIOS_AGENT_DEBUG_GEOM_REFNO").is_none()
+        && std::env::var_os("AIOS_LOG_FILE").is_none()
+    {
+        return;
+    }
+    let payload = serde_json::json!({
+        "sessionId": "debug-session",
+        "runId": agent_run_id(),
+        "hypothesisId": hypothesis_id,
+        "location": location,
+        "message": message,
+        "data": data,
+        "timestamp": agent_now_ms(),
+    });
+    let path = r"d:\work\plant-code\gen_model-dev\.cursor\debug.log";
+    use std::io::Write;
+    if let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open(path) {
+        let _ = writeln!(f, "{}", payload.to_string());
+    }
+}
+// #endregion
+
 /// 求解axis的数值
 pub fn resolve_axis_params(
     refno: RefnoEnum,
@@ -43,32 +93,59 @@ pub fn resolve_gms(
     context: &CataContext,
     axis_param_map: &BTreeMap<i32, CateAxisParam>,
 ) -> Vec<CateGeoParam> {
+    // NOTE:
+    // - 默认不按 TUFL 硬过滤（用于完整实体生成）。
+    // - 若需要“管道视图”导出/显示，可通过环境变量显式开启过滤：AIOS_RESPECT_TUFL=1。
+    let respect_tufl = std::env::var_os("AIOS_RESPECT_TUFL").is_some();
+
     gmse_raw_paras
         .iter()
         .cloned()
         .filter_map(|g| {
-            if g.visible_flag {
-                if g.gm_type == "SPRO" && g.verts.is_empty() {
-                    return None;
-                }
-                let r = resolve_paragon_gm_params(
-                    des_refno,
-                    &g,
-                    jusl_param,
-                    na_plin_param,
-                    context,
-                    axis_param_map,
+            // NOTE:
+            // - g.visible_flag 目前来源于 GMSE 的 TUFL（“管道视图可见性”），不应作为“是否生成几何”的硬过滤条件；
+            //   否则会导致某些元件（例如阀门）缺失本体几何（表现为“少一截”）。
+            // - TUFL 的语义应留给上层“视图/过滤”逻辑使用，而不是在解析阶段直接丢弃几何。
+            if g.gm_type == "SPRO" && g.verts.is_empty() {
+                return None;
+            }
+
+            // TUFL 过滤（管道视图语义）：开启时直接丢弃 TUFL=false 的几何
+            if respect_tufl && !g.visible_flag {
+                // #region agent log
+                agent_log(
+                    "H_TUFL",
+                    "rs-core/src/expression/resolve.rs:resolve_gms",
+                    "filtered_by_tufl",
+                    serde_json::json!({
+                        "design_refno": des_refno.to_string().replace('/', "_"),
+                        "geom_refno": g.refno.to_string().replace('/', "_"),
+                        "gm_type": g.gm_type,
+                        "visible_flag": g.visible_flag,
+                        "centre_line_flag": g.centre_line_flag,
+                        "diameters_expr_len": g.diameters.len(),
+                        "distances_expr_len": g.distances.len(),
+                        "xyz_expr_len": g.xyz.len(),
+                    }),
                 );
-                return match r {
-                    Ok(v) => Some(v),
-                    Err(e) => {
-                        // dbg!(g);
-                        println!("{}", e);
-                        None
-                    }
-                };
-            } else {
-                None
+                // #endregion
+                return None;
+            }
+
+            let r = resolve_paragon_gm_params(
+                des_refno,
+                &g,
+                jusl_param,
+                na_plin_param,
+                context,
+                axis_param_map,
+            );
+            match r {
+                Ok(v) => Some(v),
+                Err(e) => {
+                    println!("{}", e);
+                    None
+                }
             }
         })
         .collect::<_>()
@@ -267,6 +344,24 @@ pub fn resolve_gmse_params(
             val
         })
         .collect();
+
+    // agent：抓取目标 LPYR/NLPY 的原始表达式与求值结果，定位是否存在 /2、单位换算等导致“少一截”
+    if (gm.gm_type == "LPYR" || gm.gm_type == "NLPY") && agent_match_refno(gm.refno) {
+        agent_log(
+            "H8",
+            "rs-core/expression/resolve.rs:resolve_gmse_params",
+            "gm_expr_snapshot",
+            serde_json::json!({
+                "gm_refno": gm.refno.to_string().replace('/', "_"),
+                "gm_type": gm.gm_type,
+                "visible_flag": gm.visible_flag,
+                "distances_raw": gm.distances,
+                "distances_eval": distances,
+                "xyz_raw": gm.xyz,
+                "xyz_eval": xyz,
+            }),
+        );
+    }
 
     let mut paxises: Vec<Option<CateAxisParam>> = Vec::new();
     for axis_str in gm.paxises.iter() {

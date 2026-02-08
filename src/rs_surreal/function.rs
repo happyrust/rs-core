@@ -17,21 +17,21 @@ use std::path::PathBuf;
 /// define_common_functions(Some("resource/surreal")).await?;
 /// ```
 pub async fn define_common_functions(script_dir: Option<&str>) -> anyhow::Result<()> {
-    // 如果传入 None，从 DbOption 配置中读取路径
-    let dir_path = if let Some(dir) = script_dir {
-        dir.to_string()
-    } else {
-        // 读取配置文件获取脚本目录
-        use config::{Config, File};
-        // 读取配置文件
-        let config_file_name =
-            std::env::var("DB_OPTION_FILE").unwrap_or_else(|_| "DbOption".to_string());
-        let s = Config::builder()
-            .add_source(File::with_name(&config_file_name))
-            .build()?;
-        let db_option: crate::options::DbOption = s.try_deserialize()?;
-        db_option.get_surreal_script_dir().to_string()
-    };
+    // 读取配置文件（即使外部显式传入 script_dir，也需要从配置中取得 NS/DB）
+    use config::{Config, File};
+    let config_file_name = std::env::var("DB_OPTION_FILE").unwrap_or_else(|_| "DbOption".to_string());
+    let s = Config::builder()
+        .add_source(File::with_name(&config_file_name))
+        .build()?;
+    let db_option: crate::options::DbOption = s.try_deserialize()?;
+
+    // 如果传入 None，从 DbOption 配置中读取脚本目录
+    let dir_path = script_dir
+        .map(|dir| dir.to_string())
+        .unwrap_or_else(|| db_option.get_surreal_script_dir().to_string());
+
+    let ns = db_option.surreal_ns.clone();
+    let db = db_option.project_name.clone();
 
     let target_dir = std::fs::read_dir(&dir_path)?
         .into_iter()
@@ -57,7 +57,13 @@ pub async fn define_common_functions(script_dir: Option<&str>) -> anyhow::Result
         let mut file = std::fs::File::open(file)?;
         let mut content = String::new();
         file.read_to_string(&mut content)?;
-        SUL_DB.query_response(&content).await?;
+        // ⚠️ SurrealDB 的 NS/DB 选择可能是“连接级会话状态”：
+        // 当底层连接池为每次请求分配不同连接时，先前的 USE 可能不会生效，导致报错：
+        // "Specify a namespace to use"。
+        //
+        // 这里对每个脚本执行都显式前置 USE，保证同一次请求内完成 NS/DB 选择与脚本执行。
+        let wrapped = format!("USE NS `{}` DB `{}`;\n{}", ns, db, content);
+        SUL_DB.query_response(&wrapped).await?;
     }
     Ok(())
 }

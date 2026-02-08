@@ -40,3 +40,4 @@ dist/
 assets/mesh/
 .ace-tool/
 .ace-sidebar/
+test_output

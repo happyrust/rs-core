@@ -597,6 +597,8 @@ pub mod geo_params_data {
                 PdmsGeoParam::PrimSphere(s) => s.gen_csg_shape(),
                 PdmsGeoParam::PrimPolyhedron(s) => s.gen_csg_shape(),
                 PdmsGeoParam::PrimRevolution(s) => s.gen_csg_shape(),
+                PdmsGeoParam::PrimExtrusion(s) => s.gen_csg_shape(),
+                PdmsGeoParam::PrimLoft(s) => s.gen_csg_shape(),
                 // 其他形状暂时返回错误，需要后续实现
                 _ => Err(anyhow!("Not support this shape")),
             }

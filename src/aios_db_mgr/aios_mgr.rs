@@ -32,15 +32,12 @@ pub async fn init_surreal_with_signin(db_option: &DbOption) -> anyhow::Result<()
         .with_capacity(1000)
         .await?;
     SUL_DB
-        .use_ns(&db_option.surreal_ns)
-        .use_db(&db_option.project_name)
-        .await?;
-    SUL_DB
         .signin(Root {
             username: db_option.v_user.clone(),
             password: db_option.v_password.clone(),
         })
         .await?;
+    crate::use_ns_db_compat(&SUL_DB, &db_option.surreal_ns, &db_option.project_name).await?;
     Ok(())
 }
 

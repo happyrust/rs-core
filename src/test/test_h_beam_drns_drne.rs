@@ -111,7 +111,6 @@ fn test_h_beam_with_45_degree_end_faces() {
         path: line_path.clone(),
         lmirror: false,
         spine_segments: vec![],
-        segment_transforms: vec![],
     };
 
     // 生成 CSG mesh
@@ -187,7 +186,6 @@ fn test_h_beam_different_end_angles() {
         path: line_path,
         lmirror: false,
         spine_segments: vec![],
-        segment_transforms: vec![],
     };
 
     // 生成 CSG mesh
@@ -250,7 +248,6 @@ fn test_h_beam_normal_ends() {
         path: line_path,
         lmirror: false,
         spine_segments: vec![],
-        segment_transforms: vec![],
     };
 
     println!("  端面方向: 默认（垂直于路径）");
@@ -323,7 +320,6 @@ fn test_h_beam_arc_sweep() {
         path: arc_path,
         lmirror: false,
         spine_segments: vec![],
-        segment_transforms: vec![],
     };
 
     // 生成 CSG mesh
@@ -418,7 +414,6 @@ fn test_h_beam_multi_segment_sweep() {
         path: multi_path,
         lmirror: false,
         spine_segments: vec![],
-        segment_transforms: vec![],
     };
 
     // 生成 CSG mesh

@@ -296,32 +296,9 @@ fn sample_arc_frames(arc: &Arc3D, arc_segments: usize, plax: Vec3) -> Option<Vec
     let mut total_dist = 0.0;
     let mut last_pos = arc.start_pt;
 
-    // OCC 的截面坐标系定义:
-    // y_axis = arc.pref_axis (截面的"上"方向,固定不变)
-    // z_axis = plax (截面的法向,如果 clock_wise 则取反)
-    // x_axis = y_axis.cross(z_axis) (截面的"右"方向)
-    let profile_up = arc.pref_axis.normalize();
-    let mut profile_normal = plax.normalize();
-    if arc.clock_wise {
-        profile_normal = -profile_normal;
-    }
-
-    // 若 pref_axis 与 plax 平行，叉积将退化为零向量，normalize(0) -> NaN。
-    // 这里做兜底：当 right 退化时，改用任意不平行于 profile_normal 的轴构造 right。
-    let profile_right = {
-        let mut r = profile_up.cross(profile_normal);
-        if r.length_squared() < 1e-6 {
-            let perp = if profile_normal.dot(Vec3::X).abs() < 0.9 {
-                Vec3::X
-            } else {
-                Vec3::Y
-            };
-            r = perp.cross(profile_normal);
-        }
-        r.normalize()
-    };
-    // 重新正交化 up 向量,确保坐标系是正交的
-    let profile_up_ortho = profile_normal.cross(profile_right).normalize();
+    // 对于圆弧，使用圆弧轴作为固定的"上"方向
+    // 这样截面会随着圆弧旋转，而不会出现奇异性
+    let arc_axis_norm = arc.axis.normalize();
 
     for i in 0..=samples {
         let t = i as f32 / samples as f32;
@@ -331,17 +308,36 @@ fn sample_arc_frames(arc: &Arc3D, arc_segments: usize, plax: Vec3) -> Option<Vec
         let rot_quat = Quat::from_axis_angle(arc.axis, angle_at_t);
         let pos = arc.center + rot_quat.mul_vec3(arc.start_pt - arc.center);
 
-        // 计算切线
+        // 计算切线（沿圆弧的切向）
         let radial = (pos - arc.center).normalize();
         let tangent = arc.axis.cross(radial).normalize();
         let tangent = if arc.clock_wise { -tangent } else { tangent };
 
-        // PathSample 的坐标系定义:
-        // - right: 截面上的横向 (profile_right)
-        // - up: 截面上的纵向 (profile_up_ortho)
-        // - tangent: 路径切线方向 (实际切线,不是 plax)
-        // 对于圆弧,截面保持固定方向(不随路径旋转)
-        let rot = Mat3::from_cols(profile_right, profile_up_ortho, tangent);
+        // 使用圆弧轴作为"上"方向，构造正交坐标系
+        // up = arc.axis（或 pref_axis，取与圆弧平面正交的方向）
+        // right = tangent.cross(up)
+        // 这样可以确保截面随路径旋转而不会退化
+        let up = if arc.pref_axis.dot(tangent).abs() < 0.99 {
+            // pref_axis 与切线不平行，可以使用
+            arc.pref_axis.normalize()
+        } else {
+            // pref_axis 与切线近似平行，使用圆弧轴
+            arc_axis_norm
+        };
+
+        // 计算 right：从 tangent 和 up 叉积得到
+        let right = tangent.cross(up);
+        let right = if right.length_squared() < 1e-6 {
+            // 如果退化，使用圆弧的径向作为 right
+            radial
+        } else {
+            right.normalize()
+        };
+
+        // 重新正交化 up
+        let up_ortho = right.cross(tangent).normalize();
+
+        let rot = Mat3::from_cols(right, up_ortho, tangent);
 
         if i > 0 {
             total_dist += pos.distance(last_pos);

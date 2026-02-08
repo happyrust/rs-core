@@ -9,16 +9,13 @@ use serde::de::value::MapAccessDeserializer;
 use serde::{Deserialize, Serialize};
 use serde::{Deserializer, Serializer};
 use serde_json::Value as JsonValue;
-use serde_with::DisplayFromStr;
-use serde_with::serde_as;
 use std::fmt::{Debug, Display, Formatter, Write};
 use std::hash::Hash;
 use std::ops::Deref;
 use std::str::FromStr;
-use std::{default, fmt, hash};
+use std::{fmt, hash};
 use surrealdb::types as surrealdb_types;
 
-//todo change to this struct
 #[derive(
     rkyv::Archive,
     rkyv::Deserialize,
@@ -167,7 +164,6 @@ impl<'de> Deserialize<'de> for RefnoVariant {
             {
                 // 尝试将map反序列化为Thing
                 let thing = RecordId::deserialize(de::value::MapAccessDeserializer::new(map))?;
-                dbg!(&thing);
                 Ok(RefnoVariant::RefThing(thing))
             }
         }
@@ -182,7 +178,6 @@ impl<'de> Deserialize<'de> for RefU64 {
         D: Deserializer<'de>,
     {
         if let Ok(s) = RefnoVariant::deserialize(deserializer) {
-            dbg!(&s);
             match s {
                 RefnoVariant::RefThing(s) => Ok(s.into()),
                 RefnoVariant::Str(s) => Self::from_str(s.as_str())
@@ -240,7 +235,7 @@ impl sea_orm::sea_query::ValueType for RefU64 {
     }
 
     fn type_name() -> String {
-        stringify!(StringVec).to_owned()
+        stringify!(RefU64).to_owned()
     }
 
     fn array_type() -> sea_orm::sea_query::ArrayType {
@@ -336,6 +331,9 @@ impl From<RefI32Tuple> for RefU64 {
 
 impl From<&[u8]> for RefU64 {
     fn from(input: &[u8]) -> Self {
+        if input.len() < 8 {
+            return Self::default();
+        }
         Self(u64::from_be_bytes(input[..8].try_into().unwrap()))
     }
 }
@@ -543,7 +541,13 @@ impl From<&str> for RefI32Tuple {
             .split('/')
             .map(|x| x.parse::<i32>().unwrap_or_default())
             .collect();
-        Self::new(x[0], x[1])
+        if x.len() >= 2 {
+            Self::new(x[0], x[1])
+        } else if x.len() == 1 {
+            Self::new(x[0], 0)
+        } else {
+            Self::default()
+        }
     }
 }
 
@@ -622,9 +626,9 @@ impl From<&str> for RefnoSesno {
     }
 }
 
-impl ToString for RefnoSesno {
-    fn to_string(&self) -> String {
-        format!("['{}',{}]", self.refno.to_string(), self.sesno)
+impl Display for RefnoSesno {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "['{}',{}]", self.refno, self.sesno)
     }
 }
 
@@ -1679,7 +1683,7 @@ mod tests {
             match kind {
                 Kind::Record(tables) => {
                     assert_eq!(tables.len(), 1);
-                    assert_eq!(tables[0], "pe");
+                    assert_eq!(tables[0], "pe".into());
                 }
                 _ => panic!("Expected Kind::Record, got {:?}", kind),
             }
@@ -1857,7 +1861,7 @@ mod tests {
             match kind {
                 Kind::Record(tables) => {
                     assert_eq!(tables.len(), 1);
-                    assert_eq!(tables[0], "pe");
+                    assert_eq!(tables[0], "pe".into());
                 }
                 _ => panic!("Expected Kind::Record, got {:?}", kind),
             }

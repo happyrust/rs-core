@@ -229,7 +229,40 @@ pub async fn query_gm_param(att: &NamedAttrMap, is_spro: bool) -> Option<GmParam
         }
     } else {
         let cur_type = crate::get_type_name(refno).await.unwrap_or_default();
-        if is_spro && cur_type.as_str() == "SPRO" {
+        // 修复：SPRO 类型直接遍历子元素（SPVE），不依赖 is_spro 参数
+        if cur_type.as_str() == "SPRO" || type_name == "SPRO" {
+            let children = crate::get_children_named_attmaps(refno)
+                .await
+                .ok()
+                .unwrap_or_default();
+            crate::debug_model_debug!(
+                "[query_gm_param] SPRO {} 子元素数量: {}, is_spro={}",
+                refno, children.len(), is_spro
+            );
+            for a in children {
+                let child_type = a.get_type_str();
+                // 支持 SPVE 和其他顶点类型
+                if child_type == "SPVE" || child_type == "SVER" || child_type == "PVER" {
+                    verts.push([
+                        (a.get_as_string("PX").unwrap_or_default()),
+                        (a.get_as_string("PY").unwrap_or_default()),
+                        (a.get_as_string("PZ").unwrap_or_default()),
+                    ]);
+                    frads.push((a.get_as_string("PRAD").unwrap_or_default()));
+                    dxy.push([
+                        (a.get_as_string("DX").unwrap_or_default()),
+                        (a.get_as_string("DY").unwrap_or_default()),
+                    ]);
+                    crate::debug_model_debug!(
+                        "  [SPRO] 子元素 {} ({}): PX={}, PY={}",
+                        a.get_refno_or_default(), child_type,
+                        a.get_as_string("PX").unwrap_or_default(),
+                        a.get_as_string("PY").unwrap_or_default()
+                    );
+                }
+            }
+        } else if is_spro {
+            // 保留旧逻辑以兼容其他情况
             for a in crate::get_children_named_attmaps(refno)
                 .await
                 .ok()

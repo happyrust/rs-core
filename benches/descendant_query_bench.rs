@@ -100,10 +100,8 @@ fn setup(rt: &Runtime) {
                 }
             }
 
-            // 2) 设置 NS/DB
-            SUL_DB
-                .use_ns("bench")
-                .use_db("bench")
+            // 2) 设置 NS/DB（兼容 SurrealDB 3.x）
+            aios_core::use_ns_db_compat(&SUL_DB, "bench", "bench")
                 .await
                 .expect("use ns/db failed");
 

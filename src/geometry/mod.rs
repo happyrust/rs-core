@@ -111,6 +111,12 @@ pub struct EleGeosInfo {
     /// TUBI 段的世界坐标终点（arrive 端）
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tubi_end_pt: Option<Vec3>,
+    /// TUBI 段的到达元件 refno（tubi_relate 的 out）
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tubi_arrive_refno: Option<RefnoEnum>,
+    /// TUBI 段在 BRAN/HANG 下的顺序号（tubi_relate 的 id[1]）
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tubi_index: Option<u32>,
     /// ARRIVE 轴点世界坐标 [x, y, z]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub arrive_axis_pt: Option<[f32; 3]>,
@@ -745,9 +751,9 @@ impl EleInstGeo {
     pub fn gen_unit_geo_sur_json(&self) -> String {
         let mut json_string = "".to_string();
         // PrimLoft(SweepSolid) 有两类：
-        // 1) 单段直线且无倾斜：可安全 unit 化，并用实例 transform（scale.z/rotation）表达长度与方向（不影响截面）。
-        // 2) 圆弧/多段/倾斜：必须保留 segment_transforms 参与路径采样，否则半径/段位置无法还原；
-        //    若把这类缩放塞进 geo_relate.trans（整体缩放），会把截面也一起放大，导致 WALL 等错形。
+        // 1) 单段直线且无端面倾斜：可安全 unit 化，并用实例 transform（scale.z/rotation）表达长度与方向。
+        // 2) 有端面倾斜：不复用（scale.z 会导致端面变形），mesh 使用实际长度。
+        // 3) 圆弧/多段：使用实际几何坐标，geo_transform 为 IDENTITY。
         let param = match &self.geo_param {
             crate::parsed_data::geo_params_data::PdmsGeoParam::PrimLoft(s) => {
                 let is_simple_line = s.path.as_single_line().is_some() && !s.is_sloped();

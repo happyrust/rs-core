@@ -95,6 +95,40 @@ pub static KV_DB: Lazy<Surreal<Any>> = Lazy::new(Surreal::init);
 #[cfg(feature = "mem-kv-save")]
 pub static SUL_MEM_DB: Lazy<Surreal<Any>> = Lazy::new(Surreal::init);
 
+/// 兼容 SurrealDB 3.x 的 NS/DB 切换。
+///
+/// 说明：部分 SurrealDB/SDK 组合下，`use_ns/use_db` 会在运行期尝试把服务端返回反序列化为 `()`，
+/// 而 SurrealDB 3.x 可能返回 `{ namespace, database }` 对象，导致报错：
+/// `expected the database to return nothing`。
+///
+/// 为避免该兼容性问题，统一改用一条 `USE NS ... DB ...;` 语句，并忽略其返回值。
+pub async fn use_ns_db_compat<C, NS, DBN>(
+    db: &Surreal<C>,
+    namespace: NS,
+    database: DBN,
+) -> Result<(), surrealdb::Error>
+where
+    C: surrealdb::Connection,
+    NS: ToString,
+    DBN: ToString,
+{
+    let namespace = namespace.to_string();
+    let database = database.to_string();
+
+    // 优先尝试 SDK 原生的 use_ns/use_db（可能在某些版本组合下返回值反序列化不兼容）。
+    // 即便报错，也不直接失败，继续走下方的“字面量 USE 语句”兜底。
+    let _ = db.use_ns(&namespace).use_db(&database).await;
+
+    // 注意：SurrealQL 的 `USE NS ... DB ...` 对“绑定参数”在不同版本/SDK 组合下兼容性不稳定；
+    // 这里用反引号包裹的字面量，确保服务端实际切换 NS/DB。
+    //
+    // 若未来确有包含反引号的命名，可在此处做转义；目前项目内 ns/db 名称均为简单字串/数字。
+    let sql = format!("USE NS `{}` DB `{}`;", namespace, database);
+    let _ = db.query(sql).await?;
+
+    Ok(())
+}
+
 /// 连接 SurrealDB，使用智能连接管理器
 ///
 /// 该函数会自动处理：
@@ -132,13 +166,13 @@ pub async fn connect_kvdb(
     password: &str,
 ) -> Result<(), surrealdb::Error> {
     SUL_DB.connect(conn_str).with_capacity(1000).await?;
-    SUL_DB.use_ns(ns).use_db(db).await?;
     SUL_DB
         .signin(Root {
             username: username.to_owned(),
             password: password.to_owned(),
         })
         .await?;
+    use_ns_db_compat(&SUL_DB, ns, db).await?;
     Ok(())
 }
 
@@ -176,15 +210,12 @@ pub async fn init_mem_db_with_retry(db_option: &crate::options::DbOption) -> any
                 .with_capacity(1000)
                 .await?;
             SUL_MEM_DB
-                .use_ns(&db_option.project_code)
-                .use_db(&db_option.project_name)
-                .await?;
-            SUL_MEM_DB
                 .signin(Root {
                     username: db_option.mem_kv_user.clone(),
                     password: db_option.mem_kv_password.clone(),
                 })
                 .await?;
+            use_ns_db_compat(&SUL_MEM_DB, &db_option.project_code, &db_option.project_name).await?;
             Ok::<(), surrealdb::Error>(())
         }
         .await;

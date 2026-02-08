@@ -264,8 +264,6 @@ pub fn resolve_to_cate_geo_params(gmse: &GmseParamData) -> anyhow::Result<CateGe
                 })
             }
             "SCTO" | "NSCT" => {
-                // 弯管 - 使用 pbore（管道内径）作为直径，而非 diameters[0]（可能包含绝缘层）
-                // 如果 pbore > 0，使用 pbore * 2 作为管道直径
                 let diameter = gmse.diameters[0];
                 CateGeoParam::Torus(CateTorusParam {
                     refno: gmse.refno,

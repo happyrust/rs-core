@@ -3,6 +3,8 @@ use surrealdb::opt::auth::Root;
 use surrealdb::{Surreal, engine::any::Any};
 use tokio::sync::Mutex;
 
+use super::use_ns_db_compat;
+
 /// 数据库连接配置信息
 #[derive(Debug, Clone, PartialEq)]
 pub struct ConnectionConfig {
@@ -176,17 +178,15 @@ impl SurrealConnectionManager {
             .with_capacity(1000)
             .await?;
 
-        // 切换 NS/DB
-        db.use_ns(&config.namespace)
-            .use_db(&config.database)
-            .await?;
-
         // 登录认证
         db.signin(Root {
             username: config.username.clone(),
             password: config.password.clone(),
         })
         .await?;
+
+        // 切换 NS/DB（兼容 SurrealDB 3.x）
+        use_ns_db_compat(db, &config.namespace, &config.database).await?;
 
         println!(
             "✅ 连接成功: {} -> NS: {}, DB: {}",
@@ -201,17 +201,15 @@ impl SurrealConnectionManager {
         db: &Surreal<Any>,
         config: &ConnectionConfig,
     ) -> Result<(), surrealdb::Error> {
-        // 切换 NS/DB
-        db.use_ns(&config.namespace)
-            .use_db(&config.database)
-            .await?;
-
         // 重新登录（确保认证状态）
         db.signin(Root {
             username: config.username.clone(),
             password: config.password.clone(),
         })
         .await?;
+
+        // 切换 NS/DB（兼容 SurrealDB 3.x）
+        use_ns_db_compat(db, &config.namespace, &config.database).await?;
 
         println!(
             "✅ NS/DB 切换成功: NS: {}, DB: {}",

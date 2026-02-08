@@ -49,6 +49,7 @@ pub mod test_different_dbs;
 pub mod test_h_beam_drns_drne;
 pub mod test_lpyramid_fix;
 pub mod test_multi_segment_path;
+pub mod test_spine_refactor_validation;
 
 #[cfg(feature = "gen_model")]
 pub mod test_csg_manifold;

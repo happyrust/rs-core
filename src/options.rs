@@ -1,6 +1,7 @@
 use std::path::{Path, PathBuf};
 
 use crate::mesh_precision::MeshPrecisionSettings;
+use crate::tree_query::TreeQuery;
 use crate::{RefU64, RefnoEnum};
 use clap::Parser;
 use serde::{Deserialize, Serialize};
@@ -435,11 +436,30 @@ impl DbOption {
 
     #[inline]
     pub async fn get_all_debug_refnos(&self) -> Vec<RefnoEnum> {
-        let mut refnos = self
+        let root_refnos: Vec<RefnoEnum> = self
             .debug_model_refnos
             .as_ref()
             .map(|x| x.iter().map(|x| x.as_str().into()).collect::<Vec<_>>())
             .unwrap_or_default();
+
+        if root_refnos.is_empty() {
+            return vec![];
+        }
+
+        // 使用 TreeIndex 查询子孙节点（内存 BFS，速度快）
+        let mut refnos = root_refnos.clone();
+        for refno in &root_refnos {
+            if let Some(index) = crate::tree_query::get_tree_index_by_refno(refno.refno()) {
+                let options = crate::tree_query::TreeQueryOptions {
+                    include_self: false, // root 已在 refnos 中
+                    max_depth: None,
+                    filter: crate::tree_query::TreeQueryFilter::default(),
+                };
+                let descendants: Vec<RefU64> = index.collect_descendants_bfs(refno.refno(), &options);
+                refnos.extend(descendants.into_iter().map(RefnoEnum::from));
+            }
+        }
+
         if self.is_gen_history_model() {
             let mut h_refnos = vec![];
             for r in refnos.clone() {
@@ -448,7 +468,7 @@ impl DbOption {
             refnos.extend(h_refnos);
         }
         //还要补充使用了gen_using_spref_refnos的模型
-        let mut debug_spref_refnos = self
+        let debug_spref_refnos: Vec<RefU64> = self
             .gen_using_spref_refnos
             .as_ref()
             .map(|x| x.iter().map(|x| x.as_str().into()).collect::<Vec<_>>())
