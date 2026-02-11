@@ -48,7 +48,7 @@ pub struct AiosDBMgr {
 impl AiosDBMgr {
     pub async fn init_from_db_option() -> anyhow::Result<Self> {
         let config_file_name =
-            std::env::var("DB_OPTION_FILE").unwrap_or_else(|_| "DbOption".to_string());
+            std::env::var("DB_OPTION_FILE").unwrap_or_else(|_| "db_options/DbOption".to_string());
         let s = Config::builder()
             .add_source(File::with_name(&config_file_name))
             .build()

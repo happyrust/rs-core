@@ -153,7 +153,7 @@ use surrealdb::opt::auth::Root;
 
 /// 获取配置文件名，支持环境变量
 fn get_config_file_name() -> String {
-    std::env::var("DB_OPTION_FILE").unwrap_or_else(|_| "DbOption".to_string())
+    std::env::var("DB_OPTION_FILE").unwrap_or_else(|_| "db_options/DbOption".to_string())
 }
 
 ///获得db option
@@ -384,7 +384,7 @@ pub async fn b_connected_second_unit() -> anyhow::Result<()> {
 /// 初始化测试数据库
 pub async fn init_demo_test_surreal() -> Result<DbOption, HandleError> {
     let s = Config::builder()
-        .add_source(File::with_name("DbOption"))
+        .add_source(File::with_name("db_options/DbOption"))
         .build()
         .map_err(|e| HandleError::SurrealError {
             msg: format!("Failed to load DbOption config: {}", e),

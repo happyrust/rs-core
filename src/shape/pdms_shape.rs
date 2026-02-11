@@ -74,7 +74,16 @@ pub fn gen_bounding_box(shell: &Shell) -> BoundingBox<Point3> {
 /// 表示一条边，由顶点序列组成
 ///
 /// 边可以包含多个顶点，用于表示直线段或曲线段
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+#[derive(
+    Serialize,
+    Deserialize,
+    Debug,
+    Clone,
+    Default,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+)]
 pub struct Edge {
     /// 边的顶点序列
     pub vertices: Vec<Vec3>,
@@ -185,7 +194,16 @@ fn extract_edges_from_mesh_internal(indices: &[u32], vertices: &[Vec3]) -> Edges
 }
 
 //todo 增加LOD的实现
-#[derive(Serialize, Deserialize, Component, Debug, Clone)]
+#[derive(
+    Serialize,
+    Deserialize,
+    Component,
+    Debug,
+    Clone,
+    rkyv::Archive,
+    rkyv::Deserialize,
+    rkyv::Serialize,
+)]
 pub struct PlantMesh {
     pub indices: Vec<u32>,
     pub vertices: Vec<Vec3>,
@@ -194,10 +212,12 @@ pub struct PlantMesh {
     #[serde(default)]
     pub uvs: Vec<[f32; 2]>,
     #[serde(skip)]
+    #[rkyv(with = rkyv::with::Skip)]
     pub wire_vertices: Vec<Vec<Vec3>>,
     // edges 现在会被序列化，以支持在 plant3d 中渲染边
     pub edges: Edges,
     #[serde(skip)]
+    #[rkyv(with = rkyv::with::Skip)]
     pub aabb: Option<Aabb>,
 }
 

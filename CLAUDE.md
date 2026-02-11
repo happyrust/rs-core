@@ -182,6 +182,21 @@ aios_core::diff_sesno(refno: Refno, sesno1: i32, sesno2: i32) -> Vec<Diff>
 - **Nalgebra**: Linear algebra operations
 - **Manifold**: 3D geometry operations (feature-gated)
 
+## ⚠️ ref0 ≠ dbnum（严重易错点）
+
+refno 的第一部分（ref0，如 `24381/145018` 中的 `24381`）**不是** dbnum。
+必须通过 `output/<project>/scene_tree/db_meta_info.json` 的 `ref0_to_dbnum` 字段查找真正的 dbnum。
+
+| ref0 | dbnum |
+|------|-------|
+| 24381 | 7997 |
+| 25688 | 1112 |
+| 9304 | 1112 |
+
+- Rust 代码：`db_meta().get_dbnum_by_refno(refno)`
+- CLI `--dbnum` 参数必须传 dbnum（如 7997），**不能**传 ref0（如 24381）
+- PE 表 ID 格式 `pe:'24381_145018'` 中的 `24381` 是 ref0，不是 dbnum
+
 ## Development Notes
 
 - The project uses experimental Rust features - ensure nightly toolchain

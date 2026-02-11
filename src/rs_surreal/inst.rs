@@ -399,7 +399,7 @@ pub async fn query_insts_for_export(
                          FROM out->geo_relate
                          WHERE visible && out.meshed
                            && (trans.d ?? NONE) != NONE
-                           && geo_type IN ['Pos', 'CatePos']) as insts,
+                           && geo_type IN ['Pos', 'DesiPos', 'CatePos']) as insts,
                         false as has_neg
                     FROM [{non_bool_keys}]
                     WHERE type::record("pe_transform", record::id(in)).world_trans.d != NONE
@@ -433,7 +433,7 @@ pub async fn query_insts_for_export(
                      FROM out->geo_relate
                      WHERE visible && out.meshed
                        && (trans.d ?? NONE) != NONE
-                       && geo_type IN ['Pos']) as insts,
+                       && geo_type IN ['Pos', 'DesiPos']) as insts,
                     false as has_neg
                 FROM [{inst_relate_keys}]
                 WHERE type::record("pe_transform", record::id(in)).world_trans.d != NONE

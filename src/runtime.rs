@@ -58,7 +58,7 @@ pub async fn init_surreal_with_retry(db_option: &DbOption) -> Result<()> {
 
     // 打印配置信息
     let config_file_name =
-        std::env::var("DB_OPTION_FILE").unwrap_or_else(|_| "DbOption".to_string());
+        std::env::var("DB_OPTION_FILE").unwrap_or_else(|_| "db_options/DbOption".to_string());
     println!("📄 使用配置文件: {}.toml", config_file_name);
     println!("🌐 连接服务器: {}", db_option.get_version_db_conn_str());
     println!("🏷️  命名空间: {}", db_option.surreal_ns);

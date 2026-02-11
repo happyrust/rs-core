@@ -8,7 +8,7 @@ pub mod test_insert;
 
 pub async fn get_version_conn() -> DatabaseConnection{
     use config::{Config, File};
-    let config_file_name = std::env::var("DB_OPTION_FILE").unwrap_or_else(|_| "DbOption".to_string());
+    let config_file_name = std::env::var("DB_OPTION_FILE").unwrap_or_else(|_| "db_options/DbOption".to_string());
     let s = Config::builder()
         .add_source(File::with_name(&config_file_name))
         .build()
