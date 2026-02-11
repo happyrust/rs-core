@@ -1104,28 +1104,36 @@ pub fn eval_str_to_f64(
                     .map(|i| format!("[{}]", i))
                     .unwrap_or_default();
 
-                // 根据是否有调试信息，输出不同格式的错误（去重避免刷屏）
-                let dedup_key = format!("{}|{}|{}", des_refno_str, cata_refno_str, &input_expr);
-                let should_print = EXPR_EVAL_ERROR_ONCE.insert(dedup_key, ()).is_none();
-                if should_print {
-                    if !geo_refno_str.is_empty() && !attr_name_str.is_empty() {
-                        // 有完整调试信息
-                        println!(
-                            "处理{}时，元件库{}里的输入表达式有误:\n  几何体: {} ({})\n  属性: {}{}\n  表达式: {}",
-                            des_refno_str,
-                            cata_refno_str,
-                            geo_refno_str,
-                            geo_type_str,
-                            attr_name_str,
-                            attr_index_str,
-                            &input_expr
-                        );
-                    } else {
-                        // 没有调试信息，使用原有格式
-                        println!(
-                            "处理{}时，{}元件库里的输入表达式有误 : {}",
-                            des_refno_str, cata_refno_str, &input_expr
-                        );
+                // 默认不刷屏：仅在显式调试场景打印。
+                // - debug_model 开启时：打印（便于定位具体几何/属性/表达式）
+                // - 或设置环境变量 AIOS_PRINT_EXPR_EVAL_ERROR=1：打印（用于回归/诊断）
+                let print_enabled =
+                    crate::is_debug_model_enabled() || std::env::var_os("AIOS_PRINT_EXPR_EVAL_ERROR").is_some();
+                if print_enabled {
+                    // 根据是否有调试信息，输出不同格式的错误（去重避免刷屏）
+                    let dedup_key =
+                        format!("{}|{}|{}", des_refno_str, cata_refno_str, &input_expr);
+                    let should_print = EXPR_EVAL_ERROR_ONCE.insert(dedup_key, ()).is_none();
+                    if should_print {
+                        if !geo_refno_str.is_empty() && !attr_name_str.is_empty() {
+                            // 有完整调试信息
+                            println!(
+                                "处理{}时，元件库{}里的输入表达式有误:\n  几何体: {} ({})\n  属性: {}{}\n  表达式: {}",
+                                des_refno_str,
+                                cata_refno_str,
+                                geo_refno_str,
+                                geo_type_str,
+                                attr_name_str,
+                                attr_index_str,
+                                &input_expr
+                            );
+                        } else {
+                            // 没有调试信息，使用原有格式
+                            println!(
+                                "处理{}时，{}元件库里的输入表达式有误 : {}",
+                                des_refno_str, cata_refno_str, &input_expr
+                            );
+                        }
                     }
                 }
 
