@@ -40,7 +40,7 @@ transforms.push(Transform {
 **函数**: `get_trans()` (第 224-239 行)
 
 ```rust
-fn get_trans(&self) -> bevy_transform::prelude::Transform {
+fn get_trans(&self) -> aios_core::Transform {
     // 使用 segment_transforms 中的第一个变换（如果存在）
     if let Some(first_transform) = self.segment_transforms.first() {
         Transform {
