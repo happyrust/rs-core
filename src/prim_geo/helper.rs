@@ -1,5 +1,5 @@
 use crate::parsed_data::CateAxisParam;
-use bevy_math::prelude::{Quat, Vec3};
+use glam::{Quat, Vec3};
 use glam::{Mat3, Vec2};
 use std::f32::consts::PI;
 

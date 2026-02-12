@@ -2,10 +2,10 @@
 //!
 //! 这个模块包含了 SurrealDB 中 inst_relate、inst_geo 和 geo_relate 表的结构体定义
 //! 以及相应的 to_surql 方法用于生成 SurrealDB 插入语句
+use crate::plant_transform::Transform;
 
 use crate::RefnoEnum;
 use crate::shape::pdms_shape::RsVec3;
-use bevy_transform::components::Transform;
 use chrono::NaiveDateTime;
 use glam::Vec3;
 use serde_derive::{Deserialize, Serialize};
@@ -1040,8 +1040,7 @@ impl Annotation {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use bevy_transform::components::Transform;
-    use chrono::Utc;
+        use chrono::Utc;
     use glam::{Quat, Vec3};
     use serde_json::json;
 

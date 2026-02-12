@@ -2,9 +2,6 @@ use crate::attval::AttrVal;
 use crate::tool::float_tool::f32_round_3;
 use crate::utils::{value_to_bool, value_to_f32, value_to_i32, value_to_string};
 use crate::{RefU64, RefU64Vec, SurlValue};
-use bevy_ecs::component::Component;
-#[cfg(feature = "reflect")]
-use bevy_reflect::Reflect;
 use glam::{Vec3, bool, f32, f64, i32};
 use num_traits::{FromPrimitive, Num, One, Signed, ToPrimitive, Zero};
 #[cfg(feature = "sea-orm")]
@@ -20,7 +17,6 @@ use serde_json::json;
     PartialEq,
     Clone,
     Debug,
-    Component,
     Default,
     rkyv::Archive,
     rkyv::Deserialize,
@@ -259,29 +255,6 @@ impl NamedAttrValue {
             Self::WordType(v) => v.to_string(),
             Self::RefU64Type(v) => v.to_string().to_string(),
             _ => "unset".to_string(),
-        };
-    }
-}
-
-impl NamedAttrValue {
-    #[cfg(feature = "reflect")]
-    pub fn get_val_as_reflect(&self) -> Box<dyn Reflect> {
-        return match self {
-            NamedAttrValue::StringType(v)
-            | NamedAttrValue::ElementType(v)
-            | NamedAttrValue::WordType(v) => Box::new(v.to_string()),
-            NamedAttrValue::BoolArrayType(v) => Box::new(v.clone()),
-            NamedAttrValue::IntArrayType(v) => Box::new(v.clone()),
-            NamedAttrValue::IntegerType(v) => Box::new(*v),
-            NamedAttrValue::BoolType(v) => Box::new(*v),
-            NamedAttrValue::StringArrayType(v) => {
-                Box::new(v.iter().map(|x| x.to_string()).collect::<Vec<_>>())
-            }
-            NamedAttrValue::F32Type(v) => Box::new(*v),
-            NamedAttrValue::F32VecType(v) => Box::new(v.clone()),
-            NamedAttrValue::Vec3Type(v) => Box::new(vec![v.x, v.y, v.z]),
-            NamedAttrValue::RefU64Type(r) => Box::new(r.to_slash_string()),
-            _ => Box::new("unset".to_string()),
         };
     }
 }

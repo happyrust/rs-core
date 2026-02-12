@@ -4,7 +4,6 @@ use crate::pdms_types::{EleOperation, PdmsElement};
 use crate::tool::db_tool::db1_hash;
 use crate::types::named_attmap::NamedAttrMap;
 use crate::types::named_attvalue::NamedAttrValue;
-use bevy_ecs::resource::Resource;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, to_string_pretty};
 use serde_with::DisplayFromStr;
@@ -13,7 +12,7 @@ use surrealdb::types as surrealdb_types;
 use surrealdb::types::RecordId;
 use surrealdb::types::SurrealValue;
 
-#[derive(Serialize, Deserialize, Clone, Debug, Resource, Default, PartialEq, SurrealValue)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq, SurrealValue)]
 pub struct SPdmsElement {
     //指向具体的类型
     pub refno: RefnoEnum,

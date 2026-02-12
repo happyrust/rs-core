@@ -1,9 +1,9 @@
+use crate::plant_transform::Transform;
 use crate::NamedAttrMap;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::prim_geo::basic::*;
 use crate::shape::pdms_shape::*;
 use crate::types::attmap::AttrMap;
-use bevy_ecs::prelude::*;
 use glam::Vec3;
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "truck")]
@@ -12,7 +12,6 @@ use truck_base::cgmath64::Vector3;
 use truck_modeling::{Shell, builder};
 
 #[derive(
-    Component,
     Debug,
     Clone,
     Serialize,
@@ -100,7 +99,7 @@ impl BrepShapeTrait for SBox {
     /// - 1个中心点（优先级60）
     fn enhanced_key_points(
         &self,
-        transform: &bevy_transform::prelude::Transform,
+        transform: &crate::plant_transform::Transform,
     ) -> Vec<(Vec3, String, u8)> {
         let mut points = Vec::new();
         let half_size = self.size / 2.0;

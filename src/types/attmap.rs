@@ -15,7 +15,6 @@ use crate::tool::float_tool::{hash_f32, hash_f64_slice};
 use crate::types::attval::AttrVal;
 use crate::types::attval::AttrVal::*;
 use crate::{BHashMap, RefI32Tuple, RefU64};
-use bevy_ecs::component::Component;
 use derive_more::{Deref, DerefMut};
 use glam::*;
 use serde_derive::{Deserialize, Serialize};
@@ -24,7 +23,7 @@ use std::fmt;
 use std::fmt::Debug;
 
 ///PDMS的属性数据Map
-#[derive(Serialize, Deserialize, Deref, DerefMut, Clone, Default, Component)]
+#[derive(Serialize, Deserialize, Deref, DerefMut, Clone, Default)]
 pub struct AttrMap {
     pub map: BHashMap<NounHash, AttrVal>,
 }

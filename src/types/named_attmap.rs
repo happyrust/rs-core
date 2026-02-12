@@ -20,9 +20,6 @@ use crate::{
     },
 };
 use crate::{pdms_types::*, query_refno_sesno};
-use bevy_ecs::component::Component;
-#[cfg(feature = "reflect")]
-use bevy_reflect::{DynamicStruct, Reflect};
 use derive_more::{Deref, DerefMut};
 use glam::{Affine3A, DMat3, DQuat, DVec3, Mat3, Mat4, Quat, Vec3};
 use indexmap::IndexMap;
@@ -48,7 +45,6 @@ use surrealdb::types::{RecordId, RecordIdKey, SurrealValue, Value};
     Clone,
     Default,
     Debug,
-    Component,
     // Eq,
     PartialEq,
 )]
@@ -265,31 +261,6 @@ impl From<&AttrMap> for NamedAttrMap {
     }
 }
 
-#[cfg(feature = "sea-orm")]
-impl Into<DynamicStruct> for NamedAttrMap {
-    fn into(self) -> DynamicStruct {
-        let mut ds = DynamicStruct::default();
-        for (k, v) in self.map {
-            match v.clone() {
-                _ => {}
-                NamedAttrValue::IntegerType(d) => ds.insert(k.as_str(), d),
-                NamedAttrValue::StringType(d) => ds.insert(k.as_str(), d),
-                NamedAttrValue::F32Type(d) => ds.insert(k.as_str(), d),
-                NamedAttrValue::F32VecType(d) => ds.insert(k.as_str(), F32Vec(d)),
-                NamedAttrValue::Vec3Type(d) => ds.insert(k.as_str(), F32Vec(d.to_array().into())),
-                NamedAttrValue::StringArrayType(d) => ds.insert(k.as_str(), StringVec(d)),
-                NamedAttrValue::BoolArrayType(d) => ds.insert(k.as_str(), BoolVec(d)),
-                NamedAttrValue::IntArrayType(d) => ds.insert(k.as_str(), I32Vec(d)),
-                NamedAttrValue::BoolType(d) => ds.insert(k.as_str(), d),
-                NamedAttrValue::ElementType(d) => ds.insert(k.as_str(), d),
-                NamedAttrValue::WordType(d) => ds.insert(k.as_str(), d),
-                NamedAttrValue::RefU64Type(d) => ds.insert(k.as_str(), d),
-            }
-        }
-
-        ds
-    }
-}
 
 impl NamedAttrMap {
     ///初始化

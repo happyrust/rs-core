@@ -1,4 +1,3 @@
-use bevy_ecs::prelude::Resource;
 use glam::Vec3;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
@@ -7,7 +6,6 @@ use crate::data_center::AttrValue::{AttrFloat, AttrStrArray, AttrString};
 use crate::metadata_manager::FileBytes;
 use crate::schema::generate_basic_versioned_schema;
 use crate::types::*;
-use bevy_ecs::prelude::Component;
 use uuid::Uuid;
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
@@ -273,7 +271,7 @@ pub struct TubiData {
     pub length: f32,
 }
 
-#[derive(Resource, Serialize, Deserialize, Clone, Debug, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct SendHoleDataToArango {
     pub _key: String,
     #[serde(rename = "KeyValue")]
@@ -283,7 +281,7 @@ pub struct SendHoleDataToArango {
 }
 
 ///虚拟孔洞提资单数据
-#[derive(Resource, Serialize, Deserialize, Clone, Debug, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct TiziVirtualHoleData {
     #[serde(rename = "id", alias = "KeyValue")]
     pub key_value: String,
@@ -320,13 +318,13 @@ impl SendHoleDataToArango {
 }
 
 //提资列表
-#[derive(Resource, Serialize, Deserialize, Clone, Debug, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct AuditDataVec {
     pub data: Vec<SendHoleDataToArango>,
 }
 
 //可提资物资信息
-#[derive(Resource, Default, Clone, Debug, Serialize, Deserialize, Component, PartialEq)]
+#[derive(Default, Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct VirtualHoleData {
     pub key: String,
     pub No: String,
@@ -381,7 +379,7 @@ pub struct SendHoleDataFormData {
 }
 
 //墙板列表
-#[derive(Serialize, Deserialize, Default, Clone, Debug, Resource)]
+#[derive(Serialize, Deserialize, Default, Clone, Debug)]
 pub struct HoleWallBoardVec {
     pub data: Vec<(RefU64, String)>,
 }
@@ -450,7 +448,7 @@ pub struct CableWeight {
 }
 
 //接收创建虚拟孔洞流程的结构体
-#[derive(Resource, Serialize, Deserialize, Clone, Debug, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct ForwardHoleData {
     pub title: String,
     //孔洞或埋件的key
@@ -483,7 +481,7 @@ fn test_item_value() {
 }
 
 /// 从恩为插件过来的原生孔洞数据
-#[derive(Resource, Serialize, Deserialize, Clone, Debug, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct RawHoleData {
     // node identifier
     #[serde(rename = "id", alias = "_key")]

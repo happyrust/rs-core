@@ -1,11 +1,10 @@
 use crate::pdms_types::PdmsElement;
 use crate::types::*;
-use bevy_ecs::prelude::Resource;
 use serde_derive::{Deserialize, Serialize};
 use serde_with::{DisplayFromStr, serde_as};
 
 //b_designer
-#[derive(Debug, Clone, Default, Serialize, Deserialize, Resource)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct PdmsUser {
     pub user_name: String,
     pub chinese_name: String,

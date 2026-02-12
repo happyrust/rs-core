@@ -1,5 +1,4 @@
 use crate::shape::pdms_shape::{BrepShapeTrait, VerifiedShape};
-use bevy_ecs::prelude::*;
 use glam::Vec3;
 use serde::{Deserialize, Serialize};
 use std::collections::hash_map::DefaultHasher;
@@ -8,7 +7,6 @@ use std::hash::{Hash, Hasher};
 use truck_modeling::Shell;
 
 #[derive(
-    Component,
     Debug,
     Clone,
     Serialize,
@@ -22,7 +20,6 @@ pub struct Facet {
 }
 
 #[derive(
-    Component,
     Debug,
     Clone,
     Serialize,
@@ -36,7 +33,6 @@ pub struct Polygon {
 }
 
 #[derive(
-    Component,
     Debug,
     Clone,
     Serialize,

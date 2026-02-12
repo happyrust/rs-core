@@ -8,7 +8,6 @@ use crate::parsed_data::geo_params_data::PdmsGeoParam;
 #[cfg(feature = "occ")]
 use crate::prim_geo::basic::OccSharedShape;
 use crate::shape::pdms_shape::{BrepShapeTrait, VerifiedShape};
-use bevy_ecs::prelude::*;
 use glam::{DVec3, Vec3};
 #[cfg(feature = "occ")]
 use opencascade::primitives::*;
@@ -17,7 +16,6 @@ use serde::{Deserialize, Serialize};
 use truck_meshalgo::prelude::*;
 
 #[derive(
-    Component,
     Debug,
     Clone,
     Serialize,
@@ -106,7 +104,7 @@ impl BrepShapeTrait for LPyramid {
 
     fn enhanced_key_points(
         &self,
-        transform: &bevy_transform::prelude::Transform,
+        transform: &crate::plant_transform::Transform,
     ) -> Vec<(Vec3, String, u8)> {
         // 关键点（key points）之算式，须与 CSG `generate_lpyramid_mesh` 同步：
         // - 彼处生成网格之顶点集合，乃后续布尔/碰撞/选取等之“几何真相”。
@@ -236,7 +234,7 @@ mod tests {
         assert!(pyramid.check_valid());
 
         // 验证关键点
-        let transform = bevy_transform::prelude::Transform::default();
+        let transform = crate::plant_transform::Transform::default();
         let points = pyramid.enhanced_key_points(&transform);
 
         // 应该有2个中心点（顶面和底面）
@@ -268,7 +266,7 @@ mod tests {
         assert!(frustum.check_valid());
 
         // 验证关键点
-        let transform = bevy_transform::prelude::Transform::default();
+        let transform = crate::plant_transform::Transform::default();
         let points = frustum.enhanced_key_points(&transform);
 
         // 应该有2个中心点
@@ -300,7 +298,7 @@ mod tests {
         assert!(wedge.check_valid());
 
         // 验证关键点
-        let transform = bevy_transform::prelude::Transform::default();
+        let transform = crate::plant_transform::Transform::default();
         let points = wedge.enhanced_key_points(&transform);
 
         // 应该有2个中心点
@@ -332,7 +330,7 @@ mod tests {
         assert!(wedge.check_valid());
 
         // 验证关键点
-        let transform = bevy_transform::prelude::Transform::default();
+        let transform = crate::plant_transform::Transform::default();
         let points = wedge.enhanced_key_points(&transform);
 
         // 应该有2个中心点
@@ -364,7 +362,7 @@ mod tests {
         assert!(oblique.check_valid());
 
         // 验证关键点
-        let transform = bevy_transform::prelude::Transform::default();
+        let transform = crate::plant_transform::Transform::default();
         let points = oblique.enhanced_key_points(&transform);
 
         // 应该有2个中心点（顶面中心因偏移而移动）
@@ -402,7 +400,7 @@ mod tests {
         assert!(oblique.check_valid());
 
         // 验证关键点
-        let transform = bevy_transform::prelude::Transform::default();
+        let transform = crate::plant_transform::Transform::default();
         let points = oblique.enhanced_key_points(&transform);
 
         // 应该有2个中心点
@@ -439,7 +437,7 @@ mod tests {
         assert!(prism.check_valid());
 
         // 验证关键点
-        let transform = bevy_transform::prelude::Transform::default();
+        let transform = crate::plant_transform::Transform::default();
         let points = prism.enhanced_key_points(&transform);
 
         // 应该有2个中心点
@@ -483,7 +481,7 @@ mod tests {
         assert!(pyramid.check_valid());
 
         // 验证关键点
-        let transform = bevy_transform::prelude::Transform::default();
+        let transform = crate::plant_transform::Transform::default();
         let points = pyramid.enhanced_key_points(&transform);
 
         // 应该有2个中心点
@@ -539,7 +537,7 @@ mod tests {
         assert!(pyramid.check_valid());
 
         // 验证关键点位置
-        let transform = bevy_transform::prelude::Transform::default();
+        let transform = crate::plant_transform::Transform::default();
         let points = pyramid.enhanced_key_points(&transform);
 
         let centers: Vec<_> = points
@@ -566,7 +564,7 @@ mod tests {
         assert!(complex.check_valid());
 
         // 验证关键点
-        let transform = bevy_transform::prelude::Transform::default();
+        let transform = crate::plant_transform::Transform::default();
         let points = complex.enhanced_key_points(&transform);
 
         // 应该有2个中心点
@@ -615,7 +613,7 @@ mod tests {
 
         assert!(pyramid.check_valid());
 
-        let transform = bevy_transform::prelude::Transform::default();
+        let transform = crate::plant_transform::Transform::default();
         let points = pyramid.enhanced_key_points(&transform);
 
         // 应该仍然有正确的点数

@@ -1,17 +1,15 @@
+use crate::plant_transform::Transform;
 use crate::data_center::TiziVirtualHoleData;
 use crate::geometry::GeoBasicType;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::types::*;
-use bevy_ecs::event::Event;
-use bevy_ecs::resource::Resource;
-use bevy_transform::prelude::*;
 use parry3d::bounding_volume::Aabb;
 use serde::Deserialize;
 use serde::Serialize;
 use serde_with::DisplayFromStr;
 use serde_with::serde_as;
 
-#[derive(Resource, PartialEq, Default, Debug, Serialize, Deserialize)]
+#[derive(PartialEq, Default, Debug, Serialize, Deserialize)]
 pub struct PersonnelInfo {
     #[serde(rename = "人员工号")]
     pub job_num: String,
@@ -19,13 +17,13 @@ pub struct PersonnelInfo {
     pub name: String,
 }
 
-#[derive(PartialEq, Resource, Default, Debug, Serialize, Deserialize)]
+#[derive(PartialEq, Default, Debug, Serialize, Deserialize)]
 pub struct PersonnelInfoVec {
     pub data: Vec<PersonnelInfo>,
 }
 
 /// 封堵材料返回的数据
-#[derive(PartialEq, Resource, Debug, Serialize, Deserialize)]
+#[derive(PartialEq, Debug, Serialize, Deserialize)]
 pub struct PluggingHoleData {
     // 孔洞的参考号
     pub hole_refno: RefU64,
@@ -45,21 +43,21 @@ pub struct PluggingHoleData {
     pub plugging_material: String,
 }
 
-#[derive(PartialEq, Resource, Debug, Serialize, Deserialize)]
+#[derive(PartialEq, Debug, Serialize, Deserialize)]
 pub enum HoleSize {
     Circle(CircleHoleSize),
     Rect(RectHoleSize),
 }
 
 /// 圆形孔洞尺寸（不含高度）
-#[derive(PartialEq, Resource, Default, Debug, Serialize, Deserialize)]
+#[derive(PartialEq, Default, Debug, Serialize, Deserialize)]
 pub struct CircleHoleSize {
     pub radius: f32,
     pub height: f32,
 }
 
 /// 方形孔洞尺寸（不含高度）
-#[derive(PartialEq, Resource, Default, Debug, Serialize, Deserialize)]
+#[derive(PartialEq, Default, Debug, Serialize, Deserialize)]
 pub struct RectHoleSize {
     pub length: f32,
     pub width: f32,
@@ -90,7 +88,6 @@ pub struct HoleInstInfo {
     Debug,
     Clone,
     Default,
-    Resource,
 )]
 #[serde_as]
 pub struct HoleEleGeosInfo {
@@ -118,20 +115,20 @@ pub struct HoleEleGeosInfo {
 }
 
 //显示提资记录以及当前该记录处于哪个校核阶段
-#[derive(Resource, Serialize, Deserialize, Clone, Debug, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct ShowReviewerData {
     pub record: TiziVirtualHoleData,
     pub reviewer: String,
 }
 
 //将Vec<ShowReviewerData>组织成一种资源插入ECS
-#[derive(Resource, Serialize, Deserialize, Clone, Debug, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct ShowReviewerDataVec {
     pub data: Vec<ShowReviewerData>,
 }
 
 //绘制虚拟孔洞埋件需要的数据
-#[derive(Clone, Debug, Default, Serialize, Deserialize, Event)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct HoleGeoData {
     //图数据库的key
     pub key: String,

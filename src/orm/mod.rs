@@ -12,8 +12,6 @@ pub mod macros;
 // pub mod generated;
 // pub use generated::*;
 
-#[cfg(feature = "reflect")]
-use bevy_reflect::TypeRegistry;
 use once_cell::sync::OnceCell;
 use std::any::TypeId;
 use std::collections::BTreeMap;
@@ -24,27 +22,9 @@ pub use traits::*;
 pub use types::*;
 
 /// 获得类型的注册机
-///
-/// 注意: 此功能需要 "reflect" feature 开启
-///
-/// # 返回值
-/// - 当 reflect feature 开启时，返回 Some(&TypeRegistry)
-/// - 当 reflect feature 未开启时，返回 None
-pub fn get_type_registry() -> Option<&'static TypeRegistry> {
-    #[cfg(feature = "reflect")]
-    {
-        static INSTANCE: OnceCell<TypeRegistry> = OnceCell::new();
-        Some(INSTANCE.get_or_init(|| {
-            let mut type_registry: TypeRegistry = TypeRegistry::default();
-            type_registry.register::<pdms_element::Model>();
-            type_registry
-        }))
-    }
-
-    #[cfg(not(feature = "reflect"))]
-    {
-        None
-    }
+/// 反射链路已下线，保留空实现以兼容历史调用。
+pub fn get_type_registry() -> Option<()> {
+    None
 }
 
 //todo 根据属性描述信息，使用宏来生成类型信息

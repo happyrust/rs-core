@@ -1,6 +1,5 @@
 use crate::pdms_types::PdmsNodeTrait;
 use crate::types::*;
-use bevy_ecs::prelude::{Component, Resource};
 use serde_derive::{Deserialize, Serialize};
 
 /// 元数据管理各个字段在excel中的第几列
@@ -19,7 +18,7 @@ pub struct MetadataManagerTreeNodeExcelIndex {
     pub owned_name: Option<usize>,
 }
 
-#[derive(Debug, Default, Clone, Serialize, Deserialize, Component)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct MetadataManagerTreeNode {
     pub id: u64,
     pub owner: u64,
@@ -107,7 +106,7 @@ pub struct FileBytes {
     pub data: Vec<u8>,
 }
 
-#[derive(Resource, Debug, Default, Clone, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct ShowMetadataManagerTableData {
     pub id: u64,
     pub old_code: String,

@@ -1,3 +1,4 @@
+use crate::plant_transform::Transform;
 use crate::parsed_data::{CateProfileParam, SProfileData, SannData};
 use crate::prim_geo::spine::{SegmentPath, *};
 use crate::prim_geo::wire;
@@ -7,8 +8,6 @@ use crate::shape::pdms_shape::{BrepMathTrait, convert_to_cg_matrix4};
 use crate::tool::math_tool::{quat_to_pdms_ori_str, to_pdms_ori_str};
 use anyhow::anyhow;
 use approx::{abs_diff_eq, abs_diff_ne};
-use bevy_ecs::prelude::*;
-use bevy_transform::prelude::Transform;
 use cavalier_contours::core::math::bulge_from_angle;
 use cavalier_contours::polyline::{PlineSource, PlineSourceMut, Polyline, seg_midpoint};
 use glam::*;
@@ -32,7 +31,6 @@ use truck_base::cgmath64::*;
 
 ///含有两边方向的，扫描体
 #[derive(
-    Component,
     Debug,
     Clone,
     Serialize,
@@ -254,7 +252,7 @@ impl BrepShapeTrait for SweepSolid {
     }
 
     #[inline]
-    fn get_trans(&self) -> bevy_transform::prelude::Transform {
+    fn get_trans(&self) -> crate::plant_transform::Transform {
         // 重构后：transform 通过 geo_transform 承载，这里返回 IDENTITY
         Transform::IDENTITY
     }

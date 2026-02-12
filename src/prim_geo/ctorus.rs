@@ -1,5 +1,4 @@
-use bevy_ecs::prelude::*;
-use bevy_transform::prelude::Transform;
+use crate::plant_transform::Transform;
 use glam::{DVec2, DVec3, Quat, Vec3};
 use std::collections::hash_map::DefaultHasher;
 use std::hash::Hash;
@@ -31,7 +30,6 @@ use opencascade::primitives::{Shape, Wire};
 use opencascade::workplane::Workplane;
 
 #[derive(
-    Component,
     Debug,
     Clone,
     Serialize,
@@ -78,7 +76,7 @@ impl SCTorus {
             // CTorus 使用 unit mesh (rout=1) + scale 方式复用几何体
             // scale 必须设置为 rout，以便将 unit mesh 缩放到实际尺寸
             let mat = Transform {
-                rotation: Quat::from_mat3(&bevy_math::Mat3::from_cols(x_axis, y_axis, z_axis)),
+                rotation: Quat::from_mat3(&glam::Mat3::from_cols(x_axis, y_axis, z_axis)),
                 translation,
                 scale: Vec3::splat(ctorus.rout),
             };
@@ -171,7 +169,6 @@ impl From<AttrMap> for SCTorus {
 }
 
 #[derive(
-    Component,
     Debug,
     Clone,
     Serialize,
@@ -293,7 +290,7 @@ impl BrepShapeTrait for CTorus {
 
     fn enhanced_key_points(
         &self,
-        transform: &bevy_transform::prelude::Transform,
+        transform: &crate::plant_transform::Transform,
     ) -> Vec<(Vec3, String, u8)> {
         let mut points = Vec::new();
 

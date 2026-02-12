@@ -163,7 +163,7 @@ impl BrepShapeTrait for Revolution {
 
     fn enhanced_key_points(
         &self,
-        transform: &bevy_transform::prelude::Transform,
+        transform: &crate::plant_transform::Transform,
     ) -> Vec<(Vec3, String, u8)> {
         use glam::Quat;
 

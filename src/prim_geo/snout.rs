@@ -20,12 +20,10 @@ use truck_modeling::builder::*;
 use crate::NamedAttrMap;
 #[cfg(feature = "occ")]
 use crate::prim_geo::basic::OccSharedShape;
-use bevy_ecs::prelude::*;
 #[cfg(feature = "occ")]
 use opencascade::primitives::*;
 
 #[derive(
-    Component,
     Debug,
     Clone,
     Serialize,
@@ -267,7 +265,7 @@ impl BrepShapeTrait for LSnout {
 
     fn enhanced_key_points(
         &self,
-        transform: &bevy_transform::prelude::Transform,
+        transform: &crate::plant_transform::Transform,
     ) -> Vec<(Vec3, String, u8)> {
         use crate::prim_geo::helper::cal_ref_axis;
 

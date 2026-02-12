@@ -1,11 +1,6 @@
+use crate::plant_transform::Transform;
 use anyhow::Context;
 use anyhow::anyhow;
-#[cfg(feature = "render")]
-use bevy_asset::RenderAssetUsages;
-use bevy_ecs::component::Component;
-#[cfg(feature = "render")]
-use bevy_mesh::{Indices, Mesh};
-use bevy_transform::prelude::Transform;
 use derive_more::{Deref, DerefMut};
 use downcast_rs::*;
 use dyn_clone::DynClone;
@@ -197,7 +192,6 @@ fn extract_edges_from_mesh_internal(indices: &[u32], vertices: &[Vec3]) -> Edges
 #[derive(
     Serialize,
     Deserialize,
-    Component,
     Debug,
     Clone,
     rkyv::Archive,
@@ -460,7 +454,7 @@ impl PlantMesh {
 
     ///todo 后面需要把uv使用上
     #[cfg(feature = "render")]
-    pub fn gen_bevy_mesh(&self) -> Mesh {
+    pub fn gen_render_mesh(&self) -> Mesh {
         let mut mesh = Mesh::new(
             PrimitiveTopology::TriangleList,
             RenderAssetUsages::default(),
@@ -1017,7 +1011,7 @@ pub trait BrepShapeTrait: Downcast + VerifiedShape + Debug + Send + Sync + DynCl
     /// 各几何体可以重写此方法以提供更精确的关键点分类
     fn enhanced_key_points(
         &self,
-        transform: &bevy_transform::prelude::Transform,
+        transform: &crate::plant_transform::Transform,
     ) -> Vec<(Vec3, String, u8)> {
         // 默认实现：将所有关键点标记为表面点，优先级50
         self.key_points()

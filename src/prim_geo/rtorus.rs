@@ -1,3 +1,4 @@
+use crate::plant_transform::Transform;
 use crate::NamedAttrMap;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 #[cfg(feature = "occ")]
@@ -6,8 +7,6 @@ use crate::prim_geo::helper::*;
 use crate::shape::pdms_shape::*;
 use crate::tool::float_tool::hash_f32;
 use crate::types::attmap::AttrMap;
-use bevy_ecs::prelude::*;
-use bevy_transform::prelude::Transform;
 use glam::{DVec3, Mat3, Quat, Vec3};
 #[cfg(feature = "occ")]
 use opencascade::angle::ToAngle;
@@ -26,7 +25,6 @@ use truck_modeling::builder::*;
 use truck_modeling::builder::*;
 
 #[derive(
-    Component,
     Debug,
     Clone,
     Serialize,
@@ -203,7 +201,6 @@ impl From<AttrMap> for SRTorus {
 }
 
 #[derive(
-    Component,
     Debug,
     Clone,
     Serialize,
@@ -342,7 +339,7 @@ impl BrepShapeTrait for RTorus {
 
     fn enhanced_key_points(
         &self,
-        transform: &bevy_transform::prelude::Transform,
+        transform: &crate::plant_transform::Transform,
     ) -> Vec<(Vec3, String, u8)> {
         let mut points = Vec::new();
 

@@ -24,7 +24,6 @@ use truck_modeling::Shell;
 use crate::NamedAttrMap;
 #[cfg(feature = "occ")]
 use crate::prim_geo::basic::OccSharedShape;
-use bevy_ecs::prelude::*;
 #[cfg(feature = "occ")]
 use opencascade::primitives::*;
 #[cfg(feature = "occ")]
@@ -32,7 +31,6 @@ use opencascade::workplane::{Sketch, Workplane};
 
 //可不可以用来表达 sphere
 #[derive(
-    Component,
     Debug,
     Clone,
     Serialize,
@@ -271,7 +269,7 @@ impl BrepShapeTrait for Dish {
 
     fn enhanced_key_points(
         &self,
-        transform: &bevy_transform::prelude::Transform,
+        transform: &crate::plant_transform::Transform,
     ) -> Vec<(Vec3, String, u8)> {
         let mut points = Vec::new();
 

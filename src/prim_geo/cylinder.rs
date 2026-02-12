@@ -1,6 +1,5 @@
+use crate::plant_transform::Transform;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
-use bevy_ecs::prelude::*;
-use bevy_transform::prelude::Transform;
 use glam::{DMat4, DVec3, Mat4, Vec3};
 use nom::Parser;
 use serde::{Deserialize, Serialize};
@@ -25,7 +24,6 @@ use truck_modeling::*;
 
 ///元件库里的LCylinder
 #[derive(
-    Component,
     Debug,
     Clone,
     Serialize,
@@ -159,7 +157,7 @@ impl BrepShapeTrait for LCylinder {
 
     fn enhanced_key_points(
         &self,
-        transform: &bevy_transform::prelude::Transform,
+        transform: &crate::plant_transform::Transform,
     ) -> Vec<(Vec3, String, u8)> {
         let mut points = Vec::new();
 
@@ -222,7 +220,6 @@ impl BrepShapeTrait for LCylinder {
 }
 
 #[derive(
-    Component,
     Debug,
     Clone,
     Serialize,
@@ -461,7 +458,7 @@ impl BrepShapeTrait for SCylinder {
     /// 顶/底面中心与法向，确保关键点与实际几何一致。
     fn enhanced_key_points(
         &self,
-        transform: &bevy_transform::prelude::Transform,
+        transform: &crate::plant_transform::Transform,
     ) -> Vec<(Vec3, String, u8)> {
         let mut points = Vec::new();
 

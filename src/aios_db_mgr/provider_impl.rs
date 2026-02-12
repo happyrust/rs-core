@@ -1,6 +1,7 @@
 //! 基于 QueryProvider 的 PdmsDataInterface 实现
 //!
 //! 这个模块使用统一的 QueryProvider 接口实现 PDMS 领域特定的数据访问
+use crate::plant_transform::Transform;
 
 use crate::aios_db_mgr::PdmsDataInterface;
 use crate::pdms_types::{EleTreeNode, PdmsElement};
@@ -11,7 +12,6 @@ use crate::{
     get_named_attmap_with_uda, get_next_prev, get_world_transform,
 };
 use async_trait::async_trait;
-use bevy_transform::components::Transform;
 use std::sync::Arc;
 use surrealdb::IndexedResults as Response;
 use tracing::info;

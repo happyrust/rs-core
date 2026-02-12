@@ -35,11 +35,6 @@ erased-serde = "0.3.22"
 dyn-clone = "1.0.9"
 
 
-#bevy = { git = "https://gitee.com/happydpc/bevy", default-features = false, features = ["render", "filesystem_watcher"] }
-#bevy_egui = { git = "https://gitee.com/happydpc/bevy_egui" }
-bevy = { path = "../bevy", default-features = false, features = ["render", "filesystem_watcher"] }
-bevy_egui = { path = "../bevy_egui" }
-
 serde-name = "0.1.1"
 serde = { version = "1.0.133", features = ["derive"] }
 serde_derive = "1.0.133"

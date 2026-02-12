@@ -77,8 +77,8 @@ pub fn gen_dmat4_hash(mat: &glam::DMat4) -> u64 {
     hasher.finish()
 }
 
-/// 生成 bevy Transform 的稳定 hash（基于保留3位有效数字的字符串拼接）
-pub fn gen_bevy_transform_hash(trans: &bevy_transform::prelude::Transform) -> u64 {
+/// 生成 Transform 的稳定 hash（基于保留3位有效数字的字符串拼接）
+pub fn gen_plant_transform_hash(trans: &crate::plant_transform::Transform) -> u64 {
     use core::hash::Hasher;
 
     let s = format!(

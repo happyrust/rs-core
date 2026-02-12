@@ -29,7 +29,7 @@ pub mod basic;
 
 pub mod parse; // 兼容下游依赖：保留 aios_core::parse 路径
 
-pub mod bevy_types;
+pub mod plant_transform;
 // pub mod cache; // 模块已删除
 pub mod consts;
 pub mod csg;
@@ -126,6 +126,7 @@ pub mod color_scheme;
 
 #[cfg(feature = "web_server")]
 pub mod web_server;
+pub use crate::plant_transform::Transform;
 pub use crate::types::*;
 pub use rs_surreal::*;
 pub use runtime::{

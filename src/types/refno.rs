@@ -1,7 +1,4 @@
 use crate::utils::{IntoRecordId, RecordIdExt};
-use bevy_ecs::component::Component;
-#[cfg(feature = "reflect")]
-use bevy_reflect::Reflect;
 #[cfg(feature = "sea-orm")]
 use sea_orm::entity::prelude::*;
 use serde::de;
@@ -23,14 +20,12 @@ use surrealdb::types as surrealdb_types;
     Hash,
     Clone,
     Default,
-    Component,
     Eq,
     PartialEq,
     PartialOrd,
     Ord,
     SurrealValue,
 )]
-#[cfg_attr(feature = "reflect", derive(Reflect))]
 pub struct RefNo {
     id: String,
     sesno: Option<u16>,
@@ -47,14 +42,12 @@ pub struct ParseRefU64Error;
     Clone,
     Copy,
     Default,
-    Component,
     Eq,
     PartialEq,
     PartialOrd,
     Ord,
     // SurrealValue,
 )]
-#[cfg_attr(feature = "reflect", derive(Reflect))]
 pub struct RefU64(pub u64);
 
 impl SurrealValue for RefU64 {
@@ -596,6 +589,7 @@ impl RefI32Tuple {
     rkyv::Serialize,
     SurrealValue,
 )]
+#[rkyv(derive(Hash, Eq, PartialEq))]
 pub struct RefnoSesno {
     pub refno: RefU64,
     pub sesno: u32,
@@ -664,8 +658,8 @@ impl Into<u32> for RefnoSesno {
     rkyv::Archive,
     rkyv::Deserialize,
     rkyv::Serialize,
-    Component,
 )]
+#[rkyv(derive(Hash, Eq, PartialEq))]
 #[serde(untagged)]
 pub enum RefnoEnum {
     Refno(RefU64),

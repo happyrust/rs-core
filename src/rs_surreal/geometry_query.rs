@@ -1,3 +1,4 @@
+use crate::plant_transform::Transform;
 /// 几何查询相关的数据结构和方法
 ///
 /// 本模块提供了用于从 SurrealDB 批量查询几何参数和 AABB 数据的结构体和辅助方法
@@ -7,7 +8,6 @@ use crate::types::{PlantAabb, RefnoEnum, Thing};
 use crate::utils::RecordIdExt;
 use crate::{SUL_DB, SurrealQueryExt, gen_aabb_hash, get_inst_relate_keys, get_world_transform};
 use anyhow::anyhow;
-use bevy_transform::prelude::Transform;
 use dashmap::DashMap;
 use parry3d::bounding_volume::{Aabb, BoundingVolume};
 use parry3d::math::Isometry;
@@ -19,7 +19,7 @@ use surrealdb::types::{Kind, SurrealValue, Value};
 
 /// 植物变换包装类型
 ///
-/// 为 bevy_transform::prelude::Transform 提供 SurrealValue 实现的包装类型
+/// 为 crate::plant_transform::Transform 提供 SurrealValue 实现的包装类型
 /// 支持序列化、反序列化和数据库存储
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
 pub struct PlantTransform(pub Transform);

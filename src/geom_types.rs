@@ -1,3 +1,4 @@
+use crate::plant_transform::Transform;
 use crate::geometry::EleInstGeo;
 use crate::geometry::GeoBasicType;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
@@ -6,7 +7,6 @@ use crate::parsed_data::geo_params_data::PdmsGeoParam::PrimSCylinder;
 use crate::prim_geo::basic::OccSharedShape;
 use crate::shape::pdms_shape::RsVec3;
 use crate::types::*;
-use bevy_transform::prelude::Transform;
 #[cfg(feature = "occ")]
 use opencascade::primitives::Shape;
 use parry3d::bounding_volume::Aabb;

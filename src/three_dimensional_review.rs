@@ -1,8 +1,5 @@
+use crate::plant_transform::Transform;
 use crate::types::*;
-use bevy_ecs::prelude::Component;
-use bevy_ecs::prelude::Event;
-use bevy_ecs::prelude::Resource;
-use bevy_transform::prelude::Transform;
 use serde::{Deserialize, Serialize};
 use serde_with::DisplayFromStr;
 use serde_with::serde_as;
@@ -10,7 +7,7 @@ use std::collections::HashMap;
 use surrealdb::types as surrealdb_types;
 use surrealdb::types::SurrealValue;
 
-#[derive(Debug, Default, Clone, Serialize, Deserialize, Resource)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct ReviewModelData {
     #[serde(rename = "id", alias = "KeyValue")]
     pub key_value: String,
@@ -105,7 +102,7 @@ pub struct ModelDataIndex {
     pub name: String,
 }
 
-#[derive(Debug, Default, Clone, Serialize, Deserialize, Resource)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct ModelData {
     /// 选择校审内容的节点
     pub index: Vec<ModelDataIndex>,
@@ -173,14 +170,14 @@ pub struct VagueSearchExportRequest {
 }
 
 ///显示范围内所有模型
-#[derive(Clone, Debug, Default, Serialize, Deserialize, Event)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct ShowModelInRangeEvent {
     pub refno: RefU64,
     pub range: f32,
 }
 
 ///编校审草图结构体
-#[derive(Debug, Resource, Default, Clone, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct ReviewBluePrint {
     pub file_name: String,
     pub data: Vec<u8>,
@@ -189,7 +186,7 @@ pub struct ReviewBluePrint {
 }
 
 ///得到编校审上传图纸Event
-#[derive(Clone, Debug, Default, Event, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct GetBluePrintEvent {
     pub filter_type: String,
     pub filter_value: String,

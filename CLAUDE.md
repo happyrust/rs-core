@@ -147,7 +147,7 @@ cargo test --features sql
 - Strong typing with custom derive macros
 
 **Modular Architecture**
-- Feature-gated compilation (occ, manifold, sql, render)
+- Feature-gated compilation (occ, manifold, sql)
 - Domain-specific modules for different plant systems
 - Clear separation between data types, operations, and storage
 
@@ -176,7 +176,6 @@ aios_core::diff_sesno(refno: Refno, sesno1: i32, sesno2: i32) -> Vec<Diff>
 ## Important Dependencies
 
 - **SurrealDB**: Primary database (custom fork from gitee.com/happydpc/surrealdb)
-- **Bevy**: Math and transform utilities
 - **Glam**: Vector mathematics
 - **Parry**: Geometric collision detection
 - **Nalgebra**: Linear algebra operations

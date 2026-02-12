@@ -1,4 +1,4 @@
-use bevy_transform::prelude::Transform;
+use crate::plant_transform::Transform;
 use chrono;
 use std::collections::BTreeMap;
 use std::fs::OpenOptions;
@@ -398,7 +398,7 @@ pub mod geo_params_data {
         /// 返回：(点位置, 点类型字符串, 吸附优先级)
         pub fn enhanced_key_points(
             &self,
-            transform: &bevy_transform::prelude::Transform,
+            transform: &crate::plant_transform::Transform,
         ) -> Vec<(glam::Vec3, String, u8)> {
             match self {
                 PdmsGeoParam::Unknown => vec![],

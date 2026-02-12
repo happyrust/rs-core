@@ -1,5 +1,4 @@
 use crate::data_center::RawHoleData;
-use bevy_ecs::prelude::Resource;
 use glam::Vec3;
 use nom::character::streaming::char;
 use serde_derive::{Deserialize, Serialize};
@@ -16,7 +15,7 @@ pub struct ATTAPosVec {
     pub data: Vec<ATTAPos>,
 }
 
-#[derive(Resource, Serialize, Deserialize, Clone, Debug, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct VirtualHoleGraphNodeQuery {
     // node identifier
     // #[serde(rename = "Code")]
@@ -153,7 +152,7 @@ fn default_version_value() -> char {
 // intelld, code, and relyitem fields. The key is used to store
 // the node in the graph and to search for the node in the graph.
 
-#[derive(Resource, Serialize, Deserialize, Clone, Debug, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct VirtualEmbedGraphNode {
     // the intelligence of the node
     pub _key: String,
@@ -243,7 +242,7 @@ pub struct VirtualEmbedGraphNode {
     pub map: HashMap<String, String>,
 }
 
-#[derive(Resource, Serialize, Deserialize, Clone, Debug, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct VirtualEmbedGraphNodeQuery {
     // the intelligence of the node
     pub _key: String,
@@ -384,25 +383,25 @@ impl VirtualHoleGraphNodeJSStatus {
 }
 
 //存储虚拟孔洞detail
-#[derive(Resource, Serialize, Deserialize, Clone, Debug, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct VirtualHoleHistoryData {
     pub data: RawHoleData,
 }
 
 //存储虚拟埋件detail
-#[derive(Resource, Serialize, Deserialize, Clone, Debug, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct VirtualEmbedHistoryData {
     pub data: VirtualEmbedGraphNodeQuery,
 }
 
 //存储校核人虚拟孔洞detail
-#[derive(Resource, Serialize, Deserialize, Clone, Debug, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct ReviewerHoleDetail {
     pub data: RawHoleData,
 }
 
 //存储校核人虚拟埋件detail
-#[derive(Resource, Serialize, Deserialize, Clone, Debug, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct ReviewerEmbedDetail {
     pub data: VirtualEmbedGraphNodeQuery,
 }

@@ -1,5 +1,6 @@
-//! 空间/坐标相关的工具函数：包含 PDMS 方向到 Bevy/glam 的转换、
+//! 空间/坐标相关的工具函数：包含 PDMS 方向到 glam 的转换、
 //! 世界矩阵求解、样条路径与形集（PLIN）查询，以及基于 SQLite 的空间查询。
+use crate::plant_transform::Transform;
 use crate::RefnoEnum;
 #[cfg(all(not(target_arch = "wasm32"), feature = "sqlite"))]
 use crate::spatial::sqlite;
@@ -25,7 +26,6 @@ use crate::{
 use anyhow::anyhow;
 use approx::abs_diff_eq;
 use async_recursion::async_recursion;
-use bevy_transform::prelude::*;
 use cached::proc_macro::cached;
 use futures::future::{BoxFuture, FutureExt};
 use glam::{DMat3, DMat4, DQuat, DVec3, Mat3, Mat4, Quat, Vec3};

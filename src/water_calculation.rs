@@ -1,14 +1,11 @@
 use crate::types::*;
-use bevy_ecs::prelude::Component;
-use bevy_ecs::prelude::Event;
-use bevy_ecs::prelude::Resource;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 
 ///水淹计算孔洞的结构体
-#[derive(Resource, Clone, Debug, Default, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct FloodingHole {
     ///参考号
     pub refno: RefU64,
@@ -23,13 +20,13 @@ pub struct FloodingHole {
 }
 
 ///水淹计算墙与孔洞关系对应的结构体
-#[derive(Resource, Clone, Debug, Default, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct FloodingHoleVec {
     pub data: HashMap<RefU64, Vec<FloodingHole>>,
 }
 
 ///导出水淹计算stp需要用到的数据
-#[derive(Clone, Debug, Default, Event, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct ExportFloodingStpEvent {
     ///文件名
     pub file_name: String,
@@ -103,7 +100,7 @@ impl ExportFloodingStpEvent {
 }
 
 ///将水淹计算保存到图数据库
-#[derive(Clone, Debug, Default, Event, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct FloodingStpToArangodb {
     pub _key: String,
     //文件名
@@ -117,7 +114,7 @@ pub struct FloodingStpToArangodb {
 }
 
 ///将数据库中的数据组织成资源，导出历史记录时使用
-#[derive(Resource, Clone, Debug, Default, Event, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct FloodingStpToArangodbVec {
     pub data: Vec<FloodingStpToArangodb>,
 }

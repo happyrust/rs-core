@@ -1,4 +1,3 @@
-use bevy_ecs::resource::Resource;
 use serde::Deserialize;
 use serde::Serialize;
 
@@ -10,13 +9,13 @@ pub use version_info::{
 };
 
 /// 电气平台传入得信息，需要知道该name得设备 在传入得version到最新得版本是否发生变化
-#[derive(PartialEq, Resource, Default, Debug, Serialize, Deserialize)]
+#[derive(PartialEq, Default, Debug, Serialize, Deserialize)]
 pub struct VersionControlDataCenterRequest {
     pub name: String,
     pub version: String,
 }
 
-#[derive(PartialEq, Resource, Default, Debug, Serialize, Deserialize)]
+#[derive(PartialEq, Default, Debug, Serialize, Deserialize)]
 pub struct VersionControlDataCenterResponse {
     #[serde(rename = "mod")]
     pub modify: Vec<String>,

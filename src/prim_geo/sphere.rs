@@ -16,10 +16,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::NamedAttrMap;
 use crate::types::attmap::AttrMap;
-use bevy_ecs::prelude::*;
 
 #[derive(
-    Component,
     Debug,
     Clone,
     Serialize,
@@ -103,7 +101,7 @@ impl BrepShapeTrait for Sphere {
     /// - 8个赤道圆周点（优先级70）
     fn enhanced_key_points(
         &self,
-        transform: &bevy_transform::prelude::Transform,
+        transform: &crate::plant_transform::Transform,
     ) -> Vec<(Vec3, String, u8)> {
         let mut points = Vec::new();
 

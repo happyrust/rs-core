@@ -10,15 +10,7 @@ use crate::types::attmap::AttrMap;
 use crate::types::attval::{AttrVal, AttrValAql};
 use crate::types::named_attvalue::NamedAttrValue;
 pub use crate::types::*;
-#[cfg(feature = "bevy_component")]
-use bevy_ecs::component::Component;
-use bevy_ecs::prelude::*;
-use bevy_math::*;
-#[cfg(feature = "reflect")]
-use bevy_reflect::Reflect;
-#[cfg(feature = "render")]
-use bevy_render::prelude::*;
-use bevy_transform::prelude::*;
+use glam::*;
 use dashmap::DashMap;
 use derive_more::{Deref, DerefMut};
 use id_tree::NodeId;
@@ -640,7 +632,6 @@ pub const DEFAULT_NAMED_NOUNS: [&'static str; 5] = ["TYPE", "NAME", "REFNO", "OW
 ///PDMS通用类型枚举
 #[repr(C)]
 #[derive(
-    Component,
     rkyv::Archive,
     rkyv::Deserialize,
     rkyv::Serialize,
@@ -982,7 +973,6 @@ pub struct ChildrenNode {
     Clone,
     Debug,
     Default,
-    Component,
     rkyv::Archive,
     rkyv::Deserialize,
     rkyv::Serialize,
@@ -1002,7 +992,7 @@ pub struct CataHashRefnoKV {
 
 ///PDMS元素结构体，表示PDMS数据库中的基本元素
 #[serde_as]
-#[derive(Serialize, Deserialize, Clone, Debug, Default, Eq, PartialEq, Component, SurrealValue)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default, Eq, PartialEq, SurrealValue)]
 pub struct PdmsElement {
     ///参考号（主键）
     #[serde_as(as = "DisplayFromStr")]
@@ -1300,7 +1290,7 @@ pub struct RefnoNodeId {
 }
 
 ///项目数据库编号结构体
-#[derive(Serialize, Deserialize, Clone, Debug, Default, Component)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct ProjectDbno {
     ///主数据库编号
     pub mdb: u32,
@@ -1334,7 +1324,7 @@ pub struct Uda {
 }
 
 ///数据状态对应的数据结构
-#[derive(Default, Clone, Debug, Serialize, Deserialize, Component)]
+#[derive(Default, Clone, Debug, Serialize, Deserialize)]
 pub struct DataState {
     ///参考号
     pub refno: RefU64,
@@ -1347,14 +1337,14 @@ pub struct DataState {
 }
 
 ///数据状态向量结构体
-#[derive(Default, Clone, Debug, Serialize, Deserialize, Component)]
+#[derive(Default, Clone, Debug, Serialize, Deserialize)]
 pub struct DataStateVec {
     ///数据状态列表
     pub data_states: Vec<DataState>,
 }
 
 ///数据状态需要显示的PDMS属性
-#[derive(Default, Clone, Debug, Serialize, Deserialize, Component)]
+#[derive(Default, Clone, Debug, Serialize, Deserialize)]
 pub struct DataScope {
     ///参考号
     pub refno: RefU64,
@@ -1365,7 +1355,7 @@ pub struct DataScope {
 }
 
 ///数据范围向量结构体
-#[derive(Default, Clone, Debug, Serialize, Deserialize, Component)]
+#[derive(Default, Clone, Debug, Serialize, Deserialize)]
 pub struct DataScopeVec {
     ///数据范围列表
     pub data_scopes: Vec<DataScope>,

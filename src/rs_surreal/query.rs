@@ -147,7 +147,7 @@ pub async fn query_ancestor_refnos(refno: RefnoEnum) -> anyhow::Result<Vec<Refno
 /// 该函数用于在“惰性计算/策略计算失败”时提供一个更稳健的兜底来源，
 /// 并可配合 `save_pe_transform` 把结果回灌到 pe_transform 以提升后续命中率。
 #[cached(result = true, size = 5000)]
-pub async fn query_pe_world_trans(refno: RefnoEnum) -> anyhow::Result<Option<bevy_transform::prelude::Transform>> {
+pub async fn query_pe_world_trans(refno: RefnoEnum) -> anyhow::Result<Option<crate::plant_transform::Transform>> {
     use crate::rs_surreal::PlantTransform;
 
     #[derive(Deserialize, SurrealValue)]

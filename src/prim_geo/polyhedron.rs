@@ -4,7 +4,6 @@ use crate::shape::pdms_shape::BrepMathTrait;
 use crate::shape::pdms_shape::{BrepShapeTrait, PlantMesh, RsVec3, TRI_TOL, VerifiedShape};
 use crate::types::refno::RefnoEnum;
 use anyhow::anyhow;
-use bevy_ecs::prelude::*;
 use glam::Vec3;
 use itertools::Itertools;
 use nalgebra::Point;
@@ -19,7 +18,6 @@ use truck_modeling::Face;
 use truck_modeling::builder::*;
 
 #[derive(
-    Component,
     Debug,
     Clone,
     Serialize,
@@ -35,7 +33,6 @@ pub struct Polyhedron {
 }
 
 #[derive(
-    Component,
     Debug,
     Clone,
     Serialize,
@@ -143,7 +140,7 @@ impl BrepShapeTrait for Polyhedron {
 
     fn enhanced_key_points(
         &self,
-        transform: &bevy_transform::prelude::Transform,
+        transform: &crate::plant_transform::Transform,
     ) -> Vec<(Vec3, String, u8)> {
         // Polyhedron 是复杂的 Mesh 类型，只返回中心点
         // 计算所有顶点的平均位置作为中心点

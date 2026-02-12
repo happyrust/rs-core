@@ -14,7 +14,6 @@ use crate::{
     query_ele_filter_deep_children, query_filter_deep_children, query_response, rs_surreal,
 };
 use anyhow::anyhow;
-use bevy_ecs::resource::Resource;
 use calamine::{RangeDeserializerBuilder, Reader, Xlsx, open_workbook};
 use dashmap::DashMap;
 use itertools::Itertools;
@@ -34,24 +33,24 @@ use surrealdb::types::{RecordId, SurrealValue};
 use tokio::task;
 use tokio::task::JoinHandle;
 
-#[derive(Resource, Serialize, Deserialize, PartialEq, Debug, Default, Clone)]
+#[derive(Serialize, Deserialize, PartialEq, Debug, Default, Clone)]
 pub struct SiteData {
     pub refno: RefU64,
     pub name: String,
     pub is_selected: bool,
 }
 
-#[derive(Resource, Serialize, Deserialize, Debug, Default, Clone)]
+#[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct SiteVec {
     pub data: Vec<SiteData>,
 }
 
-#[derive(Resource, Serialize, Deserialize, Debug, Default, Clone)]
+#[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct SelectedSiteVec {
     pub data: Vec<SiteData>,
 }
 
-#[derive(Resource, Serialize, Deserialize, Debug, Default, Clone)]
+#[derive(Serialize, Deserialize, Debug, Default, Clone)]
 pub struct FlagSiteVec {
     pub data: Vec<SiteData>,
 }

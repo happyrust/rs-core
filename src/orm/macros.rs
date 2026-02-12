@@ -5,15 +5,16 @@ macro_rules! impl_db_op_trait {
         impl DbOpTrait for Model {
             fn gen_insert_many(
                 &self,
-                models: Vec<DynamicStruct>,
+                models: Vec<serde_json::Value>,
                 backend: DatabaseBackend,
             ) -> String {
                 let active_models = models
                     .into_iter()
-                    .map(|x| {
-                        let mut value = Self::default();
-                        value.apply(&x);
-                        value.into()
+                    .map(|value| {
+                        let model: Self = serde_json::from_value(value)
+                            .expect("gen_insert_many: invalid model JSON payload");
+                        let active_model: ActiveModel = model.into();
+                        active_model
                     })
                     .collect::<Vec<ActiveModel>>();
                 let insert = Entity::insert_many(active_models);

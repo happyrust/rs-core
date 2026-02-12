@@ -6,7 +6,6 @@ use crate::rs_surreal::spatial::{
 };
 use crate::{NamedAttrMap, RefnoEnum, get_named_attmap};
 use async_trait::async_trait;
-use bevy_transform::prelude::Transform;
 use glam::{DMat3, DMat4, DQuat, DVec3};
 use super::NposHandler;
 

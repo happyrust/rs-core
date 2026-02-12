@@ -2,7 +2,6 @@ use crate::geometry::PlantGeoData;
 use crate::shape::pdms_shape::PlantMesh;
 use crate::{GeomInstQuery, SUL_DB, types::*};
 use approx::{AbsDiffEq, abs_diff_ne, assert_abs_diff_eq};
-use bevy_ecs::prelude::Resource;
 use dashmap::DashMap;
 use dashmap::mapref::one::Ref;
 use glam::{Mat4, Vec3};
@@ -92,7 +91,7 @@ impl SurrealValue for RStarBoundingBox {
 }
 
 #[serde_as]
-#[derive(Clone, Default, Serialize, Deserialize, Resource)]
+#[derive(Clone, Default, Serialize, Deserialize)]
 pub struct AccelerationTree {
     pub tree: rstar::RTree<RStarBoundingBox>,
     //用来检查是否插入到了 Tree，如果遇到重复的，需要跳过

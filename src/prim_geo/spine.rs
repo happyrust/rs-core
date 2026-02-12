@@ -1,4 +1,4 @@
-use bevy_ecs::component::Component;
+use crate::plant_transform::Transform;
 use glam::{Mat3, Quat, Vec3};
 
 use serde::{Deserialize, Serialize};
@@ -7,10 +7,8 @@ use std::f32::consts::PI;
 
 use crate::tool::float_tool::{f32_round_3, vec3_round_3};
 use crate::{RefU64, RefnoEnum};
-use bevy_transform::prelude::*;
 
 #[derive(
-    Component,
     Default,
     Debug,
     Clone,
@@ -29,7 +27,6 @@ pub enum SpineCurveType {
 }
 
 #[derive(
-    Component,
     Debug,
     Default,
     Clone,
@@ -98,7 +95,6 @@ pub enum SegmentPath {
 
 /// 扫掠路径：由一个或多个连续的路径段组成
 #[derive(
-    Component,
     Debug,
     Clone,
     Serialize,
@@ -305,7 +301,6 @@ impl SweepPath3D {
 
 /// `Arc3D` 结构的定义
 #[derive(
-    Component,
     Debug,
     Clone,
     Default,
@@ -339,7 +334,6 @@ pub struct Arc3D {
 }
 
 #[derive(
-    Component,
     Debug,
     Clone,
     Serialize,

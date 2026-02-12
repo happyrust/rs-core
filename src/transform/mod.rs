@@ -4,6 +4,7 @@
 //! for different entity types. It extracts functionality from the `get_world_transform` method
 //! to calculate only the local transform of each node relative to its parent, which can then
 //! be combined to get the world transform without recalculating from the root each time.
+use crate::plant_transform::Transform;
 
 use crate::rs_surreal::pe_transform::{
     PeTransformEntry, clear_pe_transform, ensure_pe_transform_schema, query_pe_transform,
@@ -17,7 +18,6 @@ use crate::{
     tool::{direction_parse::parse_expr_to_dir, math_tool::*},
 };
 use anyhow::anyhow;
-use bevy_transform::prelude::*;
 use cached::proc_macro::cached;
 use glam::{DMat3, DMat4, DQuat, DVec3};
 
@@ -191,13 +191,13 @@ pub async fn get_transform_mat4(refno: RefnoEnum, is_local: bool) -> anyhow::Res
 
     if is_local {
         if let Some(local) = cached_local {
-            let mat4 = bevy_transform_to_dmat4(&local);
+            let mat4 = transform_to_dmat4(&local);
             #[cfg(feature = "debug_spatial")]
             println!("🎯 Cache hit for pe_transform.local: {}", refno);
             return Ok(Some(mat4));
         }
     } else if let Some(world) = cached_world {
-        let mat4 = bevy_transform_to_dmat4(&world);
+        let mat4 = transform_to_dmat4(&world);
         #[cfg(feature = "debug_spatial")]
         println!("🎯 Cache hit for pe_transform.world: {}", refno);
         return Ok(Some(mat4));
@@ -207,7 +207,7 @@ pub async fn get_transform_mat4(refno: RefnoEnum, is_local: bool) -> anyhow::Res
     // 这样可以避免 PRIM/BOX 等在模型生成时因为 world_transform=None/Err 而被跳过。
     if !is_local {
         if let Some(world) = crate::rs_surreal::query_pe_world_trans(refno).await.ok().flatten() {
-            let mat4 = bevy_transform_to_dmat4(&world);
+            let mat4 = transform_to_dmat4(&world);
             let refno_clone = refno;
             let world_clone = world.clone();
             tokio::spawn(async move {
@@ -218,7 +218,7 @@ pub async fn get_transform_mat4(refno: RefnoEnum, is_local: bool) -> anyhow::Res
     }
 
     let local_mat = match cached_local {
-        Some(local) => Some(bevy_transform_to_dmat4(&local)),
+        Some(local) => Some(transform_to_dmat4(&local)),
         None => get_local_mat4(refno).await?,
     };
     let world_mat = if is_local {
@@ -272,7 +272,7 @@ async fn compute_world_from_parent(
         }
     }
     if let Some(parent_world) = parent_world {
-        let parent_mat = bevy_transform_to_dmat4(&parent_world);
+        let parent_mat = transform_to_dmat4(&parent_world);
         return Ok(Some(match local_mat {
             Some(local) => parent_mat * local,
             None => parent_mat,
@@ -316,7 +316,7 @@ async fn compute_world_from_parent(
             }
             let world = start_world
                 .as_ref()
-                .map(bevy_transform_to_dmat4)
+                .map(transform_to_dmat4)
                 .unwrap_or(DMat4::IDENTITY);
             // 原始索引是从当前到根，反转后索引 = len - 1 - orig_idx
             let reversed_idx = ancestors_len - 1 - orig_idx;
@@ -385,14 +385,14 @@ pub async fn get_world_mat4(refno: RefnoEnum, is_local: bool) -> anyhow::Result<
     get_transform_mat4(refno, is_local).await
 }
 
-/// 将 Bevy Transform 转换为 DMat4
+/// 将 Transform 转换为 DMat4
 ///
 /// # 参数
-/// * `transform` - Bevy Transform 对象
+/// * `transform` - Transform 对象
 ///
 /// # 返回值
 /// 对应的 4x4 变换矩阵
-fn bevy_transform_to_dmat4(transform: &Transform) -> DMat4 {
+fn transform_to_dmat4(transform: &Transform) -> DMat4 {
     DMat4::from_scale_rotation_translation(
         transform.scale.as_dvec3(),
         transform.rotation.as_dquat(),
@@ -400,14 +400,14 @@ fn bevy_transform_to_dmat4(transform: &Transform) -> DMat4 {
     )
 }
 
-/// 将 DMat4 转换为 Bevy Transform
+/// 将 DMat4 转换为 Transform
 ///
 /// # 参数
 /// * `mat4` - 4x4 变换矩阵
 ///
 /// # 返回值
-/// 对应的 Bevy Transform 对象
-fn dmat4_to_bevy_transform(mat4: &DMat4) -> Transform {
+/// 对应的 Transform 对象
+fn dmat4_to_transform(mat4: &DMat4) -> Transform {
     let (scale, rotation, translation) = mat4.to_scale_rotation_translation();
     Transform {
         translation: translation.as_vec3(),
@@ -421,7 +421,7 @@ fn dmat4_to_transform_option(mat4: Option<DMat4>) -> Option<Transform> {
         if m.is_nan() {
             None
         } else {
-            Some(dmat4_to_bevy_transform(&m))
+            Some(dmat4_to_transform(&m))
         }
     })
 }

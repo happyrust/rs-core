@@ -1,3 +1,4 @@
+use crate::plant_transform::Transform;
 use crate::debug_model_debug;
 use crate::geometry::csg::{construct_basis_from_z_axis, construct_basis_from_z_axis_with_ref};
 use crate::parsed_data::geo_params_data::CateGeoParam;
@@ -14,8 +15,7 @@ use crate::prim_geo::snout::LSnout;
 use crate::prim_geo::sphere::Sphere;
 use crate::shape::pdms_shape::BrepShapeTrait;
 use crate::types::*;
-use bevy_math::prelude::*;
-use bevy_transform::prelude::Transform;
+use glam::*;
 use std::f32::consts::FRAC_PI_2;
 
 #[derive(Debug, Clone)]

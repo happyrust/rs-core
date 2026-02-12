@@ -1372,7 +1372,18 @@ fn generate_sscl_mesh(
         }
     }
 
-    dbg!(btm_x_deg, btm_y_deg, top_x_deg, top_y_deg);
+    // 默认不刷屏：仅在 debug_model 开启时输出，或显式设置 AIOS_CSG_DEBUG=1。
+    if crate::debug_macros::is_debug_model_enabled()
+        || std::env::var_os("AIOS_CSG_DEBUG").is_some()
+    {
+        crate::debug_model_debug!(
+            "csg shear angles (deg): btm_x={}, btm_y={}, top_x={}, top_y={}",
+            btm_x_deg,
+            btm_y_deg,
+            top_x_deg,
+            top_y_deg
+        );
+    }
 
     // libgm 斜率：直接使用 tan(angle)
     let btm_tan_x = btm_x_deg.to_radians().tan();

@@ -16,14 +16,12 @@ use crate::prim_geo::basic::OccSharedShape;
 use crate::prim_geo::wire::*;
 use crate::shape::pdms_shape::*;
 use crate::tool::float_tool::{f32_round_3, hash_f32, hash_vec3};
-use bevy_ecs::prelude::*;
 #[cfg(feature = "occ")]
 use opencascade::primitives::*;
 #[cfg(feature = "occ")]
 use opencascade::workplane::Workplane;
 
 #[derive(
-    Component,
     Debug,
     Clone,
     Serialize,
@@ -230,7 +228,7 @@ impl BrepShapeTrait for Extrusion {
 
     fn enhanced_key_points(
         &self,
-        transform: &bevy_transform::prelude::Transform,
+        transform: &crate::plant_transform::Transform,
     ) -> Vec<(Vec3, String, u8)> {
         let mut points = Vec::new();
 

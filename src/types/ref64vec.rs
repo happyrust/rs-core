@@ -1,5 +1,4 @@
 use crate::{RefU64, query_refno_sesno};
-use bevy_ecs::component::Component;
 use derive_more::{Deref, DerefMut};
 use serde_derive::{Deserialize, Serialize};
 use serde_with::serde_as;
@@ -12,7 +11,6 @@ use std::vec::IntoIter;
     Clone,
     Debug,
     Default,
-    Component,
     Deref,
     DerefMut,
     rkyv::Archive,

@@ -1,6 +1,5 @@
 use crate::RefU64;
 use crate::pdms_types::{EleTreeNode, PdmsNodeTrait};
-use bevy_ecs::component::Component;
 use derive_more::{Deref, DerefMut};
 use glam::{bool, u32};
 use id_tree::Tree;
@@ -11,7 +10,7 @@ use surrealdb::types::RecordId;
 
 pub type E3dTree = ElementTree<EleTreeNode>;
 
-#[derive(Serialize, Deserialize, Clone, Debug, Default, Component, Deref, DerefMut)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default, Deref, DerefMut)]
 pub struct ElementTree<T: PdmsNodeTrait>(pub Tree<T>);
 
 impl<T: PdmsNodeTrait> ElementTree<T> {

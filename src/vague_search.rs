@@ -1,7 +1,6 @@
-use bevy_ecs::resource::Resource;
 use serde::{Deserialize, Serialize};
 
-#[derive(Resource, Debug, Default, Clone, Deserialize, Serialize)]
+#[derive(Debug, Default, Clone, Deserialize, Serialize)]
 pub struct SearchConditionSave {
     pub user: String,
     pub name: String,
@@ -10,7 +9,7 @@ pub struct SearchConditionSave {
     pub condition: Vec<String>,
 }
 
-#[derive(Resource, Debug, Default, Clone, Deserialize, Serialize)]
+#[derive(Debug, Default, Clone, Deserialize, Serialize)]
 pub struct SearchConditionVec {
     pub data: Vec<SearchConditionSave>,
 }

@@ -1,5 +1,4 @@
 use crate::types::*;
-use bevy_ecs::prelude::{Component, Event};
 use serde_derive::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
@@ -13,7 +12,7 @@ pub struct RefnoStatusInfo {
     pub note: String,
 }
 
-#[derive(Event, Clone, Debug, Default, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct SetStateEvent {
     pub refnos: Vec<RefU64>,
     pub state_data: RefnoStatusInfo,

@@ -2,9 +2,6 @@ use crate::RefU64;
 use crate::attval::AttrVal::*;
 use crate::pdms_types::AiosStrHash;
 use crate::ref64vec::RefU64Vec;
-use bevy_ecs::component::Component;
-#[cfg(feature = "reflect")]
-use bevy_reflect::Reflect;
 use glam::{Vec3, bool, f32, f64, i32};
 use serde_derive::{Deserialize, Serialize};
 
@@ -14,7 +11,6 @@ use serde_derive::{Deserialize, Serialize};
     Deserialize,
     Clone,
     Debug,
-    Component,
     rkyv::Archive,
     rkyv::Deserialize,
     rkyv::Serialize,
@@ -160,26 +156,6 @@ impl AttrVal {
     }
 
     #[inline]
-    #[cfg(feature = "reflect")]
-    pub fn get_val_as_reflect(&self) -> Box<dyn Reflect> {
-        return match self {
-            InvalidType => Box::new("unset".to_string()),
-            StringType(v) | ElementType(v) | WordType(v) => Box::new(v.to_string()),
-            RefU64Type(v) => Box::new(v.to_string()),
-            BoolArrayType(v) => Box::new(v.clone()),
-            IntArrayType(v) => Box::new(v.clone()),
-            IntegerType(v) => Box::new(*v),
-            DoubleArrayType(v) => Box::new(v.clone()),
-            DoubleType(v) => Box::new(*v),
-            BoolType(v) => Box::new(*v),
-            StringHashType(v) => Box::new(*v),
-            StringArrayType(v) => Box::new(v.iter().map(|x| x.to_string()).collect::<Vec<_>>()),
-            Vec3Type(v) => Box::new(Vec3::new(v[0] as f32, v[1] as f32, v[2] as f32)),
-            RefU64Array(v) => Box::new(v.iter().map(|x| x.to_string()).collect::<Vec<_>>()),
-        };
-    }
-
-    #[inline]
     pub fn get_val_as_string(&self) -> String {
         return match self {
             AttrVal::InvalidType => "unset".to_string(),
@@ -221,7 +197,7 @@ impl AttrVal {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Component)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(untagged)]
 pub enum AttrValAql {
     InvalidType,
