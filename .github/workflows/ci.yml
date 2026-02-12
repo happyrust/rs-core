@@ -52,7 +52,7 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
         features:
           - ""  # 默认特性
-          - "bevy_transform,bevy_math,bevy_ecs,bevy_reflect"
+          - "use_strategy_transform"
           - "sqlite"
           - "gen_model"
         exclude:
