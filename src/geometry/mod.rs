@@ -1,3 +1,4 @@
+use crate::plant_transform::Transform;
 pub mod csg;
 pub mod sweep_mesh;
 
@@ -10,14 +11,6 @@ use crate::shape::pdms_shape::{PlantMesh, RsVec3};
 use crate::tool::hash_tool::hash_two_str;
 use crate::vec3_pool::{CateAxisParamCompact, compress_ptset};
 use crate::{RefU64, RefnoEnum};
-#[cfg(feature = "render")]
-use bevy_asset::RenderAssetUsages;
-use bevy_ecs::prelude::Resource;
-#[cfg(feature = "render")]
-use bevy_mesh::{Indices, Mesh};
-#[cfg(feature = "render")]
-use bevy_render::render_resource::PrimitiveTopology;
-use bevy_transform::components::Transform;
 use chrono;
 use dashmap::DashSet;
 use glam::{Vec3, bool, i32, u64};
@@ -66,8 +59,35 @@ pub enum GeoBasicType {
     Tubi,
 }
 
+/// TUBI 直段 / 管件 arrive-leave 相关信息（从 EleGeosInfo 中分离）
+#[derive(rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, Serialize, Deserialize, Debug, Clone, Default)]
+pub struct TubiData {
+    /// 关联的 tubi_info ID (格式: "{cata_hash}_{arrive_num}_{leave_num}")
+    /// 用于 BRAN/HANG 下元件的 arrive/leave 点复用
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub info_id: Option<String>,
+    /// TUBI 段的世界坐标起点（leave 端）
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub start_pt: Option<Vec3>,
+    /// TUBI 段的世界坐标终点（arrive 端）
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub end_pt: Option<Vec3>,
+    /// TUBI 段的到达元件 refno（tubi_relate 的 out）
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub arrive_refno: Option<RefnoEnum>,
+    /// TUBI 段在 BRAN/HANG 下的顺序号（tubi_relate 的 id[1]）
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub index: Option<u32>,
+    /// ARRIVE 轴点世界坐标 [x, y, z]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub arrive_axis_pt: Option<[f32; 3]>,
+    /// LEAVE 轴点世界坐标 [x, y, z]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub leave_axis_pt: Option<[f32; 3]>,
+}
+
 /// 存储一个Element 包含的所有几何信息
-#[derive(Serialize, Deserialize, Debug, Clone, Default, Resource)]
+#[derive(rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, Serialize, Deserialize, Debug, Clone, Default)]
 #[serde_as]
 pub struct EleGeosInfo {
     pub refno: RefnoEnum,
@@ -83,11 +103,13 @@ pub struct EleGeosInfo {
     //记录对应的元件库参考号
     #[serde(default)]
     #[serde(skip)]
+    #[rkyv(with = rkyv::with::Skip)]
     pub cata_refno: Option<RefnoEnum>,
     //是否可见
     pub visible: bool,
     //所属一般类型，ROOM、STRU、PIPE等, 用枚举处理
     pub generic_type: PdmsGenericType,
+    #[rkyv(with = rkyv::with::Skip)]
     pub aabb: Option<Aabb>,
 
     //相对世界坐标系下的变换矩阵 rot, translation, scale
@@ -101,28 +123,9 @@ pub struct EleGeosInfo {
     pub has_cata_neg: bool,
     pub is_solid: bool,
     // pub dt: chrono::NaiveDateTime,
-    /// 关联的 tubi_info ID (格式: "{cata_hash}_{arrive_num}_{leave_num}")
-    /// 用于 BRAN/HANG 下元件的 arrive/leave 点复用
+    /// TUBI / 管件 arrive-leave 相关信息
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tubi_info_id: Option<String>,
-    /// TUBI 段的世界坐标起点（leave 端）
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tubi_start_pt: Option<Vec3>,
-    /// TUBI 段的世界坐标终点（arrive 端）
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tubi_end_pt: Option<Vec3>,
-    /// TUBI 段的到达元件 refno（tubi_relate 的 out）
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tubi_arrive_refno: Option<RefnoEnum>,
-    /// TUBI 段在 BRAN/HANG 下的顺序号（tubi_relate 的 id[1]）
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tubi_index: Option<u32>,
-    /// ARRIVE 轴点世界坐标 [x, y, z]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub arrive_axis_pt: Option<[f32; 3]>,
-    /// LEAVE 轴点世界坐标 [x, y, z]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub leave_axis_pt: Option<[f32; 3]>,
+    pub tubi: Option<TubiData>,
 }
 
 impl EleGeosInfo {
@@ -187,7 +190,7 @@ impl EleGeosInfo {
         json.pop();
 
         // 添加 tubi_info 关联（如果有）
-        if let Some(ref tubi_id) = self.tubi_info_id {
+        if let Some(tubi_id) = self.tubi.as_ref().and_then(|t| t.info_id.as_ref()) {
             json.push_str(&format!(r#","tubi_info":tubi_info:⟨{}⟩"#, tubi_id));
         }
 
@@ -238,7 +241,7 @@ impl EleGeosInfo {
         );
 
         // 添加 tubi_info 关联（如果有）
-        if let Some(ref tubi_id) = self.tubi_info_id {
+        if let Some(tubi_id) = self.tubi.as_ref().and_then(|t| t.info_id.as_ref()) {
             json.push_str(&format!(r#","tubi_info":tubi_info:⟨{}⟩"#, tubi_id));
         }
 
@@ -277,7 +280,6 @@ impl EleGeosInfo {
     rkyv::Archive,
     rkyv::Deserialize,
     rkyv::Serialize,
-    Resource,
 )]
 pub struct ShapeInstancesData {
     /// 保存instance信息数据
@@ -559,7 +561,6 @@ pub type GeoHash = u64;
     Deserialize,
     Debug,
     Default,
-    Resource,
     rkyv::Archive,
     rkyv::Deserialize,
     rkyv::Serialize,
@@ -580,25 +581,11 @@ impl Clone for PlantGeoData {
 
 impl PlantGeoData {
     ///返回三角模型 （tri_mesh, AABB）
-    #[cfg(feature = "render")]
-    pub fn gen_bevy_mesh_with_aabb(&self) -> Option<(Mesh, Option<Aabb>)> {
-        let mut mesh = Mesh::new(
-            PrimitiveTopology::TriangleList,
-            // 保留 MAIN_WORLD 数据以支持 CPU 侧访问（如 ray picking）
-            RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD,
-        );
-        let d = PlantMesh::default();
-        mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, d.vertices.clone());
-        mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, d.normals.clone());
-        let n = d.vertices.len();
-        let mut uvs = vec![];
-        for i in 0..n {
-            uvs.push([0.0f32, 0.0]);
+    pub fn gen_render_mesh_with_aabb(&self) -> Option<(PlantMesh, Option<Aabb>)> {
+        let mut mesh = PlantMesh::default();
+        if mesh.uvs.len() != mesh.vertices.len() {
+            mesh.uvs = vec![[0.0f32, 0.0]; mesh.vertices.len()];
         }
-        mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
-        //todo 是否需要优化索引
-        mesh.insert_indices(Indices::U32(d.indices.clone()));
-
         Some((mesh, self.aabb))
     }
 
@@ -637,13 +624,13 @@ impl PlantGeoData {
     Clone,
     Debug,
     Default,
-    Resource,
 )]
 pub struct EleInstGeosData {
     pub inst_key: String,
     pub refno: RefnoEnum,
     pub insts: Vec<EleInstGeo>,
 
+    #[rkyv(with = rkyv::with::Skip)]
     pub aabb: Option<Aabb>,
     pub type_name: String,
 }
@@ -701,7 +688,6 @@ impl EleInstGeosData {
     Clone,
     Debug,
     Default,
-    Resource,
 )]
 #[serde_as]
 pub struct EleInstGeo {
@@ -713,6 +699,7 @@ pub struct EleInstGeo {
     #[serde(default)]
     pub geo_param: PdmsGeoParam,
     pub pts: Vec<i32>,
+    #[rkyv(with = rkyv::with::Skip)]
     pub aabb: Option<Aabb>,
     //相对于自身的坐标系变换
     #[serde(default)]
