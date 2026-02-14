@@ -4,7 +4,6 @@ pub mod sweep_mesh;
 
 use crate::parsed_data::CateAxisParam;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
-use crate::pdms_types::PdmsGenericType;
 use crate::prim_geo::basic::{BOXI_GEO_HASH, TUBI_GEO_HASH};
 use crate::prim_geo::{SBox, SCylinder};
 use crate::shape::pdms_shape::{PlantMesh, RsVec3};
@@ -111,8 +110,6 @@ pub struct EleGeosInfo {
     pub cata_refno: Option<RefnoEnum>,
     //是否可见
     pub visible: bool,
-    //所属一般类型，ROOM、STRU、PIPE等, 用枚举处理
-    pub generic_type: PdmsGenericType,
     #[rkyv(with = rkyv::with::Skip)]
     pub aabb: Option<Aabb>,
 
@@ -154,7 +151,6 @@ impl EleGeosInfo {
         let ptset_values: Vec<&CateAxisParam> = self.ptset_map.values().collect();
         let mut json = serde_json::to_string_pretty(&serde_json::json!({
             "visible": self.visible,
-            "generic_type": self.generic_type,
             "ptset": ptset_values,
         }))
         .unwrap();
@@ -185,7 +181,6 @@ impl EleGeosInfo {
 
         let mut json = serde_json::to_string(&serde_json::json!({
             "visible": self.visible,
-            "generic_type": self.generic_type,
             "ptset": ptset_compact,
         }))
         .unwrap();
@@ -239,10 +234,7 @@ impl EleGeosInfo {
 
         let ptset_json = format!("[{}]", ptset_items.join(","));
 
-        let mut json = format!(
-            r#"{{"visible":{},"generic_type":"{}","ptset":{}"#,
-            self.visible, self.generic_type, ptset_json
-        );
+        let mut json = format!(r#"{{"visible":{},"ptset":{}"#, self.visible, ptset_json);
 
         // 添加 tubi_info 关联（如果有）
         if let Some(tubi_id) = self.tubi.as_ref().and_then(|t| t.info_id.as_ref()) {

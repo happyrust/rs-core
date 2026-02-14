@@ -27,8 +27,6 @@ pub struct InstRelate {
     pub out: String,
     /// 所属构件编号
     pub owner: RefnoEnum,
-    /// 构件类型 (PIPE, ELBO, VALVE等)
-    pub generic: String,
     /// 世界坐标变换矩阵
     pub world_trans: Option<TransformData>,
     /// 布尔运算ID (用于孔洞等负实体)
@@ -114,14 +112,12 @@ impl InstRelate {
         input: RefnoEnum,
         out: String,
         owner: RefnoEnum,
-        generic: String,
     ) -> Self {
         Self {
             id,
             input,
             out,
             owner,
-            generic,
             world_trans: None,
             booled_id: None,
             dt: None,
@@ -201,7 +197,6 @@ impl InstRelate {
                 in = pe:{},
                 out = {},
                 owner = pe:{},
-                generic = '{}',
                 world_trans = {},
                 booled_id = {},
                 dt = {},
@@ -212,7 +207,6 @@ UPDATE pe:{} SET inst_relate_id = inst_relate:{};"#,
             self.input,
             self.out,
             self.owner,
-            self.generic,
             world_trans_str,
             booled_id_str,
             dt_str,
@@ -230,7 +224,6 @@ UPDATE pe:{} SET inst_relate_id = inst_relate:{};"#,
             "in": format!("pe:{}", self.input),
             "out": self.out,
             "owner": format!("pe:{}", self.owner),
-            "generic": self.generic,
             "world_trans": self.world_trans,
             "booled_id": self.booled_id,
             "dt": self.dt,
@@ -1051,14 +1044,12 @@ mod tests {
             RefnoEnum::from("12345"),
             "geo_instance_1".to_string(),
             RefnoEnum::from("67890"),
-            "PIPE".to_string(),
         );
 
         assert_eq!(inst_relate.id, "test_id");
         assert_eq!(inst_relate.input, RefnoEnum::from("12345"));
         assert_eq!(inst_relate.out, "geo_instance_1");
         assert_eq!(inst_relate.owner, RefnoEnum::from("67890"));
-        assert_eq!(inst_relate.generic, "PIPE");
     }
 
     #[test]
@@ -1068,7 +1059,6 @@ mod tests {
             RefnoEnum::from("12345"),
             "geo_instance_1".to_string(),
             RefnoEnum::from("67890"),
-            "PIPE".to_string(),
         );
 
         let sql = inst_relate.to_surql();
@@ -1077,7 +1067,6 @@ mod tests {
         assert!(sql.contains("in = pe:"));
         assert!(sql.contains("out = geo_instance_1"));
         assert!(sql.contains("owner = pe:"));
-        assert!(sql.contains("generic = 'PIPE'"));
         // 验证UPDATE语句将inst_relate_id添加到pe记录
         assert!(sql.contains("UPDATE pe:"));
         assert!(sql.contains("inst_relate_id = inst_relate:test_id"));
@@ -1090,7 +1079,6 @@ mod tests {
             RefnoEnum::from("12345"),
             "geo_instance_1".to_string(),
             RefnoEnum::from("67890"),
-            "PIPE".to_string(),
         );
 
         let json_str = inst_relate.gen_sur_json();
@@ -1101,7 +1089,6 @@ mod tests {
         assert!(json["in"].as_str().unwrap().contains("pe:"));
         assert_eq!(json["out"], "geo_instance_1");
         assert!(json["owner"].as_str().unwrap().contains("pe:"));
-        assert_eq!(json["generic"], "PIPE");
     }
 
     #[test]
