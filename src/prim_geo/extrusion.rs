@@ -22,13 +22,7 @@ use opencascade::primitives::*;
 use opencascade::workplane::Workplane;
 
 #[derive(
-    Debug,
-    Clone,
-    Serialize,
-    Deserialize,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
+    Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
 )]
 pub struct Extrusion {
     //xy 为坐标，z为倒角切半径

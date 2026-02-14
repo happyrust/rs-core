@@ -64,7 +64,11 @@ fn agent_log(hypothesis_id: &str, location: &str, message: &str, data: serde_jso
     });
     let path = r"d:\work\plant-code\gen_model-dev\.cursor\debug.log";
     use std::io::Write;
-    if let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open(path) {
+    if let Ok(mut f) = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(path)
+    {
         let _ = writeln!(f, "{}", payload.to_string());
     }
 }

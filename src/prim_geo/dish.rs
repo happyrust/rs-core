@@ -31,13 +31,7 @@ use opencascade::workplane::{Sketch, Workplane};
 
 //可不可以用来表达 sphere
 #[derive(
-    Debug,
-    Clone,
-    Serialize,
-    Deserialize,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
+    Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
 )]
 pub struct Dish {
     pub paax_expr: String,

@@ -57,7 +57,12 @@ fn convert_spine_to_segments(
         let prev_end = segments[i - 1].pt1;
         let curr_start = segments[i].pt0;
         if prev_end.distance(curr_start) > EPSILON {
-            tracing::warn!("Spine 段不连续: 段 {} 到段 {}, 距离={}", i - 1, i, prev_end.distance(curr_start));
+            tracing::warn!(
+                "Spine 段不连续: 段 {} 到段 {}, 距离={}",
+                i - 1,
+                i,
+                prev_end.distance(curr_start)
+            );
         }
     }
 
@@ -299,7 +304,10 @@ pub async fn create_profile_geos(
 
     println!(
         "[profile] refno={} type={} has_poss_pose={} spine_paths.len={}",
-        refno, type_name, has_poss_pose, spine_paths.len()
+        refno,
+        type_name,
+        has_poss_pose,
+        spine_paths.len()
     );
 
     // 如果有 POSS/POSE 属性，优先使用 POSS/POSE 创建路径（清空 SPINE 创建的路径）
@@ -379,7 +387,10 @@ pub async fn create_profile_geos(
             let pose = att.get_pose().unwrap();
             let length = (pose - poss).length();
             // 路径沿 Z 轴：(0,0,0) -> (0,0,length)
-            (vec![convert_poss_pose_to_segment(Vec3::ZERO, Vec3::Z * length)], length)
+            (
+                vec![convert_poss_pose_to_segment(Vec3::ZERO, Vec3::Z * length)],
+                length,
+            )
         } else {
             // SPINE 场景：使用相对坐标的路径段
             match convert_spine_to_segments(&spine_paths, first_plax, bangle) {

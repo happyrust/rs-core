@@ -363,7 +363,12 @@ pub async fn init_second_unit_surreal() -> anyhow::Result<()> {
             password: db_option.v_password.clone(),
         })
         .await?;
-    crate::use_ns_db_compat(&SECOND_SUL_DB, &db_option.surreal_ns, &db_option.project_name).await?;
+    crate::use_ns_db_compat(
+        &SECOND_SUL_DB,
+        &db_option.surreal_ns,
+        &db_option.project_name,
+    )
+    .await?;
     Ok(())
 }
 

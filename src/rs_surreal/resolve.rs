@@ -494,45 +494,45 @@ pub fn eval_str_to_f64(
             let left = input_expr.matches('(').count();
             let right = input_expr.matches(')').count();
             if left != right && (*EXPR_TRACE_ALL || input_expr.contains("PARA[10")) {
-            let des_refno_str: String = context.get("RS_DES_REFNO").unwrap_or_default();
-            let cata_refno_str: String = context.get("RS_CATR_REFNO").unwrap_or_default();
-            let geo_refno_str = context.debug_geo_refno.borrow().clone().unwrap_or_default();
-            let geo_type_str = context.debug_geo_type.borrow().clone().unwrap_or_default();
-            let attr_name_str = context.debug_attr_name.borrow().clone().unwrap_or_default();
-            let attr_index_str = context
-                .debug_attr_index
-                .borrow()
-                .map(|i| format!("[{}]", i))
-                .unwrap_or_default();
+                let des_refno_str: String = context.get("RS_DES_REFNO").unwrap_or_default();
+                let cata_refno_str: String = context.get("RS_CATR_REFNO").unwrap_or_default();
+                let geo_refno_str = context.debug_geo_refno.borrow().clone().unwrap_or_default();
+                let geo_type_str = context.debug_geo_type.borrow().clone().unwrap_or_default();
+                let attr_name_str = context.debug_attr_name.borrow().clone().unwrap_or_default();
+                let attr_index_str = context
+                    .debug_attr_index
+                    .borrow()
+                    .map(|i| format!("[{}]", i))
+                    .unwrap_or_default();
 
-            let dedup_key = format!(
-                "expr_trace_paren|{}|{}|{}|{}|{}",
-                des_refno_str, cata_refno_str, geo_refno_str, attr_name_str, input_expr
-            );
-            if EXPR_EVAL_ERROR_ONCE.insert(dedup_key, ()).is_none() {
-                eprintln!(
-                    "[expr_trace] paren_mismatch left={} right={} dtse_unit={} des={} cata={} geo={}({}) attr={}{} expr={}",
-                    left,
-                    right,
-                    dtse_unit,
-                    des_refno_str,
-                    cata_refno_str,
-                    geo_refno_str,
-                    geo_type_str,
-                    attr_name_str,
-                    attr_index_str,
-                    input_expr
+                let dedup_key = format!(
+                    "expr_trace_paren|{}|{}|{}|{}|{}",
+                    des_refno_str, cata_refno_str, geo_refno_str, attr_name_str, input_expr
                 );
-                if *EXPR_TRACE_BT {
+                if EXPR_EVAL_ERROR_ONCE.insert(dedup_key, ()).is_none() {
                     eprintln!(
-                        "[expr_trace] backtrace:\n{}",
-                        std::backtrace::Backtrace::force_capture()
+                        "[expr_trace] paren_mismatch left={} right={} dtse_unit={} des={} cata={} geo={}({}) attr={}{} expr={}",
+                        left,
+                        right,
+                        dtse_unit,
+                        des_refno_str,
+                        cata_refno_str,
+                        geo_refno_str,
+                        geo_type_str,
+                        attr_name_str,
+                        attr_index_str,
+                        input_expr
                     );
-                } else {
-                    eprintln!("[expr_trace] (set RS_EXPR_TRACE_BT=1 to print backtrace)");
+                    if *EXPR_TRACE_BT {
+                        eprintln!(
+                            "[expr_trace] backtrace:\n{}",
+                            std::backtrace::Backtrace::force_capture()
+                        );
+                    } else {
+                        eprintln!("[expr_trace] (set RS_EXPR_TRACE_BT=1 to print backtrace)");
+                    }
                 }
             }
-        }
         }
     }
 
@@ -1107,12 +1107,11 @@ pub fn eval_str_to_f64(
                 // 默认不刷屏：仅在显式调试场景打印。
                 // - debug_model 开启时：打印（便于定位具体几何/属性/表达式）
                 // - 或设置环境变量 AIOS_PRINT_EXPR_EVAL_ERROR=1：打印（用于回归/诊断）
-                let print_enabled =
-                    crate::is_debug_model_enabled() || std::env::var_os("AIOS_PRINT_EXPR_EVAL_ERROR").is_some();
+                let print_enabled = crate::is_debug_model_enabled()
+                    || std::env::var_os("AIOS_PRINT_EXPR_EVAL_ERROR").is_some();
                 if print_enabled {
                     // 根据是否有调试信息，输出不同格式的错误（去重避免刷屏）
-                    let dedup_key =
-                        format!("{}|{}|{}", des_refno_str, cata_refno_str, &input_expr);
+                    let dedup_key = format!("{}|{}|{}", des_refno_str, cata_refno_str, &input_expr);
                     let should_print = EXPR_EVAL_ERROR_ONCE.insert(dedup_key, ()).is_none();
                     if should_print {
                         if !geo_refno_str.is_empty() && !attr_name_str.is_empty() {
@@ -1276,12 +1275,8 @@ mod tests {
         let context = CataContext::default();
         context.insert("PARA12", "4");
 
-        let v = eval_str_to_f64(
-            "( ( SQRT( 3 ) * ATTRIB PARA[12 ] ) / 2 )",
-            &context,
-            "DIST",
-        )
-        .unwrap();
+        let v =
+            eval_str_to_f64("( ( SQRT( 3 ) * ATTRIB PARA[12 ] ) / 2 )", &context, "DIST").unwrap();
 
         assert!((v - 3.464).abs() < 1e-6, "v={}", v);
     }

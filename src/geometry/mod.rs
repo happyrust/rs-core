@@ -60,7 +60,9 @@ pub enum GeoBasicType {
 }
 
 /// TUBI 直段 / 管件 arrive-leave 相关信息（从 EleGeosInfo 中分离）
-#[derive(rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, Serialize, Deserialize, Debug, Clone, Default)]
+#[derive(
+    rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, Serialize, Deserialize, Debug, Clone, Default,
+)]
 pub struct TubiData {
     /// 关联的 tubi_info ID (格式: "{cata_hash}_{arrive_num}_{leave_num}")
     /// 用于 BRAN/HANG 下元件的 arrive/leave 点复用
@@ -87,7 +89,9 @@ pub struct TubiData {
 }
 
 /// 存储一个Element 包含的所有几何信息
-#[derive(rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, Serialize, Deserialize, Debug, Clone, Default)]
+#[derive(
+    rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, Serialize, Deserialize, Debug, Clone, Default,
+)]
 #[serde_as]
 pub struct EleGeosInfo {
     pub refno: RefnoEnum,
@@ -273,13 +277,7 @@ impl EleGeosInfo {
 
 /// instane数据集合管理
 #[derive(
-    Serialize,
-    Deserialize,
-    Debug,
-    Default,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
+    Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
 )]
 pub struct ShapeInstancesData {
     /// 保存instance信息数据
@@ -557,13 +555,7 @@ pub struct PdmsInstanceMeshData {
 pub type GeoHash = u64;
 
 #[derive(
-    Serialize,
-    Deserialize,
-    Debug,
-    Default,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
+    Serialize, Deserialize, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
 )]
 pub struct PlantGeoData {
     pub geo_hash: u64,
@@ -616,14 +608,7 @@ impl PlantGeoData {
 
 #[serde_as]
 #[derive(
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
-    Serialize,
-    Deserialize,
-    Clone,
-    Debug,
-    Default,
+    rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, Serialize, Deserialize, Clone, Debug, Default,
 )]
 pub struct EleInstGeosData {
     pub inst_key: String,
@@ -680,14 +665,7 @@ impl EleInstGeosData {
 
 ///分拆的基本体信息, 应该是不需要复用的
 #[derive(
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
-    Serialize,
-    Deserialize,
-    Clone,
-    Debug,
-    Default,
+    rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, Serialize, Deserialize, Clone, Debug, Default,
 )]
 #[serde_as]
 pub struct EleInstGeo {

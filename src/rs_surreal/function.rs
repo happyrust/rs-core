@@ -19,7 +19,8 @@ use std::path::PathBuf;
 pub async fn define_common_functions(script_dir: Option<&str>) -> anyhow::Result<()> {
     // 读取配置文件（即使外部显式传入 script_dir，也需要从配置中取得 NS/DB）
     use config::{Config, File};
-    let config_file_name = std::env::var("DB_OPTION_FILE").unwrap_or_else(|_| "db_options/DbOption".to_string());
+    let config_file_name =
+        std::env::var("DB_OPTION_FILE").unwrap_or_else(|_| "db_options/DbOption".to_string());
     let s = Config::builder()
         .add_source(File::with_name(&config_file_name))
         .build()?;

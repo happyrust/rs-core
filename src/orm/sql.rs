@@ -29,8 +29,10 @@ pub fn gen_insert_many_sql(
     data_vec: Vec<serde_json::Value>,
 ) -> anyhow::Result<String> {
     match type_name.trim().to_ascii_lowercase().as_str() {
-        "pdms_element" | "pdmselement" => Ok(orm::pdms_element::Model::default()
-            .gen_insert_many(data_vec, DatabaseBackend::MySql)),
+        "pdms_element" | "pdmselement" => {
+            Ok(orm::pdms_element::Model::default()
+                .gen_insert_many(data_vec, DatabaseBackend::MySql))
+        }
         "box" => Ok(orm::BOX::Model::default().gen_insert_many(data_vec, DatabaseBackend::MySql)),
         "cyli" => Ok(orm::CYLI::Model::default().gen_insert_many(data_vec, DatabaseBackend::MySql)),
         _ => Err(anyhow!("Type '{}' not supported", type_name)),

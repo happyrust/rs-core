@@ -147,7 +147,9 @@ pub async fn query_ancestor_refnos(refno: RefnoEnum) -> anyhow::Result<Vec<Refno
 /// 该函数用于在“惰性计算/策略计算失败”时提供一个更稳健的兜底来源，
 /// 并可配合 `save_pe_transform` 把结果回灌到 pe_transform 以提升后续命中率。
 #[cached(result = true, size = 5000)]
-pub async fn query_pe_world_trans(refno: RefnoEnum) -> anyhow::Result<Option<crate::plant_transform::Transform>> {
+pub async fn query_pe_world_trans(
+    refno: RefnoEnum,
+) -> anyhow::Result<Option<crate::plant_transform::Transform>> {
     use crate::rs_surreal::PlantTransform;
 
     #[derive(Deserialize, SurrealValue)]
@@ -1138,10 +1140,10 @@ pub async fn get_named_attmap(refno: RefnoEnum) -> anyhow::Result<NamedAttrMap> 
 
     // 仅在 debug-model 场景输出：用于定位“pe 存在但 pe.refno 链接缺失/指向异常”的情况
     if named_attmap.is_none() && crate::debug_macros::is_debug_model_enabled() {
+        use crate::utils::RecordIdExt;
         use serde::Deserialize;
         use surrealdb::types as surrealdb_types;
         use surrealdb_types::SurrealValue;
-        use crate::utils::RecordIdExt;
 
         #[derive(Debug, Clone, Deserialize, SurrealValue)]
         struct PeLinkRow {
@@ -1158,7 +1160,10 @@ pub async fn get_named_attmap(refno: RefnoEnum) -> anyhow::Result<NamedAttrMap> 
         );
         crate::debug_model_debug!("  sql={}", sql);
 
-        let pe_sql = format!("SELECT noun, owner, refno FROM {} LIMIT 1;", refno.to_pe_key());
+        let pe_sql = format!(
+            "SELECT noun, owner, refno FROM {} LIMIT 1;",
+            refno.to_pe_key()
+        );
         match SUL_DB.query_take::<Option<PeLinkRow>>(&pe_sql, 0).await {
             Ok(row) => {
                 let refno_field = row.as_ref().and_then(|r| r.refno.clone());
@@ -1179,10 +1184,22 @@ pub async fn get_named_attmap(refno: RefnoEnum) -> anyhow::Result<NamedAttrMap> 
                                 "  noun_record: id={} exists={} has(CATR/SPRE/ARRI/LEAV)={}/{}/{}/{}",
                                 rid_raw,
                                 noun_row.is_some(),
-                                noun_row.as_ref().map(|m| m.contains_key("CATR")).unwrap_or(false),
-                                noun_row.as_ref().map(|m| m.contains_key("SPRE")).unwrap_or(false),
-                                noun_row.as_ref().map(|m| m.contains_key("ARRI")).unwrap_or(false),
-                                noun_row.as_ref().map(|m| m.contains_key("LEAV")).unwrap_or(false),
+                                noun_row
+                                    .as_ref()
+                                    .map(|m| m.contains_key("CATR"))
+                                    .unwrap_or(false),
+                                noun_row
+                                    .as_ref()
+                                    .map(|m| m.contains_key("SPRE"))
+                                    .unwrap_or(false),
+                                noun_row
+                                    .as_ref()
+                                    .map(|m| m.contains_key("ARRI"))
+                                    .unwrap_or(false),
+                                noun_row
+                                    .as_ref()
+                                    .map(|m| m.contains_key("LEAV"))
+                                    .unwrap_or(false),
                             );
                         }
                         Err(e) => {

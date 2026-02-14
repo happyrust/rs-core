@@ -1,6 +1,6 @@
-use crate::plant_transform::Transform;
 use crate::NamedAttrMap;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
+use crate::plant_transform::Transform;
 #[cfg(feature = "occ")]
 use crate::prim_geo::basic::OccSharedShape;
 use crate::prim_geo::helper::*;
@@ -25,13 +25,7 @@ use truck_modeling::builder::*;
 use truck_modeling::builder::*;
 
 #[derive(
-    Debug,
-    Clone,
-    Serialize,
-    Deserialize,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
+    Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
 )]
 pub struct SRTorus {
     pub paax_expr: String,
@@ -201,13 +195,7 @@ impl From<AttrMap> for SRTorus {
 }
 
 #[derive(
-    Debug,
-    Clone,
-    Serialize,
-    Deserialize,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
+    Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
 )]
 pub struct RTorus {
     //内圆半径

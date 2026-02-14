@@ -18,13 +18,7 @@ use crate::NamedAttrMap;
 use crate::types::attmap::AttrMap;
 
 #[derive(
-    Debug,
-    Clone,
-    Serialize,
-    Deserialize,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
+    Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
 )]
 //
 pub struct Sphere {

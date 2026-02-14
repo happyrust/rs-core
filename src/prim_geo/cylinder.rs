@@ -1,5 +1,5 @@
-use crate::plant_transform::Transform;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
+use crate::plant_transform::Transform;
 use glam::{DMat4, DVec3, Mat4, Vec3};
 use nom::Parser;
 use serde::{Deserialize, Serialize};
@@ -24,13 +24,7 @@ use truck_modeling::*;
 
 ///元件库里的LCylinder
 #[derive(
-    Debug,
-    Clone,
-    Serialize,
-    Deserialize,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
+    Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
 )]
 pub struct LCylinder {
     pub paxi_expr: String,
@@ -220,13 +214,7 @@ impl BrepShapeTrait for LCylinder {
 }
 
 #[derive(
-    Debug,
-    Clone,
-    Serialize,
-    Deserialize,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
+    Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
 )]
 pub struct SCylinder {
     pub paxi_expr: String,

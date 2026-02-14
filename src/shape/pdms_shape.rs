@@ -70,14 +70,7 @@ pub fn gen_bounding_box(shell: &Shell) -> BoundingBox<Point3> {
 ///
 /// 边可以包含多个顶点，用于表示直线段或曲线段
 #[derive(
-    Serialize,
-    Deserialize,
-    Debug,
-    Clone,
-    Default,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
+    Serialize, Deserialize, Debug, Clone, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
 )]
 pub struct Edge {
     /// 边的顶点序列
@@ -190,13 +183,7 @@ fn extract_edges_from_mesh_internal(indices: &[u32], vertices: &[Vec3]) -> Edges
 
 //todo 增加LOD的实现
 #[derive(
-    Serialize,
-    Deserialize,
-    Debug,
-    Clone,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
+    Serialize, Deserialize, Debug, Clone, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
 )]
 pub struct PlantMesh {
     pub indices: Vec<u32>,

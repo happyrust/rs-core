@@ -30,13 +30,7 @@ use opencascade::primitives::{Shape, Wire};
 use opencascade::workplane::Workplane;
 
 #[derive(
-    Debug,
-    Clone,
-    Serialize,
-    Deserialize,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
+    Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
 )]
 pub struct SCTorus {
     pub paax_pt: Vec3,
@@ -169,13 +163,7 @@ impl From<AttrMap> for SCTorus {
 }
 
 #[derive(
-    Debug,
-    Clone,
-    Serialize,
-    Deserialize,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
+    Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
 )]
 pub struct CTorus {
     pub rins: f32,
@@ -198,9 +186,7 @@ impl Default for CTorus {
 impl VerifiedShape for CTorus {
     fn check_valid(&self) -> bool {
         // rins 可以为负值：管径大于弯曲半径时，内半径穿过弯曲中心是合法的 PDMS 几何配置
-        self.rout > 0.0
-            && self.angle.abs() > 0.0
-            && (self.rout - self.rins) > f32::EPSILON
+        self.rout > 0.0 && self.angle.abs() > 0.0 && (self.rout - self.rins) > f32::EPSILON
     }
 }
 

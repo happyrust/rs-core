@@ -857,7 +857,8 @@ impl ManifoldMeshRust {
             let mut welded_vertices: Vec<f32> = Vec::new();
 
             for v in vertices {
-                let pt = mat4.transform_point3(glam::DVec3::new(v.x as f64, v.y as f64, v.z as f64));
+                let pt =
+                    mat4.transform_point3(glam::DVec3::new(v.x as f64, v.y as f64, v.z as f64));
                 let key = Self::quantize_vertex(pt.x, pt.y, pt.z, precision);
                 if let Some(&idx) = map.get(&key) {
                     remap.push(idx);
@@ -902,7 +903,6 @@ impl ManifoldMeshRust {
             indices: welded_indices,
         }
     }
-
 }
 //负实体的模型应该更大一些
 //正实体的模型更小一些

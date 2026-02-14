@@ -9,14 +9,7 @@ use crate::tool::float_tool::{f32_round_3, vec3_round_3};
 use crate::{RefU64, RefnoEnum};
 
 #[derive(
-    Default,
-    Debug,
-    Clone,
-    Serialize,
-    Deserialize,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
+    Default, Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
 )]
 pub enum SpineCurveType {
     #[default]
@@ -27,14 +20,7 @@ pub enum SpineCurveType {
 }
 
 #[derive(
-    Debug,
-    Default,
-    Clone,
-    Serialize,
-    Deserialize,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
+    Debug, Default, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
 )]
 pub struct Spine3D {
     pub refno: RefnoEnum,
@@ -95,13 +81,7 @@ pub enum SegmentPath {
 
 /// 扫掠路径：由一个或多个连续的路径段组成
 #[derive(
-    Debug,
-    Clone,
-    Serialize,
-    Deserialize,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
+    Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
 )]
 pub struct SweepPath3D {
     /// 路径段列表，单段路径包含一个元素，多段路径包含多个元素
@@ -301,14 +281,7 @@ impl SweepPath3D {
 
 /// `Arc3D` 结构的定义
 #[derive(
-    Debug,
-    Clone,
-    Default,
-    Serialize,
-    Deserialize,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
+    Debug, Clone, Default, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
 )]
 pub struct Arc3D {
     /// 弧的中心点
@@ -334,13 +307,7 @@ pub struct Arc3D {
 }
 
 #[derive(
-    Debug,
-    Clone,
-    Serialize,
-    Deserialize,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
+    Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
 )]
 pub struct Line3D {
     pub start: Vec3,

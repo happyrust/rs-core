@@ -237,7 +237,9 @@ pub async fn query_gm_param(att: &NamedAttrMap, is_spro: bool) -> Option<GmParam
                 .unwrap_or_default();
             crate::debug_model_debug!(
                 "[query_gm_param] SPRO {} 子元素数量: {}, is_spro={}",
-                refno, children.len(), is_spro
+                refno,
+                children.len(),
+                is_spro
             );
             for a in children {
                 let child_type = a.get_type_str();
@@ -255,7 +257,8 @@ pub async fn query_gm_param(att: &NamedAttrMap, is_spro: bool) -> Option<GmParam
                     ]);
                     crate::debug_model_debug!(
                         "  [SPRO] 子元素 {} ({}): PX={}, PY={}",
-                        a.get_refno_or_default(), child_type,
+                        a.get_refno_or_default(),
+                        child_type,
                         a.get_as_string("PX").unwrap_or_default(),
                         a.get_as_string("PY").unwrap_or_default()
                     );

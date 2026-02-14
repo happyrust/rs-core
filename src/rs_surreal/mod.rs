@@ -215,7 +215,12 @@ pub async fn init_mem_db_with_retry(db_option: &crate::options::DbOption) -> any
                     password: db_option.mem_kv_password.clone(),
                 })
                 .await?;
-            use_ns_db_compat(&SUL_MEM_DB, &db_option.project_code, &db_option.project_name).await?;
+            use_ns_db_compat(
+                &SUL_MEM_DB,
+                &db_option.project_code,
+                &db_option.project_name,
+            )
+            .await?;
             Ok::<(), surrealdb::Error>(())
         }
         .await;

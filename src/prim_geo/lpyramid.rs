@@ -16,13 +16,7 @@ use serde::{Deserialize, Serialize};
 use truck_meshalgo::prelude::*;
 
 #[derive(
-    Debug,
-    Clone,
-    Serialize,
-    Deserialize,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
+    Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
 )]
 pub struct LPyramid {
     pub pbax_pt: Vec3,

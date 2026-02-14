@@ -1,9 +1,9 @@
-use crate::plant_transform::Transform;
 /// 几何查询相关的数据结构和方法
 ///
 /// 本模块提供了用于从 SurrealDB 批量查询几何参数和 AABB 数据的结构体和辅助方法
 use crate::error::init_save_database_error;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
+use crate::plant_transform::Transform;
 use crate::types::{PlantAabb, RefnoEnum, Thing};
 use crate::utils::RecordIdExt;
 use crate::{SUL_DB, SurrealQueryExt, gen_aabb_hash, get_inst_relate_keys, get_world_transform};
@@ -222,10 +222,7 @@ pub async fn query_geo_params(inst_geo_ids: &str) -> anyhow::Result<Vec<QueryGeo
         .collect::<Vec<_>>()
         .join(", ");
 
-    let sql = format!(
-        "select id, param from [{}] where param != NONE",
-        thing_ids
-    );
+    let sql = format!("select id, param from [{}] where param != NONE", thing_ids);
 
     let mut result = SUL_DB.query_take(&sql, 0).await?;
 

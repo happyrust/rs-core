@@ -237,9 +237,11 @@ pub struct DbOption {
     pub batch_insert_sql_cnt: u32,
     /// PE块大小
     #[clap(short)]
+    #[serde(default = "default_pe_chunk")]
     pub pe_chunk: u32,
     /// 属性块大小
     #[clap(short)]
+    #[serde(default = "default_att_chunk")]
     pub att_chunk: u32,
     /// 生成模型的批处理大小
     #[clap(short)]
@@ -455,7 +457,8 @@ impl DbOption {
                     max_depth: None,
                     filter: crate::tree_query::TreeQueryFilter::default(),
                 };
-                let descendants: Vec<RefU64> = index.collect_descendants_bfs(refno.refno(), &options);
+                let descendants: Vec<RefU64> =
+                    index.collect_descendants_bfs(refno.refno(), &options);
                 refnos.extend(descendants.into_iter().map(RefnoEnum::from));
             }
         }
@@ -607,4 +610,12 @@ fn default_mem_kv_password() -> String {
 
 fn default_true() -> bool {
     true
+}
+
+fn default_pe_chunk() -> u32 {
+    300
+}
+
+fn default_att_chunk() -> u32 {
+    200
 }

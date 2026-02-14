@@ -6,14 +6,7 @@ use glam::{Vec3, bool, f32, f64, i32};
 use serde_derive::{Deserialize, Serialize};
 
 #[derive(
-    Default,
-    Serialize,
-    Deserialize,
-    Clone,
-    Debug,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
+    Default, Serialize, Deserialize, Clone, Debug, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
 )]
 pub enum AttrVal {
     #[default]

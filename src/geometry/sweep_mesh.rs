@@ -1,8 +1,8 @@
-use crate::plant_transform::Transform;
 use crate::debug_macros::is_debug_model_enabled;
 use crate::mesh_precision::LodMeshSettings;
 use crate::parsed_data::CateProfileParam;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
+use crate::plant_transform::Transform;
 use crate::prim_geo::profile_processor::ProfileProcessor;
 use crate::prim_geo::spine::{Arc3D, Line3D, SegmentPath};
 use crate::prim_geo::spine::{Spine3D, SweepPath3D};
@@ -503,13 +503,7 @@ fn sample_path_frames_sync(
         // 打印关键采样点，便于判断“是否走了完整一圈”还是“沿同一半圈往返”。
         let n = raw_samples.len();
         let pick = |k: usize| -> Option<(Vec3, Vec3, f32)> { raw_samples.get(k).copied() };
-        let idxs = [
-            0usize,
-            n.saturating_sub(1),
-            n / 4,
-            n / 2,
-            (n * 3) / 4,
-        ];
+        let idxs = [0usize, n.saturating_sub(1), n / 4, n / 2, (n * 3) / 4];
         for &k in &idxs {
             if let Some((p, t, d)) = pick(k) {
                 println!(
@@ -525,10 +519,7 @@ fn sample_path_frames_sync(
             min = min.min(*p);
             max = max.max(*p);
         }
-        println!(
-            "[SweepSolid] raw_samples_aabb min={:?} max={:?}",
-            min, max
-        );
+        println!("[SweepSolid] raw_samples_aabb min={:?} max={:?}", min, max);
     }
 
     // 2. 计算第一点的坐标系
@@ -620,7 +611,11 @@ fn sample_path_frames_sync(
         }
         if proj.length_squared() < 1e-6 {
             // 仍退化：最后兜底用固定轴
-            let perp = if t2.dot(Vec3::X).abs() < 0.9 { Vec3::X } else { Vec3::Y };
+            let perp = if t2.dot(Vec3::X).abs() < 0.9 {
+                Vec3::X
+            } else {
+                Vec3::Y
+            };
             proj = perp.cross(t2);
         }
 
@@ -830,8 +825,12 @@ fn generate_mesh_from_frames(
         // 端面法线应与路径切线近似平行（start: 反向；end: 同向），否则 compute_offset 会产生非预期的倾斜截面。
         println!(
             "[SweepSolid] cap_normals: start_dot={:.6} end_dot={:.6} start_n={:?} end_n={:?} start_tan={:?} end_tan={:?}",
-            start_plane_normal.normalize_or_zero().dot(start_tan.normalize_or_zero()),
-            end_plane_normal.normalize_or_zero().dot(end_tan.normalize_or_zero()),
+            start_plane_normal
+                .normalize_or_zero()
+                .dot(start_tan.normalize_or_zero()),
+            end_plane_normal
+                .normalize_or_zero()
+                .dot(end_tan.normalize_or_zero()),
             start_plane_normal,
             end_plane_normal,
             start_tan,
@@ -882,7 +881,11 @@ fn generate_mesh_from_frames(
             num_rings.saturating_sub(1)
         };
         for i in 0..ring_steps {
-            let next_i = if path_closed { (i + 1) % num_rings } else { i + 1 };
+            let next_i = if path_closed {
+                (i + 1) % num_rings
+            } else {
+                i + 1
+            };
             for j in 0..num_prof_verts {
                 if !profile.is_closed && j == num_prof_verts - 1 {
                     continue;
@@ -914,7 +917,11 @@ fn generate_mesh_from_frames(
             num_rings.saturating_sub(1)
         };
         for i in 0..ring_steps {
-            let next_i = if path_closed { (i + 1) % num_rings } else { i + 1 };
+            let next_i = if path_closed {
+                (i + 1) % num_rings
+            } else {
+                i + 1
+            };
             let s1 = &ring_samples[i];
             let s2 = &ring_samples[next_i];
 
@@ -1227,7 +1234,8 @@ pub fn generate_sweep_solid_mesh(
     // 仅对“非简单直线”路径在截面阶段应用 bangle，避免与旧的单位化直线链路重复旋转。
     let is_line_path = sweep.path.as_single_line().is_some();
     let bangle = if is_line_path { 0.0 } else { sweep.bangle };
-    let profile = apply_profile_transform(profile, sweep.profile.get_plin_pos(), bangle, sweep.lmirror);
+    let profile =
+        apply_profile_transform(profile, sweep.profile.get_plin_pos(), bangle, sweep.lmirror);
 
     let arc_segments = if sweep.path.is_single_segment() {
         if let Some(arc) = sweep.path.as_single_arc() {
@@ -1259,11 +1267,7 @@ pub fn generate_sweep_solid_mesh(
 
     // 使用实际几何坐标进行路径采样
     // plax 由 SweepSolid 提供，决定直线路径的参考朝向
-    let frames = match sample_path_frames_sync(
-        &sweep.path.segments,
-        arc_segments,
-        sweep.plax,
-    ) {
+    let frames = match sample_path_frames_sync(&sweep.path.segments, arc_segments, sweep.plax) {
         Some(f) => f,
         None => {
             if is_debug_model_enabled() {

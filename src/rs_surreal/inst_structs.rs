@@ -1040,7 +1040,7 @@ impl Annotation {
 #[cfg(test)]
 mod tests {
     use super::*;
-        use chrono::Utc;
+    use chrono::Utc;
     use glam::{Quat, Vec3};
     use serde_json::json;
 
@@ -1135,13 +1135,7 @@ mod tests {
             "height": 2.0
         });
 
-        let inst_geo = InstGeo::new(
-            "geo_123".to_string(),
-            param,
-            true,
-            true,
-            "Pos".to_string(),
-        );
+        let inst_geo = InstGeo::new("geo_123".to_string(), param, true, true, "Pos".to_string());
 
         let sql = inst_geo.to_surql();
         assert!(sql.contains("CREATE inst_geo:geo_123"));

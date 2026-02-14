@@ -1,7 +1,7 @@
-use crate::plant_transform::Transform;
 use crate::data_center::TiziVirtualHoleData;
 use crate::geometry::GeoBasicType;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
+use crate::plant_transform::Transform;
 use crate::types::*;
 use parry3d::bounding_volume::Aabb;
 use serde::Deserialize;
@@ -80,14 +80,7 @@ pub struct HoleInstInfo {
 }
 
 #[derive(
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
-    Serialize,
-    Deserialize,
-    Debug,
-    Clone,
-    Default,
+    rkyv::Archive, rkyv::Deserialize, rkyv::Serialize, Serialize, Deserialize, Debug, Clone, Default,
 )]
 #[serde_as]
 pub struct HoleEleGeosInfo {

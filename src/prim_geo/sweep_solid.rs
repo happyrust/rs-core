@@ -1,5 +1,5 @@
-use crate::plant_transform::Transform;
 use crate::parsed_data::{CateProfileParam, SProfileData, SannData};
+use crate::plant_transform::Transform;
 use crate::prim_geo::spine::{SegmentPath, *};
 use crate::prim_geo::wire;
 use crate::shape::pdms_shape::{ANGLE_RAD_F64_TOL, BrepShapeTrait, VerifiedShape};
@@ -31,13 +31,7 @@ use truck_base::cgmath64::*;
 
 ///含有两边方向的，扫描体
 #[derive(
-    Debug,
-    Clone,
-    Serialize,
-    Deserialize,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
+    Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
 )]
 pub struct SweepSolid {
     pub profile: CateProfileParam,

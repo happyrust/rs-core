@@ -24,13 +24,7 @@ use crate::prim_geo::basic::OccSharedShape;
 use opencascade::primitives::*;
 
 #[derive(
-    Debug,
-    Clone,
-    Serialize,
-    Deserialize,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
+    Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
 )]
 pub struct LSnout {
     pub paax_expr: String,
@@ -255,7 +249,11 @@ impl BrepShapeTrait for LSnout {
             return Vec3::ONE;
         }
         let height = (self.ptdi - self.pbdi).abs();
-        let scale_xy = if self.pbdm < 0.001 { self.ptdm } else { self.pbdm };
+        let scale_xy = if self.pbdm < 0.001 {
+            self.ptdm
+        } else {
+            self.pbdm
+        };
         Vec3::new(scale_xy, scale_xy, height)
     }
 

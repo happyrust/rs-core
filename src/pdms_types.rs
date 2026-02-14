@@ -10,9 +10,9 @@ use crate::types::attmap::AttrMap;
 use crate::types::attval::{AttrVal, AttrValAql};
 use crate::types::named_attvalue::NamedAttrValue;
 pub use crate::types::*;
-use glam::*;
 use dashmap::DashMap;
 use derive_more::{Deref, DerefMut};
+use glam::*;
 use id_tree::NodeId;
 use itertools::Itertools;
 #[cfg(feature = "occ")]
@@ -968,14 +968,7 @@ pub struct ChildrenNode {
 ///元件库哈希值与参考号的键值对结构体
 #[serde_as]
 #[derive(
-    Serialize,
-    Deserialize,
-    Clone,
-    Debug,
-    Default,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
+    Serialize, Deserialize, Clone, Debug, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
 )]
 pub struct CataHashRefnoKV {
     ///元件库哈希值

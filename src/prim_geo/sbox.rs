@@ -1,6 +1,6 @@
-use crate::plant_transform::Transform;
 use crate::NamedAttrMap;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
+use crate::plant_transform::Transform;
 use crate::prim_geo::basic::*;
 use crate::shape::pdms_shape::*;
 use crate::types::attmap::AttrMap;
@@ -12,13 +12,7 @@ use truck_base::cgmath64::Vector3;
 use truck_modeling::{Shell, builder};
 
 #[derive(
-    Debug,
-    Clone,
-    Serialize,
-    Deserialize,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
+    Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
 )]
 pub struct SBox {
     pub center: Vec3,

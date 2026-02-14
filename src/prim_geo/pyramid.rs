@@ -20,13 +20,7 @@ use crate::shape::pdms_shape::{BrepShapeTrait, VerifiedShape};
 use opencascade::primitives::*;
 
 #[derive(
-    Debug,
-    Clone,
-    Serialize,
-    Deserialize,
-    rkyv::Archive,
-    rkyv::Deserialize,
-    rkyv::Serialize,
+    Debug, Clone, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
 )]
 
 pub struct Pyramid {

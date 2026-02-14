@@ -1,6 +1,6 @@
 use crate::parsed_data::CateAxisParam;
-use glam::{Quat, Vec3};
 use glam::{Mat3, Vec2};
+use glam::{Quat, Vec3};
 use std::f32::consts::PI;
 
 #[inline]

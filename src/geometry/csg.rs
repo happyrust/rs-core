@@ -1373,8 +1373,7 @@ fn generate_sscl_mesh(
     }
 
     // 默认不刷屏：仅在 debug_model 开启时输出，或显式设置 AIOS_CSG_DEBUG=1。
-    if crate::debug_macros::is_debug_model_enabled()
-        || std::env::var_os("AIOS_CSG_DEBUG").is_some()
+    if crate::debug_macros::is_debug_model_enabled() || std::env::var_os("AIOS_CSG_DEBUG").is_some()
     {
         crate::debug_model_debug!(
             "csg shear angles (deg): btm_x={}, btm_y={}, top_x={}, top_y={}",

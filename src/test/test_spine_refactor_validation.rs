@@ -1,3 +1,5 @@
+use crate::RefnoEnum;
+use crate::parsed_data::{CateProfileParam, SProfileData};
 /// 验证 normalize_spine_segments 重构后的功能
 ///
 /// 验证清单：
@@ -10,11 +12,8 @@
 /// - [ ] 布尔运算结果正确 (需要集成测试)
 /// - [ ] LOD 多级精度正确 (需要集成测试)
 /// - [ ] 缓存复用率统计无下降 (需要运行时测试)
-
 use crate::prim_geo::spine::{Arc3D, Line3D, SegmentPath, SweepPath3D};
 use crate::prim_geo::sweep_solid::SweepSolid;
-use crate::parsed_data::{CateProfileParam, SProfileData};
-use crate::RefnoEnum;
 use glam::{DVec3, Vec2, Vec3};
 use std::f32::consts::PI;
 
@@ -275,7 +274,10 @@ fn test_gensec_multi_segment_lines() {
 
     // 验证连续性
     let (is_continuous, discontinuity) = path.validate_continuity();
-    println!("  路径连续性: {} (不连续位置: {:?})", is_continuous, discontinuity);
+    println!(
+        "  路径连续性: {} (不连续位置: {:?})",
+        is_continuous, discontinuity
+    );
 
     let sweep_solid = SweepSolid {
         profile: profile.clone(),
@@ -351,7 +353,11 @@ fn test_gensec_path_with_arc() {
 
     println!("  创建路径: 直线(200mm) -> 90度圆弧(R=100mm) -> 直线(200mm)");
     println!("  路径段数: {}", path.segment_count());
-    println!("  路径总长度: {:.3} mm (预期: {:.3})", path.length(), expected_length);
+    println!(
+        "  路径总长度: {:.3} mm (预期: {:.3})",
+        path.length(),
+        expected_length
+    );
 
     // 验证路径属性
     assert_eq!(path.segment_count(), 3, "应该有3段");
@@ -421,7 +427,11 @@ fn test_single_arc_path() {
     let expected_length = PI * arc_radius;
 
     println!("  创建 180 度圆弧墙: 半径=500mm");
-    println!("  路径长度: {:.3} mm (预期: {:.3})", path.length(), expected_length);
+    println!(
+        "  路径长度: {:.3} mm (预期: {:.3})",
+        path.length(),
+        expected_length
+    );
 
     // 验证路径属性
     assert!(path.is_single_segment(), "应该是单段路径");
@@ -503,7 +513,10 @@ fn test_bangle_rotation() {
         use crate::shape::pdms_shape::BrepShapeTrait;
         match sweep_solid.gen_csg_shape() {
             Ok(csg_mesh) => {
-                println!("    ✅ CSG Mesh 生成成功！顶点数: {}", csg_mesh.vertices.len());
+                println!(
+                    "    ✅ CSG Mesh 生成成功！顶点数: {}",
+                    csg_mesh.vertices.len()
+                );
 
                 // 导出不同 BANGLE 的结果
                 let filename = format!("test_output/refactor_bangle_{}.obj", bangle as i32);
@@ -568,7 +581,10 @@ fn test_path_continuity_validation() {
     assert!(!is_continuous, "不连续路径应该验证为不连续");
     // 返回的是第一个不连续点的索引（段 0 的终点与段 1 的起点不连续，返回 0）
     assert!(discontinuity_index.is_some(), "应该检测到不连续位置");
-    println!("  ✅ 不连续路径验证通过（在索引 {:?} 处发现）", discontinuity_index);
+    println!(
+        "  ✅ 不连续路径验证通过（在索引 {:?} 处发现）",
+        discontinuity_index
+    );
 
     println!("✅ 路径连续性验证测试通过");
 }
@@ -622,7 +638,10 @@ fn test_lmirror() {
 
     match sweep_no_mirror.gen_csg_shape() {
         Ok(csg_mesh) => {
-            println!("  ✅ 不镜像版本生成成功！顶点数: {}", csg_mesh.vertices.len());
+            println!(
+                "  ✅ 不镜像版本生成成功！顶点数: {}",
+                csg_mesh.vertices.len()
+            );
             let _ = csg_mesh.export_obj(false, "test_output/refactor_lmirror_false.obj");
         }
         Err(e) => {
@@ -710,12 +729,15 @@ fn test_realistic_gensec_scenario() {
                     min = min.min(*v);
                     max = max.max(*v);
                 }
-                println!("    包围盒: ({:.1}, {:.1}, {:.1}) -> ({:.1}, {:.1}, {:.1})",
-                    min.x, min.y, min.z, max.x, max.y, max.z);
+                println!(
+                    "    包围盒: ({:.1}, {:.1}, {:.1}) -> ({:.1}, {:.1}, {:.1})",
+                    min.x, min.y, min.z, max.x, max.y, max.z
+                );
             }
 
             // 导出 OBJ
-            if let Err(e) = csg_mesh.export_obj(false, "test_output/refactor_realistic_gensec.obj") {
+            if let Err(e) = csg_mesh.export_obj(false, "test_output/refactor_realistic_gensec.obj")
+            {
                 println!("    ⚠️  OBJ 导出失败: {}", e);
             } else {
                 println!("    📁 已导出: test_output/refactor_realistic_gensec.obj");
