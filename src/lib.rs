@@ -221,7 +221,8 @@ pub fn get_uda_info() -> &'static (DashMap<u32, String>, DashMap<String, u32>) {
             if let Ok(mut file) = std::fs::File::open(path) {
                 let mut data = Vec::new();
                 let _ = file.read_to_end(&mut data);
-                let map = bincode::deserialize::<DashMap<u32, String>>(&data).unwrap_or_default();
+                let map = serde_json::from_slice::<std::collections::HashMap<u32, String>>(&data)
+                    .unwrap_or_default();
                 for (k, v) in map {
                     ukey_udna_map.entry(k).or_insert(v.to_string());
                     udna_ukey_map.entry(v).or_insert(k);

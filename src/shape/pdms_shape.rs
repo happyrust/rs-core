@@ -515,7 +515,9 @@ impl PlantMesh {
     /// 如果序列化失败，返回错误
     #[inline]
     pub fn ser_to_bytes(&self) -> anyhow::Result<Vec<u8>> {
-        Ok(bincode::serialize(self)?)
+        let bytes = rkyv::to_bytes::<rkyv::rancor::Error>(self)
+            .map_err(|e| anyhow!("rkyv 序列化失败: {:?}", e))?;
+        Ok(bytes.to_vec())
     }
 
     ///序列化到文件
@@ -525,7 +527,7 @@ impl PlantMesh {
     #[inline]
     pub fn ser_to_file(&self, file_path: &dyn AsRef<Path>) -> anyhow::Result<()> {
         use anyhow::Context;
-        let bytes = bincode::serialize(self)?;
+        let bytes = self.ser_to_bytes()?;
         let mut file = File::create(file_path)
             .with_context(|| format!("无法创建文件: {:?}", file_path.as_ref()))?;
         file.write_all(&bytes)
@@ -538,14 +540,17 @@ impl PlantMesh {
         let mut file = File::open(file_path)?;
         let mut buf: Vec<u8> = Vec::new();
         file.read_to_end(&mut buf).ok();
-        let r: Self = bincode::deserialize(&buf)?;
-        Ok(r)
+        Self::des_from_bytes(&buf)
     }
 
     ///从bytes反序列化
     pub fn des_from_bytes(bytes: &[u8]) -> anyhow::Result<Self> {
-        let r: Self = bincode::deserialize(bytes)?;
-        Ok(r)
+        let mut aligned: rkyv::util::AlignedVec<16> =
+            rkyv::util::AlignedVec::with_capacity(bytes.len());
+        aligned.extend_from_slice(bytes);
+        // SAFETY: bytes 来自本项目序列化结果，且已拷贝到对齐内存。
+        unsafe { rkyv::from_bytes_unchecked::<Self, rkyv::rancor::Error>(&aligned) }
+            .map_err(|e| anyhow!("rkyv 反序列化失败: {:?}", e))
     }
 
     ///压缩bytes
@@ -557,7 +562,7 @@ impl PlantMesh {
         use flate2::Compression;
         use flate2::write::DeflateEncoder;
         let mut e = DeflateEncoder::new(Vec::new(), Compression::default());
-        let serialized = bincode::serialize(&self)?;
+        let serialized = self.ser_to_bytes()?;
         e.write_all(&serialized)?;
         Ok(e.finish()?)
     }
@@ -569,7 +574,7 @@ impl PlantMesh {
         let writer = Vec::new();
         let mut deflater = DeflateDecoder::new(writer);
         deflater.write_all(bytes)?;
-        Ok(bincode::deserialize(&deflater.finish()?)?)
+        Self::des_from_bytes(&deflater.finish()?)
     }
 
     ///导出obj

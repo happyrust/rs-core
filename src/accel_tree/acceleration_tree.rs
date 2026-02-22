@@ -251,23 +251,23 @@ impl AccelerationTree {
             .map(|bb| bb)
     }
 
-    //实现使用bincode序列化
+    /// 将加速树写入本地 JSON 二进制文件
     #[cfg(not(target_arch = "wasm32"))]
     pub fn serialize_to_bin_file(&self) -> anyhow::Result<bool> {
         let mut file = File::create("accel_tree.bin")?;
-        let serialized = bincode::serialize(&self)?;
+        let serialized = serde_json::to_vec(&self)?;
         file.write_all(serialized.as_slice())?;
 
         Ok(true)
     }
 
-    /// 使用bincode反序列化
+    /// 从本地 JSON 二进制文件加载加速树
     #[cfg(not(target_arch = "wasm32"))]
     pub fn deserialize_from_bin_file() -> anyhow::Result<Self> {
         let mut file = File::open("accel_tree.bin")?;
         let mut buf: Vec<u8> = Vec::new();
         let _ = file.read_to_end(&mut buf)?;
-        let r = bincode::deserialize(&buf).unwrap();
+        let r = serde_json::from_slice(&buf)?;
         Ok(r)
     }
 

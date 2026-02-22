@@ -23,7 +23,9 @@ use std::fmt;
 use std::fmt::Debug;
 
 ///PDMS的属性数据Map
-#[derive(Serialize, Deserialize, Deref, DerefMut, Clone, Default)]
+#[derive(
+    Serialize, Deserialize, Deref, DerefMut, Clone, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
+)]
 pub struct AttrMap {
     pub map: BHashMap<NounHash, AttrVal>,
 }
@@ -72,21 +74,21 @@ impl AttrMap {
         self.map.len() == 0
     }
 
-    ///序列化成bincode
     #[inline]
-    pub fn into_bincode_bytes(&self) -> Vec<u8> {
-        bincode::serialize(self).unwrap()
+    pub fn into_bytes(&self) -> Vec<u8> {
+        self.into_rkyv_bytes()
     }
 
-    ///从bincode反序列化
     #[inline]
-    pub fn from_bincode_bytes(bytes: &[u8]) -> Option<Self> {
-        bincode::deserialize(bytes).ok()
+    pub fn from_bytes(bytes: &[u8]) -> anyhow::Result<Self> {
+        Self::from_rkyv_bytes(bytes)
     }
 
     #[inline]
     pub fn into_rkyv_bytes(&self) -> Vec<u8> {
-        bincode::serialize(self).unwrap()
+        rkyv::to_bytes::<rkyv::rancor::Error>(self)
+            .map(|b| b.to_vec())
+            .unwrap_or_default()
     }
 
     #[inline]
@@ -101,8 +103,12 @@ impl AttrMap {
 
     #[inline]
     pub fn from_rkyv_bytes(bytes: &[u8]) -> anyhow::Result<Self> {
-        let r: Self = bincode::deserialize(bytes)?;
-        Ok(r)
+        let mut aligned: rkyv::util::AlignedVec<16> =
+            rkyv::util::AlignedVec::with_capacity(bytes.len());
+        aligned.extend_from_slice(bytes);
+        // SAFETY: bytes 来自本项目序列化结果，且已拷贝到对齐内存。
+        unsafe { rkyv::from_bytes_unchecked::<Self, rkyv::rancor::Error>(&aligned) }
+            .map_err(|e| anyhow::anyhow!("rkyv 反序列化失败: {:?}", e))
     }
 
     #[inline]
@@ -121,7 +127,7 @@ impl AttrMap {
         use flate2::write::DeflateEncoder;
         use std::io::Write;
         let mut e = DeflateEncoder::new(Vec::new(), Compression::default());
-        let _ = e.write_all(&self.into_bincode_bytes());
+        let _ = e.write_all(&self.into_bytes());
         e.finish().unwrap_or_default()
     }
 
@@ -132,7 +138,7 @@ impl AttrMap {
         let writer = Vec::new();
         let mut deflater = DeflateDecoder::new(writer);
         deflater.write_all(bytes).ok()?;
-        bincode::deserialize(&deflater.finish().ok()?).ok()
+        Self::from_rkyv_bytes(&deflater.finish().ok()?).ok()
     }
 
     //计算使用元件库的design 元件 hash

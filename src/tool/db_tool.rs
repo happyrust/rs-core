@@ -22,12 +22,12 @@ lazy_static! {
 static DEHASH_CACHE: Lazy<Mutex<LruCache<u32, String>>> =
     Lazy::new(|| Mutex::new(LruCache::new(NonZeroUsize::new(1000).unwrap())));
 
-/// 从bincode数据加载PdmsDatabaseInfo
+/// 从二进制文本数据（JSON）加载 PdmsDatabaseInfo
 pub fn read_attr_info_config_from_bin(config_path: &str) -> PdmsDatabaseInfo {
     let mut file = File::open(config_path).unwrap();
     let mut attr_buf: Vec<u8> = Vec::new();
     file.read_to_end(&mut attr_buf);
-    bincode::deserialize(&attr_buf).unwrap()
+    serde_json::from_slice(&attr_buf).unwrap()
 }
 
 /// 从json数据加载PdmsDatabaseInfo

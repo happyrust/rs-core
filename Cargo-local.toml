@@ -43,7 +43,6 @@ hash32 = "0.2.1"
 hash32-derive = "0.1.1"
 prost = "0.8.0"
 version-sync = "0.9.4"
-bincode = "1.3.3"
 
 #truck-base = { version = "0.3.0",git = "https://gitee.com/happydpc/truck.git" }
 #truck-geotrait = { version = "0.2.0", git = "https://gitee.com/happydpc/truck.git"}

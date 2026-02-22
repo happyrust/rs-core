@@ -21,11 +21,6 @@ pub struct PetRefnoNode {
 //     let serialized = serde_json::to_string(&node).unwrap();
 //     let deserialized: PetRefnoNode = serde_json::from_str(&serialized).unwrap();
 //     dbg!(deserialized);
-//     // let config = bincode::config::standard();
-//     let serialized = bincode::serialize(&node).unwrap();
-//     let deserialized: PetRefnoNode = bincode::deserialize(&serialized).unwrap();
-//     // let (r, _) : (PetRefnoNode, usize) = bincode::decode_from_slice(&encoded, bincode::config::standard()).unwrap();
-//     dbg!(deserialized);
 // }
 
 #[derive(Debug, Default, Serialize, Deserialize)]
@@ -36,17 +31,17 @@ pub struct PetRefnoGraph {
 }
 
 impl PetRefnoGraph {
-    //实现保存成bincode文件的方法
+    // 保存成 JSON 文件
     pub fn save(&self, path: &str) -> anyhow::Result<()> {
-        let file = std::fs::File::create(path)?;
-        bincode::serialize_into(file, self)?;
+        let data = serde_json::to_vec(self)?;
+        std::fs::write(path, data)?;
         Ok(())
     }
 
-    //实现反序列化bincode文件的方法
+    // 从 JSON 文件反序列化
     pub fn load(path: &str) -> anyhow::Result<Self> {
-        let file = std::fs::File::open(path)?;
-        let graph = bincode::deserialize_from(file)?;
+        let bytes = std::fs::read(path)?;
+        let graph = serde_json::from_slice(&bytes)?;
         Ok(graph)
     }
 

@@ -95,7 +95,7 @@ impl BrepShapeTrait for Polyhedron {
     }
 
     fn hash_unit_mesh_params(&self) -> u64 {
-        let bytes = bincode::serialize(self).unwrap();
+        let bytes = serde_json::to_vec(self).unwrap_or_default();
         let mut hasher = DefaultHasher::default();
         bytes.hash(&mut hasher);
         "Polyhedron".hash(&mut hasher);

@@ -199,7 +199,7 @@ impl BrepShapeTrait for SweepSolid {
             }
         };
 
-        if let Ok(bytes) = bincode::serialize(&target) {
+        if let Ok(bytes) = serde_json::to_vec(&target) {
             bytes.hash(&mut hasher);
         }
 

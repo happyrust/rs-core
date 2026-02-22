@@ -374,7 +374,7 @@ impl BrepShapeTrait for SCylinder {
     fn hash_unit_mesh_params(&self) -> u64 {
         if self.is_sscl() {
             let mut hasher = DefaultHasher::new();
-            let bytes = bincode::serialize(self).unwrap();
+            let bytes = serde_json::to_vec(self).unwrap_or_default();
             bytes.hash(&mut hasher);
             "SSCL".hash(&mut hasher);
             hasher.finish()

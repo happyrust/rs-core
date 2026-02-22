@@ -77,8 +77,8 @@ impl WholeAttMap {
     }
 
     #[inline]
-    pub fn into_bincode_bytes(&self) -> Vec<u8> {
-        bincode::serialize(self).unwrap()
+    pub fn into_bytes(&self) -> Vec<u8> {
+        serde_json::to_vec(self).unwrap_or_default()
     }
 
     #[inline]
@@ -87,7 +87,7 @@ impl WholeAttMap {
         use flate2::write::DeflateEncoder;
         use std::io::Write;
         let mut e = DeflateEncoder::new(Vec::new(), Compression::default());
-        let _ = e.write_all(&self.into_bincode_bytes());
+        let _ = e.write_all(&self.into_bytes());
         e.finish().unwrap_or_default()
     }
 
@@ -98,7 +98,7 @@ impl WholeAttMap {
         let writer = Vec::new();
         let mut deflater = DeflateDecoder::new(writer);
         deflater.write_all(bytes).ok()?;
-        bincode::deserialize(&deflater.finish().ok()?).ok()
+        serde_json::from_slice(&deflater.finish().ok()?).ok()
     }
 
     /// 将隐式属性和显示属性放到一个attrmap中

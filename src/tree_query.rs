@@ -29,7 +29,7 @@ pub struct TreeNodeMeta {
 pub struct TreeQueryFilter {
     pub has_geo: Option<bool>,
     pub is_leaf: Option<bool>,
-    pub noun_hashes: Option<Vec<u32>>,
+    pub noun_hashes: Option<HashSet<u32>>,
 }
 
 impl TreeQueryFilter {
@@ -491,7 +491,7 @@ pub fn is_geo_noun_hash(noun: u32) -> bool {
     GEO_NOUN_HASHES.contains(&noun)
 }
 
-fn noun_hashes_to_names(hashes: &Option<Vec<u32>>) -> Vec<String> {
+fn noun_hashes_to_names(hashes: &Option<HashSet<u32>>) -> Vec<String> {
     let Some(hashes) = hashes else {
         return Vec::new();
     };
