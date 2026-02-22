@@ -8,6 +8,8 @@ sync_tidb = false
 sync_live = true
 replace_dbs = false
 sync_chunk_size = 1_0000
+parse_mode = "parallel" # legacy|parallel
+parse_channel_capacity = 200
 
 #项目设置
 project_path = "D:/AVEVA/Projects/E3D2.1"

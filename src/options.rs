@@ -50,6 +50,14 @@ pub struct DbOption {
     /// 同步的chunk size
     #[clap(long, default_value = "10_0000")]
     pub sync_chunk_size: Option<u32>,
+    /// 解析模式: legacy(串行异步) / parallel(并行同步+兼容包装)
+    #[clap(long)]
+    #[serde(default = "default_parse_mode")]
+    pub parse_mode: Option<String>,
+    /// 解析侧到写库侧的通道容量（有界通道）
+    #[clap(long)]
+    #[serde(default = "default_parse_channel_capacity")]
+    pub parse_channel_capacity: Option<usize>,
 
     /// 是否使用tidb
     #[clap(long)]
@@ -352,6 +360,24 @@ impl DbOption {
     }
 
     #[inline]
+    pub fn parse_mode_str(&self) -> &str {
+        match self.parse_mode.as_deref() {
+            Some("legacy") => "legacy",
+            _ => "parallel",
+        }
+    }
+
+    #[inline]
+    pub fn is_parse_parallel(&self) -> bool {
+        self.parse_mode_str() == "parallel"
+    }
+
+    #[inline]
+    pub fn get_parse_channel_capacity(&self) -> usize {
+        self.parse_channel_capacity.unwrap_or(200).max(1)
+    }
+
+    #[inline]
     pub fn mdb_name(&self) -> String {
         if self.mdb_name.starts_with("/") {
             self.mdb_name.clone()
@@ -618,4 +644,12 @@ fn default_pe_chunk() -> u32 {
 
 fn default_att_chunk() -> u32 {
     200
+}
+
+fn default_parse_mode() -> Option<String> {
+    Some("parallel".to_string())
+}
+
+fn default_parse_channel_capacity() -> Option<usize> {
+    Some(200)
 }
