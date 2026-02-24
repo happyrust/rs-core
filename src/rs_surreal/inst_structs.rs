@@ -107,12 +107,7 @@ pub struct PtsetContent {
 
 impl InstRelate {
     /// 创建新的 InstRelate 实例
-    pub fn new(
-        id: String,
-        input: RefnoEnum,
-        out: String,
-        owner: RefnoEnum,
-    ) -> Self {
+    pub fn new(id: String, input: RefnoEnum, out: String, owner: RefnoEnum) -> Self {
         Self {
             id,
             input,

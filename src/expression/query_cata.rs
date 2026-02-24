@@ -1,10 +1,30 @@
 use std::collections::BTreeMap;
+use std::time::Instant;
 
-use crate::expression::resolve::{resolve_axis_params, resolve_gms};
+use crate::expression::resolve::{
+    ResolveEvalCache, resolve_axis_params_with_cache, resolve_gms_with_cache,
+};
 use crate::parsed_data::CateGeomsInfo;
 use crate::pdms_data::{AxisParam, GmParam, ScomInfo};
 use crate::pdms_types::*;
 use crate::{AttrMap, CataContext, NamedAttrValue};
+
+fn resolve_trace_refno_filter() -> Option<String> {
+    std::env::var("AIOS_CATA_P1_TRACE_REFNO")
+        .ok()
+        .map(|v| v.trim().to_string())
+        .filter(|v| !v.is_empty())
+}
+
+fn should_trace_resolve_comp(desi_refno: RefnoEnum) -> bool {
+    let Some(target) = resolve_trace_refno_filter() else {
+        return false;
+    };
+    let target_normalized = target.replace('/', "_");
+    target == desi_refno.to_string()
+        || target_normalized == desi_refno.to_string()
+        || target == desi_refno.to_e3d_id()
+}
 
 ///查询 Axis 参数
 pub async fn query_axis_params(refno: RefnoEnum) -> anyhow::Result<BTreeMap<i32, AxisParam>> {
@@ -34,10 +54,18 @@ pub fn resolve_cata_comp(
     context: Option<CataContext>,
 ) -> anyhow::Result<CateGeomsInfo> {
     let des_refno = des_att.get_refno().unwrap_or_default();
-    let mut cur_context = context.unwrap_or_default();
+    let cur_context = context.unwrap_or_default();
     let cat_ref = scom_info.attr_map.get_refno().unwrap_or_default();
+    let trace_comp = should_trace_resolve_comp(des_refno);
+    let t_total = Instant::now();
+    let mut cache = ResolveEvalCache::default();
 
-    let axis_param_map = resolve_axis_params(des_refno, scom_info, &cur_context);
+    let t_axis = Instant::now();
+    let axis_param_map =
+        resolve_axis_params_with_cache(des_refno, scom_info, &cur_context, &mut cache);
+    let axis_ms = t_axis.elapsed().as_millis();
+
+    let t_plin = Instant::now();
     let jusl_param = if let Some(plin) = cur_context.get("JUSL") {
         if scom_info.plin_map.contains_key(plin.as_str()) {
             Some(scom_info.plin_map.get(plin.as_str()).unwrap().clone())
@@ -53,25 +81,51 @@ pub fn resolve_cata_comp(
     } else {
         None
     };
+    let plin_ms = t_plin.elapsed().as_millis();
 
-    let geometries = resolve_gms(
+    let t_gm = Instant::now();
+    let geometries = resolve_gms_with_cache(
         des_refno,
         &scom_info.gm_params,
         &jusl_param,
         &na_plin_param,
         &cur_context,
         &axis_param_map,
+        "gm",
+        &mut cache,
     );
+    let gm_ms = t_gm.elapsed().as_millis();
     // dbg!((des_refno, &geometries));
 
-    let n_geometries = resolve_gms(
+    let t_ngm = Instant::now();
+    let n_geometries = resolve_gms_with_cache(
         des_refno,
         &scom_info.ngm_params,
         &jusl_param,
         &na_plin_param,
         &cur_context,
         &axis_param_map,
+        "ngm",
+        &mut cache,
     );
+    let ngm_ms = t_ngm.elapsed().as_millis();
+
+    if trace_comp {
+        println!(
+            "      [resolve_comp trace] refno={} axis={}ms plin={}ms gm={}ms ngm={}ms total={}ms axis_cnt={} gm_in={} gm_out={} ngm_in={} ngm_out={}",
+            des_refno,
+            axis_ms,
+            plin_ms,
+            gm_ms,
+            ngm_ms,
+            t_total.elapsed().as_millis(),
+            axis_param_map.len(),
+            scom_info.gm_params.len(),
+            geometries.len(),
+            scom_info.ngm_params.len(),
+            n_geometries.len()
+        );
+    }
 
     Ok(CateGeomsInfo {
         refno: cat_ref,

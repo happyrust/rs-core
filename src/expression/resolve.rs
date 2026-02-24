@@ -1,9 +1,10 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::ops::Neg;
 use std::panic;
+use std::time::Instant;
 
 use crate::expression::resolve_helper::{
-    parse_str_axis_to_vec3, resolve_axis, resolve_to_cate_geo_params,
+    parse_str_axis_to_vec3, resolve_axis_with_cache, resolve_to_cate_geo_params,
 };
 use crate::parsed_data::geo_params_data::CateGeoParam;
 use crate::parsed_data::{CateAxisParam, GmseParamData};
@@ -19,6 +20,196 @@ use glam::{Vec2, Vec3};
 use once_cell::sync::Lazy;
 
 pub static SCOM_INFO_MAP: Lazy<DashMap<RefnoEnum, ScomInfo>> = Lazy::new(DashMap::new);
+
+#[derive(Default)]
+pub(crate) struct AxisResolveTraceStats {
+    pub(crate) axis_calls: usize,
+    pub(crate) cache_hit: usize,
+    pub(crate) cycle_guard_hit: usize,
+    pub(crate) total_ms: u128,
+    pub(crate) resolve_axis_core_ms: u128,
+    pub(crate) scalar_eval_ms: u128,
+    pub(crate) parse_dir_ms: u128,
+    pub(crate) parse_ref_dir_ms: u128,
+    pub(crate) p_ref_lookup_ms: u128,
+    pub(crate) p_ref_hit: usize,
+    pub(crate) p_ref_miss: usize,
+    pub(crate) ptpos_follow_ms: u128,
+    pub(crate) scalar_fast_path_hit: usize,
+    pub(crate) scalar_ctx_fast_hit: usize,
+    pub(crate) scalar_fast_path_fallback: usize,
+    pub(crate) scalar_fallback_expr_hits: HashMap<String, usize>,
+}
+
+#[derive(Default)]
+pub(crate) struct ResolveEvalCache {
+    expr_values: HashMap<(String, String), f32>,
+    axis_dirs: HashMap<String, Option<Vec3>>,
+    axis_params: HashMap<i32, CateAxisParam>,
+    axis_resolving: HashSet<i32>,
+    pub(crate) axis_trace: AxisResolveTraceStats,
+    pub(crate) axis_trace_enabled: bool,
+    pub(crate) axis_trace_refno: Option<RefnoEnum>,
+}
+
+#[inline]
+fn normalize_cache_expr(expr: &str) -> String {
+    expr.split_whitespace().collect::<Vec<_>>().join(" ")
+}
+
+#[inline]
+fn try_parse_simple_number(expr: &str) -> Option<f32> {
+    let mut s = expr.trim();
+    if s.is_empty() {
+        return None;
+    }
+    while s.starts_with('(') && s.ends_with(')') && s.len() > 2 {
+        s = s[1..s.len() - 1].trim();
+    }
+    if s.is_empty() {
+        return None;
+    }
+    let mut has_digit = false;
+    for b in s.as_bytes() {
+        if b.is_ascii_digit() {
+            has_digit = true;
+            continue;
+        }
+        match *b {
+            b'+' | b'-' | b'.' | b'e' | b'E' => {}
+            _ => return None,
+        }
+    }
+    if !has_digit {
+        return None;
+    }
+    s.parse::<f32>().ok()
+}
+
+#[inline]
+fn try_eval_context_scalar(expr: &str, context: &CataContext) -> Option<f32> {
+    let mut upper = expr.trim().to_uppercase();
+    if upper.is_empty() {
+        return None;
+    }
+    if let Some(rest) = upper.strip_prefix("ATTRIB") {
+        upper = rest.trim_start().to_string();
+    }
+    let compact = upper.split_whitespace().collect::<String>();
+    if compact.is_empty() {
+        return None;
+    }
+    if compact
+        .as_bytes()
+        .iter()
+        .any(|b| matches!(*b, b'+' | b'-' | b'*' | b'/' | b'(' | b')' | b','))
+    {
+        return None;
+    }
+
+    let mut key = compact.trim_start_matches(':').to_string();
+    if let Some(l) = key.find('[')
+        && key.ends_with(']')
+    {
+        let head = &key[..l];
+        let idx = key[l + 1..key.len() - 1].trim();
+        if idx.is_empty() || !idx.as_bytes().iter().all(|b| b.is_ascii_digit()) {
+            return None;
+        }
+        key = format!("{head}{idx}");
+    }
+    if !key
+        .as_bytes()
+        .iter()
+        .all(|b| b.is_ascii_alphanumeric() || *b == b'_')
+    {
+        return None;
+    }
+    context.get(&key).and_then(|v| v.parse::<f32>().ok())
+}
+
+#[inline]
+fn eval_str_to_f32_cached(
+    expr: &str,
+    context: &CataContext,
+    dtse_unit: &str,
+    cache: &mut ResolveEvalCache,
+) -> f32 {
+    let key = (dtse_unit.to_string(), normalize_cache_expr(expr));
+    if let Some(val) = cache.expr_values.get(&key) {
+        return *val;
+    }
+    let val = if let Some(v) = try_parse_simple_number(&key.1) {
+        if cache.axis_trace_enabled {
+            cache.axis_trace.scalar_fast_path_hit += 1;
+        }
+        v
+    } else if let Some(v) = try_eval_context_scalar(&key.1, context) {
+        if cache.axis_trace_enabled {
+            cache.axis_trace.scalar_ctx_fast_hit += 1;
+        }
+        v
+    } else {
+        if cache.axis_trace_enabled {
+            cache.axis_trace.scalar_fast_path_fallback += 1;
+            *cache
+                .axis_trace
+                .scalar_fallback_expr_hits
+                .entry(key.1.clone())
+                .or_insert(0) += 1;
+        }
+        eval_str_to_f32_or_default(expr, context, dtse_unit)
+    };
+    cache.expr_values.insert(key, val);
+    val
+}
+
+#[inline]
+pub(crate) fn parse_axis_to_vec3_cached(
+    axis_expr: &str,
+    context: &CataContext,
+    cache: &mut ResolveEvalCache,
+) -> Option<Vec3> {
+    let key = normalize_cache_expr(axis_expr);
+    if let Some(v) = cache.axis_dirs.get(&key) {
+        return *v;
+    }
+    let v = parse_str_axis_to_vec3(axis_expr, context).ok();
+    cache.axis_dirs.insert(key, v);
+    v
+}
+
+fn resolve_trace_refno_filter() -> Option<String> {
+    std::env::var("AIOS_CATA_P1_TRACE_REFNO")
+        .ok()
+        .map(|v| v.trim().to_string())
+        .filter(|v| !v.is_empty())
+}
+
+fn should_trace_resolve_detail(desi_refno: RefnoEnum) -> bool {
+    let Some(target) = resolve_trace_refno_filter() else {
+        return false;
+    };
+    let target_normalized = target.replace('/', "_");
+    target == desi_refno.to_string()
+        || target_normalized == desi_refno.to_string()
+        || target == desi_refno.to_e3d_id()
+}
+
+fn resolve_gm_trace_topn() -> usize {
+    std::env::var("AIOS_RESOLVE_GM_TRACE_TOPN")
+        .ok()
+        .and_then(|v| v.parse::<usize>().ok())
+        .filter(|&v| v > 0)
+        .unwrap_or(5)
+}
+
+fn resolve_gm_trace_threshold_ms() -> u128 {
+    std::env::var("AIOS_RESOLVE_GM_TRACE_THRESHOLD_MS")
+        .ok()
+        .and_then(|v| v.parse::<u128>().ok())
+        .unwrap_or(200)
+}
 
 // #region agent log
 fn agent_now_ms() -> u128 {
@@ -80,10 +271,61 @@ pub fn resolve_axis_params(
     scom: &ScomInfo,
     context: &CataContext,
 ) -> BTreeMap<i32, CateAxisParam> {
+    let mut cache = ResolveEvalCache::default();
+    resolve_axis_params_with_cache(refno, scom, context, &mut cache)
+}
+
+pub(crate) fn resolve_axis_params_with_cache(
+    refno: RefnoEnum,
+    scom: &ScomInfo,
+    context: &CataContext,
+    cache: &mut ResolveEvalCache,
+) -> BTreeMap<i32, CateAxisParam> {
+    if should_trace_resolve_detail(refno) {
+        cache.axis_trace_enabled = true;
+        cache.axis_trace_refno = Some(refno);
+    }
     let mut map = BTreeMap::new();
     for i in 0..scom.axis_params.len() {
-        let axis = resolve_axis_param(&scom.axis_params[i], scom, context);
+        let axis = resolve_axis_param_with_cache(&scom.axis_params[i], scom, context, cache);
         map.insert(scom.axis_param_numbers[i], axis);
+    }
+    if cache.axis_trace_enabled {
+        let s = &cache.axis_trace;
+        println!(
+            "      [axis trace] refno={} calls={} cache_hit={} cycle_guard={} total={}ms core={}ms scalar={}ms parse_dir={}ms parse_ref={}ms p_ref_lookup={}ms p_ref_hit={} p_ref_miss={} ptpos_follow={}ms scalar_fast_hit={} scalar_ctx_hit={} scalar_fallback={}",
+            refno,
+            s.axis_calls,
+            s.cache_hit,
+            s.cycle_guard_hit,
+            s.total_ms,
+            s.resolve_axis_core_ms,
+            s.scalar_eval_ms,
+            s.parse_dir_ms,
+            s.parse_ref_dir_ms,
+            s.p_ref_lookup_ms,
+            s.p_ref_hit,
+            s.p_ref_miss,
+            s.ptpos_follow_ms,
+            s.scalar_fast_path_hit,
+            s.scalar_ctx_fast_hit,
+            s.scalar_fast_path_fallback
+        );
+        if !s.scalar_fallback_expr_hits.is_empty() {
+            let mut items = s
+                .scalar_fallback_expr_hits
+                .iter()
+                .map(|(k, v)| (k, *v))
+                .collect::<Vec<_>>();
+            items.sort_by(|a, b| b.1.cmp(&a.1).then_with(|| a.0.cmp(b.0)));
+            let top = items
+                .into_iter()
+                .take(8)
+                .map(|(k, v)| format!("{k}:{v}"))
+                .collect::<Vec<_>>()
+                .join(", ");
+            println!("      [axis trace expr_top] refno={} {}", refno, top);
+        }
     }
     map
 }
@@ -96,63 +338,137 @@ pub fn resolve_gms(
     na_plin_param: &Option<PlinParam>,
     context: &CataContext,
     axis_param_map: &BTreeMap<i32, CateAxisParam>,
+    gm_group: &str,
+) -> Vec<CateGeoParam> {
+    let mut cache = ResolveEvalCache::default();
+    resolve_gms_with_cache(
+        des_refno,
+        gmse_raw_paras,
+        jusl_param,
+        na_plin_param,
+        context,
+        axis_param_map,
+        gm_group,
+        &mut cache,
+    )
+}
+
+pub(crate) fn resolve_gms_with_cache(
+    des_refno: RefnoEnum,
+    gmse_raw_paras: &[GmParam],
+    jusl_param: &Option<PlinParam>,
+    na_plin_param: &Option<PlinParam>,
+    context: &CataContext,
+    axis_param_map: &BTreeMap<i32, CateAxisParam>,
+    gm_group: &str,
+    cache: &mut ResolveEvalCache,
 ) -> Vec<CateGeoParam> {
     // NOTE:
     // - 默认不按 TUFL 硬过滤（用于完整实体生成）。
     // - 若需要“管道视图”导出/显示，可通过环境变量显式开启过滤：AIOS_RESPECT_TUFL=1。
     let respect_tufl = std::env::var_os("AIOS_RESPECT_TUFL").is_some();
 
-    gmse_raw_paras
-        .iter()
-        .cloned()
-        .filter_map(|g| {
-            // NOTE:
-            // - g.visible_flag 目前来源于 GMSE 的 TUFL（“管道视图可见性”），不应作为“是否生成几何”的硬过滤条件；
-            //   否则会导致某些元件（例如阀门）缺失本体几何（表现为“少一截”）。
-            // - TUFL 的语义应留给上层“视图/过滤”逻辑使用，而不是在解析阶段直接丢弃几何。
-            if g.gm_type == "SPRO" && g.verts.is_empty() {
-                return None;
-            }
+    let trace_detail = should_trace_resolve_detail(des_refno);
+    let trace_topn = resolve_gm_trace_topn();
+    let trace_threshold_ms = resolve_gm_trace_threshold_ms();
+    let t_group_total = Instant::now();
+    let mut filtered_empty_spro = 0usize;
+    let mut filtered_tufl = 0usize;
+    let mut fail_cnt = 0usize;
+    let mut timing_samples: Vec<(u128, RefnoEnum, String, bool)> = Vec::new();
+    let mut out = Vec::new();
 
-            // TUFL 过滤（管道视图语义）：开启时直接丢弃 TUFL=false 的几何
-            if respect_tufl && !g.visible_flag {
-                // #region agent log
-                agent_log(
-                    "H_TUFL",
-                    "rs-core/src/expression/resolve.rs:resolve_gms",
-                    "filtered_by_tufl",
-                    serde_json::json!({
-                        "design_refno": des_refno.to_string().replace('/', "_"),
-                        "geom_refno": g.refno.to_string().replace('/', "_"),
-                        "gm_type": g.gm_type,
-                        "visible_flag": g.visible_flag,
-                        "centre_line_flag": g.centre_line_flag,
-                        "diameters_expr_len": g.diameters.len(),
-                        "distances_expr_len": g.distances.len(),
-                        "xyz_expr_len": g.xyz.len(),
-                    }),
-                );
-                // #endregion
-                return None;
-            }
+    for g in gmse_raw_paras.iter() {
+        // NOTE:
+        // - g.visible_flag 目前来源于 GMSE 的 TUFL（“管道视图可见性”），不应作为“是否生成几何”的硬过滤条件；
+        //   否则会导致某些元件（例如阀门）缺失本体几何（表现为“少一截”）。
+        // - TUFL 的语义应留给上层“视图/过滤”逻辑使用，而不是在解析阶段直接丢弃几何。
+        if g.gm_type == "SPRO" && g.verts.is_empty() {
+            filtered_empty_spro += 1;
+            continue;
+        }
 
-            let r = resolve_paragon_gm_params(
-                des_refno,
-                &g,
-                jusl_param,
-                na_plin_param,
-                context,
-                axis_param_map,
+        // TUFL 过滤（管道视图语义）：开启时直接丢弃 TUFL=false 的几何
+        if respect_tufl && !g.visible_flag {
+            // #region agent log
+            agent_log(
+                "H_TUFL",
+                "rs-core/src/expression/resolve.rs:resolve_gms",
+                "filtered_by_tufl",
+                serde_json::json!({
+                    "design_refno": des_refno.to_string().replace('/', "_"),
+                    "geom_refno": g.refno.to_string().replace('/', "_"),
+                    "gm_type": g.gm_type,
+                    "visible_flag": g.visible_flag,
+                    "centre_line_flag": g.centre_line_flag,
+                    "diameters_expr_len": g.diameters.len(),
+                    "distances_expr_len": g.distances.len(),
+                    "xyz_expr_len": g.xyz.len(),
+                }),
             );
-            match r {
-                Ok(v) => Some(v),
-                Err(e) => {
-                    println!("{}", e);
-                    None
-                }
+            // #endregion
+            filtered_tufl += 1;
+            continue;
+        }
+
+        let t_item = Instant::now();
+        let r = resolve_paragon_gm_params_with_cache(
+            des_refno,
+            g,
+            jusl_param,
+            na_plin_param,
+            context,
+            axis_param_map,
+            cache,
+        );
+        let elapsed = t_item.elapsed().as_millis();
+        if trace_detail {
+            timing_samples.push((elapsed, g.refno, g.gm_type.clone(), r.is_ok()));
+        }
+        match r {
+            Ok(v) => out.push(v),
+            Err(e) => {
+                fail_cnt += 1;
+                println!("{}", e);
             }
-        })
-        .collect::<_>()
+        }
+    }
+
+    if trace_detail && !timing_samples.is_empty() {
+        timing_samples.sort_by(|a, b| b.0.cmp(&a.0));
+        let topn = trace_topn.min(timing_samples.len());
+        let slow_cnt = timing_samples
+            .iter()
+            .filter(|(elapsed, _, _, _)| *elapsed >= trace_threshold_ms)
+            .count();
+        println!(
+            "      [resolve_gms trace] refno={} group={} in={} out={} fail={} filtered_spro={} filtered_tufl={} total={}ms slow_count={}/{}(threshold={}ms)",
+            des_refno,
+            gm_group,
+            gmse_raw_paras.len(),
+            out.len(),
+            fail_cnt,
+            filtered_empty_spro,
+            filtered_tufl,
+            t_group_total.elapsed().as_millis(),
+            slow_cnt,
+            timing_samples.len(),
+            trace_threshold_ms
+        );
+        for (idx, (elapsed, gm_refno, gm_type, ok)) in timing_samples.iter().take(topn).enumerate()
+        {
+            println!(
+                "        [resolve_gms slow #{:02}] {} ms | status={} | gm_refno={} | gm_type={}",
+                idx + 1,
+                elapsed,
+                if *ok { "ok" } else { "fail" },
+                gm_refno,
+                gm_type
+            );
+        }
+    }
+
+    out
 }
 
 /// 解析gmes的参数
@@ -164,11 +480,63 @@ pub fn resolve_paragon_gm_params(
     context: &CataContext,
     axis_param_map: &BTreeMap<i32, CateAxisParam>,
 ) -> anyhow::Result<CateGeoParam> {
-    match resolve_gmse_params(gm_param, jusl_param, na_plin_param, context, axis_param_map) {
-        Ok(gm_data) => panic::catch_unwind(|| {
-            resolve_to_cate_geo_params(&gm_data).expect("resolve geom failed")
-        })
-        .map_err(|e| anyhow::anyhow!("元件库求解失败.")),
+    let mut cache = ResolveEvalCache::default();
+    resolve_paragon_gm_params_with_cache(
+        des_refno,
+        gm_param,
+        jusl_param,
+        na_plin_param,
+        context,
+        axis_param_map,
+        &mut cache,
+    )
+}
+
+pub(crate) fn resolve_paragon_gm_params_with_cache(
+    des_refno: RefnoEnum,
+    gm_param: &GmParam,
+    jusl_param: &Option<PlinParam>,
+    na_plin_param: &Option<PlinParam>,
+    context: &CataContext,
+    axis_param_map: &BTreeMap<i32, CateAxisParam>,
+    cache: &mut ResolveEvalCache,
+) -> anyhow::Result<CateGeoParam> {
+    let trace_detail = should_trace_resolve_detail(des_refno);
+    let trace_threshold_ms = resolve_gm_trace_threshold_ms();
+    let t_total = Instant::now();
+    let t_parse = Instant::now();
+
+    match resolve_gmse_params_with_cache(
+        gm_param,
+        jusl_param,
+        na_plin_param,
+        context,
+        axis_param_map,
+        cache,
+    ) {
+        Ok(gm_data) => {
+            let parse_ms = t_parse.elapsed().as_millis();
+            let t_convert = Instant::now();
+            let convert_result = panic::catch_unwind(|| {
+                resolve_to_cate_geo_params(&gm_data).expect("resolve geom failed")
+            })
+            .map_err(|_| anyhow::anyhow!("元件库求解失败."));
+            let convert_ms = t_convert.elapsed().as_millis();
+            let total_ms = t_total.elapsed().as_millis();
+            if trace_detail && total_ms >= trace_threshold_ms {
+                println!(
+                    "        [resolve_gm trace] des_refno={} gm_refno={} gm_type={} parse={}ms convert={}ms total={}ms status={}",
+                    des_refno,
+                    gm_param.refno,
+                    gm_param.gm_type,
+                    parse_ms,
+                    convert_ms,
+                    total_ms,
+                    if convert_result.is_ok() { "ok" } else { "fail" }
+                );
+            }
+            convert_result
+        }
         Err(e) => Err(anyhow::anyhow!(format!(
             "几何数据解析失败: {:?}, 原因：{}",
             des_refno.to_string(),
@@ -183,6 +551,25 @@ pub fn resolve_gmse_params(
     na_plin_param: &Option<PlinParam>,
     context: &CataContext,
     axis_param_map: &BTreeMap<i32, CateAxisParam>,
+) -> anyhow::Result<GmseParamData> {
+    let mut cache = ResolveEvalCache::default();
+    resolve_gmse_params_with_cache(
+        gm,
+        jusl_param,
+        na_plin_param,
+        context,
+        axis_param_map,
+        &mut cache,
+    )
+}
+
+pub(crate) fn resolve_gmse_params_with_cache(
+    gm: &GmParam,
+    jusl_param: &Option<PlinParam>,
+    na_plin_param: &Option<PlinParam>,
+    context: &CataContext,
+    axis_param_map: &BTreeMap<i32, CateAxisParam>,
+    cache: &mut ResolveEvalCache,
 ) -> anyhow::Result<GmseParamData> {
     let angle = context
         .get(DDANGLE_STR)
@@ -214,7 +601,7 @@ pub fn resolve_gmse_params(
         .map(|(i, exp)| {
             crate::debug_model_debug!("   DIAMETERS[{}]: {}", i, exp);
             crate::set_expr_debug_info!(context, gm.refno, &gm.gm_type, "DIAMETERS", i);
-            let val = eval_str_to_f32_or_default(exp, context, "DIST");
+            let val = eval_str_to_f32_cached(exp, context, "DIST", cache);
             crate::debug_model_debug!("   DIAMETERS[{}] 求值结果: {}", i, val);
             crate::clear_expr_debug_info!(context);
             val
@@ -228,7 +615,7 @@ pub fn resolve_gmse_params(
         .enumerate()
         .map(|(i, exp)| {
             crate::set_expr_debug_info!(context, gm.refno, &gm.gm_type, "DISTANCES", i);
-            let val = eval_str_to_f32_or_default(exp, context, "DIST");
+            let val = eval_str_to_f32_cached(exp, context, "DIST", cache);
             crate::clear_expr_debug_info!(context);
             val
         })
@@ -240,7 +627,7 @@ pub fn resolve_gmse_params(
         .enumerate()
         .map(|(i, exp)| {
             crate::set_expr_debug_info!(context, gm.refno, &gm.gm_type, "SHEARS", i);
-            let val = eval_str_to_f32_or_default(exp, context, "DIST");
+            let val = eval_str_to_f32_cached(exp, context, "DIST", cache);
             crate::clear_expr_debug_info!(context);
             val
         })
@@ -249,11 +636,11 @@ pub fn resolve_gmse_params(
     let mut verts = vec![];
     for (i, vert) in gm.verts.iter().enumerate() {
         crate::set_expr_debug_info!(context, gm.refno, &gm.gm_type, "VERTS_X", i);
-        let f0 = eval_str_to_f32_or_default(&vert[0], context, "DIST");
+        let f0 = eval_str_to_f32_cached(&vert[0], context, "DIST", cache);
         crate::set_expr_debug_info!(context, gm.refno, &gm.gm_type, "VERTS_Y", i);
-        let f1 = eval_str_to_f32_or_default(&vert[1], context, "DIST");
+        let f1 = eval_str_to_f32_cached(&vert[1], context, "DIST", cache);
         crate::set_expr_debug_info!(context, gm.refno, &gm.gm_type, "VERTS_Z", i);
-        let f2 = eval_str_to_f32_or_default(&vert[2].as_str(), context, "DIST");
+        let f2 = eval_str_to_f32_cached(&vert[2], context, "DIST", cache);
         crate::clear_expr_debug_info!(context);
         {
             verts.push(Vec3::new(f0, f1, f2));
@@ -263,28 +650,28 @@ pub fn resolve_gmse_params(
     crate::set_expr_debug_info!(context, gm.refno, &gm.gm_type, "PHEI");
     crate::debug_model_debug!("🎯 开始求值 PHEI: refno={}, type={}", gm.refno, gm.gm_type);
     crate::debug_model_debug!("   原始 PHEI 表达式: {}", gm.phei);
-    let phei = eval_str_to_f32_or_default(&gm.phei, context, "DIST");
+    let phei = eval_str_to_f32_cached(&gm.phei, context, "DIST", cache);
     crate::debug_model_debug!("   PHEI 求值结果: {}", phei);
     crate::clear_expr_debug_info!(context);
 
     crate::set_expr_debug_info!(context, gm.refno, &gm.gm_type, "OFFSET");
-    let offset = eval_str_to_f32_or_default(&gm.offset, context, "DIST");
+    let offset = eval_str_to_f32_cached(&gm.offset, context, "DIST", cache);
     crate::clear_expr_debug_info!(context);
 
     crate::set_expr_debug_info!(context, gm.refno, &gm.gm_type, "PANG");
-    let pang = eval_str_to_f32_or_default(&gm.pang, context, "DIST");
+    let pang = eval_str_to_f32_cached(&gm.pang, context, "DIST", cache);
     crate::clear_expr_debug_info!(context);
 
     crate::set_expr_debug_info!(context, gm.refno, &gm.gm_type, "PWID");
-    let pwid = eval_str_to_f32_or_default(&gm.pwid, context, "DIST");
+    let pwid = eval_str_to_f32_cached(&gm.pwid, context, "DIST", cache);
     crate::clear_expr_debug_info!(context);
 
     crate::set_expr_debug_info!(context, gm.refno, &gm.gm_type, "DRAD");
-    let drad = eval_str_to_f32_or_default(&gm.drad, context, "DIST");
+    let drad = eval_str_to_f32_cached(&gm.drad, context, "DIST", cache);
     crate::clear_expr_debug_info!(context);
 
     crate::set_expr_debug_info!(context, gm.refno, &gm.gm_type, "DWID");
-    let dwid = eval_str_to_f32_or_default(&gm.dwid, context, "DIST");
+    let dwid = eval_str_to_f32_cached(&gm.dwid, context, "DIST", cache);
     crate::clear_expr_debug_info!(context);
 
     let mut frads = gm
@@ -293,14 +680,14 @@ pub fn resolve_gmse_params(
         .enumerate()
         .map(|(i, exp)| {
             crate::set_expr_debug_info!(context, gm.refno, &gm.gm_type, "FRADS", i);
-            let val = eval_str_to_f32_or_default(exp, context, "DIST");
+            let val = eval_str_to_f32_cached(exp, context, "DIST", cache);
             crate::clear_expr_debug_info!(context);
             val
         })
         .collect();
 
     crate::set_expr_debug_info!(context, gm.refno, &gm.gm_type, "PRAD");
-    let prad = eval_str_to_f32_or_default(&gm.prad, context, "DIST");
+    let prad = eval_str_to_f32_cached(&gm.prad, context, "DIST", cache);
     crate::clear_expr_debug_info!(context);
 
     let dxy = gm
@@ -309,9 +696,9 @@ pub fn resolve_gmse_params(
         .enumerate()
         .try_fold::<_, _, anyhow::Result<_>>(vec![], |mut acc, (i, exp)| {
             crate::set_expr_debug_info!(context, gm.refno, &gm.gm_type, "DXY_X", i);
-            let f0 = eval_str_to_f32_or_default(&exp[0], context, "DIST");
+            let f0 = eval_str_to_f32_cached(&exp[0], context, "DIST", cache);
             crate::set_expr_debug_info!(context, gm.refno, &gm.gm_type, "DXY_Y", i);
-            let f1 = eval_str_to_f32_or_default(&exp[1], context, "DIST");
+            let f1 = eval_str_to_f32_cached(&exp[1], context, "DIST", cache);
             crate::clear_expr_debug_info!(context);
             acc.push(Vec2::new(f0, f1));
             Ok(acc)
@@ -323,7 +710,7 @@ pub fn resolve_gmse_params(
         .enumerate()
         .map(|(i, exp)| {
             crate::set_expr_debug_info!(context, gm.refno, &gm.gm_type, "LENGTHS", i);
-            let val = eval_str_to_f32_or_default(exp, context, "DIST");
+            let val = eval_str_to_f32_cached(exp, context, "DIST", cache);
             crate::clear_expr_debug_info!(context);
             val
         })
@@ -342,7 +729,7 @@ pub fn resolve_gmse_params(
         .map(|(i, exp)| {
             crate::debug_model_debug!("   XYZ[{}]: {}", i, exp);
             crate::set_expr_debug_info!(context, gm.refno, &gm.gm_type, "XYZ", i);
-            let val = eval_str_to_f32_or_default(exp, context, "DIST");
+            let val = eval_str_to_f32_cached(exp, context, "DIST", cache);
             crate::debug_model_debug!("   XYZ[{}] 求值结果: {}", i, val);
             crate::clear_expr_debug_info!(context);
             val
@@ -395,7 +782,7 @@ pub fn resolve_gmse_params(
                 }
             }
         } else {
-            let dir = parse_str_axis_to_vec3(axis, context).ok().map(RsVec3);
+            let dir = parse_axis_to_vec3_cached(axis, context, cache).map(RsVec3);
             let axis = CateAxisParam {
                 refno: Default::default(),
                 number: 0,
@@ -414,27 +801,27 @@ pub fn resolve_gmse_params(
         // dbg!(jusl);
         //直接把 jusl_dxy加上
         plin_pos = Vec2::new(
-            eval_str_to_f32_or_default(&jusl.vxy[0], context, "DIST"),
-            eval_str_to_f32_or_default(&jusl.vxy[1], context, "DIST"),
+            eval_str_to_f32_cached(&jusl.vxy[0], context, "DIST", cache),
+            eval_str_to_f32_cached(&jusl.vxy[1], context, "DIST", cache),
         ) + Vec2::new(
-            eval_str_to_f32_or_default(&jusl.dxy[0], context, "DIST"),
-            eval_str_to_f32_or_default(&jusl.dxy[1], context, "DIST"),
+            eval_str_to_f32_cached(&jusl.dxy[0], context, "DIST", cache),
+            eval_str_to_f32_cached(&jusl.dxy[1], context, "DIST", cache),
         );
 
-        if let Ok(dir) = parse_str_axis_to_vec3(&jusl.plax, context) {
+        if let Some(dir) = parse_axis_to_vec3_cached(&jusl.plax, context, cache) {
             plin_axis = Some(dir);
             // dbg!(plin_axis);
         }
     }
     if let Some(na_plin) = na_plin_param {
-        if let Ok(dir) = parse_str_axis_to_vec3(&na_plin.plax, context) {
+        if let Some(dir) = parse_axis_to_vec3_cached(&na_plin.plax, context, cache) {
             na_axis = Some(dir);
             // dbg!(na_axis);
         }
     }
 
     if let Some(p) = &gm.plax {
-        if let Ok(dir) = parse_str_axis_to_vec3(p, context) {
+        if let Some(dir) = parse_axis_to_vec3_cached(p, context, cache) {
             plax = Some(dir);
             // dbg!(plax);
         }
@@ -476,6 +863,33 @@ pub fn resolve_axis_param(
     scom: &ScomInfo,
     context: &CataContext,
 ) -> CateAxisParam {
+    let mut cache = ResolveEvalCache::default();
+    resolve_axis_param_with_cache(axis_param, scom, context, &mut cache)
+}
+
+pub(crate) fn resolve_axis_param_with_cache(
+    axis_param: &AxisParam,
+    scom: &ScomInfo,
+    context: &CataContext,
+    cache: &mut ResolveEvalCache,
+) -> CateAxisParam {
+    let t_axis_total = Instant::now();
+    let number = axis_param.number;
+    if number != 0 {
+        if let Some(axis) = cache.axis_params.get(&number) {
+            if cache.axis_trace_enabled {
+                cache.axis_trace.cache_hit += 1;
+            }
+            return axis.clone();
+        }
+        if !cache.axis_resolving.insert(number) {
+            if cache.axis_trace_enabled {
+                cache.axis_trace.cycle_guard_hit += 1;
+            }
+            return Default::default();
+        }
+    }
+
     let key: String = axis_param
         .pconnect
         .replace("\n", "")
@@ -487,91 +901,124 @@ pub fn resolve_axis_param(
     } else {
         key.clone()
     };
-    let number = axis_param.number;
-    let pbore = eval_str_to_f32_or_default(&axis_param.pbore, &context, "DIST");
-    let pwidth = eval_str_to_f32_or_default(&axis_param.pwidth, &context, "DIST");
-    let pheight = eval_str_to_f32_or_default(&axis_param.pheight, &context, "DIST");
-    let Ok((m_dir, ref_dir, pos)) = resolve_axis(axis_param, scom, context) else {
-        return Default::default();
-    };
-    let mut dir = m_dir.is_normalized().then(|| RsVec3(m_dir));
-    let ref_dir = ref_dir.is_normalized().then(|| RsVec3(ref_dir));
-    // dbg!(&axis_param);
-    let result = match axis_param.type_name.as_str() {
-        "PTAX" => {
-            let d = eval_str_to_f32_or_default(&axis_param.distance, &context, "DIST");
-            CateAxisParam {
-                refno: axis_param.refno,
-                number,
-                pt: RsVec3(d * m_dir + pos),
-                dir,
-                ref_dir,
-                pconnect,
-                pbore,
-                pwidth,
-                pheight,
-                ..Default::default()
-            }
+    let t_scalar = Instant::now();
+    let pbore = eval_str_to_f32_cached(&axis_param.pbore, context, "DIST", cache);
+    let pwidth = eval_str_to_f32_cached(&axis_param.pwidth, context, "DIST", cache);
+    let pheight = eval_str_to_f32_cached(&axis_param.pheight, context, "DIST", cache);
+    if cache.axis_trace_enabled {
+        cache.axis_trace.scalar_eval_ms += t_scalar.elapsed().as_millis();
+    }
+    let t_core = Instant::now();
+    let result = if let Ok((m_dir, ref_dir, pos)) =
+        resolve_axis_with_cache(axis_param, scom, context, cache)
+    {
+        if cache.axis_trace_enabled {
+            cache.axis_trace.resolve_axis_core_ms += t_core.elapsed().as_millis();
         }
-        "PTCA" | "PTMI" => {
-            let x = eval_str_to_f32_or_default(&axis_param.x, &context, "DIST");
-            let y = eval_str_to_f32_or_default(&axis_param.y, &context, "DIST");
-            let z = eval_str_to_f32_or_default(&axis_param.z, &context, "DIST");
-            if dir.is_none() {
-                // dbg!(&axis_param);
-                let dirs = axis_param.direction.split(" ").collect::<Vec<_>>();
-                if !dirs.is_empty() {
-                    dir = parse_str_axis_to_vec3(&dirs[0], &context).ok().map(RsVec3);
-                    // dbg!(dir);
+        let mut dir = m_dir.is_normalized().then(|| RsVec3(m_dir));
+        let ref_dir = ref_dir.is_normalized().then(|| RsVec3(ref_dir));
+        match axis_param.type_name.as_str() {
+            "PTAX" => {
+                let t_scalar = Instant::now();
+                let d = eval_str_to_f32_cached(&axis_param.distance, context, "DIST", cache);
+                if cache.axis_trace_enabled {
+                    cache.axis_trace.scalar_eval_ms += t_scalar.elapsed().as_millis();
                 }
-                // dbg!(dirs);
-                // dbg!(dirs);
+                CateAxisParam {
+                    refno: axis_param.refno,
+                    number,
+                    pt: RsVec3(d * m_dir + pos),
+                    dir,
+                    ref_dir,
+                    pconnect,
+                    pbore,
+                    pwidth,
+                    pheight,
+                    ..Default::default()
+                }
             }
-            CateAxisParam {
-                refno: axis_param.refno,
-                number,
-                pt: RsVec3(pos + Vec3::new(x, y, z)),
-                dir,
-                ref_dir,
-                pconnect,
-                pbore,
-                pwidth,
-                pheight,
-                ..Default::default()
-            }
-        }
-        "PTPOS" => {
-            let mut cate_axis = CateAxisParam {
-                number,
-                dir,
-                ref_dir,
-                pconnect,
-                pbore,
-                pwidth,
-                pheight,
-                ..Default::default()
-            };
-            if let Some(pnt_index_str) = axis_param.pnt_index_str.as_ref() {
-                let paras = pnt_index_str
-                    .split_whitespace()
-                    .map(|x| x.trim().to_owned())
-                    .collect::<Vec<_>>();
-                if paras.len() == 2 {
-                    let pnt_index = paras[1].parse::<i32>().unwrap_or(i32::MAX);
-                    if let Some(indx) = scom.axis_param_numbers.iter().position(|&x| x == pnt_index)
-                    {
-                        let axis = resolve_axis_param(&scom.axis_params[indx], scom, context);
-                        cate_axis.refno = axis_param.refno;
-                        cate_axis.pt = axis.pt;
+            "PTCA" | "PTMI" => {
+                let t_scalar = Instant::now();
+                let x = eval_str_to_f32_cached(&axis_param.x, context, "DIST", cache);
+                let y = eval_str_to_f32_cached(&axis_param.y, context, "DIST", cache);
+                let z = eval_str_to_f32_cached(&axis_param.z, context, "DIST", cache);
+                if cache.axis_trace_enabled {
+                    cache.axis_trace.scalar_eval_ms += t_scalar.elapsed().as_millis();
+                }
+                if dir.is_none() {
+                    let dirs = axis_param.direction.split(" ").collect::<Vec<_>>();
+                    if !dirs.is_empty() {
+                        dir = parse_axis_to_vec3_cached(dirs[0], context, cache).map(RsVec3);
                     }
                 }
+                CateAxisParam {
+                    refno: axis_param.refno,
+                    number,
+                    pt: RsVec3(pos + Vec3::new(x, y, z)),
+                    dir,
+                    ref_dir,
+                    pconnect,
+                    pbore,
+                    pwidth,
+                    pheight,
+                    ..Default::default()
+                }
             }
-            return cate_axis;
+            "PTPOS" => {
+                let mut cate_axis = CateAxisParam {
+                    number,
+                    dir,
+                    ref_dir,
+                    pconnect,
+                    pbore,
+                    pwidth,
+                    pheight,
+                    ..Default::default()
+                };
+                if let Some(pnt_index_str) = axis_param.pnt_index_str.as_ref() {
+                    let paras = pnt_index_str
+                        .split_whitespace()
+                        .map(|x| x.trim().to_owned())
+                        .collect::<Vec<_>>();
+                    if paras.len() == 2 {
+                        let pnt_index = paras[1].parse::<i32>().unwrap_or(i32::MAX);
+                        if let Some(indx) =
+                            scom.axis_param_numbers.iter().position(|&x| x == pnt_index)
+                        {
+                            let t_follow = Instant::now();
+                            let axis = resolve_axis_param_with_cache(
+                                &scom.axis_params[indx],
+                                scom,
+                                context,
+                                cache,
+                            );
+                            if cache.axis_trace_enabled {
+                                cache.axis_trace.ptpos_follow_ms += t_follow.elapsed().as_millis();
+                            }
+                            cate_axis.refno = axis_param.refno;
+                            cate_axis.pt = axis.pt;
+                        }
+                    }
+                }
+                cate_axis
+            }
+            _ => CateAxisParam::default(),
         }
-        _ => CateAxisParam::default(),
+    } else {
+        if cache.axis_trace_enabled {
+            cache.axis_trace.resolve_axis_core_ms += t_core.elapsed().as_millis();
+        }
+        Default::default()
     };
 
-    // dbg!(&result);
+    if number != 0 {
+        cache.axis_resolving.remove(&number);
+        cache.axis_params.insert(number, result.clone());
+    }
+    if cache.axis_trace_enabled {
+        cache.axis_trace.axis_calls += 1;
+        cache.axis_trace.total_ms += t_axis_total.elapsed().as_millis();
+    }
 
     result
 }

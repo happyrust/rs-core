@@ -1,4 +1,6 @@
-use crate::expression::resolve::resolve_axis_param;
+use crate::expression::resolve::{
+    ResolveEvalCache, parse_axis_to_vec3_cached, resolve_axis_param, resolve_axis_param_with_cache,
+};
 use crate::parsed_data::geo_params_data::CateGeoParam;
 use crate::parsed_data::*;
 use crate::pdms_data::{AxisParam, ScomInfo};
@@ -7,9 +9,12 @@ use crate::tool::parse_to_dir::parse_to_direction;
 use crate::{CataContext, eval_str_to_f64};
 use glam::{Mat3, Quat, Vec2, Vec3};
 use nom::Parser;
+use once_cell::sync::Lazy;
 use regex::Regex;
 use std::collections::HashMap;
 use std::{mem, panic};
+
+static RE_AXIS_P: Lazy<Regex> = Lazy::new(|| Regex::new(r"^(-?)P(P?)\s?(\d+)$").unwrap());
 
 #[test]
 fn test_exp() {
@@ -379,10 +384,9 @@ pub fn resolve_axis(
     let mut dir = Vec3::ZERO;
     let mut ref_dir = Vec3::ZERO;
     let mut pos = Vec3::ZERO;
-    let re = Regex::new(r"^(-?)P(P?)\s?(\d+)$").unwrap();
     // dbg!(dir_str);
-    if re.is_match(dir_str) {
-        if let Some(caps) = re.captures(dir_str) {
+    if RE_AXIS_P.is_match(dir_str) {
+        if let Some(caps) = RE_AXIS_P.captures(dir_str) {
             // dbg!(&caps);
             let is_neg = caps.get(1).map(|m| m.as_str() == "-").unwrap_or(false);
             let is_pp = caps.get(2).map(|x| !x.is_empty()).unwrap_or(false);
@@ -407,8 +411,8 @@ pub fn resolve_axis(
         dir = parse_str_axis_to_vec3(dir_str, context).unwrap_or_default();
     }
 
-    if re.is_match(ref_dir_str) {
-        if let Some(cap) = re.captures(ref_dir_str) {
+    if RE_AXIS_P.is_match(ref_dir_str) {
+        if let Some(cap) = RE_AXIS_P.captures(ref_dir_str) {
             let is_neg = cap.get(1).map_or("", |m| m.as_str()) == "-";
             let pnt_indx = cap
                 .get(2)
@@ -432,6 +436,90 @@ pub fn resolve_axis(
     }
 
     return Ok((dir.normalize_or_zero(), ref_dir.normalize_or_zero(), pos));
+}
+
+pub fn resolve_axis_with_cache(
+    axis: &AxisParam,
+    scom: &ScomInfo,
+    context: &CataContext,
+    cache: &mut ResolveEvalCache,
+) -> anyhow::Result<(Vec3, Vec3, Vec3)> {
+    let dir_str = axis.direction.trim();
+    let ref_dir_str = axis.ref_direction.trim();
+    let mut dir = Vec3::ZERO;
+    let mut ref_dir = Vec3::ZERO;
+    let mut pos = Vec3::ZERO;
+    if RE_AXIS_P.is_match(dir_str) {
+        if let Some(caps) = RE_AXIS_P.captures(dir_str) {
+            let is_neg = caps.get(1).map(|m| m.as_str() == "-").unwrap_or(false);
+            let is_pp = caps.get(2).map(|x| !x.is_empty()).unwrap_or(false);
+            let pnt_index = caps
+                .get(3)
+                .map_or("", |m| m.as_str())
+                .parse::<i32>()
+                .unwrap_or(-1);
+            if let Some(indx) = scom.axis_param_numbers.iter().position(|&x| x == pnt_index) {
+                let t_p_ref = std::time::Instant::now();
+                let axis =
+                    resolve_axis_param_with_cache(&scom.axis_params[indx], scom, context, cache);
+                if cache.axis_trace_enabled {
+                    cache.axis_trace.p_ref_lookup_ms += t_p_ref.elapsed().as_millis();
+                    cache.axis_trace.p_ref_hit += 1;
+                }
+                let flag = if is_neg { -1.0 } else { 1.0 };
+                dir = *axis.dir.unwrap_or_default() * flag;
+                if !is_pp {
+                    pos = axis.pt.0;
+                }
+            } else {
+                if cache.axis_trace_enabled {
+                    cache.axis_trace.p_ref_miss += 1;
+                }
+                return Err(anyhow::anyhow!("未找到点索引: {}", pnt_index));
+            }
+        }
+    } else {
+        let t_parse = std::time::Instant::now();
+        dir = parse_axis_to_vec3_cached(dir_str, context, cache).unwrap_or_default();
+        if cache.axis_trace_enabled {
+            cache.axis_trace.parse_dir_ms += t_parse.elapsed().as_millis();
+        }
+    }
+
+    if RE_AXIS_P.is_match(ref_dir_str) {
+        if let Some(cap) = RE_AXIS_P.captures(ref_dir_str) {
+            let is_neg = cap.get(1).map_or("", |m| m.as_str()) == "-";
+            let pnt_indx = cap
+                .get(2)
+                .map_or("", |m| m.as_str())
+                .parse::<i32>()
+                .unwrap_or(-1);
+            if let Some(indx) = scom.axis_param_numbers.iter().position(|&x| x == pnt_indx) {
+                let t_p_ref = std::time::Instant::now();
+                let axis =
+                    resolve_axis_param_with_cache(&scom.axis_params[indx], scom, context, cache);
+                if cache.axis_trace_enabled {
+                    cache.axis_trace.p_ref_lookup_ms += t_p_ref.elapsed().as_millis();
+                    cache.axis_trace.p_ref_hit += 1;
+                }
+                let flag = if is_neg { -1.0 } else { 1.0 };
+                ref_dir = *axis.dir.unwrap_or_default() * flag;
+            } else {
+                if cache.axis_trace_enabled {
+                    cache.axis_trace.p_ref_miss += 1;
+                }
+                return Err(anyhow::anyhow!("未找到点索引: {}", pnt_indx));
+            }
+        }
+    } else {
+        let t_parse = std::time::Instant::now();
+        ref_dir = parse_axis_to_vec3_cached(ref_dir_str, context, cache).unwrap_or_default();
+        if cache.axis_trace_enabled {
+            cache.axis_trace.parse_ref_dir_ms += t_parse.elapsed().as_millis();
+        }
+    }
+
+    Ok((dir.normalize_or_zero(), ref_dir.normalize_or_zero(), pos))
 }
 
 //Y is N and Z is U
