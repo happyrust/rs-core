@@ -563,7 +563,7 @@ pub async fn query_insts_with_batch(
                     refno.owner ?? refno as owner,
                     type::record("pe_transform", record::id(refno)).world_trans.d as world_trans,
                     (refno->inst_relate_aabb[0].out).d as world_aabb,
-                    [{{ "transform": type::record("pe_transform", record::id(refno)).world_trans.d, "geo_hash": mesh_id, "is_tubi": false, "unit_flag": false }}] as insts,
+                    [{{ "geo_transform": type::record("pe_transform", record::id(refno)).world_trans.d, "geo_hash": mesh_id, "is_tubi": false, "unit_flag": false }}] as insts,
                     true as has_neg
                 FROM [{bool_keys}]
                 WHERE status = 'Success' AND type::record("pe_transform", record::id(refno)).world_trans.d != NONE
@@ -600,7 +600,7 @@ pub async fn query_insts_with_batch(
                         in.owner ?? in as owner,
                         type::record("pe_transform", record::id(in)).world_trans.d as world_trans,
                         (in->inst_relate_aabb[0].out).d as world_aabb,
-                        (SELECT trans.d as transform, record::id(out) as geo_hash, false as is_tubi, out.unit_flag ?? false as unit_flag
+                        (SELECT trans.d as geo_transform, record::id(out) as geo_hash, false as is_tubi, out.unit_flag ?? false as unit_flag
                          FROM out->geo_relate
                          WHERE visible && (out.meshed || out.unit_flag || record::id(out) IN ['1','2','3'])
                            && (trans.d ?? NONE) != NONE
@@ -633,7 +633,7 @@ pub async fn query_insts_with_batch(
                     in.owner ?? in as owner,
                     type::record("pe_transform", record::id(in)).world_trans.d as world_trans,
                     (in->inst_relate_aabb[0].out).d as world_aabb,
-                    (SELECT trans.d as transform, record::id(out) as geo_hash, false as is_tubi, out.unit_flag ?? false as unit_flag
+                    (SELECT trans.d as geo_transform, record::id(out) as geo_hash, false as is_tubi, out.unit_flag ?? false as unit_flag
                      FROM out->geo_relate
                      WHERE visible && (out.meshed || out.unit_flag || record::id(out) IN ['1','2','3'])
                        && (trans.d ?? NONE) != NONE
