@@ -1158,7 +1158,8 @@ fn test_dashmap() {
 }
 
 ///数据库属性类型枚举
-#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq, Hash, Default)]
+#[repr(C)]
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq, Hash, Default, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
 pub enum DbAttributeType {
     #[default]
     Unknown, // 未知类型
@@ -1183,7 +1184,7 @@ pub enum DbAttributeType {
 }
 
 ///属性信息结构体
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
 pub struct AttrInfo {
     ///属性名称
     pub name: String,
