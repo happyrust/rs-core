@@ -60,14 +60,14 @@ impl SurrealValue for RefU64 {
         surrealdb_types::Value::RecordId(self.to_pe_thing())
     }
 
-    fn from_value(value: surrealdb_types::Value) -> anyhow::Result<Self> {
+    fn from_value(value: surrealdb_types::Value) -> Result<Self, surrealdb::Error> {
         match value {
             surrealdb_types::Value::RecordId(rid) => Ok(Self::from(rid)),
             surrealdb_types::Value::String(s) => {
-                Self::from_str(&s).map_err(|_| anyhow::anyhow!("无法解析字符串为 RefU64"))
+                Self::from_str(&s).map_err(|_| surrealdb::Error::internal("无法解析字符串为 RefU64".into()))
             }
             surrealdb_types::Value::Number(n) => Ok(Self(n.to_int().unwrap_or(0) as u64)),
-            _ => Err(anyhow::anyhow!("不支持的值类型转换为 RefU64")),
+            _ => Err(surrealdb::Error::internal("不支持的值类型转换为 RefU64".into())),
         }
     }
 }
@@ -706,7 +706,7 @@ impl SurrealValue for RefnoEnum {
         }
     }
 
-    fn from_value(value: surrealdb_types::Value) -> anyhow::Result<Self> {
+    fn from_value(value: surrealdb_types::Value) -> Result<Self, surrealdb::Error> {
         match value {
             surrealdb_types::Value::RecordId(rid) => {
                 // RecordId can be: pe:123_456 or pe:["123_456", 12]
@@ -714,7 +714,7 @@ impl SurrealValue for RefnoEnum {
                     RecordIdKey::String(key) => {
                         // Direct string key: pe:123_456 -> use from_str
                         RefnoEnum::from_str(&key)
-                            .map_err(|_| anyhow::anyhow!("无法解析 RecordId 字符串 key: {}", key))
+                            .map_err(|_| surrealdb::Error::internal(format!("无法解析 RecordId 字符串 key: {}", key)))
                     }
                     RecordIdKey::Number(num) => {
                         // Number key -> Refno variant
@@ -723,7 +723,7 @@ impl SurrealValue for RefnoEnum {
                     RecordIdKey::Array(arr) => {
                         // Array key: pe:["123_456", 12] -> join with comma and use from_str
                         if arr.is_empty() {
-                            return Err(anyhow::anyhow!("RecordId Array key 为空"));
+                            return Err(surrealdb::Error::internal("RecordId Array key 为空".into()));
                         }
 
                         // Convert array elements to strings and join with comma
@@ -741,20 +741,20 @@ impl SurrealValue for RefnoEnum {
 
                         let joined = parts.join(",");
                         RefnoEnum::from_str(&joined)
-                            .map_err(|_| anyhow::anyhow!("无法解析 RecordId Array key: {}", joined))
+                            .map_err(|_| surrealdb::Error::internal(format!("无法解析 RecordId Array key: {}", joined)))
                     }
                     _ => {
                         // Fallback: use to_raw()
                         let raw = rid.to_raw();
                         RefnoEnum::from_str(&raw)
-                            .map_err(|_| anyhow::anyhow!("无法解析 RecordId: {}", raw))
+                            .map_err(|_| surrealdb::Error::internal(format!("无法解析 RecordId: {}", raw)))
                     }
                 }
             }
             surrealdb_types::Value::String(s) => {
                 // Parse string to RefnoEnum
                 RefnoEnum::from_str(&s)
-                    .map_err(|_| anyhow::anyhow!("无法解析字符串为 RefnoEnum: {}", s))
+                    .map_err(|_| surrealdb::Error::internal(format!("无法解析字符串为 RefnoEnum: {}", s)))
             }
             surrealdb_types::Value::Number(n) => {
                 // Number -> Refno variant
@@ -763,12 +763,11 @@ impl SurrealValue for RefnoEnum {
             surrealdb_types::Value::Array(arr) => {
                 // Array [refno, sesno] -> SesRef variant
                 if arr.is_empty() {
-                    return Err(anyhow::anyhow!("空数组无法转换为 RefnoEnum"));
+                    return Err(surrealdb::Error::internal("空数组无法转换为 RefnoEnum".into()));
                 }
 
                 // Parse first element as refno
-                let refno = RefU64::from_value(arr[0].clone())
-                    .map_err(|e| anyhow::anyhow!("无法解析数组第一个元素为 RefU64: {}", e))?;
+                let refno = RefU64::from_value(arr[0].clone())?;
 
                 // If array has second element, parse it as sesno
                 if arr.len() >= 2 {
@@ -788,10 +787,10 @@ impl SurrealValue for RefnoEnum {
                     Ok(RefnoEnum::Refno(refno))
                 }
             }
-            _ => Err(anyhow::anyhow!(
+            _ => Err(surrealdb::Error::internal(format!(
                 "不支持的值类型转换为 RefnoEnum: {:?}",
                 value
-            )),
+            ))),
         }
     }
 }

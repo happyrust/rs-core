@@ -28,9 +28,11 @@ impl SurrealValue for PlantAabb {
             .into_value()
     }
 
-    fn from_value(value: Value) -> anyhow::Result<Self> {
+    fn from_value(value: Value) -> Result<Self, surrealdb::Error> {
         let json = serde_json::Value::from_value(value)?;
-        Ok(PlantAabb(serde_json::from_value(json)?))
+        serde_json::from_value(json)
+            .map(PlantAabb)
+            .map_err(|e| surrealdb::Error::internal(e.to_string()))
     }
 }
 

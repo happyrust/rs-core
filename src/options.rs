@@ -301,6 +301,12 @@ pub struct DbOption {
 
     pub meshes_path: Option<String>,
     // pub geom_live: Option<bool>,
+
+    /// 嵌入式 SurrealKV 数据目录（配置后启用模型数据双写）
+    #[clap(skip)]
+    #[serde(default)]
+    pub model_kv_path: Option<String>,
+
     /// 内存KV数据库IP地址（用于PE数据额外备份）
     #[clap(long)]
     #[serde(default = "default_mem_kv_ip")]

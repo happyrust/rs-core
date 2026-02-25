@@ -95,6 +95,44 @@ pub static KV_DB: Lazy<Surreal<Any>> = Lazy::new(Surreal::init);
 #[cfg(feature = "mem-kv-save")]
 pub static SUL_MEM_DB: Lazy<Surreal<Any>> = Lazy::new(Surreal::init);
 
+use std::sync::atomic::{AtomicBool, Ordering};
+
+/// 运行时标记：模型 KV 双写是否已启用
+static MODEL_KV_ENABLED: AtomicBool = AtomicBool::new(false);
+
+/// 模型 KV 双写是否已启用
+#[inline]
+pub fn is_model_kv_enabled() -> bool {
+    MODEL_KV_ENABLED.load(Ordering::Relaxed)
+}
+
+/// 连接嵌入式 SurrealKV 作为模型数据双写目标
+pub async fn connect_model_kv(
+    db_path: &str,
+    ns: &str,
+    db: &str,
+) -> Result<(), surrealdb::Error> {
+    let conn_str = format!("surrealkv://{}", db_path);
+    let config = surrealdb::opt::Config::default().ast_payload();
+    KV_DB
+        .connect((conn_str, config))
+        .with_capacity(1000)
+        .await?;
+    use_ns_db_compat(&KV_DB, ns, db).await?;
+    MODEL_KV_ENABLED.store(true, Ordering::Relaxed);
+    Ok(())
+}
+
+/// 双写辅助：将 SQL 额外发送到 KV_DB（忽略错误，仅打印警告）
+pub async fn kv_dual_write(sql: &str) {
+    if !is_model_kv_enabled() {
+        return;
+    }
+    if let Err(e) = KV_DB.query(sql).await {
+        eprintln!("[KV_DUAL_WRITE] ⚠️ {}", e);
+    }
+}
+
 /// 兼容 SurrealDB 3.x 的 NS/DB 切换。
 ///
 /// 说明：部分 SurrealDB/SDK 组合下，`use_ns/use_db` 会在运行期尝试把服务端返回反序列化为 `()`，

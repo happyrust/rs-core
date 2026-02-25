@@ -171,5 +171,22 @@ pub async fn initialize_databases(db_option: &DbOption) -> Result<()> {
         eprintln!("初始化通用函数失败: {} (忽略并继续)", e);
     }
 
+    // 5. 初始化嵌入式模型 KV 双写（如果配置了 model_kv_path）
+    if let Some(kv_path) = &db_option.model_kv_path {
+        if !kv_path.is_empty() {
+            println!("🗄️ 初始化嵌入式模型 KV 双写...");
+            match crate::rs_surreal::connect_model_kv(
+                kv_path,
+                &db_option.surreal_ns,
+                &db_option.project_name,
+            )
+            .await
+            {
+                Ok(_) => println!("✅ 模型 KV 双写就绪: surrealkv://{}", kv_path),
+                Err(e) => eprintln!("❌ 模型 KV 初始化失败: {}（双写跳过）", e),
+            }
+        }
+    }
+
     Ok(())
 }

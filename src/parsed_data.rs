@@ -341,9 +341,10 @@ pub mod geo_params_data {
             json.into_value()
         }
 
-        fn from_value(value: surrealdb_types::Value) -> anyhow::Result<Self> {
+        fn from_value(value: surrealdb_types::Value) -> Result<Self, surrealdb::Error> {
             let json = serde_json::Value::from_value(value)?;
-            Ok(serde_json::from_value(json)?)
+            serde_json::from_value(json)
+                .map_err(|e| surrealdb::Error::internal(e.to_string()))
         }
     }
 

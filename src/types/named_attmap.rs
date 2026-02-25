@@ -238,7 +238,7 @@ impl SurrealValue for NamedAttrMap {
         self.into()
     }
 
-    fn from_value(value: SurlValue) -> anyhow::Result<Self> {
+    fn from_value(value: SurlValue) -> Result<Self, surrealdb::Error> {
         Ok(value.into())
     }
 }

@@ -5,6 +5,26 @@ All notable changes to the rs-core library will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 2026-02-25
+
+### Changed
+
+- **清理 5 个未使用的 crate 依赖**
+  - 移除：`deku`、`jsonxf`、`serde_yaml`、`smallvec`、`axum`（optional 但无使用）
+
+- **升级 surrealdb 依赖至 `dev-3.1` 分支**
+  - `surrealdb` 和 `surrealdb-types` 从 `updated` 分支切换到 `dev-3.1`
+
+- **适配 SurrealValue::from_value 签名变更**
+  - `from_value` 返回类型从 `anyhow::Result<Self>` 改为 `Result<Self, surrealdb::Error>`
+  - 涉及 8 处手动实现：`RefU64`、`RefnoEnum`、`PlantTransform`、`PlantAabb`、`NamedAttrMap`、`RsVec3`、`PdmsGeoParam`、`RStarBoundingBox`
+  - 错误构造从 `anyhow::anyhow!()` 改为 `surrealdb::Error::internal()`
+
+### Added
+
+- **rs_surreal 模块增强**：新增 kv_dual_write 双写支持
+- **runtime 模块增强**：新增运行时配置选项
+
 ## [Unreleased]
 
 ### Fixed
