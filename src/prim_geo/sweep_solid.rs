@@ -241,14 +241,12 @@ impl BrepShapeTrait for SweepSolid {
 
     #[inline]
     fn get_scaled_vec3(&self) -> Vec3 {
-        // 重构后：scale 通过 geo_transform 承载，这里返回 ONE
-        Vec3::ONE
-    }
-
-    #[inline]
-    fn get_trans(&self) -> crate::plant_transform::Transform {
-        // 重构后：transform 通过 geo_transform 承载，这里返回 IDENTITY
-        Transform::IDENTITY
+        if self.is_reuse_unit() {
+            // unit mesh 路径固定为 100，需要 scale 缩放到实际路径长度
+            Vec3::new(1.0, 1.0, self.path.length() / 100.0)
+        } else {
+            Vec3::ONE
+        }
     }
 
     fn tol(&self) -> f32 {

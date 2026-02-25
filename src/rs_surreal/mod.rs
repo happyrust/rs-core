@@ -176,6 +176,25 @@ pub async fn connect_kvdb(
     Ok(())
 }
 
+/// 连接嵌入式 SurrealKV 后端（本地文件，无需认证）。
+///
+/// `db_path` 为 SurrealKV 数据目录，例如 `output/surrealkv_data`。
+/// 连接后 `SUL_DB` 的所有 SurrealQL 读写自动落盘到该目录。
+pub async fn connect_surrealkv(
+    db_path: &str,
+    ns: &str,
+    db: &str,
+) -> Result<(), surrealdb::Error> {
+    let conn_str = format!("surrealkv://{}", db_path);
+    let config = surrealdb::opt::Config::default().ast_payload();
+    SUL_DB
+        .connect((conn_str, config))
+        .with_capacity(1000)
+        .await?;
+    use_ns_db_compat(&SUL_DB, ns, db).await?;
+    Ok(())
+}
+
 /// 带重试的内存KV数据库初始化（与 init_surreal_with_retry 风格一致）
 #[cfg(feature = "mem-kv-save")]
 pub async fn init_mem_db_with_retry(db_option: &crate::options::DbOption) -> anyhow::Result<()> {
