@@ -33,15 +33,15 @@ pub async fn query_cata_neg_boolean_groups(
     let inst_keys = get_inst_relate_keys(refnos);
 
     let mut sql = format!(
-        r#" select in as refno, (->inst_info)[0] as inst_info_id, (select value array::flatten([geom_refno, cata_neg])
-            from ->inst_info->geo_relate where visible and !out.bad and cata_neg!=none) as boolean_group
-            from {inst_keys} where in.id != none and (->inst_info)[0]!=none and has_cata_neg "#
+        r#" select in as refno, out as inst_info_id, (select value array::flatten([geom_refno, cata_neg])
+            from $parent.out->geo_relate where visible and !out.bad and cata_neg!=none) as boolean_group
+            from {inst_keys} where in.id != none and out!=none and has_cata_neg "#
     );
 
     if !replace_exist {
         // 仅处理尚未成功的 catalog 布尔结果（使用独立表，避免与实例级布尔互相覆盖）
         sql.push_str(
-            "and (SELECT status FROM inst_relate_cata_bool WHERE refno = in AND status = 'Success' LIMIT 1) = NONE",
+            "and (SELECT status FROM $parent.out->inst_relate_cata_bool WHERE status = 'Success' LIMIT 1) = NONE",
         );
     }
 
