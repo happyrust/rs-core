@@ -6,7 +6,9 @@ use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::plant_transform::Transform;
 use crate::types::{PlantAabb, RefnoEnum, Thing};
 use crate::utils::RecordIdExt;
-use crate::{SUL_DB, SurrealQueryExt, gen_aabb_hash, get_inst_relate_keys, get_world_transform};
+use crate::{
+    SurrealQueryExt, gen_aabb_hash, get_inst_relate_keys, get_world_transform, model_primary_db,
+};
 use anyhow::anyhow;
 use dashmap::DashMap;
 use parry3d::bounding_volume::{Aabb, BoundingVolume};
@@ -193,13 +195,13 @@ pub async fn query_inst_geo_ids(
                 select value (select out as geo_id,
                     ($parent<-neg_relate)[0] != none as has_neg_relate,
                     $parent.has_cata_neg ?? false as has_cata_neg
-                from out->geo_relate {})
+                from $parent.out->geo_relate {})
                 from {}
             );
         "#,
         where_clause, inst_keys
     );
-    let results: Vec<QueryInstGeoResult> = SUL_DB.query_take(&sql, 0).await?;
+    let results: Vec<QueryInstGeoResult> = model_primary_db().query_take(&sql, 0).await?;
     Ok(results)
 }
 
@@ -215,8 +217,6 @@ pub async fn query_inst_geo_ids(
 ///
 /// 返回 `QueryGeoParam` 列表，包含几何 ID 和参数
 pub async fn query_geo_params(inst_geo_ids: &str) -> anyhow::Result<Vec<QueryGeoParam>> {
-    use crate::SUL_DB;
-
     // 将逗号分隔的数字 ID 转换为 Thing ID 格式：inst_geo:⟨id⟩
     let thing_ids = inst_geo_ids
         .split(',')
@@ -226,7 +226,7 @@ pub async fn query_geo_params(inst_geo_ids: &str) -> anyhow::Result<Vec<QueryGeo
 
     let sql = format!("select id, param from [{}] where param != NONE", thing_ids);
 
-    let mut result = SUL_DB.query_take(&sql, 0).await?;
+    let mut result = model_primary_db().query_take(&sql, 0).await?;
 
     Ok(result)
 }
@@ -249,14 +249,12 @@ pub async fn query_aabb_params(
     inst_keys: &str,
     replace_exist: bool,
 ) -> anyhow::Result<Vec<QueryAabbParam>> {
-    use crate::SUL_DB;
-
     // 从 pe_transform 获取 world_trans（允许为 None，由调用方过滤）
     let mut sql = format!(
         r#"select id, in as refno,
         in.world_trans as world_trans,
         in.noun as noun,
-        (select out.aabb.d as aabb, trans.d as trans from out->geo_relate where out.aabb.d != none and trans.d != none)
+        (select out.aabb.d as aabb, trans.d as trans from $parent.out->geo_relate where out.aabb.d != none and trans.d != none)
         as geo_aabbs from {inst_keys}"#,
     );
 
@@ -265,7 +263,7 @@ pub async fn query_aabb_params(
     }
 
     // println!("Executing SQL: {}", sql);
-    let mut response = SUL_DB.query_response(&sql).await?;
+    let mut response = model_primary_db().query_response(&sql).await?;
     // 注意：历史数据里可能存在 out.aabb.d 的内部字段为 null（mins/maxs 某一维为 null）。
     // 若直接反序列化为 PlantAabb / QueryAabbParam，会导致整批查询失败。
     #[derive(Debug, Clone, Deserialize, SurrealValue)]
@@ -345,7 +343,7 @@ pub async fn save_aabb_to_surreal(aabb_map: &DashMap<String, Aabb>) {
                 };
                 sql.push_str(&format!("UPSERT {id_key} SET d = {d};"));
             }
-            match SUL_DB.query_response(&sql).await {
+            match model_primary_db().query_response(&sql).await {
                 Ok(_) => {}
                 Err(_) => {
                     init_save_database_error(&sql, &std::panic::Location::caller().to_string());
@@ -372,7 +370,7 @@ pub async fn save_pts_to_surreal(vec3_map: &DashMap<u64, String>) {
                 let json = format!("{{'id':vec3:⟨{}⟩, 'd':{}}}", k, v.value());
                 sql.push_str(&format!("INSERT IGNORE INTO vec3 {};", json));
             }
-            match SUL_DB.query_response(&sql).await {
+            match model_primary_db().query_response(&sql).await {
                 Ok(_) => {}
                 Err(_e) => {
                     init_save_database_error(&sql, &std::panic::Location::caller().to_string());
@@ -497,7 +495,7 @@ pub async fn update_inst_relate_aabbs_by_refnos(
                 "INSERT RELATION INTO inst_relate_aabb [{}];",
                 relation_records.join(",")
             ));
-            SUL_DB.query_response(&sql).await?;
+            model_primary_db().query_response(&sql).await?;
         }
     }
 

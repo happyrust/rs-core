@@ -282,7 +282,7 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
         r#"
         SELECT 
             in as refno,
-            (SELECT out AS id, trans.d AS trans FROM out->geo_relate 
+            (SELECT out AS id, trans.d AS trans FROM $parent.out->geo_relate 
              WHERE geo_type IN ["Compound", "Pos"] AND trans.d != NONE) AS geos
         FROM {inst_keys}
         "#

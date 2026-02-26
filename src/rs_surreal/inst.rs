@@ -3,7 +3,10 @@ use crate::plant_transform::Transform;
 use crate::rs_surreal::geometry_query::PlantTransform;
 use crate::shape::pdms_shape::RsVec3;
 use crate::types::PlantAabb;
-use crate::{RefU64, RefnoEnum, SUL_DB, SurlValue, SurrealQueryExt, get_inst_relate_keys};
+use crate::{
+    RefU64, RefnoEnum, SUL_DB, SurlValue, SurrealQueryExt, current_model_write_mode,
+    get_inst_relate_keys, is_model_kv_enabled, options::ModelWriteMode, KV_DB,
+};
 use anyhow::Context;
 use chrono::{DateTime, Local, NaiveDateTime};
 use glam::{DVec3, Vec3};
@@ -42,7 +45,26 @@ pub struct FullPtsetPoint {
 
 /// 初始化数据库的所有模型相关表结构和索引
 pub async fn init_model_tables() -> anyhow::Result<()> {
-    return Ok(());
+    async fn exec_schema_sql(sql: &str) -> anyhow::Result<()> {
+        let mode = current_model_write_mode();
+
+        if mode != ModelWriteMode::KvOnly {
+            SUL_DB.query(sql).await?;
+        }
+
+        if mode != ModelWriteMode::SurrealOnly {
+            if !is_model_kv_enabled() {
+                if mode == ModelWriteMode::KvOnly {
+                    anyhow::bail!("model_write_mode=kv_only 但 KV_DB 未启用，无法初始化模型表结构");
+                }
+            } else {
+                KV_DB.query(sql).await?;
+            }
+        }
+
+        Ok(())
+    }
+
     // 1. 定义关系表 (RELATION)
     // 这些表必须显式定义为 TYPE RELATION，否则如果第一条插入不是 relate 语句可能会创建为普通表
     let relation_tables = [
@@ -58,7 +80,7 @@ pub async fn init_model_tables() -> anyhow::Result<()> {
 
     for table in relation_tables {
         let sql = format!("DEFINE TABLE IF NOT EXISTS {} TYPE RELATION;", table);
-        let _ = SUL_DB.query(sql).await;
+        exec_schema_sql(&sql).await?;
     }
 
     // 2. 定义普通表 (NORMAL/SCHEMALESS)
@@ -66,7 +88,7 @@ pub async fn init_model_tables() -> anyhow::Result<()> {
     let normal_tables = ["inst_geo", "inst_info", "tubi_info"];
     for table in normal_tables {
         let sql = format!("DEFINE TABLE IF NOT EXISTS {} TYPE NORMAL;", table);
-        let _ = SUL_DB.query(sql).await;
+        exec_schema_sql(&sql).await?;
     }
 
     // 3. 创建 inst_relate 的核心索引
@@ -75,7 +97,7 @@ pub async fn init_model_tables() -> anyhow::Result<()> {
         DEFINE INDEX IF NOT EXISTS idx_inst_relate_in ON TABLE inst_relate COLUMNS in;
         DEFINE INDEX IF NOT EXISTS idx_inst_relate_out ON TABLE inst_relate COLUMNS out;
     ";
-    let _ = SUL_DB.query(create_index_sql).await?;
+    exec_schema_sql(create_index_sql).await?;
 
     // 4. 清理旧的计算字段定义（已弃用，改为在查询中直接使用 graph traversal）
     // world_trans 和 world_aabb 不再使用 <future> 计算字段，避免性能问题和定义不一致
@@ -83,7 +105,7 @@ pub async fn init_model_tables() -> anyhow::Result<()> {
         REMOVE FIELD IF EXISTS world_trans ON TABLE pe;
         REMOVE FIELD IF EXISTS world_aabb ON TABLE pe;
     "#;
-    let _ = SUL_DB.query(remove_old_fields_sql).await;
+    exec_schema_sql(remove_old_fields_sql).await?;
 
     Ok(())
 }
@@ -396,10 +418,10 @@ pub async fn query_insts_for_export(
                             record::id(type::record("pe_transform", record::id(in)).world_trans)
                         }} else {{ None }}) as world_trans_hash,
                         (SELECT record::id(trans) as trans_hash, record::id(out) as geo_hash, out.unit_flag ?? false as unit_flag
-                         FROM out->geo_relate
+                         FROM $parent.out->geo_relate
                          WHERE visible && out.meshed
                            && (trans.d ?? NONE) != NONE
-                           && geo_type IN ['Pos', 'DesiPos', 'CatePos']) as insts,
+                           && geo_type IN ['Pos', 'DesiPos', 'CatePos', 'Compound']) as insts,
                         false as has_neg
                     FROM [{non_bool_keys}]
                     WHERE type::record("pe_transform", record::id(in)).world_trans.d != NONE
@@ -430,10 +452,10 @@ pub async fn query_insts_for_export(
                         record::id(type::record("pe_transform", record::id(in)).world_trans)
                     }} else {{ None }}) as world_trans_hash,
                     (SELECT record::id(trans) as trans_hash, record::id(out) as geo_hash, out.unit_flag ?? false as unit_flag
-                     FROM out->geo_relate
+                     FROM $parent.out->geo_relate
                      WHERE visible && out.meshed
                        && (trans.d ?? NONE) != NONE
-                       && geo_type IN ['Pos', 'DesiPos']) as insts,
+                       && geo_type IN ['Pos', 'DesiPos', 'Compound']) as insts,
                     false as has_neg
                 FROM [{inst_relate_keys}]
                 WHERE type::record("pe_transform", record::id(in)).world_trans.d != NONE
@@ -601,10 +623,10 @@ pub async fn query_insts_with_batch(
                         type::record("pe_transform", record::id(in)).world_trans.d as world_trans,
                         (in->inst_relate_aabb[0].out).d as world_aabb,
                         (SELECT trans.d as geo_transform, record::id(out) as geo_hash, false as is_tubi, out.unit_flag ?? false as unit_flag
-                         FROM out->geo_relate
+                         FROM $parent.out->geo_relate
                          WHERE visible && (out.meshed || out.unit_flag || record::id(out) IN ['1','2','3'])
                            && (trans.d ?? NONE) != NONE
-                           && geo_type IN ['Pos', 'CatePos']) as insts,
+                           && geo_type IN ['Pos', 'CatePos', 'Compound']) as insts,
                         false as has_neg
                     FROM [{non_bool_keys}]
                     WHERE type::record("pe_transform", record::id(in)).world_trans.d != NONE
@@ -634,10 +656,10 @@ pub async fn query_insts_with_batch(
                     type::record("pe_transform", record::id(in)).world_trans.d as world_trans,
                     (in->inst_relate_aabb[0].out).d as world_aabb,
                     (SELECT trans.d as geo_transform, record::id(out) as geo_hash, false as is_tubi, out.unit_flag ?? false as unit_flag
-                     FROM out->geo_relate
+                     FROM $parent.out->geo_relate
                      WHERE visible && (out.meshed || out.unit_flag || record::id(out) IN ['1','2','3'])
                        && (trans.d ?? NONE) != NONE
-                       && geo_type IN ['Pos', 'DesiPos', 'CatePos']) as insts,
+                       && geo_type IN ['Pos', 'DesiPos', 'CatePos', 'Compound']) as insts,
                     false as has_neg
                 FROM [{inst_relate_keys}]
                 WHERE type::record("pe_transform", record::id(in)).world_trans.d != NONE

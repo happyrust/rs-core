@@ -5,6 +5,25 @@ All notable changes to the rs-core library will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 2026-02-26
+
+### Fixed
+
+- **SurrealDB 3.x 嵌套子查询 `out`/`in` 作用域兼容修复**
+  - 3.x 中嵌套 SELECT 的 `out`/`in` 不再自动引用外层 graph edge 字段，需使用 `$parent.out`
+  - `inst.rs`：修复 4 处 `FROM out->geo_relate` → `FROM $parent.out->geo_relate`
+  - `geometry_query.rs`：修复 2 处同上
+  - `boolean_query_optimized.rs`：修复 1 处同上
+  - `query.rs`（`query_single_by_paths`）：用 `array::flatten` 包裹子查询解决嵌套数组问题
+
+- **`query_catr_via_sql` 补全 SPRE 路径**
+  - 新增 `refno.SPRE.refno.CATR` 查询路径，修复 FITT 元素 CATR 引用查找失败
+
+- **导出查询 geo_type 过滤增加 `Compound` 回退**
+  - `inst.rs`：4 处导出查询的 geo_type 过滤条件增加 `'Compound'`
+  - 当目录级布尔未处理时，`Compound`（visible=true）作为回退正确导出
+  - 布尔成功时 `Compound` 已被设为 visible=false，由 `WHERE visible` 自动排除
+
 ## 2026-02-25
 
 ### Changed

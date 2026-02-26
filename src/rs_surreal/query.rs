@@ -1366,6 +1366,7 @@ async fn query_catr_via_sql(refno: RefnoEnum) -> anyhow::Result<Option<RefnoEnum
         select value array::first(array::flatten([
             refno.CATR.refno.CATR[where noun in ["SCOM", "SPRF", "SFIT", "JOIN", "SPCO"]],
             refno.CATR.refno.PRTREF.refno.CATR[where noun in ["SCOM", "SPRF", "SFIT", "JOIN", "SPCO"]],
+            refno.SPRE.refno.CATR[where noun in ["SCOM", "SPRF", "SFIT", "JOIN", "SPCO"]],
             refno.CATR[where noun in ["SCOM", "SPRF", "SFIT", "JOIN", "SPCO"]]
         ]))
         from only {} limit 1;
@@ -1555,7 +1556,7 @@ pub async fn query_single_by_paths(
         ps.push(str);
     }
     let sql = format!(
-        r#"(select value refno.* from (select value [{}] from only {}) where id != none)[0]"#,
+        r#"(select value refno.* from array::flatten((select value [{}] from only {})) where id != none)[0]"#,
         ps.join(","),
         refno.to_pe_key()
     );
