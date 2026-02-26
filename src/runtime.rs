@@ -1,5 +1,5 @@
 use crate::init_surreal;
-use crate::options::DbOption;
+use crate::options::{DbOption, ModelWriteMode};
 use crate::rs_surreal::SUL_DB;
 use anyhow::Result;
 use std::time::Duration;
@@ -171,22 +171,85 @@ pub async fn initialize_databases(db_option: &DbOption) -> Result<()> {
         eprintln!("初始化通用函数失败: {} (忽略并继续)", e);
     }
 
-    // 5. 初始化嵌入式模型 KV 双写（如果配置了 model_kv_path）
-    if let Some(kv_path) = &db_option.model_kv_path {
-        if !kv_path.is_empty() {
-            println!("🗄️ 初始化嵌入式模型 KV 双写...");
-            match crate::rs_surreal::connect_model_kv(
-                kv_path,
-                &db_option.surreal_ns,
-                &db_option.project_name,
-            )
-            .await
-            {
-                Ok(_) => println!("✅ 模型 KV 双写就绪: surrealkv://{}", kv_path),
-                Err(e) => eprintln!("❌ 模型 KV 初始化失败: {}（双写跳过）", e),
+    // 5. 初始化模型写入路由（SurrealOnly / Dual / KvOnly）与模型 KV(WS)
+    let requested_mode = crate::rs_surreal::resolve_model_write_mode(db_option);
+    let kv_conn_str = normalized_model_kv_conn_str(db_option);
+    validate_model_write_requirements(requested_mode, &kv_conn_str)?;
+
+    if matches!(requested_mode, ModelWriteMode::Dual | ModelWriteMode::KvOnly) {
+        println!("🗄️ 初始化模型 KV（WebSocket）...");
+        match crate::rs_surreal::connect_model_kv(
+            &kv_conn_str,
+            &db_option.surreal_ns,
+            &db_option.project_name,
+            db_option.get_model_kv_user(),
+            db_option.get_model_kv_password(),
+        )
+        .await
+        {
+            Ok(_) => println!("✅ 模型 KV 就绪: {}", kv_conn_str),
+            Err(e) => {
+                if requested_mode == ModelWriteMode::KvOnly {
+                    return Err(anyhow::anyhow!(
+                        "model_write_mode=kv_only 但模型 KV 初始化失败: {}",
+                        e
+                    ));
+                }
+                eprintln!("❌ 模型 KV 初始化失败: {}（退回 SurrealDB 单写）", e);
             }
         }
     }
 
+    crate::rs_surreal::set_model_write_mode(requested_mode);
+    println!(
+        "🧭 模型写入模式: {} (kv_enabled={})",
+        requested_mode.as_str(),
+        crate::rs_surreal::is_model_kv_enabled()
+    );
+
     Ok(())
+}
+
+#[inline]
+fn normalized_model_kv_conn_str(db_option: &DbOption) -> String {
+    db_option.get_model_kv_conn_str().trim().to_string()
+}
+
+#[inline]
+fn validate_model_write_requirements(mode: ModelWriteMode, kv_conn_str: &str) -> Result<()> {
+    let is_ws_endpoint = kv_conn_str.starts_with("ws://") || kv_conn_str.starts_with("wss://");
+    if mode == ModelWriteMode::KvOnly && !is_ws_endpoint {
+        return Err(anyhow::anyhow!(
+            "model_write_mode=kv_only 但模型 KV 连接地址非法: {}",
+            kv_conn_str
+        ));
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{normalized_model_kv_conn_str, validate_model_write_requirements};
+    use crate::options::{DbOption, ModelWriteMode};
+
+    #[test]
+    fn kv_only_requires_ws_endpoint() {
+        let err = validate_model_write_requirements(ModelWriteMode::KvOnly, "http://127.0.0.1:8010")
+            .expect_err("kv_only 在非 ws 地址时必须报错");
+        assert!(err.to_string().contains("kv_only"));
+    }
+
+    #[test]
+    fn dual_allows_non_ws_endpoint() {
+        validate_model_write_requirements(ModelWriteMode::Dual, "http://127.0.0.1:8010")
+            .expect("dual 在连接失败时可回退 SurrealDB 单写");
+    }
+
+    #[test]
+    fn normalized_model_kv_conn_str_uses_kv_config() {
+        let mut opt = DbOption::default();
+        opt.kv_ip = "localhost".to_string();
+        opt.kv_port = "8010".to_string();
+        assert_eq!(normalized_model_kv_conn_str(&opt), "ws://127.0.0.1:8010");
+    }
 }

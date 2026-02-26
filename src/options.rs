@@ -6,6 +6,42 @@ use crate::{RefU64, RefnoEnum};
 use clap::Parser;
 use serde::{Deserialize, Serialize};
 
+#[repr(u8)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ModelWriteMode {
+    SurrealOnly,
+    Dual,
+    KvOnly,
+}
+
+impl Default for ModelWriteMode {
+    fn default() -> Self {
+        Self::SurrealOnly
+    }
+}
+
+impl ModelWriteMode {
+    #[inline]
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::SurrealOnly => "surreal_only",
+            Self::Dual => "dual",
+            Self::KvOnly => "kv_only",
+        }
+    }
+
+    #[inline]
+    pub fn parse(raw: &str) -> Self {
+        match raw.trim().to_ascii_lowercase().as_str() {
+            "surreal_only" | "surreal-only" | "surreal" => Self::SurrealOnly,
+            "dual" => Self::Dual,
+            "kv_only" | "kv-only" | "kv" => Self::KvOnly,
+            _ => Self::SurrealOnly,
+        }
+    }
+}
+
 #[derive(Debug, Default, Clone, Parser, Serialize, Deserialize)]
 pub struct DbOption {
     /// 是否启用日志
@@ -75,10 +111,22 @@ pub struct DbOption {
     /// 版本库的端口
     #[clap(long)]
     pub v_port: u16,
-    // #[clap(long)]
-    // pub kv_ip: String,
-    // #[clap(long)]
-    // pub kv_port: String,
+    /// 模型KV服务的IP（WebSocket）
+    #[clap(long)]
+    #[serde(default = "default_model_kv_ip")]
+    pub kv_ip: String,
+    /// 模型KV服务的端口（WebSocket）
+    #[clap(long)]
+    #[serde(default = "default_model_kv_port")]
+    pub kv_port: String,
+    /// 模型KV服务的用户名（为空时回退 v_user）
+    #[clap(long)]
+    #[serde(default)]
+    pub kv_user: String,
+    /// 模型KV服务的密码（为空时回退 v_password）
+    #[clap(long)]
+    #[serde(default)]
+    pub kv_password: String,
     /// mqtt的host
     #[clap(long)]
     pub mqtt_host: String,
@@ -307,6 +355,11 @@ pub struct DbOption {
     #[serde(default)]
     pub model_kv_path: Option<String>,
 
+    /// 模型写入模式：surreal_only / dual / kv_only
+    #[clap(skip)]
+    #[serde(default = "default_model_write_mode")]
+    pub model_write_mode: Option<String>,
+
     /// 内存KV数据库IP地址（用于PE数据额外备份）
     #[clap(long)]
     #[serde(default = "default_mem_kv_ip")]
@@ -534,18 +587,58 @@ impl DbOption {
     }
 
     #[inline]
+    pub fn get_model_write_mode_str(&self) -> &str {
+        self.model_write_mode
+            .as_deref()
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .unwrap_or("surreal_only")
+    }
+
+    #[inline]
+    pub fn get_model_write_mode(&self) -> ModelWriteMode {
+        ModelWriteMode::parse(self.get_model_write_mode_str())
+    }
+
+    #[inline]
     pub fn get_version_db_conn_str(&self) -> String {
         let ip = self.v_ip.as_str();
         let port = self.v_port;
         format!("ws://{ip}:{port}")
     }
 
-    // #[inline]
-    // pub fn get_kv_db_conn_str(&self) -> String {
-    //     let ip = self.kv_ip.as_str();
-    //     let port = self.kv_port.as_str();
-    //     format!("ws://{ip}:{port}")
-    // }
+    #[inline]
+    pub fn get_model_kv_conn_str(&self) -> String {
+        let raw_ip = self.kv_ip.trim();
+        let ip = if raw_ip.is_empty() {
+            self.v_ip.as_str()
+        } else if raw_ip == "localhost" {
+            "127.0.0.1"
+        } else {
+            raw_ip
+        };
+        let port = self.kv_port.trim();
+        let port = if port.is_empty() { "8010" } else { port };
+        format!("ws://{ip}:{port}")
+    }
+
+    #[inline]
+    pub fn get_model_kv_user(&self) -> &str {
+        if self.kv_user.trim().is_empty() {
+            self.v_user.as_str()
+        } else {
+            self.kv_user.as_str()
+        }
+    }
+
+    #[inline]
+    pub fn get_model_kv_password(&self) -> &str {
+        if self.kv_password.trim().is_empty() {
+            self.v_password.as_str()
+        } else {
+            self.kv_password.as_str()
+        }
+    }
 
     #[inline]
     pub fn get_mysql_conn_str(&self) -> String {
@@ -624,6 +717,14 @@ impl SecondUnitDbOption {
 // 内存KV数据库配置默认值函数
 // ============================================================================
 
+fn default_model_kv_ip() -> String {
+    "localhost".to_string()
+}
+
+fn default_model_kv_port() -> String {
+    "8010".to_string()
+}
+
 fn default_mem_kv_ip() -> String {
     "localhost".to_string()
 }
@@ -658,4 +759,57 @@ fn default_parse_mode() -> Option<String> {
 
 fn default_parse_channel_capacity() -> Option<usize> {
     Some(200)
+}
+
+fn default_model_write_mode() -> Option<String> {
+    Some(ModelWriteMode::SurrealOnly.as_str().to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{DbOption, ModelWriteMode};
+
+    #[test]
+    fn model_write_mode_defaults_to_surreal_only() {
+        let opt = DbOption::default();
+        assert_eq!(opt.get_model_write_mode(), ModelWriteMode::SurrealOnly);
+        assert_eq!(opt.get_model_write_mode_str(), "surreal_only");
+    }
+
+    #[test]
+    fn model_write_mode_parses_kv_only() {
+        let mut opt = DbOption::default();
+        opt.model_write_mode = Some("kv_only".to_string());
+        assert_eq!(opt.get_model_write_mode(), ModelWriteMode::KvOnly);
+    }
+
+    #[test]
+    fn model_write_mode_parses_dual() {
+        let mut opt = DbOption::default();
+        opt.model_write_mode = Some("dual".to_string());
+        assert_eq!(opt.get_model_write_mode(), ModelWriteMode::Dual);
+    }
+
+    #[test]
+    fn model_write_mode_fallbacks_to_surreal_only_for_unknown_value() {
+        let mut opt = DbOption::default();
+        opt.model_write_mode = Some("unexpected".to_string());
+        assert_eq!(opt.get_model_write_mode(), ModelWriteMode::SurrealOnly);
+    }
+
+    #[test]
+    fn model_kv_ws_config_fallbacks_to_version_db_auth() {
+        let mut opt = DbOption::default();
+        opt.v_ip = "main-host".to_string();
+        opt.v_user = "root".to_string();
+        opt.v_password = "root-pass".to_string();
+        opt.kv_ip = "localhost".to_string();
+        opt.kv_port = "8010".to_string();
+        opt.kv_user = String::new();
+        opt.kv_password = String::new();
+
+        assert_eq!(opt.get_model_kv_conn_str(), "ws://127.0.0.1:8010");
+        assert_eq!(opt.get_model_kv_user(), "root");
+        assert_eq!(opt.get_model_kv_password(), "root-pass");
+    }
 }
