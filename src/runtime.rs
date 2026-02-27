@@ -2,6 +2,7 @@ use crate::init_surreal;
 use crate::options::{DbOption, ModelWriteMode};
 use crate::rs_surreal::SUL_DB;
 use anyhow::Result;
+use std::sync::Mutex;
 use std::time::Duration;
 use tokio::time::sleep;
 
@@ -121,47 +122,63 @@ pub async fn try_connect_database() -> Result<()> {
 
 /// 统一的数据库初始化入口，包含所有数据库连接和函数定义
 ///
-/// 根据编译特性自动选择合适的初始化方式：
-/// - `local` 特性: 使用 RocksDB 后端
-/// - `ws` 特性: 使用 WebSocket 连接远程 SurrealDB
-/// - `mem-kv-save` 特性: 额外初始化内存 KV 数据库
+/// 根据 `db_option.surreal_backend` 运行时选择连接方式：
+/// - `"ws"` (默认): 使用 WebSocket 连接远程 SurrealDB
+/// - `"rocksdb"`: 使用 RocksDB 嵌入式后端（本地文件，无需认证）
 ///
 /// 此函数还会初始化 SurrealDB 通用函数定义
 pub async fn initialize_databases(db_option: &DbOption) -> Result<()> {
-    // 1. 初始化本地 RocksDB（如果启用 local 特性）
-    #[cfg(feature = "local")]
-    {
-        println!("初始化本地 RocksDB...");
-        connect_local_rocksdb(&db_option.project_name).await?;
-    }
+    let backend = db_option.surreal_backend.as_str();
 
-    // 2. 初始化远程 SurrealDB（如果启用 ws 特性）
-    #[cfg(not(feature = "local"))]
-    {
-        println!("数据库连接中...");
-        match init_surreal_with_retry(db_option).await {
-            Ok(_) => {
-                println!(
-                    "✅ 数据库连接成功: {} -> {}",
-                    db_option.get_version_db_conn_str(),
-                    db_option.project_name
-                );
-            }
-            Err(e) => {
-                eprintln!("❌ 数据库连接失败: {}", e);
-                eprintln!("   配置信息: {}", db_option.connection_summary());
-                eprintln!("   请检查 SurrealDB 服务是否运行，配置是否正确");
-                // 不直接返回错误，让应用继续运行但标记数据库不可用
-            }
+    match backend {
+        "rocksdb" => {
+            let path = db_option
+                .surreal_local_path
+                .as_deref()
+                .unwrap_or("data.rdb");
+            println!("🗄️  初始化本地 RocksDB 嵌入式...");
+            println!("📂 数据目录: {}", path);
+            let conn_str = format!("rocksdb://{}", path);
+            let config = surrealdb::opt::Config::default().ast_payload();
+            SUL_DB
+                .connect((&conn_str, config))
+                .with_capacity(1000)
+                .await
+                .map_err(|e| anyhow::anyhow!("RocksDB 连接失败: {}", e))?;
+            // 嵌入式无需 signin
+            crate::use_ns_db_compat(&SUL_DB, &db_option.surreal_ns, &db_option.project_name)
+                .await
+                .map_err(|e| anyhow::anyhow!("use ns/db 失败: {}", e))?;
+            println!(
+                "✅ RocksDB 嵌入式连接成功: {} -> {}",
+                path, db_option.project_name
+            );
         }
+        _ => {
+            // WS 模式（默认）
+            println!("数据库连接中...");
+            match init_surreal_with_retry(db_option).await {
+                Ok(_) => {
+                    println!(
+                        "✅ 数据库连接成功: {} -> {}",
+                        db_option.get_version_db_conn_str(),
+                        db_option.project_name
+                    );
+                }
+                Err(e) => {
+                    eprintln!("❌ 数据库连接失败: {}", e);
+                    eprintln!("   配置信息: {}", db_option.connection_summary());
+                    eprintln!("   请检查 SurrealDB 服务是否运行，配置是否正确");
+                }
+            }
 
-        // 3. 初始化内存 KV 数据库（如果启用 mem-kv-save 特性）
-        #[cfg(feature = "mem-kv-save")]
-        {
-            use crate::init_mem_db_with_retry;
-            if let Err(e) = init_mem_db_with_retry(db_option).await {
-                eprintln!("❌ 内存KV数据库连接失败: {}", e);
-                eprintln!("   请检查内存KV数据库服务是否运行");
+            #[cfg(feature = "mem-kv-save")]
+            {
+                use crate::init_mem_db_with_retry;
+                if let Err(e) = init_mem_db_with_retry(db_option).await {
+                    eprintln!("❌ 内存KV数据库连接失败: {}", e);
+                    eprintln!("   请检查内存KV数据库服务是否运行");
+                }
             }
         }
     }
@@ -225,6 +242,129 @@ fn validate_model_write_requirements(mode: ModelWriteMode, kv_conn_str: &str) ->
         ));
     }
     Ok(())
+}
+
+// ============================================================================
+// SurrealDB 服务进程管理
+// ============================================================================
+
+static SURREAL_PROCESS: Mutex<Option<std::process::Child>> = Mutex::new(None);
+
+/// 根据 DbOption 配置启动 SurrealDB 服务进程。
+///
+/// 使用 `surreal_local_path` 作为 RocksDB 数据目录，
+/// `v_port` 作为绑定端口，`v_user` / `v_password` 作为认证。
+/// 启动前会自动清理占用目标端口的进程。
+pub fn start_surreal_server(db_option: &DbOption) -> Result<()> {
+    let port = db_option.v_port;
+    let path = db_option
+        .surreal_local_path
+        .as_deref()
+        .unwrap_or("data.rdb");
+    let user = &db_option.v_user;
+    let password = &db_option.v_password;
+
+    // 先停掉旧进程（如果有）
+    stop_surreal_server_inner();
+
+    // 清理占用端口的进程（Windows）
+    #[cfg(target_os = "windows")]
+    {
+        let _ = std::process::Command::new("powershell")
+            .args([
+                "-Command",
+                &format!(
+                    "Get-NetTCPConnection -LocalPort {} -ErrorAction SilentlyContinue | ForEach-Object {{ Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }}",
+                    port
+                ),
+            ])
+            .output();
+    }
+
+    // 清理占用端口的进程（Linux/macOS）
+    #[cfg(not(target_os = "windows"))]
+    {
+        let _ = std::process::Command::new("sh")
+            .args([
+                "-c",
+                &format!("lsof -ti:{} | xargs -r kill -9 2>/dev/null || true", port),
+            ])
+            .output();
+    }
+
+    let rocksdb_url = format!("rocksdb://{}", path);
+    let bind_addr = format!("0.0.0.0:{}", port);
+
+    println!("🚀 启动 SurrealDB 服务...");
+    println!("   端口: {}", port);
+    println!("   数据: {}", path);
+
+    // 设置 RocksDB 性能优化环境变量
+    let cpu = num_cpus::get();
+    let envs = vec![
+        ("SURREAL_SYNC_DATA", "false".to_string()),
+        ("SURREAL_ROCKSDB_THREAD_COUNT", std::cmp::min(cpu, 16).to_string()),
+        ("SURREAL_ROCKSDB_JOBS_COUNT", std::cmp::min(cpu * 2, 32).to_string()),
+        ("SURREAL_ROCKSDB_MAX_CONCURRENT_SUBCOMPACTIONS",
+            if cpu >= 16 { "8" } else { "4" }.to_string()),
+        ("SURREAL_ROCKSDB_MAX_OPEN_FILES", "4096".to_string()),
+        ("SURREAL_ROCKSDB_BLOCK_CACHE_SIZE", "16GB".to_string()),
+        ("SURREAL_ROCKSDB_WRITE_BUFFER_SIZE", "256MB".to_string()),
+        ("SURREAL_ROCKSDB_MAX_WRITE_BUFFER_NUMBER", "8".to_string()),
+        ("SURREAL_ROCKSDB_MIN_WRITE_BUFFER_NUMBER_TO_MERGE", "2".to_string()),
+        ("SURREAL_ROCKSDB_TARGET_FILE_SIZE_BASE", "256MB".to_string()),
+        ("SURREAL_ROCKSDB_TARGET_FILE_SIZE_MULTIPLIER", "2".to_string()),
+        ("SURREAL_ROCKSDB_FILE_COMPACTION_TRIGGER", "4".to_string()),
+        ("SURREAL_ROCKSDB_STORAGE_LOG_LEVEL", "warn".to_string()),
+        ("SURREAL_ROCKSDB_BLOB_COMPRESSION_TYPE", "lz4".to_string()),
+    ];
+
+    let mut cmd = std::process::Command::new("surreal");
+    cmd.args(["start", "--user", user, "--pass", password, "--bind", &bind_addr, &rocksdb_url]);
+    for (k, v) in &envs {
+        cmd.env(k, v);
+    }
+    cmd.stdout(std::process::Stdio::piped());
+    cmd.stderr(std::process::Stdio::piped());
+
+    let child = cmd.spawn().map_err(|e| {
+        anyhow::anyhow!("启动 surreal 进程失败（请确认 surreal 在 PATH 中）: {}", e)
+    })?;
+
+    let pid = child.id();
+    *SURREAL_PROCESS.lock().unwrap() = Some(child);
+
+    // 等待服务就绪
+    std::thread::sleep(Duration::from_secs(2));
+    println!("✅ SurrealDB 服务已启动 (PID: {})", pid);
+    Ok(())
+}
+
+/// 停止由 `start_surreal_server` 启动的 SurrealDB 服务进程。
+pub fn stop_surreal_server() {
+    stop_surreal_server_inner();
+}
+
+fn stop_surreal_server_inner() {
+    if let Ok(mut guard) = SURREAL_PROCESS.lock() {
+        if let Some(ref mut child) = *guard {
+            let pid = child.id();
+            println!("🛑 停止 SurrealDB 服务 (PID: {})...", pid);
+            let _ = child.kill();
+            let _ = child.wait();
+            println!("✅ SurrealDB 服务已停止");
+        }
+        *guard = None;
+    }
+}
+
+/// 检查 SurrealDB 服务进程是否在运行。
+pub fn is_surreal_server_running() -> bool {
+    if let Ok(guard) = SURREAL_PROCESS.lock() {
+        guard.is_some()
+    } else {
+        false
+    }
 }
 
 #[cfg(test)]

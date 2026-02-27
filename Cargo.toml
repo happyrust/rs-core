@@ -113,6 +113,7 @@ chrono = "0.4"
 surrealdb = { git = "https://gitee.com/happydpc/surrealdb", branch = "dev-3.1", default-features = false, features = [
     "protocol-ws",
     "kv-mem",
+    "kv-rocksdb",
 ] }
 # surrealdb-types 必须作为独立依赖引入，因为 SurrealValue derive 宏生成的代码
 # 会引用 ::surrealdb_types 这个 crate 路径

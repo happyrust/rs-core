@@ -350,6 +350,16 @@ pub struct DbOption {
     pub meshes_path: Option<String>,
     // pub geom_live: Option<bool>,
 
+    /// SurrealDB 后端类型：ws（默认）/ rocksdb / mem
+    #[clap(skip)]
+    #[serde(default = "default_surreal_backend")]
+    pub surreal_backend: String,
+
+    /// 本地嵌入式后端的数据目录路径（rocksdb 模式下使用）
+    #[clap(skip)]
+    #[serde(default)]
+    pub surreal_local_path: Option<String>,
+
     /// 嵌入式 SurrealKV 数据目录（配置后启用模型数据双写）
     #[clap(skip)]
     #[serde(default)]
@@ -763,6 +773,10 @@ fn default_parse_channel_capacity() -> Option<usize> {
 
 fn default_model_write_mode() -> Option<String> {
     Some(ModelWriteMode::SurrealOnly.as_str().to_string())
+}
+
+fn default_surreal_backend() -> String {
+    "ws".to_string()
 }
 
 #[cfg(test)]

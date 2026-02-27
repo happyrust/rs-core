@@ -798,20 +798,19 @@ pub(crate) fn resolve_gmse_params_with_cache(
     let mut plax = None;
     let mut na_axis = None;
     if let Some(jusl) = jusl_param {
-        // dbg!(jusl);
-        //直接把 jusl_dxy加上
-        plin_pos = Vec2::new(
+        // 与 rs_surreal::spatial::query_pline 保持一致：
+        // pt = vxy + dxy * plax（按分量缩放，2D 取 plax.xy）
+        let vxy = Vec2::new(
             eval_str_to_f32_cached(&jusl.vxy[0], context, "DIST", cache),
             eval_str_to_f32_cached(&jusl.vxy[1], context, "DIST", cache),
-        ) + Vec2::new(
+        );
+        let dxy = Vec2::new(
             eval_str_to_f32_cached(&jusl.dxy[0], context, "DIST", cache),
             eval_str_to_f32_cached(&jusl.dxy[1], context, "DIST", cache),
         );
-
-        if let Some(dir) = parse_axis_to_vec3_cached(&jusl.plax, context, cache) {
-            plin_axis = Some(dir);
-            // dbg!(plin_axis);
-        }
+        let plax_dir = parse_axis_to_vec3_cached(&jusl.plax, context, cache).unwrap_or(Vec3::Y);
+        plin_pos = calc_plin_pos(vxy, dxy, plax_dir);
+        plin_axis = Some(plax_dir);
     }
     if let Some(na_plin) = na_plin_param {
         if let Some(dir) = parse_axis_to_vec3_cached(&na_plin.plax, context, cache) {
@@ -856,6 +855,11 @@ pub(crate) fn resolve_gmse_params_with_cache(
         plax,
         na_axis,
     })
+}
+
+#[inline]
+fn calc_plin_pos(vxy: Vec2, dxy: Vec2, plax: Vec3) -> Vec2 {
+    vxy + dxy * Vec2::new(plax.x, plax.y)
 }
 
 pub fn resolve_axis_param(
@@ -1088,4 +1092,40 @@ pub fn parse_to_f32_arr(input: &[u8]) -> [f64; 3] {
         data[i] = parse_to_f32(&input[i * 4..i * 4 + 4]) as f64;
     }
     data
+}
+
+#[cfg(test)]
+mod tests {
+    use super::calc_plin_pos;
+    use glam::{Vec2, Vec3};
+
+    #[test]
+    fn test_calc_plin_pos_when_plax_is_y() {
+        let vxy = Vec2::new(10.0, 20.0);
+        let dxy = Vec2::new(3.0, 4.0);
+        let plax = Vec3::Y;
+        let p = calc_plin_pos(vxy, dxy, plax);
+        assert!((p.x - 10.0).abs() < 1e-6, "x={}", p.x);
+        assert!((p.y - 24.0).abs() < 1e-6, "y={}", p.y);
+    }
+
+    #[test]
+    fn test_calc_plin_pos_when_plax_is_x() {
+        let vxy = Vec2::new(10.0, 20.0);
+        let dxy = Vec2::new(3.0, 4.0);
+        let plax = Vec3::X;
+        let p = calc_plin_pos(vxy, dxy, plax);
+        assert!((p.x - 13.0).abs() < 1e-6, "x={}", p.x);
+        assert!((p.y - 20.0).abs() < 1e-6, "y={}", p.y);
+    }
+
+    #[test]
+    fn test_calc_plin_pos_when_plax_has_mixed_sign() {
+        let vxy = Vec2::new(1.0, 2.0);
+        let dxy = Vec2::new(5.0, 7.0);
+        let plax = Vec3::new(0.5, -1.0, 0.0);
+        let p = calc_plin_pos(vxy, dxy, plax);
+        assert!((p.x - 3.5).abs() < 1e-6, "x={}", p.x);
+        assert!((p.y + 5.0).abs() < 1e-6, "y={}", p.y);
+    }
 }

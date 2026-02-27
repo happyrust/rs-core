@@ -131,7 +131,7 @@ pub use crate::types::*;
 pub use rs_surreal::*;
 pub use runtime::{
     DbOptionSurrealExt, connect_local_rocksdb, init_surreal_with_retry, initialize_databases,
-    try_connect_database,
+    is_surreal_server_running, start_surreal_server, stop_surreal_server, try_connect_database,
 };
 pub use tree_query::{
     DbMetaInfo, TreeIndex, TreeQuery, TreeQueryFilter, TreeQueryOptions, get_cached_tree_index,
@@ -299,36 +299,59 @@ pub async fn init_surreal() -> anyhow::Result<()> {
         .unwrap();
     let db_option: DbOption = s.try_deserialize()?;
 
-    // 打印服务器连接信息
-    let connection_str = db_option.get_version_db_conn_str();
-    println!("🌐 连接服务器: {}", connection_str);
+    let backend = db_option.surreal_backend.as_str();
     println!("🏷️  命名空间: {}", db_option.surreal_ns);
     println!("💾 数据库名: {}", db_option.project_name);
-    println!("👤 用户名: {}", db_option.v_user);
 
-    // 创建配置
-    let config = surrealdb::opt::Config::default().ast_payload(); // 启用AST格式
-    match SUL_DB
-        .connect((db_option.get_version_db_conn_str(), config))
-        .with_capacity(1000)
-        .await
-    {
-        Ok(_) => {}
-        Err(e) => {
-            if e.to_string().contains("Already connected") {
-                // println!("⚠️  Database already connected, skipping connection");
-            } else {
-                return Err(e.into());
+    let config = surrealdb::opt::Config::default().ast_payload();
+
+    match backend {
+        "rocksdb" => {
+            let path = db_option
+                .surreal_local_path
+                .as_deref()
+                .unwrap_or("data.rdb");
+            let conn_str = format!("rocksdb://{}", path);
+            println!("🗄️  后端: RocksDB 嵌入式");
+            println!("📂 数据目录: {}", path);
+            match SUL_DB.connect((&conn_str, config)).with_capacity(1000).await {
+                Ok(_) => {}
+                Err(e) => {
+                    if e.to_string().contains("Already connected") {
+                    } else {
+                        return Err(e.into());
+                    }
+                }
             }
+            // 嵌入式模式无需 signin
+        }
+        _ => {
+            // WS 模式（默认）
+            let connection_str = db_option.get_version_db_conn_str();
+            println!("🌐 后端: WebSocket 远程");
+            println!("🌐 连接服务器: {}", connection_str);
+            println!("👤 用户名: {}", db_option.v_user);
+            match SUL_DB
+                .connect((connection_str, config))
+                .with_capacity(1000)
+                .await
+            {
+                Ok(_) => {}
+                Err(e) => {
+                    if e.to_string().contains("Already connected") {
+                    } else {
+                        return Err(e.into());
+                    }
+                }
+            }
+            SUL_DB
+                .signin(Root {
+                    username: db_option.v_user.clone(),
+                    password: db_option.v_password.clone(),
+                })
+                .await?;
         }
     }
-
-    SUL_DB
-        .signin(Root {
-            username: db_option.v_user.clone(),
-            password: db_option.v_password.clone(),
-        })
-        .await?;
 
     crate::use_ns_db_compat(&SUL_DB, &db_option.surreal_ns, &db_option.project_name).await?;
 
