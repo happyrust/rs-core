@@ -203,24 +203,6 @@ pub async fn get_transform_mat4(refno: RefnoEnum, is_local: bool) -> anyhow::Res
         return Ok(Some(mat4));
     }
 
-    // 兜底：直接从 PE 记录读取 world_trans（某些库/节点 pe_transform 缓存未预热或策略计算失败时使用）。
-    // 这样可以避免 PRIM/BOX 等在模型生成时因为 world_transform=None/Err 而被跳过。
-    if !is_local {
-        if let Some(world) = crate::rs_surreal::query_pe_world_trans(refno)
-            .await
-            .ok()
-            .flatten()
-        {
-            let mat4 = transform_to_dmat4(&world);
-            let refno_clone = refno;
-            let world_clone = world.clone();
-            tokio::spawn(async move {
-                let _ = save_pe_transform(refno_clone, None, Some(world_clone)).await;
-            });
-            return Ok(Some(mat4));
-        }
-    }
-
     let local_mat = match cached_local {
         Some(local) => Some(transform_to_dmat4(&local)),
         None => get_local_mat4(refno).await?,
@@ -264,22 +246,9 @@ async fn compute_world_from_parent(
     }
 
     // 尝试直接从父节点缓存获取（快速路径）
-    let mut parent_world = query_pe_transform(parent_refno)
+    let parent_world = query_pe_transform(parent_refno)
         .await?
         .and_then(|c| c.world);
-    if parent_world.is_none() {
-        // pe_transform 未命中时，优先使用 pe.world_trans（若存在），并回灌 pe_transform。
-        parent_world = crate::rs_surreal::query_pe_world_trans(parent_refno)
-            .await
-            .ok()
-            .flatten();
-        if let Some(w) = parent_world.clone() {
-            let r = parent_refno;
-            tokio::spawn(async move {
-                let _ = save_pe_transform(r, None, Some(w)).await;
-            });
-        }
-    }
     if let Some(parent_world) = parent_world {
         let parent_mat = transform_to_dmat4(&parent_world);
         return Ok(Some(match local_mat {
@@ -311,21 +280,9 @@ async fn compute_world_from_parent(
     // 确定计算起点（注意：find_nearest_cached_ancestor 返回的索引是原始顺序，需要转换为反转后的索引）
     let (start_idx, mut world_mat) = match cached_ancestor {
         Some((orig_idx, ancestor_refno)) => {
-            let mut start_world = query_pe_transform(ancestor_refno)
+            let start_world = query_pe_transform(ancestor_refno)
                 .await?
                 .and_then(|c| c.world);
-            if start_world.is_none() {
-                start_world = crate::rs_surreal::query_pe_world_trans(ancestor_refno)
-                    .await
-                    .ok()
-                    .flatten();
-                if let Some(w) = start_world.clone() {
-                    let r = ancestor_refno;
-                    tokio::spawn(async move {
-                        let _ = save_pe_transform(r, None, Some(w)).await;
-                    });
-                }
-            }
             let world = start_world
                 .as_ref()
                 .map(transform_to_dmat4)

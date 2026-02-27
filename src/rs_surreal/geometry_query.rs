@@ -249,10 +249,10 @@ pub async fn query_aabb_params(
     inst_keys: &str,
     replace_exist: bool,
 ) -> anyhow::Result<Vec<QueryAabbParam>> {
-    // 从 pe_transform 获取 world_trans（允许为 None，由调用方过滤）
+    // 直接从 pe_transform 表获取 world_trans
     let mut sql = format!(
         r#"select id, in as refno,
-        in.world_trans as world_trans,
+        type::record("pe_transform", record::id(in)).world_trans.d as world_trans,
         in.noun as noun,
         (select out.aabb.d as aabb, trans.d as trans from $parent.out->geo_relate where out.aabb.d != none and trans.d != none)
         as geo_aabbs from {inst_keys}"#,

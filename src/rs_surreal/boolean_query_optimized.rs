@@ -103,7 +103,7 @@ pub async fn query_manifold_boolean_operations_optimized(
     // 步骤3：直接从 neg_relate 和 ngmr_relate 获取切割几何（新结构简化版）
     // neg_relate/ngmr_relate 结构：in = geo_relate (切割几何), out = pe (被切割的正实体)
     // geo_relate 结构：in = pe (负载体), out = geo
-    // 所以负载体 = in.in，负载体的 world_trans = in.in<-inst_relate.world_trans
+    // 所以负载体 = in.in，负载体的 world_trans 从 pe_transform 获取
     // 兼容两种 out：pe 与 inst_relate（历史/兼容写入）
     let pe_key = refno.to_pe_key();
     let sql_neg_pe = format!(
@@ -114,7 +114,7 @@ pub async fn query_manifold_boolean_operations_optimized(
             in.para_type ?? "" AS para_type,
             in.trans.d AS trans,
             in.out.aabb.d AS aabb,
-            array::first(in.in<-inst_relate).world_trans.d AS carrier_wt
+            type::record("pe_transform", record::id(in.in)).world_trans.d AS carrier_wt
         FROM {pe_key}<-neg_relate
         WHERE in.trans.d != NONE
         "#
@@ -129,7 +129,7 @@ pub async fn query_manifold_boolean_operations_optimized(
                 in.para_type ?? "" AS para_type,
                 in.trans.d AS trans,
                 in.out.aabb.d AS aabb,
-                array::first(in.in<-inst_relate).world_trans.d AS carrier_wt
+                type::record("pe_transform", record::id(in.in)).world_trans.d AS carrier_wt
             FROM {inst_key}<-neg_relate
             WHERE in.trans.d != NONE
             "#
@@ -148,7 +148,7 @@ pub async fn query_manifold_boolean_operations_optimized(
             in.para_type ?? "" AS para_type,
             in.trans.d AS trans,
             in.out.aabb.d AS aabb,
-            array::first(in.in<-inst_relate).world_trans.d AS carrier_wt
+            type::record("pe_transform", record::id(in.in)).world_trans.d AS carrier_wt
         FROM {pe_key}<-ngmr_relate
         WHERE in.trans.d != NONE
         "#
@@ -164,7 +164,7 @@ pub async fn query_manifold_boolean_operations_optimized(
                 in.para_type ?? "" AS para_type,
                 in.trans.d AS trans,
                 in.out.aabb.d AS aabb,
-                array::first(in.in<-inst_relate).world_trans.d AS carrier_wt
+                type::record("pe_transform", record::id(in.in)).world_trans.d AS carrier_wt
             FROM {inst_key}<-ngmr_relate
             WHERE in.trans.d != NONE
             "#

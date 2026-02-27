@@ -38,11 +38,11 @@ pub async fn query_arrive_leave_points(
         r#"
              select value [
                     in,
-                    world_trans.d,
+                    type::record("pe_transform", record::id(in)).world_trans.d,
                     (select * from out.ptset where number=$parent.in.refno.ARRI)[0],
                     (select * from out.ptset where number=$parent.in.refno.LEAV)[0]
                 ]
-              from array::flatten([{}][? owner.noun in ['BRAN', 'HANG']]->inst_relate) where world_trans.d!=none
+              from array::flatten([{}][? owner.noun in ['BRAN', 'HANG']]->inst_relate) where type::record("pe_transform", record::id(in)).world_trans.d != none
              "#,
         pes
     );
@@ -110,7 +110,7 @@ pub async fn query_arrive_leave_points_of_branch(
     let sql = format!(
         r#"
              select value [id,
-                (->inst_relate.world_trans.d ?? ->tubi_relate.world_trans.d)[0],
+                type::record("pe_transform", record::id(id)).world_trans.d,
                 (select * from (->inst_relate.out.ptset)[0] where number=$parent.refno.ARRI)[0],
                 (select * from (->inst_relate.out.ptset)[0] where number=$parent.refno.LEAV)[0]
             ] from {}.children
@@ -128,19 +128,24 @@ pub async fn query_arrive_leave_points_of_branch(
     )> = SUL_DB.query_take(&sql, 0).await?;
     let mut map = DashMap::new();
     for (refno, world_trans, arri, leav) in rows {
-        if arri.is_none() || leav.is_none() {
-            continue;
+        if let Some(pts) = to_world_branch_points(world_trans, arri, leav) {
+            map.insert(refno, pts);
         }
-        let mut pts = [arri.unwrap(), leav.unwrap()];
-        // 应用 world_trans 转换为世界坐标
-        if let Some(trans) = world_trans {
-            let t: Transform = *trans;
-            pts[0].transform(&t);
-            pts[1].transform(&t);
-        }
-        map.insert(refno, pts);
     }
     Ok(map)
+}
+
+fn to_world_branch_points(
+    world_trans: Option<PlantTransform>,
+    arri: Option<CateAxisParam>,
+    leav: Option<CateAxisParam>,
+) -> Option<[CateAxisParam; 2]> {
+    let (mut arri, mut leav) = (arri?, leav?);
+    let trans = world_trans?;
+    let t: Transform = *trans;
+    arri.transform(&t);
+    leav.transform(&t);
+    Some([arri, leav])
 }
 
 // ============================================================================
@@ -172,7 +177,7 @@ pub async fn query_branch_children_tubi_info(
         SELECT 
             id as refno,
             (->inst_relate->inst_info.tubi_info)[0] as tubi_info_id,
-            (->inst_relate.world_trans)[0] as world_trans
+            type::record("pe_transform", record::id(id)).world_trans.d as world_trans
         FROM array::flatten([{}].children)
         WHERE (->inst_relate->inst_info.tubi_info)[0] != NONE
         "#,
@@ -259,4 +264,37 @@ pub async fn query_arrive_leave_from_tubi_info(
     }
 
     Ok(result)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use glam::Vec3;
+
+    #[test]
+    fn branch_points_should_require_world_transform() {
+        let result = to_world_branch_points(None, Some(CateAxisParam::default()), Some(CateAxisParam::default()));
+        assert!(result.is_none(), "world_trans 缺失时必须跳过，不能返回局部点");
+    }
+
+    #[test]
+    fn branch_points_should_apply_world_transform() {
+        let mut arrive = CateAxisParam::default();
+        arrive.pt.0 = Vec3::new(1.0, 2.0, 3.0);
+        let mut leave = CateAxisParam::default();
+        leave.pt.0 = Vec3::new(-1.0, -2.0, -3.0);
+
+        let mut world = Transform::IDENTITY;
+        world.translation = Vec3::new(10.0, 0.0, 0.0);
+
+        let result = to_world_branch_points(
+            Some(PlantTransform(world)),
+            Some(arrive),
+            Some(leave),
+        )
+        .expect("world_trans 存在时应返回点");
+
+        assert_eq!(result[0].pt.0, Vec3::new(11.0, 2.0, 3.0));
+        assert_eq!(result[1].pt.0, Vec3::new(9.0, -2.0, -3.0));
+    }
 }

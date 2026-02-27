@@ -30,6 +30,7 @@ debug_spatial = []
 web = []
 web_server = [] # Web UI feature for database management interface
 web_server_api = [] # 简易 HTTP API：触发单 refno 模型/mesh 生成
+kv-rocksdb = ["surrealdb/kv-rocksdb"]
 sql = ["dep:sqlx"]
 sqlite = ["dep:rusqlite"] # SQLite 空间索引功能
 mem-kv-save = [] # 额外保存PE数据到内存KV数据库
@@ -113,7 +114,6 @@ chrono = "0.4"
 surrealdb = { git = "https://gitee.com/happydpc/surrealdb", branch = "dev-3.1", default-features = false, features = [
     "protocol-ws",
     "kv-mem",
-    "kv-rocksdb",
 ] }
 # surrealdb-types 必须作为独立依赖引入，因为 SurrealValue derive 宏生成的代码
 # 会引用 ::surrealdb_types 这个 crate 路径

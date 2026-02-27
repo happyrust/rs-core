@@ -138,33 +138,6 @@ pub async fn query_ancestor_refnos(refno: RefnoEnum) -> anyhow::Result<Vec<Refno
     SUL_DB.query_take::<Vec<RefnoEnum>>(&sql, 0).await
 }
 
-/// 直接从 PE 记录读取 world_trans（不是 pe_transform 缓存表）。
-///
-/// 背景：在首次运行/缓存未预热时，`pe_transform.world_trans` 可能为空，
-/// 但 `pe.world_trans` 可能已经由解析/计算流程写入。模型生成（PRIM/BOX 等）
-/// 若仅依赖 pe_transform，会导致 `get_world_transform` 返回 None/Err，从而跳过几何生成。
-///
-/// 该函数用于在“惰性计算/策略计算失败”时提供一个更稳健的兜底来源，
-/// 并可配合 `save_pe_transform` 把结果回灌到 pe_transform 以提升后续命中率。
-#[cached(result = true, size = 5000)]
-pub async fn query_pe_world_trans(
-    refno: RefnoEnum,
-) -> anyhow::Result<Option<crate::plant_transform::Transform>> {
-    use crate::rs_surreal::PlantTransform;
-
-    #[derive(Deserialize, SurrealValue)]
-    struct Row {
-        world_trans: Option<PlantTransform>,
-    }
-
-    let sql = format!(
-        "SELECT world_trans.d as world_trans FROM {} LIMIT 1",
-        refno.to_pe_key()
-    );
-    let row: Option<Row> = SUL_DB.query_take(&sql, 0).await?;
-    Ok(row.and_then(|r| r.world_trans.map(|t| t.0)))
-}
-
 /// 查找祖先链中最近的有 world_trans 缓存的层级
 ///
 /// 该函数从目标节点向上遍历，找到**第一个有 world_trans 缓存**的祖先节点。
@@ -184,7 +157,7 @@ pub async fn find_nearest_cached_ancestor(
         r#"
         LET $ancestors = fn::ancestor({});
         LET $reversed = array::reverse($ancestors);
-        LET $rev_index = array::find_index($reversed, |$a| $a.world_trans IS NOT NONE);
+        LET $rev_index = array::find_index($reversed, |$a| type::record("pe_transform", record::id($a)).world_trans.d IS NOT NONE);
         RETURN IF $rev_index != NONE {{
             LET $index = array::len($ancestors) - 1 - $rev_index;
             RETURN {{
@@ -333,12 +306,12 @@ pub async fn get_ancestor_attmaps_from_cached(
         r#"
         LET $ancestors = fn::ancestor({});
         LET $reversed = array::reverse($ancestors);
-        LET $rev_idx = array::find_index($reversed, |$a| $a.world_trans IS NOT NONE);
+        LET $rev_idx = array::find_index($reversed, |$a| type::record("pe_transform", record::id($a)).world_trans.d IS NOT NONE);
         RETURN IF $rev_idx != NONE {{
             LET $cached_idx = array::len($ancestors) - 1 - $rev_idx;
             RETURN {{
                 attmaps: $ancestors[$cached_idx + 1..].refno.*,
-                cached_transform: $ancestors[$cached_idx].world_trans,
+                cached_transform: type::record("pe_transform", record::id($ancestors[$cached_idx])).world_trans.d,
                 start_index: $cached_idx
             }};
         }} ELSE {{
