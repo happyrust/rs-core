@@ -12,7 +12,7 @@ default = [
 ] #"occ", "gen_model", "sql"
 use_strategy_transform = [] # 新的策略系统变换计算，默认关闭（opt-in 迁移）
 redb = ["dep:redb"]
-manifold = ["dep:manifold-rs"]
+manifold = ["dep:manifold-rs", "dep:gltf"]
 truck = [
     # "dep:truck-base",
     # "dep:truck-geotrait",
@@ -83,7 +83,7 @@ log = "0.4.21"
 simplelog = "0.12.2"
 lru = "0.12"
 num_cpus = "1.16"
-gltf = "1.4"
+gltf = { version = "1.4", optional = true }
 
 base64 = "0.22.0"
 serde = { version = "1.0.133", features = ["derive"] }
