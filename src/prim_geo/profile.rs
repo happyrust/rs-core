@@ -87,6 +87,12 @@ fn convert_spine_to_segments(
                 let angle = vec0.angle_between(vec1);
                 let axis = vec0.cross(vec1).normalize_or_zero();
 
+                println!(
+                    "[convert_spine] THRU: pt0={:?} pt1={:?} thru={:?} center={:?} radius={:.3} angle={:.3}deg axis={:?} pref_axis={:?}",
+                    spine.pt0, spine.pt1, spine.thru_pt, center, radius,
+                    angle.to_degrees(), axis, spine.preferred_dir
+                );
+
                 result.push(SegmentPath::Arc(Arc3D {
                     center,
                     radius,
@@ -279,6 +285,12 @@ pub async fn create_profile_geos(
                         "THRU" => SpineCurveType::THRU,
                         _ => SpineCurveType::UNKNOWN,
                     };
+                    let ydir = spine_att.get_vec3("YDIR").unwrap_or(Vec3::Z);
+                    println!(
+                        "[profile][arc-spine] refno={} CURTYP={} pt0_world={:?} pt1_world={:?} mid_pt={:?} origin={:?} ydir={:?} rad={:?}",
+                        refno, cur_type_str, pt0_world, pt1_world, mid_pt_world, origin, ydir,
+                        att2.get_f32("RAD")
+                    );
                     paths.push(Spine3D {
                         refno: att1.get_refno().unwrap(), // 修正：使用起点 POINSP 的 refno，而不是 CURVE 的 refno
                         pt0: pt0_world - origin,          // 相对坐标
@@ -370,12 +382,14 @@ pub async fn create_profile_geos(
         };
 
         println!(
-            "[profile] refno={} type={} has_poss_pose={} drns={:?} drne={:?}",
+            "[profile] refno={} type={} has_poss_pose={} drns={:?} drne={:?} plax={:?} bangle={:.3}",
             refno,
             type_name,
             has_poss_pose,
             drns.map(|v| vec3_round_3(v.as_vec3())),
-            drne.map(|v| vec3_round_3(v.as_vec3()))
+            drne.map(|v| vec3_round_3(v.as_vec3())),
+            first_plax,
+            bangle,
         );
 
         // 根据路径来源选择不同的转换函数
@@ -527,8 +541,14 @@ pub async fn create_profile_geos(
                         Transform::IDENTITY
                     }
                 } else {
-                    // 多段/圆弧：使用 IDENTITY，实际几何已在正确坐标系
-                    Transform::IDENTITY
+                    // 多段/圆弧：路径坐标是相对于 spine_origin 的，需要将 spine_origin 作为偏移
+                    // 否则 world_transform * IDENTITY 会丢失 spine_origin 的 XY 偏移
+                    let origin = spine_origin.unwrap_or(Vec3::ZERO);
+                    Transform {
+                        translation: origin,
+                        rotation: Quat::IDENTITY,
+                        scale: Vec3::ONE,
+                    }
                 };
 
                 // 根据元素类型调整 transform

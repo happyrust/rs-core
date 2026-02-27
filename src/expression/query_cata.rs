@@ -66,7 +66,8 @@ pub fn resolve_cata_comp(
     let axis_ms = t_axis.elapsed().as_millis();
 
     let t_plin = Instant::now();
-    let jusl_param = if let Some(plin) = cur_context.get("JUSL") {
+    let jusl_val: Option<String> = cur_context.context.get("JUSL").map(|r| r.value().clone());
+    let jusl_param = if let Some(ref plin) = jusl_val {
         if scom_info.plin_map.contains_key(plin.as_str()) {
             Some(scom_info.plin_map.get(plin.as_str()).unwrap().clone())
         } else {
@@ -81,6 +82,22 @@ pub fn resolve_cata_comp(
     } else {
         None
     };
+    if crate::debug_macros::is_debug_model_enabled() {
+        println!(
+            "[resolve_cata_comp] refno={} JUSL={:?} jusl_param={} na_plin={} plin_map_keys={:?}",
+            des_refno,
+            jusl_val,
+            jusl_param.is_some(),
+            na_plin_param.is_some(),
+            scom_info.plin_map.keys().collect::<Vec<_>>()
+        );
+        for (k, v) in scom_info.plin_map.iter() {
+            println!(
+                "[resolve_cata_comp] PLIN[{:?}]: vxy=[{:?}, {:?}] dxy=[{:?}, {:?}] plax={:?}",
+                k, v.vxy[0], v.vxy[1], v.dxy[0], v.dxy[1], v.plax
+            );
+        }
+    }
     let plin_ms = t_plin.elapsed().as_millis();
 
     let t_gm = Instant::now();

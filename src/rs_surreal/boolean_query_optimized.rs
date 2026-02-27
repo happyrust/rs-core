@@ -227,6 +227,7 @@ pub async fn query_manifold_boolean_operations_optimized(
 /// Returns `Vec<ManiGeoTransQuery>` containing all boolean operation data
 pub async fn query_manifold_boolean_operations_batch_optimized(
     refnos: &[RefnoEnum],
+    replace_exist: bool,
 ) -> anyhow::Result<Vec<ManiGeoTransQuery>> {
     use serde::{Deserialize, Serialize};
     use std::collections::HashMap;
@@ -255,6 +256,11 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
     // 从 pe_transform 获取 world_trans，从 inst_relate_aabb 关系获取 aabb（允许为空）
     use anyhow::Context as _;
     let inst_keys = get_inst_relate_keys(refnos);
+    let bool_status_filter = if replace_exist {
+        String::new()
+    } else {
+        "AND (bool_status != 'Success' OR bool_status = NONE)".to_string()
+    };
     // 使用 in->inst_relate_aabb->out.d 的 relate 方式访问 aabb
     let sql_bases = format!(
         r#"
@@ -266,11 +272,14 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
             in->inst_relate_aabb[0].out.d AS aabb
         FROM {inst_keys}
         WHERE in.id != NONE
-            AND (bool_status != 'Success' OR bool_status = NONE)
+            {bool_status_filter}
             AND type::record("pe_transform", record::id(in)).world_trans != NONE
         "#
     );
     let base_infos: Vec<PosEntityBase> = SUL_DB.query_take(&sql_bases, 0).await.unwrap_or_default(); // 反序列化失败时返回空列表
+    if base_infos.len() != refnos.len() {
+        eprintln!("[bool_query_opt] step1 base_infos={}/{} (部分 refno 被 bool_status/pe_transform 过滤)", base_infos.len(), refnos.len());
+    }
     let mut base_map: HashMap<RefnoEnum, PosEntityBase> = HashMap::new();
     for base in base_infos {
         base_map.insert(base.refno, base);
@@ -298,6 +307,10 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
         .query_take(&sql_all_pos_geos, 0)
         .await
         .with_context(|| format!("sql_all_pos_geos 查询失败，SQL={}", sql_all_pos_geos))?;
+    let has_pos_geos = pos_geo_results.iter().filter(|r| !r.geos.is_empty()).count();
+    if has_pos_geos != refnos.len() {
+        eprintln!("[bool_query_opt] step2 有正实体几何的={}/{}", has_pos_geos, refnos.len());
+    }
     let mut pos_geo_map: HashMap<
         RefnoEnum,
         Vec<(
@@ -536,7 +549,7 @@ mod tests {
         assert!(optimized_result.is_ok());
 
         // 执行批量优化版本
-        let batch_result = query_manifold_boolean_operations_batch_optimized(&[test_refno]).await;
+        let batch_result = query_manifold_boolean_operations_batch_optimized(&[test_refno], false).await;
         assert!(batch_result.is_ok());
 
         // 验证结果一致性

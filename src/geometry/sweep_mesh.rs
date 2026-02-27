@@ -221,18 +221,35 @@ fn get_profile_data(profile: &CateProfileParam, _refno: RefnoEnum) -> Option<Pro
     })
 }
 
-/// 构建截面变换矩阵（与 OCC 模式保持一致）
+/// Core3D.dll GTPLAX + GJLORI: 将 PLAX 方向转换为截面旋转角度
+///
+/// GTPLAX: X→0°, Y→90°, -X→180°, -Y→-90°
+/// GJLORI: plin_rotation = PI/2 - plax_angle
+fn plin_axis_to_rotation(plin_axis: Vec3) -> f32 {
+    let plax_angle = plin_axis.y.atan2(plin_axis.x);
+    std::f32::consts::FRAC_PI_2 - plax_angle
+}
+
+/// 构建截面变换矩阵（对齐 Core3D.dll getProfileFromDB）
 ///
 /// 变换顺序：
 /// 1. 平移：应用 plin_pos 偏移（负值，因为要移到原点）
-/// 2. 旋转：应用 bangle 绕 Z 轴旋转
-/// 3. 镜像：如果 lmirror，X 轴取反
-fn build_profile_transform_matrix(plin_pos: Vec2, bangle: f32, lmirror: bool) -> DMat4 {
+/// 2. PLIN 旋转：plin_rotation（来自 PLAX 方向，GJLORI）
+/// 3. 旋转：应用 bangle 绕 Z 轴旋转
+/// 4. 镜像：如果 lmirror，X 轴取反
+fn build_profile_transform_matrix(plin_pos: Vec2, plin_rotation: f32, bangle: f32, lmirror: bool) -> DMat4 {
     // 1. 平移：移到原点（负 plin_pos）
     let translation =
         DMat4::from_translation(DVec3::new(-plin_pos.x as f64, -plin_pos.y as f64, 0.0));
 
-    // 2. 旋转：bangle 绕 Z 轴
+    // 2. PLIN 旋转：来自 PLAX 方向编码
+    let plin_rot_mat = if plin_rotation.abs() > 0.001 {
+        DMat4::from_quat(DQuat::from_rotation_z(plin_rotation as f64))
+    } else {
+        DMat4::IDENTITY
+    };
+
+    // 3. 旋转：bangle 绕 Z 轴
     let rotation = if bangle.abs() > 0.001 {
         DQuat::from_rotation_z(bangle.to_radians() as f64)
     } else {
@@ -240,27 +257,26 @@ fn build_profile_transform_matrix(plin_pos: Vec2, bangle: f32, lmirror: bool) ->
     };
     let rotation_mat = DMat4::from_quat(rotation);
 
-    // 3. 镜像：lmirror 时 X 轴取反
+    // 4. 镜像：lmirror 时 X 轴取反
     let mirror_mat = if lmirror {
         DMat4::from_scale(DVec3::new(-1.0, 1.0, 1.0))
     } else {
         DMat4::IDENTITY
     };
 
-    // 组合变换：先平移，再旋转，最后镜像
-    mirror_mat * rotation_mat * translation
+    // 组合变换：先平移，再 PLIN 旋转，再 bangle 旋转，最后镜像
+    mirror_mat * rotation_mat * plin_rot_mat * translation
 }
 
-/// 对截面应用 plin_pos/lmirror 变换
+/// 对截面应用 plin_pos/plin_rotation/bangle/lmirror 变换
 fn apply_profile_transform(
     mut profile: ProfileData,
     plin_pos: Vec2,
+    plin_rotation: f32,
     bangle: f32,
     lmirror: bool,
 ) -> ProfileData {
-    // 说明：
-    // - 重构后：所有路径使用实际几何坐标，bangle 在截面阶段应用
-    let mat = build_profile_transform_matrix(plin_pos, bangle, lmirror);
+    let mat = build_profile_transform_matrix(plin_pos, plin_rotation, bangle, lmirror);
 
     for v in &mut profile.vertices {
         let p = mat.transform_point3(DVec3::new(v.pos.x as f64, v.pos.y as f64, 0.0));
@@ -1234,8 +1250,17 @@ pub fn generate_sweep_solid_mesh(
     // 仅对“非简单直线”路径在截面阶段应用 bangle，避免与旧的单位化直线链路重复旋转。
     let is_line_path = sweep.path.as_single_line().is_some();
     let bangle = if is_line_path { 0.0 } else { sweep.bangle };
+    let plin_pos = sweep.profile.get_plin_pos();
+    let plin_axis = sweep.profile.get_plin_axis();
+    let plin_rotation = plin_axis_to_rotation(plin_axis);
+    if is_debug_model_enabled() {
+        println!(
+            "[SweepSolid] profile plin_pos={:?} plin_axis={:?} plin_rotation={:.4} bangle={:.3} lmirror={} is_line={}",
+            plin_pos, plin_axis, plin_rotation.to_degrees(), bangle, sweep.lmirror, is_line_path
+        );
+    }
     let profile =
-        apply_profile_transform(profile, sweep.profile.get_plin_pos(), bangle, sweep.lmirror);
+        apply_profile_transform(profile, plin_pos, plin_rotation, bangle, sweep.lmirror);
 
     let arc_segments = if sweep.path.is_single_segment() {
         if let Some(arc) = sweep.path.as_single_arc() {

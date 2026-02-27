@@ -960,6 +960,15 @@ impl CateProfileParam {
         }
     }
 
+    pub fn get_plin_axis(&self) -> Vec3 {
+        match self {
+            CateProfileParam::UNKOWN => Vec3::Y,
+            CateProfileParam::SPRO(s) => s.plin_axis,
+            CateProfileParam::SANN(s) => s.plin_axis,
+            CateProfileParam::SREC(s) => s.plin_axis,
+        }
+    }
+
     pub fn get_bbox(&self) -> Option<Aabb> {
         match self {
             CateProfileParam::UNKOWN => None,
