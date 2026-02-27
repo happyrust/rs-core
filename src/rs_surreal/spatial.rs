@@ -413,6 +413,11 @@ pub enum SectionEnd {
     END,
 }
 
+#[inline]
+fn should_pick_current_segment(tmp_dist: f64, cur_len: f64, is_last_seg: bool) -> bool {
+    is_last_seg || tmp_dist <= cur_len
+}
+
 /// 计算 ZDIS 和 PKDI, `refno` 是具有 SPLINE 属性或者 SCTN 这种的参考号。
 /// 沿 spine 段长度方向累加弧长，返回截面所在的世界坐标和朝向四元数。
 pub async fn cal_zdis_pkdi_in_section_by_spine(
@@ -455,76 +460,85 @@ pub async fn cal_zdis_pkdi_in_section_by_spine(
     for (i, segment) in sweep_path.segments.into_iter().enumerate() {
         tmp_dist -= cur_len;
         cur_len = lens[i] as f64;
-        //在第一段范围内，或者是最后一段，就没有长度的限制
-        if tmp_dist > cur_len || i == lens.len() - 1 {
-            match segment {
-                SegmentPath::Line(l) => {
-                    let mut z_dir = get_spline_line_dir(refno)
-                        .await
-                        .unwrap_or_default()
-                        .normalize_or_zero();
-                    if z_dir.length() == 0.0 {
-                        // z_dir = DVec3::Z;
-                        // let mut y_dir = spine_ydir;
-                        // if y_dir.normalize().dot(DVec3::Z).abs() > 0.999 {
-                        //     y_dir = DVec3::X
-                        // };
-                        // let x_dir = y_dir.cross(z_dir).normalize();
-                        // quat = DQuat::from_mat3(&DMat3::from_cols(x_axis, y_axis, z_axis));
-                        quat = w_quat;
+        let is_last_seg = i == lens.len() - 1;
+        if !should_pick_current_segment(tmp_dist, cur_len, is_last_seg) {
+            continue;
+        }
+
+        match segment {
+            SegmentPath::Line(l) => {
+                // 使用“当前命中段”的切线方向，避免多段路径误用全局首尾方向。
+                let mut z_dir = (l.end.as_dvec3() - l.start.as_dvec3()).normalize_or_zero();
+                if z_dir.length() == 0.0 {
+                    quat = w_quat;
+                } else {
+                    quat = construct_basis_z_y_raw(z_dir, spine_ydir);
+                    z_dir = DMat3::from_quat(quat).z_axis;
+                    quat = w_quat * quat;
+                }
+                let spine = &spline_paths[i];
+                match section_end {
+                    Some(SectionEnd::START) => {
+                        pos = spine.pt0.as_dvec3();
+                    }
+                    Some(SectionEnd::END) => {
+                        pos = spine.pt1.as_dvec3();
+                    }
+                    _ => {
+                        let dist_in_seg = if is_last_seg {
+                            tmp_dist
+                        } else {
+                            tmp_dist.clamp(0.0, cur_len)
+                        };
+                        pos = z_dir * dist_in_seg + spine.pt0.as_dvec3();
+                    }
+                }
+                break;
+            }
+            SegmentPath::Arc(arc) => {
+                //使用弧长去计算当前的点的位置
+                if arc.radius > LEN_TOL {
+                    let arc_center = arc.center.as_dvec3();
+                    let arc_radius = arc.radius as f64;
+                    let v = (arc.start_pt.as_dvec3() - arc_center).normalize();
+                    let mut start_angle = DVec3::X.angle_between(v);
+                    if DVec3::X.cross(v).z < 0.0 {
+                        start_angle = -start_angle;
+                    }
+                    let dist_in_seg = if is_last_seg {
+                        tmp_dist
                     } else {
-                        quat = construct_basis_z_y_raw(z_dir, spine_ydir);
-                        z_dir = DMat3::from_quat(quat).z_axis;
-                        quat = w_quat * quat;
+                        tmp_dist.clamp(0.0, cur_len)
+                    };
+                    let mut theta = dist_in_seg / arc_radius;
+                    if arc.clock_wise {
+                        theta = -theta;
                     }
-                    // dbg!(dquat_to_pdms_ori_xyz_str(&quat, true));
-                    let spine = &spline_paths[i];
-                    match section_end {
-                        Some(SectionEnd::START) => {
-                            pos = spine.pt0.as_dvec3();
-                        }
-                        Some(SectionEnd::END) => {
-                            pos = spine.pt1.as_dvec3();
-                        }
-                        _ => {
-                            pos += z_dir * tmp_dist + spine.pt0.as_dvec3();
-                        }
+                    theta = start_angle + theta;
+                    pos = arc_center + arc_radius * DVec3::new(theta.cos(), theta.sin(), 0.0);
+                    let y_axis = DVec3::Z;
+                    let mut x_axis = (arc_center - pos).normalize();
+                    if arc.clock_wise {
+                        x_axis = -x_axis;
                     }
+                    let z_axis = x_axis.cross(y_axis).normalize();
+                    quat = DQuat::from_mat3(&DMat3::from_cols(x_axis, y_axis, z_axis));
+                    quat = w_quat * quat;
                     break;
                 }
-                SegmentPath::Arc(arc) => {
-                    //使用弧长去计算当前的点的位置
-                    if arc.radius > LEN_TOL {
-                        let arc_center = arc.center.as_dvec3();
-                        let arc_radius = arc.radius as f64;
-                        let v = (arc.start_pt.as_dvec3() - arc_center).normalize();
-                        let mut start_angle = DVec3::X.angle_between(v);
-                        if DVec3::X.cross(v).z < 0.0 {
-                            start_angle = -start_angle;
-                        }
-                        let mut theta = (tmp_dist / arc_radius);
-                        if arc.clock_wise {
-                            theta = -theta;
-                        }
-                        theta = start_angle + theta;
-                        pos = arc_center + arc_radius * DVec3::new(theta.cos(), theta.sin(), 0.0);
-                        let y_axis = DVec3::Z;
-                        let mut x_axis = (arc_center - pos).normalize();
-                        if arc.clock_wise {
-                            x_axis = -x_axis;
-                        }
-                        let z_axis = x_axis.cross(y_axis).normalize();
-                        // dbg!((x_axis, y_axis, z_axis));
-                        quat = DQuat::from_mat3(&DMat3::from_cols(x_axis, y_axis, z_axis));
-                        // dbg!(dquat_to_pdms_ori_xyz_str(&quat));
-                        quat = w_quat * quat;
-                    }
-                }
-                _ => {}
             }
+            _ => {}
         }
     }
     Ok(Some((quat, pos)))
+}
+
+#[test]
+fn test_should_pick_current_segment() {
+    assert!(!should_pick_current_segment(120.0, 100.0, false));
+    assert!(should_pick_current_segment(100.0, 100.0, false));
+    assert!(should_pick_current_segment(80.0, 100.0, false));
+    assert!(should_pick_current_segment(120.0, 100.0, true));
 }
 
 /// 根据 GENSEC/WALL 下的 SPINE / POINSP / CURVE 节点，
