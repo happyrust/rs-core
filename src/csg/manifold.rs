@@ -552,6 +552,40 @@ impl ManifoldRust {
         manifold
     }
 
+    /// 从 AABB 中心向外微量膨胀（消除布尔运算中的共面薄片）
+    ///
+    /// 当负实体的面与正实体的面完全共面时，布尔差集会产生零厚度退化三角形。
+    /// 通过将负实体从其 AABB 中心向外扩展 `epsilon_mm`（每边），
+    /// 使其略微超出正实体表面，从而产生干净的切割。
+    ///
+    /// # 参数
+    /// * `epsilon_mm` - 每边扩展量（与模型单位一致，PDMS 中为 mm）
+    pub fn inflate_from_center(&self, epsilon_mm: f64) -> Self {
+        let mesh = self.get_mesh();
+        let aabb = match mesh.cal_aabb() {
+            Some(a) => a,
+            None => return self.clone(),
+        };
+        let extents = aabb.extents();
+        let min_ext = extents.x.min(extents.y).min(extents.z) as f64;
+        if min_ext < 1e-6 {
+            return self.clone();
+        }
+        let center = aabb.center();
+        let cx = center.x as f64;
+        let cy = center.y as f64;
+        let cz = center.z as f64;
+        // 每个轴的缩放因子 = 1 + 2*epsilon / extent（两端各扩展 epsilon）
+        let sx = 1.0 + 2.0 * epsilon_mm / extents.x as f64;
+        let sy = 1.0 + 2.0 * epsilon_mm / extents.y as f64;
+        let sz = 1.0 + 2.0 * epsilon_mm / extents.z as f64;
+        // 平移到原点 → 缩放 → 平移回来
+        let step1 = self.inner.translate(-cx, -cy, -cz);
+        let step2 = step1.scale(sx, sy, sz);
+        let step3 = step2.translate(cx, cy, cz);
+        Self { inner: step3 }
+    }
+
     pub fn destroy(&self) {
         // manifold-rs 使用 RAII，无需手动释放
     }
