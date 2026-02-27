@@ -281,10 +281,17 @@ pub async fn create_profile_geos(
                     let mid_pt_world = att2.get_position().unwrap_or_default();
                     let cur_type_str = att2.get_str("CURTYP").unwrap_or("unset");
                     let curve_type = match cur_type_str {
-                        "CENT" => SpineCurveType::CENT,
-                        "THRU" => SpineCurveType::THRU,
-                        _ => SpineCurveType::UNKNOWN,
+                        "CENT" => Some(SpineCurveType::CENT),
+                        "THRU" | "FILL" | "RADI" | "BULG" => Some(SpineCurveType::THRU),
+                        "LINE" => Some(SpineCurveType::LINE),
+                        // 与 core.dll 一致：NULL 段不生成路径
+                        "NULL" => None,
+                        _ => Some(SpineCurveType::UNKNOWN),
                     };
+                    if curve_type.is_none() {
+                        i += 2;
+                        continue;
+                    }
                     let ydir = spine_att.get_vec3("YDIR").unwrap_or(Vec3::Z);
                     println!(
                         "[profile][arc-spine] refno={} CURTYP={} pt0_world={:?} pt1_world={:?} mid_pt={:?} origin={:?} ydir={:?} rad={:?}",
@@ -298,7 +305,7 @@ pub async fn create_profile_geos(
                         thru_pt: mid_pt_world - origin,   // 相对坐标
                         center_pt: mid_pt_world - origin, // 相对坐标
                         cond_pos: att2.get_vec3("CPOS").unwrap_or_default(),
-                        curve_type,
+                        curve_type: curve_type.unwrap_or_default(),
                         preferred_dir: spine_att.get_vec3("YDIR").unwrap_or(Vec3::Z),
                         radius: att2.get_f32("RAD").unwrap_or_default(),
                     });
