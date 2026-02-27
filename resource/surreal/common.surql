@@ -1,10 +1,9 @@
 -- DEFINE FIELD refnos ON TABLE his_pe TYPE set<record<pe>>;
 DEFINE TABLE IF NOT EXISTS inst_info;
 
-REMOVE FUNCTION fn::ancestor;
 -- 考虑到版本的原因，需要使用到历史祖先的记录，所以需要使用到这个函数
 -- 获取节点的所有祖先节点（不包括根节点和空节点）
-DEFINE FUNCTION fn::ancestor($r: record) {
+DEFINE FUNCTION OVERWRITE fn::ancestor($r: record) {
     return if !record::exists($r) {
         return [];
     } else {
@@ -15,9 +14,8 @@ DEFINE FUNCTION fn::ancestor($r: record) {
 
 
 
-REMOVE FUNCTION fn::newest_pe;
 -- 获取节点的最新版本（如果不是数组ID则返回自身）
-DEFINE FUNCTION fn::newest_pe(
+DEFINE FUNCTION OVERWRITE fn::newest_pe(
     $pe: record,
 ) {
     if $pe == none {
@@ -31,9 +29,8 @@ DEFINE FUNCTION fn::newest_pe(
     return type::record('pe', $refno);
 };
 
-REMOVE FUNCTION fn::newest_pe_id;
 -- 获取节点的最新版本ID
-DEFINE FUNCTION fn::newest_pe_id(
+DEFINE FUNCTION OVERWRITE fn::newest_pe_id(
     $pe: record,
 ) {
     if !type::is_array($pe) {
@@ -43,9 +40,8 @@ DEFINE FUNCTION fn::newest_pe_id(
 };
 
 
-REMOVE FUNCTION fn::order;
 -- 获取节点在同类型兄弟节点中的序号
-DEFINE FUNCTION fn::order(
+DEFINE FUNCTION OVERWRITE fn::order(
     $pe: record,
 ) {
     if $pe.owner == none {
@@ -60,17 +56,15 @@ DEFINE FUNCTION fn::order(
     };
 };
 
-REMOVE FUNCTION fn::default_name;
 -- 获取节点的默认名称（如果名称为空则自动生成）
-DEFINE FUNCTION fn::default_name(
+DEFINE FUNCTION OVERWRITE fn::default_name(
     $pe: record,
 ) {
     return (select value (if name=='' {string::join(' ', noun, <string> (fn::order($pe)?:0 + 1) ) } else { name } ) from $pe)[0];
 };
 
-REMOVE FUNCTION fn::default_names;
 -- 批量获取节点的默认名称
-DEFINE FUNCTION fn::default_names(
+DEFINE FUNCTION OVERWRITE fn::default_names(
     $pes: array<record>,
 ) {
     return select value (if name=='' {string::join(' ', noun,<string> (
@@ -78,9 +72,8 @@ DEFINE FUNCTION fn::default_names(
 };
 
 
-REMOVE FUNCTION fn::default_full_name;
 -- 获取节点的完整默认名称（包含所有祖先信息）
-DEFINE FUNCTION fn::default_full_name($r: record) {
+DEFINE FUNCTION OVERWRITE fn::default_full_name($r: record) {
     return if !record::exists($r) {
         return '';
     }else if $r.name != '' && $r.name != none {
@@ -97,11 +90,10 @@ DEFINE FUNCTION fn::default_full_name($r: record) {
 };
 
 
-REMOVE FUNCTION fn::backup_data;
 //备份修改的数据，只针对修改的处理
 //如果是新增，应该是对pe_owner的备份
 -- 备份数据：处理修改和删除操作的数据备份
-DEFINE FUNCTION fn::backup_data(
+DEFINE FUNCTION OVERWRITE fn::backup_data(
     $pes: array<record>,
     $is_del: bool,
     $sesno: number,
@@ -179,11 +171,10 @@ DEFINE FUNCTION fn::backup_data(
 };
 
 
-REMOVE FUNCTION fn::backup_owner_relate;
 //备份修改的数据，只针对修改的处理
 //如果是新增，应该是对pe_owner的备份
 -- 备份所有者关系：处理父子关系的备份
-DEFINE FUNCTION fn::backup_owner_relate(
+DEFINE FUNCTION OVERWRITE fn::backup_owner_relate(
     $pes: array<record>,
     $delete_old: bool,
 ) {
@@ -220,9 +211,8 @@ DEFINE FUNCTION fn::backup_owner_relate(
 // let $pe = pe:17496_171606;
 // fn::backup_owner_relate([$pe], false);
 
-REMOVE FUNCTION fn::latest_pe_sesno;
 -- 获取节点在指定会话号或数据库号下的最新会话号
-DEFINE FUNCTION fn::latest_pe_sesno($pe: record, $s: option<number>, $db: option<number>){
+DEFINE FUNCTION OVERWRITE fn::latest_pe_sesno($pe: record, $s: option<number>, $db: option<number>){
     let $sesno = $pe.sesno?:0;
     let $r = return if $s != none and $db != none {
         #找到对应的时间
@@ -241,9 +231,8 @@ DEFINE FUNCTION fn::latest_pe_sesno($pe: record, $s: option<number>, $db: option
     return [$r?:0, $sesno];
 };
 
-REMOVE FUNCTION fn::latest_pe;
 -- 获取节点在指定会话号或数据库号下的最新版本
-DEFINE FUNCTION fn::latest_pe($pe: record, $s: option<number>, $db: option<number>){
+DEFINE FUNCTION OVERWRITE fn::latest_pe($pe: record, $s: option<number>, $db: option<number>){
     let $s = fn::latest_pe_sesno($pe, $s, $db);
     return if $s[1] == $s[0]  {
         return $pe;
@@ -254,9 +243,8 @@ DEFINE FUNCTION fn::latest_pe($pe: record, $s: option<number>, $db: option<numbe
 };
 
 
-REMOVE FUNCTION fn::find_pe_by_datetime;
 -- 根据日期时间查找节点
-DEFINE FUNCTION fn::find_pe_by_datetime($pe: record, $dt: datetime){
+DEFINE FUNCTION OVERWRITE fn::find_pe_by_datetime($pe: record, $dt: datetime){
     let $his_pe = type::record('his_pe', fn::newest_pe_id($pe));
     if !record::exists($his_pe) {
         return $pe;
@@ -270,16 +258,14 @@ DEFINE FUNCTION fn::find_pe_by_datetime($pe: record, $dt: datetime){
 -- fn::latest_pe_sesno(pe:17496_171715, 880);
 -- fn::latest_pe_sesno(pe:17496_171715);
 
-REMOVE FUNCTION fn::ses_data;
 -- 获取节点的会话数据
-DEFINE FUNCTION fn::ses_data($pe: record){
+DEFINE FUNCTION OVERWRITE fn::ses_data($pe: record){
     let $id = type::record('ses', [$pe.dbnum, $pe.sesno]);
     return select * from only $id limit 1;
 };
 
-REMOVE FUNCTION fn::ses_date;
 -- 获取节点的会话日期
-DEFINE FUNCTION fn::ses_date($pe: record){
+DEFINE FUNCTION OVERWRITE fn::ses_date($pe: record){
     return if record::exists($pe) {
         let $id = type::record('ses', [$pe.dbnum, $pe.sesno]);
         return select value date from only $id limit 1;
@@ -288,39 +274,33 @@ DEFINE FUNCTION fn::ses_date($pe: record){
     };
 };
 
-REMOVE FUNCTION fn::next_is_type;
 -- 判断下一个节点是否为指定类型
-DEFINE FUNCTION fn::next_is_type($pe:record,$type:string) {
+DEFINE FUNCTION OVERWRITE fn::next_is_type($pe:record,$type:string) {
     return fn::next_type($pe)==$type;
 };
 
-REMOVE FUNCTION fn::first_child;
 -- 获取第一个子节点
-DEFINE FUNCTION fn::first_child($pe:record) {
+DEFINE FUNCTION OVERWRITE fn::first_child($pe:record) {
     return select value (<-pe_owner[0].in) from only $pe limit 1;
 };
 
-REMOVE FUNCTION fn::first_child_exclude_type;
 -- 获取第一个非指定类型的子节点
-DEFINE FUNCTION fn::first_child_exclude_type($pe:record, $exclude_type: string) {
+DEFINE FUNCTION OVERWRITE fn::first_child_exclude_type($pe:record, $exclude_type: string) {
     return select value in from only $pe<-pe_owner where in.noun != $exclude_type limit 1;
 };
 
-REMOVE FUNCTION fn::last_child;
 -- 获取最后一个子节点
-DEFINE FUNCTION fn::last_child($pe:record) {
+DEFINE FUNCTION OVERWRITE fn::last_child($pe:record) {
     return array::last((select value (<-pe_owner.in) from only $pe limit 1)?:[]);
 };
 
-REMOVE FUNCTION fn::last_child_exclude_type;
 -- 获取最后一个非指定类型的子节点
-DEFINE FUNCTION fn::last_child_exclude_type($pe:record, $exclude_type: string) {
+DEFINE FUNCTION OVERWRITE fn::last_child_exclude_type($pe:record, $exclude_type: string) {
     return (select * from only $pe<-pe_owner where in.noun != $exclude_type order by id desc limit 1).in;
 };
 
-REMOVE FUNCTION fn::prev_pe;
 -- 获取前一个兄弟节点
-DEFINE FUNCTION fn::prev_pe($pe:record) {
+DEFINE FUNCTION OVERWRITE fn::prev_pe($pe:record) {
     if $pe == none || !record::exists($pe) {
         return none;
     };
@@ -328,9 +308,8 @@ DEFINE FUNCTION fn::prev_pe($pe:record) {
     return select value (out<-pe_owner[$a].in) from only $pe->pe_owner limit 1;
 };
 
-REMOVE FUNCTION fn::prev_pe_exclude_type;
 -- 获取前一个非指定类型的兄弟节点
-DEFINE FUNCTION fn::prev_pe_exclude_type($pe:record, $exclude_type: string) {
+DEFINE FUNCTION OVERWRITE fn::prev_pe_exclude_type($pe:record, $exclude_type: string) {
     if $pe == none || !record::exists($pe) {
             return none;
     };
@@ -339,9 +318,8 @@ DEFINE FUNCTION fn::prev_pe_exclude_type($pe:record, $exclude_type: string) {
 };
 
 
-REMOVE FUNCTION fn::next_pe;
 -- 获取下一个兄弟节点
-DEFINE FUNCTION fn::next_pe($pe:record) {
+DEFINE FUNCTION OVERWRITE fn::next_pe($pe:record) {
     if $pe == none || !record::exists($pe) {
         return none;
     };
@@ -349,9 +327,8 @@ DEFINE FUNCTION fn::next_pe($pe:record) {
     return select value (out<-pe_owner[$a].in) from only $pe->pe_owner limit 1;
 };
 
-REMOVE FUNCTION fn::next_pe_exclude_type;
 -- 获取下一个非指定类型的兄弟节点
-DEFINE FUNCTION fn::next_pe_exclude_type($pe:record, $exclude_type: string) {
+DEFINE FUNCTION OVERWRITE fn::next_pe_exclude_type($pe:record, $exclude_type: string) {
     if $pe == none || !record::exists($pe) {
             return none;
         };
@@ -359,9 +336,8 @@ DEFINE FUNCTION fn::next_pe_exclude_type($pe:record, $exclude_type: string) {
     return select value in from only ($pe->pe_owner->pe<-pe_owner)[$a..] where in.noun != $exclude_type  limit 1;
 };
 
-REMOVE FUNCTION fn::prev_connect_pe;
 -- 获取前一个连接节点（跳过ATTA类型）
-DEFINE FUNCTION fn::prev_connect_pe($pe:record) {
+DEFINE FUNCTION OVERWRITE fn::prev_connect_pe($pe:record) {
     if $pe == none {
         return none;
     };
@@ -378,9 +354,8 @@ DEFINE FUNCTION fn::prev_connect_pe($pe:record) {
     };
 };
 
-REMOVE FUNCTION fn::prev_connect_pe_data;
 -- 获取前一个连接节点的详细信息
-DEFINE FUNCTION fn::prev_connect_pe_data($pe:record) {
+DEFINE FUNCTION OVERWRITE fn::prev_connect_pe_data($pe:record) {
     let $p = fn::prev_connect_pe($pe);
     //如果有到达这个元件的直段，则返回这个直段的leave
     let $tmp_tubi_refno = fn::query_tubi_from($pe).leave;
@@ -428,9 +403,8 @@ DEFINE FUNCTION fn::prev_connect_pe_data($pe:record) {
     };
 };
 
-REMOVE FUNCTION fn::next_connect_pe;
 -- 获取下一个连接节点（跳过ATTA类型）
-DEFINE FUNCTION fn::next_connect_pe($pe:record) {
+DEFINE FUNCTION OVERWRITE fn::next_connect_pe($pe:record) {
     if $pe == none {
         return none;
     };
@@ -447,9 +421,8 @@ DEFINE FUNCTION fn::next_connect_pe($pe:record) {
     };
 };
 
-REMOVE FUNCTION fn::next_connect_pe_data;
 -- 获取下一个连接节点的详细信息
-DEFINE FUNCTION fn::next_connect_pe_data($pe:record) {
+DEFINE FUNCTION OVERWRITE fn::next_connect_pe_data($pe:record) {
     let $p = fn::next_connect_pe($pe);
     let $tubi_refno = if fn::query_tubi_to($pe) != none {
         $pe
@@ -494,43 +467,37 @@ DEFINE FUNCTION fn::next_connect_pe_data($pe:record) {
     };
 };
 
-REMOVE FUNCTION fn::query_tubi_to;
 -- 查询连接到指定节点的直段
-DEFINE FUNCTION fn::query_tubi_to($pe:record) {
+DEFINE FUNCTION OVERWRITE fn::query_tubi_to($pe:record) {
     return select out from only $pe->tubi_relate limit 1;
 };
 
-REMOVE FUNCTION fn::query_tubi_from;
 -- 查询从指定节点出发的直段
-DEFINE FUNCTION fn::query_tubi_from($pe:record) {
+DEFINE FUNCTION OVERWRITE fn::query_tubi_from($pe:record) {
     return select in from only $pe<-tubi_relate limit 1;
 };
 
-REMOVE FUNCTION fn::query_bran_first_tubi;
 -- 查询分支的第一个直段
-DEFINE FUNCTION fn::query_bran_first_tubi($pe:record) {
+DEFINE FUNCTION OVERWRITE fn::query_bran_first_tubi($pe:record) {
     if $pe.noun != 'BRAN' {
         return none;
     };
     return tubi_relate:[$pe, 0].id;
 };
 
-REMOVE FUNCTION fn::prev_type;
 -- 获取前一个节点的类型
-DEFINE FUNCTION fn::prev_type($pe:record) {
+DEFINE FUNCTION OVERWRITE fn::prev_type($pe:record) {
     return fn::prev_pe($pe).noun;
 };
 
-REMOVE FUNCTION fn::next_type;
 -- 获取下一个节点的类型
-DEFINE FUNCTION fn::next_type($pe:record) {
+DEFINE FUNCTION OVERWRITE fn::next_type($pe:record) {
     return fn::next_pe($pe).noun;
 };
 
 
-REMOVE FUNCTION fn::children;
 -- 获取所有子节点（去重且排除已删除节点）
-DEFINE FUNCTION fn::children($pe:record) {
+DEFINE FUNCTION OVERWRITE fn::children($pe:record) {
     if !record::exists($pe) {
         return [];
     };
@@ -545,10 +512,9 @@ DEFINE FUNCTION fn::children($pe:record) {
 
 // 获取ipara
 // 获取保温层参数
-REMOVE FUNCTION fn::get_ipara;
 -- 获取保温层参数
 -- 根据 TEMP（温度）筛选 SELE，再根据 HBOR（孔径）筛选 SPCO
-DEFINE FUNCTION fn::get_ipara($pe:record) {
+DEFINE FUNCTION OVERWRITE fn::get_ipara($pe:record) {
     // 获取父节点的 ISPE 引用
     let $ispe = $pe.refno.ISPE?:$pe.owner.refno.ISPE;
     return if $ispe == none {
@@ -580,24 +546,21 @@ DEFINE FUNCTION fn::get_ipara($pe:record) {
 };
 
 //根据类型找到父节点
-REMOVE FUNCTION fn::find_ancestor_type;
 -- 根据类型查找祖先节点
-DEFINE FUNCTION fn::find_ancestor_type($pe: record, $t: string){
+DEFINE FUNCTION OVERWRITE fn::find_ancestor_type($pe: record, $t: string){
     (array::flatten(select value fn::ancestor(id) from $pe)[?$self.noun=$t])[0]
 };
 
 
 // 返回类型集合的父节点
-REMOVE FUNCTION fn::find_ancestor_types;
 -- 根据类型集合查找祖先节点
-DEFINE FUNCTION fn::find_ancestor_types($pe: record, $t: array){
+DEFINE FUNCTION OVERWRITE fn::find_ancestor_types($pe: record, $t: array){
     let $r = (array::flatten(select value fn::ancestor(id) from $pe));
     return select value id from $r where noun in $t;
 };
 
-REMOVE FUNCTION fn::init_site_spec_value;
 -- SITE 专业枚举初始化
-DEFINE FUNCTION fn::init_site_spec_value() {
+DEFINE FUNCTION OVERWRITE fn::init_site_spec_value() {
     UPDATE pe SET spec_value =
         IF string::contains(name, 'PIPE') { 1 }
         ELSE IF string::contains(name, 'ELEC') { 2 }
@@ -608,15 +571,13 @@ DEFINE FUNCTION fn::init_site_spec_value() {
 };
 
 // 返回符合类型集合的子节点ID
-REMOVE FUNCTION fn::collect_descendant_ids_by_types;
 -- 收集符合指定类型的子孙节点ID
-DEFINE FUNCTION fn::collect_descendant_ids_by_types($pe:record,$t:array,$inclusive:option<bool>,$range_str:string) {
+DEFINE FUNCTION OVERWRITE fn::collect_descendant_ids_by_types($pe:record,$t:array,$inclusive:option<bool>,$range_str:string) {
     let $infos = fn::collect_descendant_infos($pe, $t, $inclusive, $range_str);
     return array::map($infos, |$info| $info.id);
 };
 
 // 返回符合类型集合且具有 CATR 或 SPRE 属性的子节点ID
-REMOVE FUNCTION fn::collect_descendants_filter_spre;
 -- 收集符合指定类型的子孙节点ID，并过滤出具有 CATR 或 SPRE 属性的节点
 -- 参数：
 --   $root: 起始节点
@@ -625,7 +586,7 @@ REMOVE FUNCTION fn::collect_descendants_filter_spre;
 --   $inclusive: 是否包含根节点本身
 --   $range_str: 递归范围字符串，仅用于文档/注释
 -- 返回：符合条件且 refno.CATR 或 refno.SPRE 不为空且 record exist 的节点ID数组
-DEFINE FUNCTION fn::collect_descendants_filter_spre(
+DEFINE FUNCTION OVERWRITE fn::collect_descendants_filter_spre(
     $root: record,
     $types: array<string>,
     $filter_inst: option<bool>,
@@ -684,10 +645,9 @@ DEFINE FUNCTION fn::collect_descendants_filter_spre(
     return array::map($filtered, |$node| $node.id);
 };
 
-REMOVE FUNCTION fn::collect_children;
 -- 收集子节点，支持按类型过滤
 -- $types: 要过滤的类型数组，空数组表示不过滤
-DEFINE FUNCTION fn::collect_children($root: record, $types: option<array<string>>) {
+DEFINE FUNCTION OVERWRITE fn::collect_children($root: record, $types: option<array<string>>) {
     if !record::exists($root) {
         return [];
     };
@@ -703,10 +663,9 @@ DEFINE FUNCTION fn::collect_children($root: record, $types: option<array<string>
     };
 };
 
-REMOVE FUNCTION fn::collect_descendant_infos;
 -- 收集子孙节点信息（包含ID和类型），支持自定义递归深度范围
 -- $range_str: 递归范围字符串，仅用于文档/注释，实际在 Rust 代码中进行字符串拼接
-DEFINE FUNCTION fn::collect_descendant_infos(
+DEFINE FUNCTION OVERWRITE fn::collect_descendant_infos(
     $root: record,
     $types: array<string>,
     $inclusive: option<bool>,
@@ -732,11 +691,10 @@ DEFINE FUNCTION fn::collect_descendant_infos(
 };
 
 
-REMOVE FUNCTION fn::collect_descendant_ids_has_inst;
 -- 收集子孙节点的 ID 和 has_inst 状态
 -- 返回 { id, has_inst } 结构数组，可以通过 [? has_inst] 过滤出有 inst_relate 的节点
 -- $range_str: 递归范围字符串，可选参数，默认为 ".."
-DEFINE FUNCTION fn::collect_descendant_ids_has_inst(
+DEFINE FUNCTION OVERWRITE fn::collect_descendant_ids_has_inst(
     $root: record,
     $types: array<string>,
     $inclusive: option<bool>,
@@ -763,9 +721,8 @@ DEFINE FUNCTION fn::collect_descendant_ids_has_inst(
 
 
 
-REMOVE FUNCTION fn::visible_geo_descendants;
 -- 获取可见的几何子孙节点
-DEFINE FUNCTION fn::visible_geo_descendants($root: record, $include_self: bool, $range_str: string) {
+DEFINE FUNCTION OVERWRITE fn::visible_geo_descendants($root: record, $include_self: bool, $range_str: string) {
     let $visible_types = [
         "BOX", "CYLI", "SLCY", "CONE", "DISH", "CTOR", "RTOR", "PYRA", "SNOU", "POHE", "POLYHE",
         "EXTR", "REVO", "FLOOR", "PANE", "ELCONN", "CMPF", "WALL", "GWALL", "SJOI", "FITT", "PFIT",
@@ -776,9 +733,8 @@ DEFINE FUNCTION fn::visible_geo_descendants($root: record, $include_self: bool, 
     return array::map($infos, |$info| $info.id);
 };
 
-REMOVE FUNCTION fn::negative_geo_descendants;
 -- 获取负实体几何子孙节点（对应 TOTAL_NEG_NOUN_NAMES）
-DEFINE FUNCTION fn::negative_geo_descendants($root: record, $include_self: bool, $range_str: string) {
+DEFINE FUNCTION OVERWRITE fn::negative_geo_descendants($root: record, $include_self: bool, $range_str: string) {
     let $negative_types = [
         "NBOX", "NCYL", "NLCY", "NSBO", "NCON", "NSNO", "NPYR", "NDIS", "NXTR", "NCTO", "NRTO", "NREV",
         "NSCY", "NSBO", "NSCO", "NLSN", "NSSP", "NLCY", "NSCY", "NSCT", "NSRT", "NSDS", "NSSL", "NLPY",
@@ -789,11 +745,10 @@ DEFINE FUNCTION fn::negative_geo_descendants($root: record, $include_self: bool,
 };
 
 
-REMOVE FUNCTION fn::query_mdb_db_nums;
 -- 查询MDB数据库编号
 -- 参数：$mdb - MDB名称, $db_type - 数据库类型
 -- 返回：数据库编号数组
-DEFINE FUNCTION fn::query_mdb_db_nums($mdb: string, $db_type: int) {
+DEFINE FUNCTION OVERWRITE fn::query_mdb_db_nums($mdb: string, $db_type: int) {
         let $dbnos = select value (select value DBNO from CURD.refno where STYP=$db_type) from only MDB where NAME=$mdb limit 1;
         return (select value dbnum from (
             select REFNO.dbnum as dbnum, array::find_index($dbnos, REFNO.dbnum) as o
@@ -803,9 +758,8 @@ DEFINE FUNCTION fn::query_mdb_db_nums($mdb: string, $db_type: int) {
         ));
 };
 
-REMOVE FUNCTION fn::get_flan_bolt_list;
 -- 获取法兰螺栓列表
-DEFINE FUNCTION fn::get_flan_bolt_list($pe:record) {
+DEFINE FUNCTION OVERWRITE fn::get_flan_bolt_list($pe:record) {
     if $pe.refno.SPRE == NONE { return NONE; };
     let $bltf = select value refno.SPRE.refno.CATR.refno.BLRF[0].name from $pe;
     if $bltf == NONE { return NONE; };
@@ -903,9 +857,8 @@ DEFINE FUNCTION fn::get_flan_bolt_list($pe:record) {
 --     };
 -- };
 
-REMOVE FUNCTION fn::ancestor_atts;
 -- 获取祖先节点的属性数据，并过滤掉属性为 NONE 的节点
-DEFINE FUNCTION fn::ancestor_atts($r: record) {
+DEFINE FUNCTION OVERWRITE fn::ancestor_atts($r: record) {
     return if !record::exists($r) {
         return [];
     } else {
@@ -915,7 +868,6 @@ DEFINE FUNCTION fn::ancestor_atts($r: record) {
     };
 };
 
-REMOVE FUNCTION fn::query_negative_entities;
 -- 查询指定正实体关联的负实体载体 refnos
 -- 参数 $pe: 正实体记录，如 pe:17496_106028
 -- 返回: 关联的负载体 refnos 数组（通过 neg_relate 和 ngmr_relate 关系)
@@ -923,13 +875,12 @@ REMOVE FUNCTION fn::query_negative_entities;
 --   neg_relate/ngmr_relate.in = geo_relate (切割几何)
 --   neg_relate/ngmr_relate.pe = 负载体 pe
 --   neg_relate/ngmr_relate.out = 正实体 pe
-DEFINE FUNCTION fn::query_negative_entities($pe: record) {
+DEFINE FUNCTION OVERWRITE fn::query_negative_entities($pe: record) {
     return array::union($pe<-neg_relate.pe, $pe<-ngmr_relate.pe);
 };
 
-REMOVE FUNCTION fn::query_ptset;
 -- 查询点集数据
-DEFINE FUNCTION fn::query_ptset($refno: string) {
+DEFINE FUNCTION OVERWRITE fn::query_ptset($refno: string) {
     let $table_name = string::concat($refno, '_inst_relate');
     let $sql = string::concat(
         '(SELECT world_trans.d AS transform, object::values(out.ptset?:{}).pt AS points FROM ',
@@ -954,9 +905,8 @@ DEFINE FUNCTION fn::query_ptset($refno: string) {
 -- 返回：符合条件的节点 ID 数组
 -- 性能提升：相比分块查询，减少 90% 的网络往返时间
 -- ============================================================================
-REMOVE FUNCTION fn::collect_descendants_filter_inst;
 -- 收集子孙节点并过滤实例关系和直段关系
-DEFINE FUNCTION fn::collect_descendants_filter_inst(
+DEFINE FUNCTION OVERWRITE fn::collect_descendants_filter_inst(
     $root: record,
     $types: array<string>,
     $filter_inst: option<bool>,

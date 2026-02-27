@@ -5,6 +5,26 @@ All notable changes to the rs-core library will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 2026-02-27
+
+### Added
+
+- **`ManifoldMeshRust::orient_consistently()` 绕序一致性修复算法**
+  - BFS 遍历半边邻接关系，修复 CSG 生成的混合绕序（底/顶面 vs 侧面方向不一致）
+  - 有符号体积判断法线朝向，确保法线统一朝外
+  - 解决 NPYR 等锥台类几何体 `Mesh::to_manifold()` 返回空的根因
+
+- **`ManifoldMeshRust` 二进制序列化 `save_to_file` / `load_from_file`**
+  - 无损保存/加载顶点和索引数组，避免 GLB 转换精度损失
+
+### Changed
+
+- **`ManifoldRust::from_mesh_with_cap` 简化**
+  - 移除 reverse winding 和 AABB cube fallback，绕序修复由 `orient_consistently` 在生成阶段统一处理
+
+- **SurrealDB 3.x `fetch_loops_and_height` 子查询修复** (`rs_surreal/geom.rs`)
+  - 将对象字面量内子查询改为路径遍历语法，修复 GWALL/PANE/FLOOR 等拉伸体 PAVE 顶点查询返回空数组
+
 ## 2026-02-26
 
 ### Fixed

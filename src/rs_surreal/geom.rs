@@ -49,9 +49,13 @@ pub fn get_inst_relate_keys(refnos: &[RefnoEnum]) -> String {
 }
 
 /// 从 LOOP/PLOO 子元素获取顶点数据的响应结构（内部使用）
+///
+/// 使用路径遍历 `children[WHERE ...].refno.POS` 替代子查询 `(SELECT ... FROM id.children)`，
+/// 因为 SurrealDB 3.x 中子查询/对象字面量内的 `id.children` 不解析外层记录。
 #[derive(Serialize, Deserialize, Debug, Default, SurrealValue)]
 struct LoopHeightRaw {
-    loops: Vec<RsVec3>,
+    positions: Vec<RsVec3>,
+    frads: Vec<f32>,
     height: Option<f32>,
 }
 
@@ -68,15 +72,16 @@ pub struct LoopHeightResult {
 ///
 /// 注意：顶点数据存储在 LOOP/PLOO 的子元素 PAVE/PONT 上，而不是 LOOP/PLOO 本身
 pub async fn fetch_loops_and_height(refno: RefnoEnum) -> anyhow::Result<LoopHeightResult> {
-    // 新查询：从 LOOP/PLOO 的子元素 PAVE/PONT 获取顶点数据
+    // 使用路径遍历获取 PAVE/PONT 的位置和圆角半径，避免在对象字面量内
+    // 使用 `(SELECT ... FROM id.children)` 子查询（SurrealDB 3.x 不解析外层 id）
     let sql = format!(
-        r#"SELECT value {{ 
-            loops: (SELECT value [refno.POS[0], refno.POS[1], refno.FRAD] FROM id.children WHERE noun IN ["PAVE", "PONT"]), 
-            height: refno.HEIG 
-        }} FROM {0}.children WHERE noun IN ["LOOP", "PLOO"]"#,
+        r#"SELECT
+            children[WHERE noun IN ["PAVE", "PONT"]].refno.POS as positions,
+            children[WHERE noun IN ["PAVE", "PONT"]].refno.FRAD as frads,
+            refno.HEIG as height
+        FROM {0}.children WHERE noun IN ["LOOP", "PLOO"]"#,
         refno.to_pe_key()
     );
-    // println!(" fetch_loops_and_height sql is {}", &sql);
     let mut response = SUL_DB.query_response(&sql).await.unwrap();
     let results: Vec<LoopHeightRaw> = response.take(0)?;
 
@@ -85,7 +90,13 @@ pub async fn fetch_loops_and_height(refno: RefnoEnum) -> anyhow::Result<LoopHeig
     let mut height: f32 = 0.0;
 
     for result in results {
-        let points: Vec<Vec3> = result.loops.into_iter().map(|v| v.0).collect();
+        // 将 positions [x,y,z] 和 frads 合并为 [x, y, frad] 格式（与旧逻辑兼容）
+        let points: Vec<Vec3> = result
+            .positions
+            .iter()
+            .zip(result.frads.iter().chain(std::iter::repeat(&0.0f32)))
+            .map(|(pos, &frad)| Vec3::new(pos.0.x, pos.0.y, frad))
+            .collect();
         if !points.is_empty() {
             all_loops.push(points);
         }

@@ -211,26 +211,10 @@ impl ManifoldRust {
             (vertices, indices) = build_welded(retry_precision);
         }
 
-        let mut manifold = Self::from_mesh(&ManifoldMeshRust {
-            vertices: vertices.clone(),
-            indices: indices.clone(),
+        let manifold = Self::from_mesh_with_cap(&ManifoldMeshRust {
+            vertices,
+            indices,
         });
-
-        // 兼容：若输入网格是“开口壳体”（常见于 RTOR/管件为减面而省略端盖），Manifold::to_manifold
-        // 往往会直接输出空 mesh。这里尝试自动为边界环加端盖后重试一次。
-        //
-        // 设计原则：
-        // - 仅当 to_manifold 结果为空时触发（避免影响正常闭合体）
-        // - 仅处理“边界顶点度数=2”的简单环（复杂边界/非闭环直接跳过）
-        // - 端盖用简单扇形三角化；绕序按“远离几何中心”推断外向
-        if manifold.get_mesh().indices.is_empty() && !indices.is_empty() && !vertices.is_empty() {
-            if let Some(capped) = try_cap_boundary_loops(&vertices, &indices) {
-                manifold = Self::from_mesh(&ManifoldMeshRust {
-                    vertices,
-                    indices: capped,
-                });
-            }
-        }
 
         Ok(manifold)
     }
@@ -545,7 +529,27 @@ impl ManifoldRust {
         more_precision: bool,
     ) -> Self {
         let mesh = ManifoldMeshRust::from_vertices_indices(vertices, indices, mat4, more_precision);
-        Self::from_mesh(&mesh)
+        Self::from_mesh_with_cap(&mesh)
+    }
+
+    /// 从 ManifoldMeshRust 创建 ManifoldRust，若 to_manifold 结果为空则尝试补端盖重试
+    pub fn from_mesh_with_cap(m: &ManifoldMeshRust) -> Self {
+        let manifold = Self::from_mesh(m);
+        if !manifold.get_mesh().indices.is_empty() || m.indices.is_empty() || m.vertices.is_empty() {
+            return manifold;
+        }
+
+        if let Some(capped) = try_cap_boundary_loops(&m.vertices, &m.indices) {
+            let capped_manifold = Self::from_mesh(&ManifoldMeshRust {
+                vertices: m.vertices.clone(),
+                indices: capped,
+            });
+            if !capped_manifold.get_mesh().indices.is_empty() {
+                return capped_manifold;
+            }
+        }
+
+        manifold
     }
 
     pub fn destroy(&self) {
@@ -817,6 +821,103 @@ impl ManifoldMeshRust {
         Some(aabb)
     }
 
+    /// 修复不一致的三角形绕序（BFS 传播一致性）
+    ///
+    /// CSG 生成的 mesh 可能存在混合绕序（如底/顶面与侧面相反），
+    /// 导致 Manifold 库拒绝。此方法通过 BFS 遍历半边邻接关系，
+    /// 确保所有三角形绕序一致，然后用有符号体积判断是否需要整体翻转。
+    pub fn orient_consistently(&mut self) {
+        use std::collections::{HashMap, VecDeque};
+
+        let n_tris = self.indices.len() / 3;
+        if n_tris == 0 {
+            return;
+        }
+
+        // 半边 (a,b) → 所属三角形索引
+        let mut half_edge_tri: HashMap<(u32, u32), usize> = HashMap::with_capacity(n_tris * 3);
+        for ti in 0..n_tris {
+            let base = ti * 3;
+            for j in 0..3 {
+                let a = self.indices[base + j];
+                let b = self.indices[base + (j + 1) % 3];
+                half_edge_tri.insert((a, b), ti);
+            }
+        }
+
+        let mut visited = vec![false; n_tris];
+        let mut flip = vec![false; n_tris];
+        let mut queue = VecDeque::new();
+
+        // 从三角形 0 开始 BFS
+        visited[0] = true;
+        queue.push_back(0);
+
+        while let Some(ti) = queue.pop_front() {
+            let base = ti * 3;
+            let (a, b, c) = (self.indices[base], self.indices[base + 1], self.indices[base + 2]);
+            // 有效边：如果当前三角形需要翻转，则边顺序反转
+            let edges: [(u32, u32); 3] = if flip[ti] {
+                [(a, c), (c, b), (b, a)]
+            } else {
+                [(a, b), (b, c), (c, a)]
+            };
+
+            for (ea, eb) in edges {
+                // 一致的邻居应持有反向半边 (eb, ea)
+                if let Some(&ni) = half_edge_tri.get(&(eb, ea)) {
+                    if !visited[ni] {
+                        visited[ni] = true;
+                        queue.push_back(ni);
+                    }
+                }
+                // 不一致的邻居持有同向半边 (ea, eb)
+                if let Some(&ni) = half_edge_tri.get(&(ea, eb)) {
+                    if ni != ti && !visited[ni] {
+                        visited[ni] = true;
+                        flip[ni] = true;
+                        queue.push_back(ni);
+                    }
+                }
+            }
+        }
+
+        // 应用翻转
+        for ti in 0..n_tris {
+            if flip[ti] {
+                let base = ti * 3;
+                self.indices.swap(base + 1, base + 2);
+            }
+        }
+
+        // 用有符号体积判断法线朝向：负体积 → 法线朝内 → 整体翻转
+        let signed_vol = self.signed_volume();
+        if signed_vol < 0.0 {
+            for tri in self.indices.chunks_exact_mut(3) {
+                tri.swap(1, 2);
+            }
+        }
+    }
+
+    /// 计算 mesh 的有符号体积（正 = 法线朝外，负 = 法线朝内）
+    fn signed_volume(&self) -> f64 {
+        let mut vol = 0.0f64;
+        for tri in self.indices.chunks_exact(3) {
+            let (ai, bi, ci) = (tri[0] as usize * 3, tri[1] as usize * 3, tri[2] as usize * 3);
+            if ai + 2 >= self.vertices.len() || bi + 2 >= self.vertices.len() || ci + 2 >= self.vertices.len() {
+                continue;
+            }
+            let (ax, ay, az) = (self.vertices[ai] as f64, self.vertices[ai + 1] as f64, self.vertices[ai + 2] as f64);
+            let (bx, by, bz) = (self.vertices[bi] as f64, self.vertices[bi + 1] as f64, self.vertices[bi + 2] as f64);
+            let (cx, cy, cz) = (self.vertices[ci] as f64, self.vertices[ci + 1] as f64, self.vertices[ci + 2] as f64);
+            // 有符号体积 = det([a, b, c]) / 6
+            vol += ax * (by * cz - bz * cy)
+                 + ay * (bz * cx - bx * cz)
+                 + az * (bx * cy - by * cx);
+        }
+        vol / 6.0
+    }
+
     /// 将顶点坐标量化为整数键（用于顶点焊接）
     fn quantize_vertex(x: f64, y: f64, z: f64, precision: f64) -> (i64, i64, i64) {
         (
@@ -902,6 +1003,71 @@ impl ManifoldMeshRust {
             vertices: transformed_vertices,
             indices: welded_indices,
         }
+    }
+
+
+    /// 保存为二进制文件 (.manifold)
+    ///
+    /// 格式: [vertex_count: u32][index_count: u32][vertices: f32 × N][indices: u32 × M]
+    pub fn save_to_file(&self, path: &std::path::Path) -> anyhow::Result<()> {
+        use std::io::Write;
+
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+
+        let vertex_count = (self.vertices.len()) as u32;
+        let index_count = self.indices.len() as u32;
+
+        let mut file = std::fs::File::create(path)?;
+        file.write_all(&vertex_count.to_le_bytes())?;
+        file.write_all(&index_count.to_le_bytes())?;
+
+        // SAFETY: f32 和 u32 都是 4 字节 POD 类型
+        let vert_bytes = unsafe {
+            std::slice::from_raw_parts(
+                self.vertices.as_ptr() as *const u8,
+                self.vertices.len() * 4,
+            )
+        };
+        file.write_all(vert_bytes)?;
+
+        let idx_bytes = unsafe {
+            std::slice::from_raw_parts(
+                self.indices.as_ptr() as *const u8,
+                self.indices.len() * 4,
+            )
+        };
+        file.write_all(idx_bytes)?;
+        Ok(())
+    }
+
+    /// 从二进制文件加载 (.manifold)
+    pub fn load_from_file(path: &std::path::Path) -> anyhow::Result<Self> {
+        use std::io::Read;
+
+        let mut file = std::fs::File::open(path)
+            .map_err(|e| anyhow::anyhow!("打开 .manifold 文件失败: {} - {}", path.display(), e))?;
+
+        let mut buf4 = [0u8; 4];
+        file.read_exact(&mut buf4)?;
+        let vertex_count = u32::from_le_bytes(buf4) as usize;
+        file.read_exact(&mut buf4)?;
+        let index_count = u32::from_le_bytes(buf4) as usize;
+
+        let mut vertices = vec![0f32; vertex_count];
+        let vert_bytes = unsafe {
+            std::slice::from_raw_parts_mut(vertices.as_mut_ptr() as *mut u8, vertex_count * 4)
+        };
+        file.read_exact(vert_bytes)?;
+
+        let mut indices = vec![0u32; index_count];
+        let idx_bytes = unsafe {
+            std::slice::from_raw_parts_mut(indices.as_mut_ptr() as *mut u8, index_count * 4)
+        };
+        file.read_exact(idx_bytes)?;
+
+        Ok(Self { vertices, indices })
     }
 }
 //负实体的模型应该更大一些
