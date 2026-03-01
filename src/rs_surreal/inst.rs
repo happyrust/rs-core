@@ -6,6 +6,7 @@ use crate::types::PlantAabb;
 use crate::{
     RefU64, RefnoEnum, SUL_DB, SurlValue, SurrealQueryExt, current_model_write_mode,
     get_inst_relate_keys, is_model_kv_enabled, options::ModelWriteMode, KV_DB,
+    model_primary_db, model_query_response,
 };
 use anyhow::Context;
 use chrono::{DateTime, Local, NaiveDateTime};
@@ -188,7 +189,7 @@ pub async fn query_tubi_insts_by_brans(
             "#,
             pe_key, pe_key
         );
-        let mut results: Vec<TubiInstQuery> = SUL_DB.query_take(&sql, 0).await?;
+        let mut results: Vec<TubiInstQuery> = model_primary_db().query_take(&sql, 0).await?;
 
         all_results.append(&mut results);
     }
@@ -230,7 +231,7 @@ pub async fn query_tubi_insts_by_flow(refnos: &[RefnoEnum]) -> anyhow::Result<Ve
             pe_key, pe_key
         );
 
-        let mut results: Vec<TubiInstQuery> = SUL_DB.query_take(&sql, 0).await?;
+        let mut results: Vec<TubiInstQuery> = model_primary_db().query_take(&sql, 0).await?;
         all_results.append(&mut results);
     }
 
@@ -388,7 +389,7 @@ pub async fn query_insts_for_export(
                 bool_keys = bool_keys_str
             );
 
-            let mut bool_results: Vec<ExportInstQuery> = SUL_DB
+            let mut bool_results: Vec<ExportInstQuery> = model_primary_db()
                 .query_take(&bool_sql, 0)
                 .await
                 .with_context(|| format!("query_insts_for_export bool SQL: {}", bool_sql))?;
@@ -429,7 +430,7 @@ pub async fn query_insts_for_export(
                     non_bool_keys = non_bool_keys_str
                 );
 
-                let mut geo_results: Vec<ExportInstQuery> = SUL_DB
+                let mut geo_results: Vec<ExportInstQuery> = model_primary_db()
                     .query_take(&geo_sql, 0)
                     .await
                     .with_context(|| format!("query_insts_for_export geo SQL: {}", geo_sql))?;
@@ -463,7 +464,7 @@ pub async fn query_insts_for_export(
                 inst_relate_keys = inst_relate_keys_str
             );
 
-            let mut chunk_result: Vec<ExportInstQuery> = SUL_DB
+            let mut chunk_result: Vec<ExportInstQuery> = model_primary_db()
                 .query_take(&sql, 0)
                 .await
                 .with_context(|| format!("query_insts_for_export SQL: {}", sql))?;
@@ -593,7 +594,7 @@ pub async fn query_insts_with_batch(
                 bool_keys = bool_keys_str
             );
 
-            let mut bool_results: Vec<GeomInstQuery> = SUL_DB
+            let mut bool_results: Vec<GeomInstQuery> = model_primary_db()
                 .query_take(&bool_sql, 0)
                 .await
                 .with_context(|| format!("query_insts_with_batch bool SQL: {}", bool_sql))?;
@@ -634,7 +635,7 @@ pub async fn query_insts_with_batch(
                     non_bool_keys = non_bool_keys_str
                 );
 
-                let mut geo_results: Vec<GeomInstQuery> = SUL_DB
+                let mut geo_results: Vec<GeomInstQuery> = model_primary_db()
                     .query_take(&geo_sql, 0)
                     .await
                     .with_context(|| format!("query_insts_with_batch geo SQL: {}", geo_sql))?;
@@ -667,7 +668,7 @@ pub async fn query_insts_with_batch(
                 inst_relate_keys = inst_relate_keys_str
             );
 
-            let mut chunk_result: Vec<GeomInstQuery> = SUL_DB
+            let mut chunk_result: Vec<GeomInstQuery> = model_primary_db()
                 .query_take(&sql, 0)
                 .await
                 .with_context(|| format!("query_insts_with_batch SQL: {}", sql))?;
@@ -807,8 +808,7 @@ pub async fn delete_inst_relate_cascade(
             sql.push_str(&format!("delete {};", inst_ids.join(",")));
             sql.push_str("\nCOMMIT TRANSACTION;");
             // println!("Delete Sql is {}", &sql);
-            SUL_DB
-                .query(sql)
+            model_query_response(&sql)
                 .await
                 .expect("delete model insts info failed");
         }
@@ -843,6 +843,6 @@ pub async fn delete_all_model_data() -> anyhow::Result<()> {
 
     println!("Delete Sql is: \n {}", &sql);
 
-    SUL_DB.query(sql).await.unwrap();
+    model_query_response(&sql).await.unwrap();
     Ok(())
 }
