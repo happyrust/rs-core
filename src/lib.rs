@@ -130,8 +130,9 @@ pub use crate::plant_transform::Transform;
 pub use crate::types::*;
 pub use rs_surreal::*;
 pub use runtime::{
-    DbOptionSurrealExt, connect_local_rocksdb, init_surreal_with_retry, initialize_databases,
-    is_surreal_server_running, start_surreal_server, stop_surreal_server, try_connect_database,
+    DbOptionSurrealExt, connect_local_rocksdb, ensure_model_kv_connected,
+    init_surreal_with_retry, initialize_databases, is_surreal_server_running,
+    start_surreal_server, stop_surreal_server, try_connect_database,
 };
 pub use tree_query::{
     DbMetaInfo, TreeIndex, TreeQuery, TreeQueryFilter, TreeQueryOptions, get_cached_tree_index,

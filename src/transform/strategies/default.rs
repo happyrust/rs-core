@@ -72,7 +72,12 @@ impl PoslHandler {
             }
 
             let z_axis = if is_lmirror { -pline_plax } else { pline_plax };
-            let plin_pos = if is_lmirror { -plin_pos } else { plin_pos };
+            let plin_pos = if is_lmirror {
+                // 与 core.dll 行为对齐：LMIRR 仅反转 JUSL 偏移的 X 分量
+                DVec3::new(-plin_pos.x, plin_pos.y, plin_pos.z)
+            } else {
+                plin_pos
+            };
 
             // YDIR 优先取自身的，如果没有则取 Owner 的
             let eff_ydir = att

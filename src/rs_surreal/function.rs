@@ -69,6 +69,49 @@ pub async fn define_common_functions(script_dir: Option<&str>) -> anyhow::Result
     Ok(())
 }
 
+/// 在指定的数据库连接上执行 SurrealDB 脚本目录中的所有脚本。
+///
+/// 与 `define_common_functions` 相同逻辑，但可指定目标 DB（用于在 KV_DB 上定义函数）。
+pub async fn define_common_functions_on_db(
+    db: &surrealdb::Surreal<surrealdb::engine::any::Any>,
+    script_dir: Option<&str>,
+) -> anyhow::Result<()> {
+    use config::{Config, File};
+    let config_file_name =
+        std::env::var("DB_OPTION_FILE").unwrap_or_else(|_| "db_options/DbOption".to_string());
+    let s = Config::builder()
+        .add_source(File::with_name(&config_file_name))
+        .build()?;
+    let db_option: crate::options::DbOption = s.try_deserialize()?;
+
+    let dir_path = script_dir
+        .map(|dir| dir.to_string())
+        .unwrap_or_else(|| db_option.get_surreal_script_dir().to_string());
+
+    let ns = db_option.surreal_ns.clone();
+    let db_name = db_option.project_name.clone();
+
+    let mut surql_files: Vec<PathBuf> = std::fs::read_dir(&dir_path)?
+        .filter_map(|entry| entry.ok().map(|e| e.path()))
+        .filter(|p| p.is_file())
+        .filter(|p| p.extension().and_then(|e| e.to_str()) == Some("surql"))
+        .collect();
+    surql_files.sort();
+
+    for file in surql_files {
+        println!(
+            "载入surreal(KV) {}",
+            file.file_name().unwrap().to_str().unwrap()
+        );
+        let mut f = std::fs::File::open(file)?;
+        let mut content = String::new();
+        f.read_to_string(&mut content)?;
+        let wrapped = format!("USE NS `{}` DB `{}`;\n{}", ns, db_name, content);
+        db.query_response(&wrapped).await?;
+    }
+    Ok(())
+}
+
 /// 定义数据库编号事件
 ///
 /// 当创建新的 pe 记录时,会触发此事件来更新 dbnum_info_table 表中的信息
