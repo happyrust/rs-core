@@ -126,6 +126,15 @@ pub fn model_primary_db() -> &'static Surreal<Any> {
     }
 }
 
+/// 返回"项目数据主读写库"连接。
+///
+/// 项目/PE/属性数据固定读写 SUL_DB（RocksDB）。
+/// 通过此函数统一访问，避免直接使用 SUL_DB，方便未来切换后端。
+#[inline]
+pub fn project_primary_db() -> &'static Surreal<Any> {
+    &SUL_DB
+}
+
 /// 连接模型 KV（WebSocket）作为模型数据写入目标
 pub async fn connect_model_kv(
     conn_str: &str,

@@ -308,8 +308,8 @@ pub async fn init_surreal() -> anyhow::Result<()> {
 
     match sdb_cfg.mode {
         options::DbConnMode::File => {
-            let path = sdb_cfg.path.as_deref().unwrap_or("data.rdb");
-            let conn_str = sdb_cfg.conn_str();
+            let path = db_option.surrealdb_data_path();
+            let conn_str = db_option.surrealdb_conn_str();
             println!("🗄️  后端: 嵌入式 ({})", conn_str);
             println!("📂 数据目录: {}", path);
             match SUL_DB.connect((&conn_str, config)).with_capacity(1000).await {

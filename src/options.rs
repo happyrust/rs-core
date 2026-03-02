@@ -73,7 +73,7 @@ impl SurrealDbConfig {
     pub fn conn_str(&self) -> String {
         match self.mode {
             DbConnMode::File => {
-                let path = self.path.as_deref().unwrap_or("data.rdb");
+                let path = self.path.as_deref().unwrap_or("db-data/default.rdb");
                 format!("rocksdb://{}", path)
             }
             DbConnMode::Ws => {
@@ -125,7 +125,7 @@ impl SurrealKvConfig {
     pub fn conn_str(&self) -> String {
         match self.mode {
             DbConnMode::File => {
-                let path = self.path.as_deref().unwrap_or("data.kv");
+                let path = self.path.as_deref().unwrap_or("db-data/default.kv");
                 format!("surrealkv://{}", path)
             }
             DbConnMode::Ws => {
@@ -242,8 +242,6 @@ pub struct DbOption {
     pub mesh_tol_ratio: Option<f32>,
     #[clap(long)]
     pub apply_boolean_operation: bool,
-    #[clap(long)]
-    pub save_model_mesh_to_graph_db: bool,
     #[clap(long)]
     pub gen_spatial_tree: bool,
     #[clap(long)]
@@ -680,16 +678,56 @@ impl DbOption {
         self.surrealkv.clone()
     }
 
+    /// 获取 SurrealDB 嵌入式模式的数据目录路径
+    ///
+    /// 优先使用 `[surrealdb].path`，未配置时默认 `db-data/{project_name}_{v_port}.rdb`
+    #[inline]
+    pub fn surrealdb_data_path(&self) -> String {
+        self.surrealdb.path.clone().unwrap_or_else(|| {
+            format!("db-data/{}_{}.rdb", self.project_name, self.v_port)
+        })
+    }
+
+    /// 获取 SurrealKV 嵌入式模式的数据目录路径
+    ///
+    /// 优先使用 `[surrealkv].path`，未配置时默认 `db-data/{project_name}_{kv_port}.kv`
+    #[inline]
+    pub fn surrealkv_data_path(&self) -> String {
+        self.surrealkv.path.clone().unwrap_or_else(|| {
+            format!("db-data/{}_{}.kv", self.project_name, self.surrealkv.port)
+        })
+    }
+
+    /// 获取 SurrealDB 嵌入式模式的完整连接字符串
+    ///
+    /// 当 mode=File 时使用 `surrealdb_data_path()` 生成 `rocksdb://` 连接串
+    pub fn surrealdb_conn_str(&self) -> String {
+        match self.surrealdb.mode {
+            DbConnMode::File => format!("rocksdb://{}", self.surrealdb_data_path()),
+            DbConnMode::Ws => self.surrealdb.conn_str(),
+        }
+    }
+
+    /// 获取 SurrealKV 嵌入式模式的完整连接字符串
+    ///
+    /// 当 mode=File 时使用 `surrealkv_data_path()` 生成 `surrealkv://` 连接串
+    pub fn surrealkv_conn_str(&self) -> String {
+        match self.surrealkv.mode {
+            DbConnMode::File => format!("surrealkv://{}", self.surrealkv_data_path()),
+            DbConnMode::Ws => self.surrealkv.conn_str(),
+        }
+    }
+
     /// 获取主 SurrealDB 连接字符串
     #[inline]
     pub fn get_version_db_conn_str(&self) -> String {
-        self.surrealdb.conn_str()
+        self.surrealdb_conn_str()
     }
 
     /// 获取模型 KV 连接字符串
     #[inline]
     pub fn get_model_kv_conn_str(&self) -> String {
-        self.surrealkv.conn_str()
+        self.surrealkv_conn_str()
     }
 
     /// 获取模型 KV 用户名

@@ -45,7 +45,7 @@ impl DbOptionSurrealExt for DbOption {
 pub async fn connect_local_rocksdb(project_name: &str) -> Result<()> {
     let config = surrealdb::opt::Config::default().ast_payload();
     SUL_DB
-        .connect((format!("rocksdb://{}.rdb", project_name), config))
+        .connect((format!("rocksdb://db-data/{}.rdb", project_name), config))
         .with_capacity(1000)
         .await?;
     Ok(())
@@ -128,11 +128,11 @@ pub async fn try_connect_database() -> Result<()> {
 pub async fn initialize_databases(db_option: &DbOption) -> Result<()> {
     // 1. 初始化 SurrealDB（输入数据源）
     let sdb_cfg = db_option.effective_surrealdb();
-    let sdb_conn_str = sdb_cfg.conn_str();
+    let sdb_conn_str = db_option.surrealdb_conn_str();
 
     match sdb_cfg.mode {
         DbConnMode::File => {
-            let path = sdb_cfg.path.as_deref().unwrap_or("data.rdb");
+            let path = db_option.surrealdb_data_path();
             println!("🗄️  初始化本地 RocksDB 嵌入式...");
             println!("📂 数据目录: {}", path);
             let config = surrealdb::opt::Config::default().ast_payload();
@@ -183,12 +183,12 @@ pub async fn initialize_databases(db_option: &DbOption) -> Result<()> {
 
     // 3. 初始化 SurrealKV（模型数据写入，固定启用）
     let kv_cfg = db_option.effective_surrealkv();
-    let kv_conn_str = kv_cfg.conn_str();
+    let kv_conn_str = db_option.surrealkv_conn_str();
     println!("🗄️  初始化 SurrealKV（{}）...", kv_cfg.mode.as_str());
 
     match kv_cfg.mode {
         DbConnMode::File => {
-            let path = kv_cfg.path.as_deref().unwrap_or("data.kv");
+            let path = db_option.surrealkv_data_path();
             println!("📂 KV 数据目录: {}", path);
             let config = surrealdb::opt::Config::default().ast_payload();
             crate::rs_surreal::KV_DB
@@ -270,7 +270,8 @@ static SURREAL_KV_PROCESS: Mutex<Option<std::process::Child>> = Mutex::new(None)
 /// 启动前会自动清理占用目标端口的进程。
 pub fn start_surreal_server(db_option: &DbOption) -> Result<()> {
     let port = db_option.v_port;
-    let path = db_option.surrealdb.path.as_deref().unwrap_or("data.rdb");
+    let path_owned = db_option.surrealdb_data_path();
+    let path = path_owned.as_str();
     let user = &db_option.v_user;
     let password = &db_option.v_password;
 
@@ -387,7 +388,7 @@ pub fn is_surreal_server_running() -> bool {
 pub fn start_surreal_kv_server(db_option: &DbOption) -> Result<()> {
     let port = db_option.surrealkv.port;
 
-    let kv_data_path = db_option.surrealkv.path.as_deref().unwrap_or("data.kv").to_string();
+    let kv_data_path = db_option.surrealkv_data_path();
     let kv_url = format!("surrealkv://{}", kv_data_path);
     let bind_addr = format!("0.0.0.0:{}", port);
 
