@@ -130,7 +130,7 @@ pub use crate::plant_transform::Transform;
 pub use crate::types::*;
 pub use rs_surreal::*;
 pub use runtime::{
-    DbOptionSurrealExt, connect_local_rocksdb, ensure_model_kv_connected,
+    DbOptionSurrealExt, connect_local_rocksdb,
     init_surreal_with_retry, initialize_databases, is_surreal_server_running,
     start_surreal_server, stop_surreal_server, try_connect_database,
 };
@@ -300,20 +300,17 @@ pub async fn init_surreal() -> anyhow::Result<()> {
         .unwrap();
     let db_option: DbOption = s.try_deserialize()?;
 
-    let backend = db_option.surreal_backend.as_str();
+    let sdb_cfg = db_option.effective_surrealdb();
     println!("🏷️  命名空间: {}", db_option.surreal_ns);
     println!("💾 数据库名: {}", db_option.project_name);
 
     let config = surrealdb::opt::Config::default().ast_payload();
 
-    match backend {
-        "rocksdb" => {
-            let path = db_option
-                .surreal_local_path
-                .as_deref()
-                .unwrap_or("data.rdb");
-            let conn_str = format!("rocksdb://{}", path);
-            println!("🗄️  后端: RocksDB 嵌入式");
+    match sdb_cfg.mode {
+        options::DbConnMode::File => {
+            let path = sdb_cfg.path.as_deref().unwrap_or("data.rdb");
+            let conn_str = sdb_cfg.conn_str();
+            println!("🗄️  后端: 嵌入式 ({})", conn_str);
             println!("📂 数据目录: {}", path);
             match SUL_DB.connect((&conn_str, config)).with_capacity(1000).await {
                 Ok(_) => {}
@@ -326,28 +323,9 @@ pub async fn init_surreal() -> anyhow::Result<()> {
             }
             // 嵌入式模式无需 signin
         }
-        "surrealkv" => {
-            let path = db_option
-                .surreal_local_path
-                .as_deref()
-                .unwrap_or("data.skv");
-            println!("🗄️  后端: SurrealKV 嵌入式");
-            println!("📂 数据目录: {}", path);
-            match crate::connect_surrealkv(path, &db_option.surreal_ns, &db_option.project_name).await {
-                Ok(_) => {}
-                Err(e) => {
-                    if e.to_string().contains("Already connected") {
-                    } else {
-                        return Err(e.into());
-                    }
-                }
-            }
-            // surrealkv 嵌入式无需 signin，connect_surrealkv 已处理 ns/db
-            // 提前返回跳过后面的 use_ns_db_compat（已在 connect_surrealkv 内完成）
-        }
-        _ => {
-            // WS 模式（默认）
-            let connection_str = db_option.get_version_db_conn_str();
+        options::DbConnMode::Ws => {
+            // WS 模式
+            let connection_str = sdb_cfg.conn_str();
             println!("🌐 后端: WebSocket 远程");
             println!("🌐 连接服务器: {}", connection_str);
             println!("👤 用户名: {}", db_option.v_user);

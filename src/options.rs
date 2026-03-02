@@ -6,38 +6,132 @@ use crate::{RefU64, RefnoEnum};
 use clap::Parser;
 use serde::{Deserialize, Serialize};
 
-#[repr(u8)]
+/// 数据库连接模式
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum ModelWriteMode {
-    SurrealOnly,
-    Dual,
-    KvOnly,
+#[serde(rename_all = "lowercase")]
+pub enum DbConnMode {
+    /// 本地嵌入式文件访问
+    File,
+    /// WebSocket 远程连接
+    Ws,
 }
 
-impl Default for ModelWriteMode {
+impl Default for DbConnMode {
     fn default() -> Self {
-        Self::SurrealOnly
+        Self::File
     }
 }
 
-impl ModelWriteMode {
+impl DbConnMode {
     #[inline]
     pub fn as_str(self) -> &'static str {
         match self {
-            Self::SurrealOnly => "surreal_only",
-            Self::Dual => "dual",
-            Self::KvOnly => "kv_only",
+            Self::File => "file",
+            Self::Ws => "ws",
         }
     }
+}
 
-    #[inline]
-    pub fn parse(raw: &str) -> Self {
-        match raw.trim().to_ascii_lowercase().as_str() {
-            "surreal_only" | "surreal-only" | "surreal" => Self::SurrealOnly,
-            "dual" => Self::Dual,
-            "kv_only" | "kv-only" | "kv" => Self::KvOnly,
-            _ => Self::SurrealOnly,
+/// SurrealDB 连接配置（PE/属性/输入数据读取）
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SurrealDbConfig {
+    /// 连接模式：file（嵌入式）或 ws（WebSocket）
+    #[serde(default)]
+    pub mode: DbConnMode,
+    /// file 模式：本地数据目录路径
+    #[serde(default)]
+    pub path: Option<String>,
+    /// ws 模式：IP 地址
+    #[serde(default = "default_surrealdb_ip")]
+    pub ip: String,
+    /// ws 模式：端口
+    #[serde(default = "default_surrealdb_port")]
+    pub port: u16,
+    /// ws 模式：用户名
+    #[serde(default = "default_surrealdb_user")]
+    pub user: String,
+    /// ws 模式：密码
+    #[serde(default = "default_surrealdb_password")]
+    pub password: String,
+}
+
+impl Default for SurrealDbConfig {
+    fn default() -> Self {
+        Self {
+            mode: DbConnMode::File,
+            path: None,
+            ip: "localhost".to_string(),
+            port: 8020,
+            user: "root".to_string(),
+            password: "root".to_string(),
+        }
+    }
+}
+
+impl SurrealDbConfig {
+    /// 获取连接字符串
+    pub fn conn_str(&self) -> String {
+        match self.mode {
+            DbConnMode::File => {
+                let path = self.path.as_deref().unwrap_or("data.rdb");
+                format!("rocksdb://{}", path)
+            }
+            DbConnMode::Ws => {
+                let ip = if self.ip == "localhost" { "127.0.0.1" } else { &self.ip };
+                format!("ws://{}:{}", ip, self.port)
+            }
+        }
+    }
+}
+
+/// SurrealKV 连接配置（模型数据写入，固定启用）
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SurrealKvConfig {
+    /// 连接模式：file（嵌入式）或 ws（WebSocket）
+    #[serde(default)]
+    pub mode: DbConnMode,
+    /// file 模式：本地数据目录路径
+    #[serde(default)]
+    pub path: Option<String>,
+    /// ws 模式：IP 地址
+    #[serde(default = "default_surrealkv_ip")]
+    pub ip: String,
+    /// ws 模式：端口
+    #[serde(default = "default_surrealkv_port")]
+    pub port: u16,
+    /// ws 模式：用户名
+    #[serde(default = "default_surrealkv_user")]
+    pub user: String,
+    /// ws 模式：密码
+    #[serde(default = "default_surrealkv_password")]
+    pub password: String,
+}
+
+impl Default for SurrealKvConfig {
+    fn default() -> Self {
+        Self {
+            mode: DbConnMode::File,
+            path: None,
+            ip: "localhost".to_string(),
+            port: 8010,
+            user: "root".to_string(),
+            password: "root".to_string(),
+        }
+    }
+}
+
+impl SurrealKvConfig {
+    /// 获取连接字符串
+    pub fn conn_str(&self) -> String {
+        match self.mode {
+            DbConnMode::File => {
+                let path = self.path.as_deref().unwrap_or("data.kv");
+                format!("surrealkv://{}", path)
+            }
+            DbConnMode::Ws => {
+                let ip = if self.ip == "localhost" { "127.0.0.1" } else { &self.ip };
+                format!("ws://{}:{}", ip, self.port)
+            }
         }
     }
 }
@@ -99,34 +193,22 @@ pub struct DbOption {
     #[clap(long)]
     pub use_tidb: Option<bool>,
 
-    /// 版本库的ip
+    /// 版本库的ip（旧配置兼容，新配置请使用 [surrealdb]）
     #[clap(long)]
+    #[serde(default)]
     pub v_ip: String,
-    /// 版本库的用户
+    /// 版本库的用户（旧配置兼容）
     #[clap(long)]
+    #[serde(default)]
     pub v_user: String,
-    /// 版本库的密码
+    /// 版本库的密码（旧配置兼容）
     #[clap(long)]
+    #[serde(default)]
     pub v_password: String,
-    /// 版本库的端口
+    /// 版本库的端口（旧配置兼容）
     #[clap(long)]
+    #[serde(default)]
     pub v_port: u16,
-    /// 模型KV服务的IP（WebSocket）
-    #[clap(long)]
-    #[serde(default = "default_model_kv_ip")]
-    pub kv_ip: String,
-    /// 模型KV服务的端口（WebSocket）
-    #[clap(long)]
-    #[serde(default = "default_model_kv_port")]
-    pub kv_port: String,
-    /// 模型KV服务的用户名（为空时回退 v_user）
-    #[clap(long)]
-    #[serde(default)]
-    pub kv_user: String,
-    /// 模型KV服务的密码（为空时回退 v_password）
-    #[clap(long)]
-    #[serde(default)]
-    pub kv_password: String,
     /// mqtt的host
     #[clap(long)]
     pub mqtt_host: String,
@@ -350,25 +432,15 @@ pub struct DbOption {
     pub meshes_path: Option<String>,
     // pub geom_live: Option<bool>,
 
-    /// SurrealDB 后端类型：ws（默认）/ rocksdb / mem
-    #[clap(skip)]
-    #[serde(default = "default_surreal_backend")]
-    pub surreal_backend: String,
-
-    /// 本地嵌入式后端的数据目录路径（rocksdb 模式下使用）
+    /// SurrealDB 连接配置（[surrealdb] 子表）
     #[clap(skip)]
     #[serde(default)]
-    pub surreal_local_path: Option<String>,
+    pub surrealdb: SurrealDbConfig,
 
-    /// 嵌入式 SurrealKV 数据目录（配置后启用模型数据双写）
+    /// SurrealKV 连接配置（[surrealkv] 子表）
     #[clap(skip)]
     #[serde(default)]
-    pub model_kv_path: Option<String>,
-
-    /// 模型写入模式：surreal_only / dual / kv_only
-    #[clap(skip)]
-    #[serde(default = "default_model_write_mode")]
-    pub model_write_mode: Option<String>,
+    pub surrealkv: SurrealKvConfig,
 
     /// 内存KV数据库IP地址（用于PE数据额外备份）
     #[clap(long)]
@@ -596,58 +668,40 @@ impl DbOption {
             .unwrap_or_default()
     }
 
+    /// 获取 SurrealDB 连接配置
     #[inline]
-    pub fn get_model_write_mode_str(&self) -> &str {
-        self.model_write_mode
-            .as_deref()
-            .map(str::trim)
-            .filter(|s| !s.is_empty())
-            .unwrap_or("surreal_only")
+    pub fn effective_surrealdb(&self) -> SurrealDbConfig {
+        self.surrealdb.clone()
     }
 
+    /// 获取 SurrealKV 连接配置
     #[inline]
-    pub fn get_model_write_mode(&self) -> ModelWriteMode {
-        ModelWriteMode::parse(self.get_model_write_mode_str())
+    pub fn effective_surrealkv(&self) -> SurrealKvConfig {
+        self.surrealkv.clone()
     }
 
+    /// 获取主 SurrealDB 连接字符串
     #[inline]
     pub fn get_version_db_conn_str(&self) -> String {
-        let ip = self.v_ip.as_str();
-        let port = self.v_port;
-        format!("ws://{ip}:{port}")
+        self.surrealdb.conn_str()
     }
 
+    /// 获取模型 KV 连接字符串
     #[inline]
     pub fn get_model_kv_conn_str(&self) -> String {
-        let raw_ip = self.kv_ip.trim();
-        let ip = if raw_ip.is_empty() {
-            self.v_ip.as_str()
-        } else if raw_ip == "localhost" {
-            "127.0.0.1"
-        } else {
-            raw_ip
-        };
-        let port = self.kv_port.trim();
-        let port = if port.is_empty() { "8010" } else { port };
-        format!("ws://{ip}:{port}")
+        self.surrealkv.conn_str()
     }
 
+    /// 获取模型 KV 用户名
     #[inline]
     pub fn get_model_kv_user(&self) -> &str {
-        if self.kv_user.trim().is_empty() {
-            self.v_user.as_str()
-        } else {
-            self.kv_user.as_str()
-        }
+        &self.surrealkv.user
     }
 
+    /// 获取模型 KV 密码
     #[inline]
     pub fn get_model_kv_password(&self) -> &str {
-        if self.kv_password.trim().is_empty() {
-            self.v_password.as_str()
-        } else {
-            self.kv_password.as_str()
-        }
+        &self.surrealkv.password
     }
 
     #[inline]
@@ -724,16 +778,44 @@ impl SecondUnitDbOption {
 }
 
 // ============================================================================
-// 内存KV数据库配置默认值函数
+// SurrealDB/KV 配置默认值函数
 // ============================================================================
 
-fn default_model_kv_ip() -> String {
+fn default_surrealdb_ip() -> String {
     "localhost".to_string()
 }
 
-fn default_model_kv_port() -> String {
-    "8010".to_string()
+fn default_surrealdb_port() -> u16 {
+    8020
 }
+
+fn default_surrealdb_user() -> String {
+    "root".to_string()
+}
+
+fn default_surrealdb_password() -> String {
+    "root".to_string()
+}
+
+fn default_surrealkv_ip() -> String {
+    "localhost".to_string()
+}
+
+fn default_surrealkv_port() -> u16 {
+    8010
+}
+
+fn default_surrealkv_user() -> String {
+    "root".to_string()
+}
+
+fn default_surrealkv_password() -> String {
+    "root".to_string()
+}
+
+// ============================================================================
+// 内存KV数据库配置默认值函数
+// ============================================================================
 
 fn default_mem_kv_ip() -> String {
     "localhost".to_string()
@@ -771,59 +853,76 @@ fn default_parse_channel_capacity() -> Option<usize> {
     Some(200)
 }
 
-fn default_model_write_mode() -> Option<String> {
-    Some(ModelWriteMode::SurrealOnly.as_str().to_string())
-}
-
-fn default_surreal_backend() -> String {
-    "ws".to_string()
-}
-
 #[cfg(test)]
 mod tests {
-    use super::{DbOption, ModelWriteMode};
+    use super::{DbOption, DbConnMode, SurrealDbConfig, SurrealKvConfig};
 
     #[test]
-    fn model_write_mode_defaults_to_surreal_only() {
-        let opt = DbOption::default();
-        assert_eq!(opt.get_model_write_mode(), ModelWriteMode::SurrealOnly);
-        assert_eq!(opt.get_model_write_mode_str(), "surreal_only");
+    fn surrealdb_file_mode_conn_str() {
+        let cfg = SurrealDbConfig {
+            mode: DbConnMode::File,
+            path: Some("D:/data/test.db".to_string()),
+            ..Default::default()
+        };
+        assert_eq!(cfg.conn_str(), "rocksdb://D:/data/test.db");
     }
 
     #[test]
-    fn model_write_mode_parses_kv_only() {
-        let mut opt = DbOption::default();
-        opt.model_write_mode = Some("kv_only".to_string());
-        assert_eq!(opt.get_model_write_mode(), ModelWriteMode::KvOnly);
+    fn surrealdb_ws_mode_conn_str() {
+        let cfg = SurrealDbConfig {
+            mode: DbConnMode::Ws,
+            ip: "localhost".to_string(),
+            port: 8020,
+            ..Default::default()
+        };
+        assert_eq!(cfg.conn_str(), "ws://127.0.0.1:8020");
     }
 
     #[test]
-    fn model_write_mode_parses_dual() {
-        let mut opt = DbOption::default();
-        opt.model_write_mode = Some("dual".to_string());
-        assert_eq!(opt.get_model_write_mode(), ModelWriteMode::Dual);
+    fn surrealkv_file_mode_conn_str() {
+        let cfg = SurrealKvConfig {
+            mode: DbConnMode::File,
+            path: Some("D:/data/test.kv".to_string()),
+            ..Default::default()
+        };
+        assert_eq!(cfg.conn_str(), "surrealkv://D:/data/test.kv");
     }
 
     #[test]
-    fn model_write_mode_fallbacks_to_surreal_only_for_unknown_value() {
-        let mut opt = DbOption::default();
-        opt.model_write_mode = Some("unexpected".to_string());
-        assert_eq!(opt.get_model_write_mode(), ModelWriteMode::SurrealOnly);
+    fn surrealkv_ws_mode_conn_str() {
+        let cfg = SurrealKvConfig {
+            mode: DbConnMode::Ws,
+            ip: "192.168.1.10".to_string(),
+            port: 8010,
+            ..Default::default()
+        };
+        assert_eq!(cfg.conn_str(), "ws://192.168.1.10:8010");
     }
 
     #[test]
-    fn model_kv_ws_config_fallbacks_to_version_db_auth() {
+    fn effective_surrealdb_uses_new_config() {
         let mut opt = DbOption::default();
-        opt.v_ip = "main-host".to_string();
-        opt.v_user = "root".to_string();
-        opt.v_password = "root-pass".to_string();
-        opt.kv_ip = "localhost".to_string();
-        opt.kv_port = "8010".to_string();
-        opt.kv_user = String::new();
-        opt.kv_password = String::new();
+        opt.surrealdb = SurrealDbConfig {
+            mode: DbConnMode::File,
+            path: Some("/data/test.db".to_string()),
+            ..Default::default()
+        };
+        let eff = opt.effective_surrealdb();
+        assert_eq!(eff.mode, DbConnMode::File);
+        assert_eq!(eff.path.as_deref(), Some("/data/test.db"));
+        assert_eq!(eff.conn_str(), "rocksdb:///data/test.db");
+    }
 
-        assert_eq!(opt.get_model_kv_conn_str(), "ws://127.0.0.1:8010");
-        assert_eq!(opt.get_model_kv_user(), "root");
-        assert_eq!(opt.get_model_kv_password(), "root-pass");
+    #[test]
+    fn effective_surrealkv_uses_new_config() {
+        let mut opt = DbOption::default();
+        opt.surrealkv = SurrealKvConfig {
+            mode: DbConnMode::File,
+            path: Some("D:/data/test.kv".to_string()),
+            ..Default::default()
+        };
+        let eff = opt.effective_surrealkv();
+        assert_eq!(eff.mode, DbConnMode::File);
+        assert_eq!(eff.conn_str(), "surrealkv://D:/data/test.kv");
     }
 }

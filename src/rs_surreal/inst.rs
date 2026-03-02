@@ -4,8 +4,8 @@ use crate::rs_surreal::geometry_query::PlantTransform;
 use crate::shape::pdms_shape::RsVec3;
 use crate::types::PlantAabb;
 use crate::{
-    RefU64, RefnoEnum, SUL_DB, SurlValue, SurrealQueryExt, current_model_write_mode,
-    get_inst_relate_keys, is_model_kv_enabled, options::ModelWriteMode, KV_DB,
+    RefU64, RefnoEnum, SUL_DB, SurlValue, SurrealQueryExt,
+    get_inst_relate_keys, is_model_kv_enabled, KV_DB,
     model_primary_db, model_query_response,
 };
 use anyhow::Context;
@@ -47,20 +47,12 @@ pub struct FullPtsetPoint {
 /// 初始化数据库的所有模型相关表结构和索引
 pub async fn init_model_tables() -> anyhow::Result<()> {
     async fn exec_schema_sql(sql: &str) -> anyhow::Result<()> {
-        let mode = current_model_write_mode();
+        // 在主 SurrealDB 上执行
+        SUL_DB.query(sql).await?;
 
-        if mode != ModelWriteMode::KvOnly {
-            SUL_DB.query(sql).await?;
-        }
-
-        if mode != ModelWriteMode::SurrealOnly {
-            if !is_model_kv_enabled() {
-                if mode == ModelWriteMode::KvOnly {
-                    anyhow::bail!("model_write_mode=kv_only 但 KV_DB 未启用，无法初始化模型表结构");
-                }
-            } else {
-                KV_DB.query(sql).await?;
-            }
+        // 如果 KV 已启用，也在 KV_DB 上执行
+        if is_model_kv_enabled() {
+            KV_DB.query(sql).await?;
         }
 
         Ok(())

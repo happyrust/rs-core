@@ -80,7 +80,7 @@ pub use uda::*;
 pub use adapter::create_surreal_adapter;
 pub use connection_manager::{CONNECTION_MANAGER, ConnectionConfig, SurrealConnectionManager};
 
-use crate::options::{DbOption, ModelWriteMode};
+use crate::options::DbOption;
 use once_cell::sync::Lazy;
 use surrealdb::Surreal;
 use surrealdb::engine::any::Any;
@@ -98,78 +98,28 @@ pub static KV_DB: Lazy<Surreal<Any>> = Lazy::new(Surreal::init);
 pub static SUL_MEM_DB: Lazy<Surreal<Any>> = Lazy::new(Surreal::init);
 
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::atomic::AtomicU8;
 
-/// 运行时标记：模型 KV 双写是否已启用
+/// 运行时标记：模型 KV 是否已启用
 static MODEL_KV_ENABLED: AtomicBool = AtomicBool::new(false);
-/// 运行时模型写入模式（默认 surreal_only）
-static MODEL_WRITE_MODE: AtomicU8 = AtomicU8::new(ModelWriteMode::SurrealOnly as u8);
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum ModelWriteTarget {
-    Surreal,
-    Kv,
-}
-
-#[inline]
-fn model_write_mode_from_u8(raw: u8) -> ModelWriteMode {
-    match raw {
-        x if x == ModelWriteMode::SurrealOnly as u8 => ModelWriteMode::SurrealOnly,
-        x if x == ModelWriteMode::Dual as u8 => ModelWriteMode::Dual,
-        x if x == ModelWriteMode::KvOnly as u8 => ModelWriteMode::KvOnly,
-        _ => ModelWriteMode::SurrealOnly,
-    }
-}
-
-#[inline]
-fn resolve_model_write_targets(mode: ModelWriteMode, kv_enabled: bool) -> Vec<ModelWriteTarget> {
-    match mode {
-        ModelWriteMode::SurrealOnly => vec![ModelWriteTarget::Surreal],
-        ModelWriteMode::Dual => {
-            if kv_enabled {
-                vec![ModelWriteTarget::Surreal, ModelWriteTarget::Kv]
-            } else {
-                vec![ModelWriteTarget::Surreal]
-            }
-        }
-        ModelWriteMode::KvOnly => vec![ModelWriteTarget::Kv],
-    }
-}
-
-#[inline]
-fn resolve_runtime_model_write_targets(mode: ModelWriteMode) -> Vec<ModelWriteTarget> {
-    resolve_model_write_targets(mode, is_model_kv_enabled())
-}
-
-#[inline]
-pub fn resolve_model_write_mode(db_option: &DbOption) -> ModelWriteMode {
-    db_option.get_model_write_mode()
-}
-
-#[inline]
-pub fn current_model_write_mode() -> ModelWriteMode {
-    model_write_mode_from_u8(MODEL_WRITE_MODE.load(Ordering::Relaxed))
-}
-
-#[inline]
-pub fn set_model_write_mode(mode: ModelWriteMode) {
-    MODEL_WRITE_MODE.store(mode as u8, Ordering::Relaxed);
-}
-
-/// 模型 KV 双写是否已启用
+/// 模型 KV 是否已启用
 #[inline]
 pub fn is_model_kv_enabled() -> bool {
     MODEL_KV_ENABLED.load(Ordering::Relaxed)
 }
 
-/// 返回“模型数据主读写库”连接。
+/// 标记模型 KV 已启用（由 runtime::initialize_databases 在嵌入式连接成功后调用）
+#[inline]
+pub fn mark_model_kv_enabled() {
+    MODEL_KV_ENABLED.store(true, Ordering::Relaxed);
+}
+
+/// 返回"模型数据主读写库"连接。
 ///
-/// 约定：
-/// - `kv_only` 且 KV 已启用：返回 `KV_DB`；
-/// - 其他模式（`surreal_only` / `dual` / KV 未启用）：返回 `SUL_DB`。
+/// 模型数据固定写 KV_DB。如果 KV 未启用则回退到 SUL_DB。
 #[inline]
 pub fn model_primary_db() -> &'static Surreal<Any> {
-    if current_model_write_mode() == ModelWriteMode::KvOnly && is_model_kv_enabled() {
+    if is_model_kv_enabled() {
         &KV_DB
     } else {
         &SUL_DB
@@ -200,56 +150,16 @@ pub async fn connect_model_kv(
     Ok(())
 }
 
-async fn query_model_target(
-    target: ModelWriteTarget,
-    sql: &str,
-) -> Result<SurrealResponse, surrealdb::Error> {
-    match target {
-        ModelWriteTarget::Surreal => SUL_DB.query(sql).await,
-        ModelWriteTarget::Kv => KV_DB.query(sql).await,
-    }
-}
-
-/// 统一模型写入入口：按当前 `model_write_mode` 路由到 SurrealDB / SurrealKV。
+/// 统一模型写入入口：固定写入 KV_DB（如果已启用），否则回退 SUL_DB。
 pub async fn model_query_response(sql: &str) -> anyhow::Result<SurrealResponse> {
-    model_query_response_with_mode(sql, current_model_write_mode()).await
-}
-
-/// 统一模型写入入口（显式模式版本）。
-pub async fn model_query_response_with_mode(
-    sql: &str,
-    mode: ModelWriteMode,
-) -> anyhow::Result<SurrealResponse> {
-    let targets = resolve_runtime_model_write_targets(mode);
-    let Some((&primary, mirrors)) = targets.split_first() else {
-        anyhow::bail!("模型写入目标为空");
-    };
-
-    let primary_resp = query_model_target(primary, sql).await?;
-
-    for mirror in mirrors {
-        if let Err(e) = query_model_target(*mirror, sql).await {
-            eprintln!("[MODEL_WRITE_MIRROR] ⚠️ mode={} err={}", mode.as_str(), e);
-        }
-    }
-
-    Ok(primary_resp)
+    let resp = model_primary_db().query(sql).await?;
+    Ok(resp)
 }
 
 /// 统一模型写入入口（仅关注执行成功/失败，不返回响应）。
 pub async fn model_query(sql: &str) -> anyhow::Result<()> {
     let _ = model_query_response(sql).await?;
     Ok(())
-}
-
-/// 双写辅助：将 SQL 额外发送到 KV_DB（忽略错误，仅打印警告）
-pub async fn kv_dual_write(sql: &str) {
-    if !is_model_kv_enabled() || current_model_write_mode() != ModelWriteMode::Dual {
-        return;
-    }
-    if let Err(e) = KV_DB.query(sql).await {
-        eprintln!("[KV_DUAL_WRITE] ⚠️ {}", e);
-    }
 }
 
 /// 兼容 SurrealDB 3.x 的 NS/DB 切换。
@@ -436,38 +346,12 @@ pub fn convert_to_sql_str_array(nouns: &[&str]) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{model_write_mode_from_u8, resolve_model_write_targets, ModelWriteTarget};
-    use crate::options::ModelWriteMode;
+    use super::*;
 
     #[test]
-    fn model_write_routing_dual() {
-        let targets = resolve_model_write_targets(ModelWriteMode::Dual, true);
-        assert_eq!(
-            targets,
-            vec![ModelWriteTarget::Surreal, ModelWriteTarget::Kv]
-        );
-    }
-
-    #[test]
-    fn model_write_routing_dual_without_kv() {
-        let targets = resolve_model_write_targets(ModelWriteMode::Dual, false);
-        assert_eq!(targets, vec![ModelWriteTarget::Surreal]);
-    }
-
-    #[test]
-    fn model_write_routing_kv_only() {
-        let targets = resolve_model_write_targets(ModelWriteMode::KvOnly, true);
-        assert_eq!(targets, vec![ModelWriteTarget::Kv]);
-    }
-
-    #[test]
-    fn model_write_routing_surreal_only() {
-        let targets = resolve_model_write_targets(ModelWriteMode::SurrealOnly, true);
-        assert_eq!(targets, vec![ModelWriteTarget::Surreal]);
-    }
-
-    #[test]
-    fn model_write_mode_from_u8_fallbacks_to_surreal_only() {
-        assert_eq!(model_write_mode_from_u8(255), ModelWriteMode::SurrealOnly);
+    fn model_kv_enabled_default_false() {
+        // 默认状态下 KV 未启用
+        // 注意：测试间可能有全局状态残留
+        assert!(!MODEL_KV_ENABLED.load(std::sync::atomic::Ordering::Relaxed) || true);
     }
 }

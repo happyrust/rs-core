@@ -1,5 +1,5 @@
 use crate::init_surreal;
-use crate::options::{DbOption, ModelWriteMode};
+use crate::options::{DbOption, DbConnMode};
 use crate::rs_surreal::SUL_DB;
 use anyhow::Result;
 use std::sync::Mutex;
@@ -122,32 +122,25 @@ pub async fn try_connect_database() -> Result<()> {
 
 /// 统一的数据库初始化入口，包含所有数据库连接和函数定义
 ///
-/// 根据 `db_option.surreal_backend` 运行时选择连接方式：
-/// - `"ws"` (默认): 使用 WebSocket 连接远程 SurrealDB
-/// - `"rocksdb"`: 使用 RocksDB 嵌入式后端（本地文件，无需认证）
-///
-/// 此函数还会初始化 SurrealDB 通用函数定义
+/// 根据 `DbOption` 中的 `[surrealdb]` 和 `[surrealkv]` 配置初始化两个数据库连接：
+/// - SurrealDB（PE/属性/输入数据）：file 或 ws
+/// - SurrealKV（模型数据写入）：file 或 ws，固定启用
 pub async fn initialize_databases(db_option: &DbOption) -> Result<()> {
-    log::error!("[DEBUG] initialize_databases called");
-    let backend = db_option.surreal_backend.as_str();
-    log::error!("[DEBUG] backend = {}", backend);
+    // 1. 初始化 SurrealDB（输入数据源）
+    let sdb_cfg = db_option.effective_surrealdb();
+    let sdb_conn_str = sdb_cfg.conn_str();
 
-    match backend {
-        "rocksdb" => {
-            let path = db_option
-                .surreal_local_path
-                .as_deref()
-                .unwrap_or("data.rdb");
+    match sdb_cfg.mode {
+        DbConnMode::File => {
+            let path = sdb_cfg.path.as_deref().unwrap_or("data.rdb");
             println!("🗄️  初始化本地 RocksDB 嵌入式...");
             println!("📂 数据目录: {}", path);
-            let conn_str = format!("rocksdb://{}", path);
             let config = surrealdb::opt::Config::default().ast_payload();
             SUL_DB
-                .connect((&conn_str, config))
+                .connect((&sdb_conn_str, config))
                 .with_capacity(1000)
                 .await
                 .map_err(|e| anyhow::anyhow!("RocksDB 连接失败: {}", e))?;
-            // 嵌入式无需 signin
             crate::use_ns_db_compat(&SUL_DB, &db_option.surreal_ns, &db_option.project_name)
                 .await
                 .map_err(|e| anyhow::anyhow!("use ns/db 失败: {}", e))?;
@@ -156,19 +149,17 @@ pub async fn initialize_databases(db_option: &DbOption) -> Result<()> {
                 path, db_option.project_name
             );
         }
-        _ => {
-            // WS 模式（默认）
-            println!("数据库连接中...");
+        DbConnMode::Ws => {
+            println!("🗄️  初始化 SurrealDB（WebSocket）...");
             match init_surreal_with_retry(db_option).await {
                 Ok(_) => {
                     println!(
-                        "✅ 数据库连接成功: {} -> {}",
-                        db_option.get_version_db_conn_str(),
-                        db_option.project_name
+                        "✅ SurrealDB 连接成功: {} -> {}",
+                        sdb_conn_str, db_option.project_name
                     );
                 }
                 Err(e) => {
-                    eprintln!("❌ 数据库连接失败: {}", e);
+                    eprintln!("❌ SurrealDB 连接失败: {}", e);
                     eprintln!("   配置信息: {}", db_option.connection_summary());
                     eprintln!("   请检查 SurrealDB 服务是否运行，配置是否正确");
                 }
@@ -185,159 +176,61 @@ pub async fn initialize_databases(db_option: &DbOption) -> Result<()> {
         }
     }
 
-    // 4. 初始化 SurrealDB 通用函数定义 (使用 None 从配置文件自动读取路径)
+    // 2. 初始化 SurrealDB 通用函数定义
     if let Err(e) = crate::function::define_common_functions(None).await {
         eprintln!("初始化通用函数失败: {} (忽略并继续)", e);
     }
 
-    // 5. 初始化模型写入路由（SurrealOnly / Dual / KvOnly）与模型 KV(WS)
-    let requested_mode = crate::rs_surreal::resolve_model_write_mode(db_option);
-    let kv_conn_str = normalized_model_kv_conn_str(db_option);
+    // 3. 初始化 SurrealKV（模型数据写入，固定启用）
+    let kv_cfg = db_option.effective_surrealkv();
+    let kv_conn_str = kv_cfg.conn_str();
+    println!("🗄️  初始化 SurrealKV（{}）...", kv_cfg.mode.as_str());
 
-    // DEBUG: 强制输出模式信息
-    log::error!("[DEBUG] requested_mode = {:?}, kv_conn_str = {}", requested_mode, kv_conn_str);
-
-    validate_model_write_requirements(requested_mode, &kv_conn_str)?;
-
-    if matches!(requested_mode, ModelWriteMode::Dual | ModelWriteMode::KvOnly) {
-        println!("🗄️ 初始化模型 KV（WebSocket）...");
-
-        // 尝试连接 KV
-        let connect_result = crate::rs_surreal::connect_model_kv(
-            &kv_conn_str,
-            &db_option.surreal_ns,
-            &db_option.project_name,
-            db_option.get_model_kv_user(),
-            db_option.get_model_kv_password(),
-        )
-        .await;
-
-        match connect_result {
-            Ok(_) => println!("✅ 模型 KV 就绪: {}", kv_conn_str),
-            Err(e) => {
-                // 连接失败，尝试自动启动 SurrealKV
-                eprintln!("⚠️  模型 KV 连接失败: {}", e);
-                eprintln!("🚀 尝试自动启动 SurrealKV 服务...");
-
-                if let Err(start_err) = start_surreal_kv_server(db_option) {
-                    if requested_mode == ModelWriteMode::KvOnly {
-                        return Err(anyhow::anyhow!(
-                            "model_write_mode=kv_only 但模型 KV 启动失败: {}",
-                            start_err
-                        ));
-                    }
-                    eprintln!("❌ 模型 KV 启动失败: {}（退回 SurrealDB 单写）", start_err);
-                } else {
-                    // 启动成功，重新尝试连接
-                    match crate::rs_surreal::connect_model_kv(
-                        &kv_conn_str,
-                        &db_option.surreal_ns,
-                        &db_option.project_name,
-                        db_option.get_model_kv_user(),
-                        db_option.get_model_kv_password(),
-                    )
-                    .await
-                    {
-                        Ok(_) => println!("✅ 模型 KV 就绪: {}", kv_conn_str),
-                        Err(e2) => {
-                            if requested_mode == ModelWriteMode::KvOnly {
-                                return Err(anyhow::anyhow!(
-                                    "model_write_mode=kv_only 但模型 KV 连接失败: {}",
-                                    e2
-                                ));
-                            }
-                            eprintln!("❌ 模型 KV 连接失败: {}（退回 SurrealDB 单写）", e2);
-                        }
-                    }
-                }
-            }
+    match kv_cfg.mode {
+        DbConnMode::File => {
+            let path = kv_cfg.path.as_deref().unwrap_or("data.kv");
+            println!("📂 KV 数据目录: {}", path);
+            let config = surrealdb::opt::Config::default().ast_payload();
+            crate::rs_surreal::KV_DB
+                .connect((&kv_conn_str, config))
+                .with_capacity(1000)
+                .await
+                .map_err(|e| anyhow::anyhow!("SurrealKV 嵌入式连接失败: {}", e))?;
+            crate::use_ns_db_compat(
+                &crate::rs_surreal::KV_DB,
+                &db_option.surreal_ns,
+                &db_option.project_name,
+            )
+            .await
+            .map_err(|e| anyhow::anyhow!("KV use ns/db 失败: {}", e))?;
+            crate::rs_surreal::mark_model_kv_enabled();
+            println!(
+                "✅ SurrealKV 嵌入式连接成功: {} -> {}",
+                path, db_option.project_name
+            );
         }
-    }
-
-    crate::rs_surreal::set_model_write_mode(requested_mode);
-    println!(
-        "🧭 模型写入模式: {} (kv_enabled={})",
-        requested_mode.as_str(),
-        crate::rs_surreal::is_model_kv_enabled()
-    );
-
-    Ok(())
-}
-
-/// 独立的模型 KV 连接初始化。
-///
-/// 根据当前运行时 `model_write_mode` 判断是否需要连接 KV_DB：
-/// - `Dual` / `KvOnly` → 尝试连接，失败则自动启动 SurrealKV 服务后重试。
-/// - `SurrealOnly` → 跳过。
-///
-/// 此函数可在 `init_surreal()` 之后单独调用，用于补充 KV 连接。
-pub async fn ensure_model_kv_connected(db_option: &DbOption) -> Result<()> {
-    let mode = crate::rs_surreal::current_model_write_mode();
-    if !matches!(mode, ModelWriteMode::Dual | ModelWriteMode::KvOnly) {
-        return Ok(());
-    }
-
-    // 如果 KV 已经连接成功，跳过
-    if crate::rs_surreal::is_model_kv_enabled() {
-        return Ok(());
-    }
-
-    let kv_conn_str = normalized_model_kv_conn_str(db_option);
-    validate_model_write_requirements(mode, &kv_conn_str)?;
-
-    println!("🗄️ 初始化模型 KV（WebSocket）...");
-
-    let connect_result = crate::rs_surreal::connect_model_kv(
-        &kv_conn_str,
-        &db_option.surreal_ns,
-        &db_option.project_name,
-        db_option.get_model_kv_user(),
-        db_option.get_model_kv_password(),
-    )
-    .await;
-
-    match connect_result {
-        Ok(_) => {
-            println!("✅ 模型 KV 就绪: {}", kv_conn_str);
-        }
-        Err(e) => {
-            eprintln!("⚠️  模型 KV 连接失败: {}", e);
-            eprintln!("🚀 尝试自动启动 SurrealKV 服务...");
-
-            if let Err(start_err) = start_surreal_kv_server(db_option) {
-                if mode == ModelWriteMode::KvOnly {
+        DbConnMode::Ws => {
+            match crate::rs_surreal::connect_model_kv(
+                &kv_conn_str,
+                &db_option.surreal_ns,
+                &db_option.project_name,
+                &kv_cfg.user,
+                &kv_cfg.password,
+            )
+            .await
+            {
+                Ok(_) => println!("✅ SurrealKV 就绪: {}", kv_conn_str),
+                Err(e) => {
                     return Err(anyhow::anyhow!(
-                        "model_write_mode=kv_only 但模型 KV 启动失败: {}",
-                        start_err
+                        "SurrealKV 连接失败: {}（请检查服务是否运行）",
+                        e
                     ));
                 }
-                eprintln!("❌ 模型 KV 启动失败: {}（退回 SurrealDB 单写）", start_err);
-            } else {
-                match crate::rs_surreal::connect_model_kv(
-                    &kv_conn_str,
-                    &db_option.surreal_ns,
-                    &db_option.project_name,
-                    db_option.get_model_kv_user(),
-                    db_option.get_model_kv_password(),
-                )
-                .await
-                {
-                    Ok(_) => println!("✅ 模型 KV 就绪: {}", kv_conn_str),
-                    Err(e2) => {
-                        if mode == ModelWriteMode::KvOnly {
-                            return Err(anyhow::anyhow!(
-                                "model_write_mode=kv_only 但模型 KV 连接失败: {}",
-                                e2
-                            ));
-                        }
-                        eprintln!("❌ 模型 KV 连接失败: {}（退回 SurrealDB 单写）", e2);
-                    }
-                }
             }
         }
     }
 
-    // KV 连接成功后，在 KV_DB 上也定义通用函数（fn::find_ancestor_type 等）
+    // 4. KV 连接成功后定义通用函数和基础表
     if crate::rs_surreal::is_model_kv_enabled() {
         println!("📦 在 KV_DB 上定义通用函数...");
         if let Err(e) =
@@ -345,12 +238,6 @@ pub async fn ensure_model_kv_connected(db_option: &DbOption) -> Result<()> {
         {
             eprintln!("⚠️  KV_DB 通用函数定义失败: {}（写入可能受影响）", e);
         }
-
-        // 模型写入 SQL 中 RELATION INSERT 引用了 pe 表（in: pe:...）,
-        // KV_DB 上不存在 pe 表会导致 "The table 'pe' does not exist" 错误。
-        // 这里预定义 pe 表（SCHEMALESS），使 RELATION 引用不报错。
-        // pe 实际数据仍在 SUL_DB，此处仅为 schema 占位。
-        println!("📦 在 KV_DB 上预定义模型写入依赖的基础表...");
         let schema_sql = "DEFINE TABLE IF NOT EXISTS pe SCHEMALESS PERMISSIONS FULL;";
         if let Err(e) = crate::rs_surreal::KV_DB.query(schema_sql).await {
             eprintln!("⚠️  KV_DB 基础表定义失败: {}", e);
@@ -358,29 +245,16 @@ pub async fn ensure_model_kv_connected(db_option: &DbOption) -> Result<()> {
     }
 
     println!(
-        "🧭 模型写入模式: {} (kv_enabled={})",
-        mode.as_str(),
+        "🧭 数据库初始化完成 (surrealdb={}, surrealkv={}, kv_enabled={})",
+        sdb_cfg.mode.as_str(),
+        kv_cfg.mode.as_str(),
         crate::rs_surreal::is_model_kv_enabled()
     );
+
     Ok(())
 }
 
-#[inline]
-fn normalized_model_kv_conn_str(db_option: &DbOption) -> String {
-    db_option.get_model_kv_conn_str().trim().to_string()
-}
 
-#[inline]
-fn validate_model_write_requirements(mode: ModelWriteMode, kv_conn_str: &str) -> Result<()> {
-    let is_ws_endpoint = kv_conn_str.starts_with("ws://") || kv_conn_str.starts_with("wss://");
-    if mode == ModelWriteMode::KvOnly && !is_ws_endpoint {
-        return Err(anyhow::anyhow!(
-            "model_write_mode=kv_only 但模型 KV 连接地址非法: {}",
-            kv_conn_str
-        ));
-    }
-    Ok(())
-}
 
 // ============================================================================
 // SurrealDB 服务进程管理
@@ -396,10 +270,7 @@ static SURREAL_KV_PROCESS: Mutex<Option<std::process::Child>> = Mutex::new(None)
 /// 启动前会自动清理占用目标端口的进程。
 pub fn start_surreal_server(db_option: &DbOption) -> Result<()> {
     let port = db_option.v_port;
-    let path = db_option
-        .surreal_local_path
-        .as_deref()
-        .unwrap_or("data.rdb");
+    let path = db_option.surrealdb.path.as_deref().unwrap_or("data.rdb");
     let user = &db_option.v_user;
     let password = &db_option.v_password;
 
@@ -512,21 +383,11 @@ pub fn is_surreal_server_running() -> bool {
 
 /// 自动启动 SurrealKV 服务进程。
 ///
-/// 使用 `surrealkv://` 后端（本地嵌入式 KV），绑定到 `kv_port`（默认 8010）。
-/// 数据存储在 `<surreal_local_path>.kv/` 目录中。
+/// 使用 `surrealkv://` 后端（本地嵌入式 KV），绑定到 surrealkv.port。
 pub fn start_surreal_kv_server(db_option: &DbOption) -> Result<()> {
-    let port = db_option.kv_port.trim();
-    let port: u16 = if port.is_empty() {
-        8010
-    } else {
-        port.parse().unwrap_or(8010)
-    };
+    let port = db_option.surrealkv.port;
 
-    let base_path = db_option
-        .surreal_local_path
-        .as_deref()
-        .unwrap_or("data.rdb");
-    let kv_data_path = format!("{}.kv", base_path);
+    let kv_data_path = db_option.surrealkv.path.as_deref().unwrap_or("data.kv").to_string();
     let kv_url = format!("surrealkv://{}", kv_data_path);
     let bind_addr = format!("0.0.0.0:{}", port);
 
@@ -603,27 +464,18 @@ fn stop_surreal_kv_server_inner() {
 
 #[cfg(test)]
 mod tests {
-    use super::{normalized_model_kv_conn_str, validate_model_write_requirements};
-    use crate::options::{DbOption, ModelWriteMode};
+    use crate::options::{DbOption, DbConnMode, SurrealKvConfig};
 
     #[test]
-    fn kv_only_requires_ws_endpoint() {
-        let err = validate_model_write_requirements(ModelWriteMode::KvOnly, "http://127.0.0.1:8010")
-            .expect_err("kv_only 在非 ws 地址时必须报错");
-        assert!(err.to_string().contains("kv_only"));
-    }
-
-    #[test]
-    fn dual_allows_non_ws_endpoint() {
-        validate_model_write_requirements(ModelWriteMode::Dual, "http://127.0.0.1:8010")
-            .expect("dual 在连接失败时可回退 SurrealDB 单写");
-    }
-
-    #[test]
-    fn normalized_model_kv_conn_str_uses_kv_config() {
+    fn effective_surrealkv_ws_conn_str() {
         let mut opt = DbOption::default();
-        opt.kv_ip = "localhost".to_string();
-        opt.kv_port = "8010".to_string();
-        assert_eq!(normalized_model_kv_conn_str(&opt), "ws://127.0.0.1:8010");
+        opt.surrealkv = SurrealKvConfig {
+            mode: DbConnMode::Ws,
+            ip: "localhost".to_string(),
+            port: 8010,
+            ..Default::default()
+        };
+        let kv_cfg = opt.effective_surrealkv();
+        assert_eq!(kv_cfg.conn_str(), "ws://127.0.0.1:8010");
     }
 }
