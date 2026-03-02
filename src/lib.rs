@@ -326,6 +326,25 @@ pub async fn init_surreal() -> anyhow::Result<()> {
             }
             // 嵌入式模式无需 signin
         }
+        "surrealkv" => {
+            let path = db_option
+                .surreal_local_path
+                .as_deref()
+                .unwrap_or("data.skv");
+            println!("🗄️  后端: SurrealKV 嵌入式");
+            println!("📂 数据目录: {}", path);
+            match crate::connect_surrealkv(path, &db_option.surreal_ns, &db_option.project_name).await {
+                Ok(_) => {}
+                Err(e) => {
+                    if e.to_string().contains("Already connected") {
+                    } else {
+                        return Err(e.into());
+                    }
+                }
+            }
+            // surrealkv 嵌入式无需 signin，connect_surrealkv 已处理 ns/db
+            // 提前返回跳过后面的 use_ns_db_compat（已在 connect_surrealkv 内完成）
+        }
         _ => {
             // WS 模式（默认）
             let connection_str = db_option.get_version_db_conn_str();

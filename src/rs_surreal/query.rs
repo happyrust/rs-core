@@ -1518,8 +1518,21 @@ pub async fn query_single_by_paths(
     paths: &[&str],
     fields: &[&str],
 ) -> anyhow::Result<NamedAttrMap> {
+    let paths_key = paths.join(",");
+    let fields_key = fields.join(",");
+    query_single_by_paths_cached(refno, paths_key, fields_key).await
+}
+
+/// 带 LRU 缓存的 `query_single_by_paths` 内部实现。
+/// paths_key / fields_key 是 owned String，满足 `#[cached]` 宏要求。
+#[cached(result = true, size = 10000)]
+async fn query_single_by_paths_cached(
+    refno: RefnoEnum,
+    paths_key: String,
+    fields_key: String,
+) -> anyhow::Result<NamedAttrMap> {
     let mut ps = vec![];
-    for &path in paths {
+    for path in paths_key.split(',') {
         let p = path.replace("->", ".refno.");
         let str = if p.starts_with(".") {
             p[1..].to_owned()
@@ -1539,12 +1552,11 @@ pub async fn query_single_by_paths(
     let mut map = response
         .take::<Option<NamedAttrMap>>(0)?
         .unwrap_or_default();
-    // dbg!(&map);
-    //只保留 fileds 里的数据
-    if !fields.is_empty() {
+    // 只保留 fields 里的数据
+    if !fields_key.is_empty() {
+        let fields: Vec<&str> = fields_key.split(',').collect();
         map.retain(|k, _| fields.contains(&k.as_str()));
     }
-    // dbg!(&map);
     Ok(map)
 }
 
