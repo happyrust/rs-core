@@ -132,7 +132,15 @@ fn resolve_model_write_targets(mode: ModelWriteMode, kv_enabled: bool) -> Vec<Mo
                 vec![ModelWriteTarget::Surreal]
             }
         }
-        ModelWriteMode::KvOnly => vec![ModelWriteTarget::Kv],
+        ModelWriteMode::KvOnly => {
+            if kv_enabled {
+                // KV 为主写，SUL_DB 为镜像：确保 SUL_DB 也有模型数据，
+                // 以便导出等需要 JOIN PE 表的查询能在 SUL_DB 上完成。
+                vec![ModelWriteTarget::Kv, ModelWriteTarget::Surreal]
+            } else {
+                vec![ModelWriteTarget::Surreal]
+            }
+        }
     }
 }
 
@@ -162,18 +170,14 @@ pub fn is_model_kv_enabled() -> bool {
     MODEL_KV_ENABLED.load(Ordering::Relaxed)
 }
 
-/// 返回“模型数据主读写库”连接。
+/// 返回"模型数据主读库"连接。
 ///
-/// 约定：
-/// - `kv_only` 且 KV 已启用：返回 `KV_DB`；
-/// - 其他模式（`surreal_only` / `dual` / KV 未启用）：返回 `SUL_DB`。
+/// 始终返回 `SUL_DB`：
+/// - 读取时需要 JOIN PE 表数据（owner / world_aabb / noun 等），这些只存在于 SUL_DB。
+/// - 在 KvOnly 模式下，写入同时镜像到 SUL_DB，因此 SUL_DB 也包含最新模型产物数据。
 #[inline]
 pub fn model_primary_db() -> &'static Surreal<Any> {
-    if current_model_write_mode() == ModelWriteMode::KvOnly && is_model_kv_enabled() {
-        &KV_DB
-    } else {
-        &SUL_DB
-    }
+    &SUL_DB
 }
 
 /// 连接模型 KV（WebSocket）作为模型数据写入目标
@@ -457,7 +461,13 @@ mod tests {
     #[test]
     fn model_write_routing_kv_only() {
         let targets = resolve_model_write_targets(ModelWriteMode::KvOnly, true);
-        assert_eq!(targets, vec![ModelWriteTarget::Kv]);
+        assert_eq!(targets, vec![ModelWriteTarget::Kv, ModelWriteTarget::Surreal]);
+    }
+
+    #[test]
+    fn model_write_routing_kv_only_without_kv() {
+        let targets = resolve_model_write_targets(ModelWriteMode::KvOnly, false);
+        assert_eq!(targets, vec![ModelWriteTarget::Surreal]);
     }
 
     #[test]
