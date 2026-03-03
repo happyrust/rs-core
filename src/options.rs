@@ -84,6 +84,68 @@ impl SurrealDbConfig {
     }
 }
 
+/// Web Server 配置
+///
+/// 控制 web_server 二进制的启动行为，包括监听端口、SurrealDB 自启动等。
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WebServerConfig {
+    /// Web 服务监听端口
+    #[serde(default = "default_web_server_port")]
+    pub port: u16,
+    /// 是否自动启动 SurrealDB 进程
+    #[serde(default = "default_true_auto_start")]
+    pub auto_start_surreal: bool,
+    /// SurrealDB 可执行文件路径（auto_start 时使用）
+    #[serde(default = "default_surreal_bin")]
+    pub surreal_bin: String,
+    /// SurrealDB 数据目录（auto_start 时使用 rocksdb://path）
+    #[serde(default)]
+    pub surreal_data_path: Option<String>,
+    /// SurrealDB 监听地址（auto_start 时使用）
+    #[serde(default = "default_surreal_bind")]
+    pub surreal_bind: String,
+    /// SurrealDB 用户名
+    #[serde(default = "default_surrealdb_user")]
+    pub surreal_user: String,
+    /// SurrealDB 密码
+    #[serde(default = "default_surrealdb_password")]
+    pub surreal_password: String,
+}
+
+impl Default for WebServerConfig {
+    fn default() -> Self {
+        Self {
+            port: 8080,
+            auto_start_surreal: true,
+            surreal_bin: "surreal".to_string(),
+            surreal_data_path: None,
+            surreal_bind: "0.0.0.0:8020".to_string(),
+            surreal_user: "root".to_string(),
+            surreal_password: "root".to_string(),
+        }
+    }
+}
+
+impl WebServerConfig {
+    /// 获取 SurrealDB 数据路径，优先使用 web_server 配置，否则回退到 surrealdb.path
+    pub fn effective_data_path<'a>(&'a self, fallback: Option<&'a str>) -> &'a str {
+        self.surreal_data_path
+            .as_deref()
+            .or(fallback)
+            .unwrap_or("db-data/default.rdb")
+    }
+
+    /// 获取 auto_start 时 SurrealDB 的 WebSocket 连接地址
+    pub fn ws_conn_str(&self) -> String {
+        format!("ws://{}", self.surreal_bind)
+    }
+}
+
+fn default_web_server_port() -> u16 { 8080 }
+fn default_true_auto_start() -> bool { true }
+fn default_surreal_bin() -> String { "surreal".to_string() }
+fn default_surreal_bind() -> String { "0.0.0.0:8020".to_string() }
+
 /// SurrealKV 连接配置（模型数据写入）
 ///
 /// 当 `enabled = false` 时，跳过 KV_DB 初始化，模型数据写回主 SurrealDB（SUL_DB）。
@@ -446,6 +508,11 @@ pub struct DbOption {
     #[clap(skip)]
     #[serde(default)]
     pub surrealkv: SurrealKvConfig,
+
+    /// Web Server 配置（[web_server] 子表）
+    #[clap(skip)]
+    #[serde(default)]
+    pub web_server: WebServerConfig,
 
     /// 内存KV数据库IP地址（用于PE数据额外备份）
     #[clap(long)]

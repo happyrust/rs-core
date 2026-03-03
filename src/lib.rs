@@ -171,7 +171,23 @@ pub fn get_db_option() -> &'static DbOption {
             .add_source(File::with_name(&config_file_name))
             .build()
             .unwrap();
-        let option = s.try_deserialize::<DbOption>().unwrap();
+        let mut option = s.try_deserialize::<DbOption>().unwrap();
+        // 环境变量覆盖 surrealdb 连接模式（web_server auto_start 场景）
+        if let Ok(mode) = std::env::var("SURREAL_CONN_MODE") {
+            match mode.as_str() {
+                "ws" => option.surrealdb.mode = options::DbConnMode::Ws,
+                "file" => option.surrealdb.mode = options::DbConnMode::File,
+                _ => {}
+            }
+        }
+        if let Ok(ip) = std::env::var("SURREAL_CONN_IP") {
+            option.surrealdb.ip = ip;
+        }
+        if let Ok(port) = std::env::var("SURREAL_CONN_PORT") {
+            if let Ok(p) = port.parse::<u16>() {
+                option.surrealdb.port = p;
+            }
+        }
         crate::mesh_precision::set_active_precision(option.mesh_precision.clone());
         option
     })
@@ -294,11 +310,8 @@ pub async fn init_surreal() -> anyhow::Result<()> {
     println!("🔧 正在初始化数据库连接...");
     println!("📄 使用配置文件: {}.toml", config_file_name);
 
-    let s = Config::builder()
-        .add_source(File::with_name(&config_file_name))
-        .build()
-        .unwrap();
-    let db_option: DbOption = s.try_deserialize()?;
+    // 使用 get_db_option() 以复用 OnceCell 缓存并尊重环境变量覆盖
+    let db_option = get_db_option();
 
     let sdb_cfg = db_option.effective_surrealdb();
     println!("🏷️  命名空间: {}", db_option.surreal_ns);

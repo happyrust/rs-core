@@ -1,4 +1,9 @@
+#Compile rule
+如果 target 被占用了，就可以切换到 target-check 去执行编译或者 check。
+
+
 # Repository Guidelines
+
 
 ## Project Structure & Module Organization
 项目代码集中在 `src/`，其中 `aios_db_mgr` 与 `query_provider` 实现核心数据库桥接，`rs_surreal` 聚合 SurrealDB 适配，而 `geometry`、`material`、`version_control` 等模块支撑三维语义；命令入口存放于 `src/bin/` 与 `examples/`，演示如 `test_unified_query` 可直连双引擎；架构与同步方案记录在 `docs/`，性能数据、夹具与输出保存在 `benches/`、`test-files/`、`test_output/`，可复用现有 `.cypher`、`.json`、`.log` 文件；资源及二进制字典集中在 `resource/` 与 `data/`。
