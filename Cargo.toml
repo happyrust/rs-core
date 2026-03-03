@@ -152,13 +152,5 @@ criterion = { version = "0.7", features = ["html_reports", "async_tokio"] }
 async-trait = "0.1"
 tempfile = "3"
 
-[[bench]]
-name = "room_query_bench"
-harness = false
-
-[[bench]]
-name = "descendant_query_bench"
-harness = false
-
 # [patch."https://gitee.com/happydpc/rust-ploop-processor.git"]   
 # ploop-rs = { path = "../rust-ploop-processor/ploop-rs" }
