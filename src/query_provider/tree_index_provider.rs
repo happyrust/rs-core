@@ -100,6 +100,7 @@ impl TreeIndexQueryProvider {
             include_self,
             max_depth,
             filter: Self::build_filter(nouns),
+            prune_on_match: false,
         }
     }
 }
@@ -177,6 +178,7 @@ impl HierarchyQuery for TreeIndexQueryProvider {
             include_self: false,
             max_depth: None,
             filter: TreeQueryFilter::default(),
+            prune_on_match: false,
         };
         let ancestors = index
             .query_ancestors_root_to_parent(refno.refno(), options)
@@ -201,6 +203,7 @@ impl HierarchyQuery for TreeIndexQueryProvider {
             include_self: false,
             max_depth: None,
             filter: Self::build_filter(nouns),
+            prune_on_match: false,
         };
         let ancestors = index
             .query_ancestors_root_to_parent(refno.refno(), options)
@@ -349,6 +352,7 @@ impl GraphQuery for TreeIndexQueryProvider {
             include_self: false,
             max_depth: None,
             filter: TreeQueryFilter::default(),
+            prune_on_match: false,
         };
         let ancestors = index
             .query_ancestors_root_to_parent(refno.refno(), options)

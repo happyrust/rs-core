@@ -306,6 +306,9 @@ pub async fn init_test_surreal() -> Result<DbOption, HandleError> {
 }
 
 pub async fn init_surreal() -> anyhow::Result<()> {
+    // 修复 SurrealDB 3.x 图遍历在默认 planner 下可能返回空的问题
+    unsafe { std::env::set_var("SURREAL_PLANNER_STRATEGY", "compute-only") };
+
     let config_file_name = get_config_file_name();
     println!("🔧 正在初始化数据库连接...");
     println!("📄 使用配置文件: {}.toml", config_file_name);

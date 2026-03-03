@@ -1,5 +1,5 @@
 #Compile rule
-如果 target 被占用了，就可以切换到 target-check 去执行编译或者 check。
+如果 target 被占用了，就可以切换到 target-check 去执行 check。
 
 
 # Repository Guidelines

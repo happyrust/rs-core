@@ -58,6 +58,8 @@ pub struct TreeQueryOptions {
     pub include_self: bool,
     pub max_depth: Option<usize>,
     pub filter: TreeQueryFilter,
+    /// 匹配到目标节点后不再递归其子节点
+    pub prune_on_match: bool,
 }
 
 impl Default for TreeQueryOptions {
@@ -66,6 +68,7 @@ impl Default for TreeQueryOptions {
             include_self: true,
             max_depth: None,
             filter: TreeQueryFilter::default(),
+            prune_on_match: false,
         }
     }
 }
@@ -242,9 +245,51 @@ impl TreeIndex {
             let is_root = depth == 0;
             let has_geo = is_geo_noun_hash(node.noun);
             let is_leaf = node_id.children(&self.arena).next().is_none();
-            if !(is_root && !options.include_self) && options.filter.matches(node, has_geo, is_leaf)
-            {
+            let matched = !(is_root && !options.include_self)
+                && options.filter.matches(node, has_geo, is_leaf);
+            if matched {
                 out.push(node.refno);
+            }
+            // prune_on_match: 匹配到目标节点后不再递归其子节点
+            if options.prune_on_match && matched && !is_root {
+                continue;
+            }
+            if let Some(max_depth) = options.max_depth {
+                if depth >= max_depth {
+                    continue;
+                }
+            }
+            for child_id in node_id.children(&self.arena) {
+                queue.push_back((child_id, depth + 1));
+            }
+        }
+        out
+    }
+
+    /// BFS 收集子孙节点，按 noun_hash 分组返回
+    pub fn collect_descendants_bfs_grouped(
+        &self,
+        root: RefU64,
+        options: &TreeQueryOptions,
+    ) -> HashMap<u32, Vec<RefU64>> {
+        let Some(&root_id) = self.id_map.get(&root) else {
+            return HashMap::new();
+        };
+        let mut out: HashMap<u32, Vec<RefU64>> = HashMap::new();
+        let mut queue: VecDeque<(NodeId, usize)> = VecDeque::new();
+        queue.push_back((root_id, 0));
+        while let Some((node_id, depth)) = queue.pop_front() {
+            let node = self.arena[node_id].get();
+            let is_root = depth == 0;
+            let has_geo = is_geo_noun_hash(node.noun);
+            let is_leaf = node_id.children(&self.arena).next().is_none();
+            let matched = !(is_root && !options.include_self)
+                && options.filter.matches(node, has_geo, is_leaf);
+            if matched {
+                out.entry(node.noun).or_default().push(node.refno);
+            }
+            if options.prune_on_match && matched && !is_root {
+                continue;
             }
             if let Some(max_depth) = options.max_depth {
                 if depth >= max_depth {
@@ -644,6 +689,7 @@ mod tests {
                 is_leaf: Some(true),
                 noun_hashes: None,
             },
+            prune_on_match: false,
         };
         let descendants = index.collect_descendants_bfs(root_refno, &options);
         assert_eq!(descendants, vec![child_refno]);

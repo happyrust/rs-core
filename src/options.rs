@@ -695,6 +695,7 @@ impl DbOption {
                     include_self: false, // root 已在 refnos 中
                     max_depth: None,
                     filter: crate::tree_query::TreeQueryFilter::default(),
+                    prune_on_match: false,
                 };
                 let descendants: Vec<RefU64> =
                     index.collect_descendants_bfs(refno.refno(), &options);

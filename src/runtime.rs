@@ -126,6 +126,9 @@ pub async fn try_connect_database() -> Result<()> {
 /// - SurrealDB（PE/属性/输入数据）：file 或 ws
 /// - SurrealKV（模型数据写入）：file 或 ws，固定启用
 pub async fn initialize_databases(db_option: &DbOption) -> Result<()> {
+    // 修复 SurrealDB 3.x 图遍历在默认 planner 下可能返回空的问题
+    unsafe { std::env::set_var("SURREAL_PLANNER_STRATEGY", "compute-only") };
+
     // 1. 初始化 SurrealDB（输入数据源）
     let sdb_cfg = db_option.effective_surrealdb();
     let sdb_conn_str = db_option.surrealdb_conn_str();
@@ -334,6 +337,7 @@ pub fn start_surreal_server(db_option: &DbOption) -> Result<()> {
         ("SURREAL_ROCKSDB_FILE_COMPACTION_TRIGGER", "4".to_string()),
         ("SURREAL_ROCKSDB_STORAGE_LOG_LEVEL", "warn".to_string()),
         ("SURREAL_ROCKSDB_BLOB_COMPRESSION_TYPE", "lz4".to_string()),
+        ("SURREAL_PLANNER_STRATEGY", "compute-only".to_string()),
     ];
 
     let mut cmd = std::process::Command::new("surreal");
