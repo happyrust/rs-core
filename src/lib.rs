@@ -355,12 +355,65 @@ pub async fn init_surreal() -> anyhow::Result<()> {
 
     println!("✅ 数据库连接成功！");
 
+    // 初始化 KV_DB（模型数据写入目标）
+    let kv_cfg = db_option.effective_surrealkv();
+
+    if !kv_cfg.enabled {
+        // KV 未启用：模型数据写回主 SurrealDB（SUL_DB）
+        println!("🗄️  SurrealKV 已禁用 (surrealkv.enabled=false)，模型数据写回主 SurrealDB");
+    } else {
+        let kv_conn_str = db_option.surrealkv_conn_str();
+        println!("🔧 正在初始化 SurrealKV (模型数据库)...");
+        let kv_config = surrealdb::opt::Config::default().ast_payload();
+        match kv_cfg.mode {
+            options::DbConnMode::File => {
+                let kv_path = db_option.surrealkv_data_path();
+                println!("📂 KV 数据目录: {}", kv_path);
+                match rs_surreal::KV_DB.connect((&kv_conn_str, kv_config)).with_capacity(1000).await {
+                    Ok(_) => {}
+                    Err(e) => {
+                        if !e.to_string().contains("Already connected") {
+                            return Err(e.into());
+                        }
+                    }
+                }
+            }
+            options::DbConnMode::Ws => {
+                println!("🌐 KV 连接: {}", kv_conn_str);
+                match rs_surreal::KV_DB.connect((&kv_conn_str, kv_config)).with_capacity(1000).await {
+                    Ok(_) => {}
+                    Err(e) => {
+                        if !e.to_string().contains("Already connected") {
+                            return Err(e.into());
+                        }
+                    }
+                }
+                rs_surreal::KV_DB
+                    .signin(Root {
+                        username: kv_cfg.user.clone(),
+                        password: kv_cfg.password.clone(),
+                    })
+                    .await?;
+            }
+        }
+        crate::use_ns_db_compat(&rs_surreal::KV_DB, &db_option.surreal_ns, &db_option.project_name).await?;
+        rs_surreal::mark_model_kv_enabled();
+        println!("✅ SurrealKV 连接成功！");
+    }
+
     // Define common functions (使用 None 从配置文件自动读取路径)
     define_common_functions(None)
         .await
         .map_err(|e| HandleError::SurrealError {
             msg: format!("Failed to define common functions: {}", e),
         })?;
+
+    // 在 KV_DB 上也定义通用函数（仅当 KV 启用时）
+    if rs_surreal::is_model_kv_enabled() {
+        if let Err(e) = crate::function::define_common_functions_on_db(&rs_surreal::KV_DB, None).await {
+            eprintln!("⚠️  KV_DB 通用函数定义失败: {}（写入可能受影响）", e);
+        }
+    }
 
     // 加载属性中文名缓存
     rs_surreal::load_attr_cn_names().await?;

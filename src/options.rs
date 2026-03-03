@@ -84,9 +84,15 @@ impl SurrealDbConfig {
     }
 }
 
-/// SurrealKV 连接配置（模型数据写入，固定启用）
+/// SurrealKV 连接配置（模型数据写入）
+///
+/// 当 `enabled = false` 时，跳过 KV_DB 初始化，模型数据写回主 SurrealDB（SUL_DB）。
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SurrealKvConfig {
+    /// 是否启用独立的 KV 数据库。
+    /// 设为 false 时模型数据写回主 SurrealDB（与 PE/属性同库），避免跨库引用缺失。
+    #[serde(default = "default_true_kv")]
+    pub enabled: bool,
     /// 连接模式：file（嵌入式）或 ws（WebSocket）
     #[serde(default)]
     pub mode: DbConnMode,
@@ -110,6 +116,7 @@ pub struct SurrealKvConfig {
 impl Default for SurrealKvConfig {
     fn default() -> Self {
         Self {
+            enabled: true,
             mode: DbConnMode::File,
             path: None,
             ip: "localhost".to_string(),
@@ -710,10 +717,16 @@ impl DbOption {
 
     /// 获取 SurrealKV 嵌入式模式的完整连接字符串
     ///
-    /// 当 mode=File 时使用 `surrealkv_data_path()` 生成 `surrealkv://` 连接串
+    /// 当 mode=File 时使用 `surrealkv_data_path()` 生成 `rocksdb://` 连接串
+    /// （当 kv-surrealkv feature 未启用时回退到 rocksdb 后端）
     pub fn surrealkv_conn_str(&self) -> String {
         match self.surrealkv.mode {
-            DbConnMode::File => format!("surrealkv://{}", self.surrealkv_data_path()),
+            DbConnMode::File => {
+                #[cfg(feature = "kv-surrealkv")]
+                { format!("surrealkv://{}", self.surrealkv_data_path()) }
+                #[cfg(not(feature = "kv-surrealkv"))]
+                { format!("rocksdb://{}", self.surrealkv_data_path()) }
+            }
             DbConnMode::Ws => self.surrealkv.conn_str(),
         }
     }
@@ -833,6 +846,10 @@ fn default_surrealdb_user() -> String {
 
 fn default_surrealdb_password() -> String {
     "root".to_string()
+}
+
+fn default_true_kv() -> bool {
+    true
 }
 
 fn default_surrealkv_ip() -> String {

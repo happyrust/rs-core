@@ -181,73 +181,79 @@ pub async fn initialize_databases(db_option: &DbOption) -> Result<()> {
         eprintln!("初始化通用函数失败: {} (忽略并继续)", e);
     }
 
-    // 3. 初始化 SurrealKV（模型数据写入，固定启用）
+    // 3. 初始化 SurrealKV（模型数据写入）
     let kv_cfg = db_option.effective_surrealkv();
-    let kv_conn_str = db_option.surrealkv_conn_str();
-    println!("🗄️  初始化 SurrealKV（{}）...", kv_cfg.mode.as_str());
 
-    match kv_cfg.mode {
-        DbConnMode::File => {
-            let path = db_option.surrealkv_data_path();
-            println!("📂 KV 数据目录: {}", path);
-            let config = surrealdb::opt::Config::default().ast_payload();
-            crate::rs_surreal::KV_DB
-                .connect((&kv_conn_str, config))
-                .with_capacity(1000)
+    if !kv_cfg.enabled {
+        // KV 未启用：模型数据写回主 SurrealDB（SUL_DB）
+        println!("🗄️  SurrealKV 已禁用 (surrealkv.enabled=false)，模型数据写回主 SurrealDB");
+    } else {
+        let kv_conn_str = db_option.surrealkv_conn_str();
+        println!("🗄️  初始化 SurrealKV（{}）...", kv_cfg.mode.as_str());
+
+        match kv_cfg.mode {
+            DbConnMode::File => {
+                let path = db_option.surrealkv_data_path();
+                println!("📂 KV 数据目录: {}", path);
+                let config = surrealdb::opt::Config::default().ast_payload();
+                crate::rs_surreal::KV_DB
+                    .connect((&kv_conn_str, config))
+                    .with_capacity(1000)
+                    .await
+                    .map_err(|e| anyhow::anyhow!("SurrealKV 嵌入式连接失败: {}", e))?;
+                crate::use_ns_db_compat(
+                    &crate::rs_surreal::KV_DB,
+                    &db_option.surreal_ns,
+                    &db_option.project_name,
+                )
                 .await
-                .map_err(|e| anyhow::anyhow!("SurrealKV 嵌入式连接失败: {}", e))?;
-            crate::use_ns_db_compat(
-                &crate::rs_surreal::KV_DB,
-                &db_option.surreal_ns,
-                &db_option.project_name,
-            )
-            .await
-            .map_err(|e| anyhow::anyhow!("KV use ns/db 失败: {}", e))?;
-            crate::rs_surreal::mark_model_kv_enabled();
-            println!(
-                "✅ SurrealKV 嵌入式连接成功: {} -> {}",
-                path, db_option.project_name
-            );
-        }
-        DbConnMode::Ws => {
-            match crate::rs_surreal::connect_model_kv(
-                &kv_conn_str,
-                &db_option.surreal_ns,
-                &db_option.project_name,
-                &kv_cfg.user,
-                &kv_cfg.password,
-            )
-            .await
-            {
-                Ok(_) => println!("✅ SurrealKV 就绪: {}", kv_conn_str),
-                Err(e) => {
-                    return Err(anyhow::anyhow!(
-                        "SurrealKV 连接失败: {}（请检查服务是否运行）",
-                        e
-                    ));
+                .map_err(|e| anyhow::anyhow!("KV use ns/db 失败: {}", e))?;
+                crate::rs_surreal::mark_model_kv_enabled();
+                println!(
+                    "✅ SurrealKV 嵌入式连接成功: {} -> {}",
+                    path, db_option.project_name
+                );
+            }
+            DbConnMode::Ws => {
+                match crate::rs_surreal::connect_model_kv(
+                    &kv_conn_str,
+                    &db_option.surreal_ns,
+                    &db_option.project_name,
+                    &kv_cfg.user,
+                    &kv_cfg.password,
+                )
+                .await
+                {
+                    Ok(_) => println!("✅ SurrealKV 就绪: {}", kv_conn_str),
+                    Err(e) => {
+                        return Err(anyhow::anyhow!(
+                            "SurrealKV 连接失败: {}（请检查服务是否运行）",
+                            e
+                        ));
+                    }
                 }
+            }
+        }
+
+        // 4. KV 连接成功后定义通用函数和基础表
+        if crate::rs_surreal::is_model_kv_enabled() {
+            println!("📦 在 KV_DB 上定义通用函数...");
+            if let Err(e) =
+                crate::function::define_common_functions_on_db(&crate::rs_surreal::KV_DB, None).await
+            {
+                eprintln!("⚠️  KV_DB 通用函数定义失败: {}（写入可能受影响）", e);
+            }
+            let schema_sql = "DEFINE TABLE IF NOT EXISTS pe SCHEMALESS PERMISSIONS FULL;";
+            if let Err(e) = crate::rs_surreal::KV_DB.query(schema_sql).await {
+                eprintln!("⚠️  KV_DB 基础表定义失败: {}", e);
             }
         }
     }
 
-    // 4. KV 连接成功后定义通用函数和基础表
-    if crate::rs_surreal::is_model_kv_enabled() {
-        println!("📦 在 KV_DB 上定义通用函数...");
-        if let Err(e) =
-            crate::function::define_common_functions_on_db(&crate::rs_surreal::KV_DB, None).await
-        {
-            eprintln!("⚠️  KV_DB 通用函数定义失败: {}（写入可能受影响）", e);
-        }
-        let schema_sql = "DEFINE TABLE IF NOT EXISTS pe SCHEMALESS PERMISSIONS FULL;";
-        if let Err(e) = crate::rs_surreal::KV_DB.query(schema_sql).await {
-            eprintln!("⚠️  KV_DB 基础表定义失败: {}", e);
-        }
-    }
-
     println!(
-        "🧭 数据库初始化完成 (surrealdb={}, surrealkv={}, kv_enabled={})",
+        "🧭 数据库初始化完成 (surrealdb={}, surrealkv_enabled={}, kv_active={})",
         sdb_cfg.mode.as_str(),
-        kv_cfg.mode.as_str(),
+        kv_cfg.enabled,
         crate::rs_surreal::is_model_kv_enabled()
     );
 

@@ -116,10 +116,11 @@ pub fn mark_model_kv_enabled() {
 
 /// 返回"模型数据主读写库"连接。
 ///
-/// 模型数据固定写 KV_DB。如果 KV 未启用则回退到 SUL_DB。
+/// 当 KV_DB 已启用（`surrealkv.enabled = true`）时返回 KV_DB；
+/// 否则回退到 SUL_DB，使模型数据与 PE/属性写入同一个数据库。
 #[inline]
 pub fn model_primary_db() -> &'static Surreal<Any> {
-    if is_model_kv_enabled() {
+    if MODEL_KV_ENABLED.load(Ordering::Relaxed) {
         &KV_DB
     } else {
         &SUL_DB
