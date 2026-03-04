@@ -1,6 +1,7 @@
 use crate::plant_transform::Transform;
 pub mod csg;
 pub mod sweep_mesh;
+pub mod triangulation_helper;
 
 use crate::parsed_data::CateAxisParam;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;

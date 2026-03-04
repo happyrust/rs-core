@@ -3,6 +3,7 @@ use crate::shape::pdms_shape::BrepMathTrait;
 use crate::shape::pdms_shape::LEN_TOL;
 use crate::tool::float_tool::*;
 use crate::tool::float_tool::{cal_vec2_hash_string, cal_xy_hash_string, vec3_round_2};
+use crate::geometry::triangulation_helper::triangulate_polygon_indices_spade;
 use anyhow::anyhow;
 use approx::abs_diff_eq;
 use cavalier_contours::core::math::{Vector2, angle, bulge_from_angle};
@@ -2100,7 +2101,7 @@ fn calculate_arc_segments_needed(bulge: f64) -> usize {
     segments.max(4).min(32)
 }
 
-/// 使用 i_triangle 对 2D 点集进行三角化
+/// 使用 spade 对 2D 点集进行三角化
 fn triangulate_2d_points(
     points_2d: &[Vec2],
 ) -> Option<crate::geometry::sweep_mesh::CapTriangulation> {
@@ -2108,27 +2109,10 @@ fn triangulate_2d_points(
         return None;
     }
 
-    // 转换为 i_triangle 需要的格式
-    let contour: Vec<[f32; 2]> = points_2d.iter().map(|p| [p.x, p.y]).collect();
-
-    use i_triangle::float::triangulatable::Triangulatable;
-
-    // 使用 i_triangle 进行三角化
-    let raw = contour.as_slice().triangulate();
-    let triangulation = raw.to_triangulation::<u32>();
-
-    if triangulation.indices.is_empty() {
-        return None;
-    }
-
-    // 转换回内部格式
+    let indices = triangulate_polygon_indices_spade(points_2d).ok()?;
     Some(crate::geometry::sweep_mesh::CapTriangulation {
-        points: triangulation
-            .points
-            .into_iter()
-            .map(|p| Vec2::new(p[0], p[1]))
-            .collect(),
-        indices: triangulation.indices,
+        points: points_2d.to_vec(),
+        indices,
     })
 }
 
@@ -2137,7 +2121,7 @@ fn triangulate_2d_points(
 /// 该函数将输入的带 FRADIUS 的顶点数据，通过以下流程进行三角化：
 /// 1. 先通过 ploop-rs 处理 FRADIUS，再基于 bulge 生成 2D Polyline
 /// 2. 提取 2D 轮廓点
-/// 3. 使用 i_triangle 进行三角化
+/// 3. 使用 spade 进行三角化
 /// 4. 生成 3D 网格数据
 ///
 /// # 参数
@@ -2198,9 +2182,9 @@ pub fn triangulate_wire_directly(vertices: &[Vec3]) -> anyhow::Result<WireTriang
         return Err(anyhow!("2D 轮廓点数量不足，无法三角化"));
     }
 
-    // 3. 使用 i_triangle 进行三角化
+    // 3. 使用 spade 进行三角化
     let triangulation = triangulate_2d_points(&points_2d)
-        .ok_or_else(|| anyhow!("三角化失败:i_triangle 无法处理输入轮廓"))?;
+        .ok_or_else(|| anyhow!("三角化失败:spade 无法处理输入轮廓"))?;
 
     println!(
         "   三角化成功，生成 {} 个三角形",

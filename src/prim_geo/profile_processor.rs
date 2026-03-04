@@ -5,16 +5,16 @@
 /// 2. 使用 ploop-rs 处理 FRADIUS
 /// 3. 使用 cavalier_contours 生成 Polyline
 /// 4. 处理多轮廓的 boolean 操作（subtract 内孔等）
-/// 5. 使用 i_triangle 进行三角化
+/// 5. 使用 spade 进行三角化
 /// 6. 输出标准化的截面数据
 use crate::prim_geo::wire::{
     export_polyline_svg_for_debug, gen_polyline_from_processed_vertices,
     polyline_to_debug_json_str, process_ploop_vertices,
 };
+use crate::geometry::triangulation_helper::triangulate_polygon_indices_spade;
 use anyhow::{Result, anyhow};
 use cavalier_contours::polyline::{BooleanOp, PlineSource, Polyline};
 use glam::{Vec2, Vec3};
-use i_triangle::float::triangulatable::Triangulatable;
 
 /// 截面轮廓数据
 #[derive(Debug, Clone)]
@@ -248,11 +248,11 @@ impl ProfileProcessor {
         //     self.outer_contour.vertices.len()
         // );
 
-        // 4. 使用 i_triangle 进行三角化
+        // 4. 使用 spade 进行三角化
         let (tri_vertices, tri_indices) = self.triangulate_polyline(&contour_points_raw)?;
 
         // 关键：后续拉伸体侧面/端面必须共用同一套顶点索引体系。
-        // 这里直接使用 i_triangle 输出的 points 作为最终轮廓点，保证 tri_indices 可直接复用。
+        // 这里直接使用三角化输入点作为最终轮廓点，保证 tri_indices 可直接复用。
         let contour_points = tri_vertices.clone();
 
         // println!(
@@ -346,7 +346,7 @@ impl ProfileProcessor {
 
     /// 将 Polyline 转换为 2D 点集
     ///
-    /// 注意：i_triangle 不支持 bulge，需要将圆弧段离散化
+    /// 注意：三角化不直接处理 bulge，需要将圆弧段离散化
     fn polyline_to_2d_points(&self, polyline: &Polyline) -> Vec<Vec2> {
         let mut points = Vec::new();
         let vertex_count = polyline.vertex_data.len();
@@ -505,86 +505,13 @@ impl ProfileProcessor {
         arc_points
     }
 
-    /// 使用 i_triangle 进行三角化
+    /// 使用 spade 进行三角化
     fn triangulate_polyline(&self, points: &[Vec2]) -> Result<(Vec<Vec2>, Vec<u32>)> {
         if points.len() < 3 {
             return Err(anyhow!("三角化失败：点数不足（< 3）"));
         }
-
-        // 转换为 i_triangle 需要的格式
-        let contour: Vec<[f32; 2]> = points.iter().map(|p| [p.x, p.y]).collect();
-
-        // 执行三角化
-        let raw = contour.as_slice().triangulate();
-        let triangulation = raw.to_triangulation::<u32>();
-
-        if triangulation.indices.is_empty() {
-            return Err(anyhow!("i_triangle 三角化返回空结果"));
-        }
-
-        // 关键：i_triangle 可能会对 points 做清理/重排，导致 triangulation.points 的顺序不一定等于输入顺序。
-        // 为了让拉伸体侧面保持“轮廓顺序”，这里固定使用输入 points 作为端面/侧面的共享顶点，
-        // 并将 i_triangle 的索引映射回输入 points 的索引。
-        use std::collections::HashMap;
-
-        let mut map: HashMap<(u32, u32), u32> = HashMap::with_capacity(points.len() * 2);
-        for (i, p) in points.iter().enumerate() {
-            let key = (p.x.to_bits(), p.y.to_bits());
-            map.entry(key).or_insert(i as u32);
-        }
-
-        let tri_points: Vec<Vec2> = triangulation
-            .points
-            .into_iter()
-            .map(|p| Vec2::new(p[0], p[1]))
-            .collect();
-
-        // 快路径：如果 i_triangle 输出点集与输入点集顺序一致（仅存在浮点微小误差），直接复用 indices。
-        if tri_points.len() == points.len()
-            && tri_points
-                .iter()
-                .zip(points.iter())
-                .all(|(a, b)| a.distance(*b) < 1e-6)
-        {
-            return Ok((points.to_vec(), triangulation.indices));
-        }
-
-        let mut mapped = Vec::with_capacity(triangulation.indices.len());
-        for &idx in &triangulation.indices {
-            let p = tri_points
-                .get(idx as usize)
-                .ok_or_else(|| anyhow!("三角化索引越界: idx={}", idx))?;
-            let key = (p.x.to_bits(), p.y.to_bits());
-            if let Some(&orig) = map.get(&key) {
-                mapped.push(orig);
-                continue;
-            }
-
-            // 量化未命中时，做一次小范围最近邻兜底（避免极端浮点误差）
-            let mut best: Option<(u32, f32)> = None;
-            for (i, op) in points.iter().enumerate() {
-                let d = op.distance(*p);
-                match best {
-                    None => best = Some((i as u32, d)),
-                    Some((_, bd)) if d < bd => best = Some((i as u32, d)),
-                    _ => {}
-                }
-            }
-            let Some((best_i, best_d)) = best else {
-                return Err(anyhow!("三角化索引映射失败: idx={}", idx));
-            };
-            if best_d > 1e-4 {
-                return Err(anyhow!(
-                    "三角化索引映射失败: idx={}, best_d={} (points.len={})",
-                    idx,
-                    best_d,
-                    points.len()
-                ));
-            }
-            mapped.push(best_i);
-        }
-
-        Ok((points.to_vec(), mapped))
+        let indices = triangulate_polygon_indices_spade(points)?;
+        Ok((points.to_vec(), indices))
     }
 }
 
@@ -595,7 +522,7 @@ impl ProfileProcessor {
 /// 特点：
 /// - 使用统一的顶点集合（底面 + 顶面各 n 个顶点）
 /// - 所有面共享边缘顶点
-/// - 底面/顶面使用 i_triangle 三角化结果（支持凹多边形）
+/// - 底面/顶面使用 spade 三角化结果（支持凹多边形）
 pub fn extrude_profile(profile: &ProcessedProfile, height: f32) -> ExtrudedMesh {
     let n = profile.contour_points.len();
     if n < 3 {

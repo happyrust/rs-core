@@ -10,8 +10,8 @@ use crate::prim_geo::sweep_solid::SweepSolid;
 use crate::prim_geo::wire::CurveType;
 use crate::shape::pdms_shape::PlantMesh;
 use crate::types::refno::RefnoEnum;
+use crate::geometry::triangulation_helper::triangulate_polygon_indices_spade;
 use glam::{DMat4, DQuat, DVec3, Mat3, Quat, Vec2, Vec3};
-use i_triangle::float::triangulatable::Triangulatable;
 
 /// 截面顶点数据
 #[derive(Clone, Debug)]
@@ -1124,20 +1124,10 @@ fn triangulate_polygon(points: &[Vec2]) -> Option<CapTriangulation> {
     if points.len() < 3 {
         return None;
     }
-    let contour: Vec<[f32; 2]> = points.iter().map(|p| [p.x, p.y]).collect();
-    let raw = contour.as_slice().triangulate();
-    let triangulation = raw.to_triangulation::<u32>();
-    if triangulation.indices.is_empty() {
-        return None;
-    }
-
+    let indices = triangulate_polygon_indices_spade(points).ok()?;
     Some(CapTriangulation {
-        points: triangulation
-            .points
-            .into_iter()
-            .map(|p| Vec2::new(p[0], p[1]))
-            .collect(),
-        indices: triangulation.indices,
+        points: points.to_vec(),
+        indices,
     })
 }
 

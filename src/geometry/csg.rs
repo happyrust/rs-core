@@ -3923,7 +3923,7 @@ fn generate_extrusion_mesh(
     // 1. FRADIUS → bulge（process_ploop_vertices 在 ProfileProcessor 内部调用）
     // 2. Polyline（cavalier_contours）
     // 3. 圆弧按 bulge 离散化为 2D 轮廓点
-    // 4. i_triangle 三角化
+    // 4. spade 三角化
     // 5. extrude_profile 生成 3D 网格
     let mut verts2d: Vec<Vec<Vec2>> = Vec::with_capacity(extrusion.verts.len());
     let mut frads: Vec<Vec<f32>> = Vec::with_capacity(extrusion.verts.len());
