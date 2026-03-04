@@ -262,22 +262,22 @@ pub struct DbOption {
     #[clap(long)]
     pub use_tidb: Option<bool>,
 
-    /// 版本库的ip（旧配置兼容，新配置请使用 [surrealdb]）
+    /// SurrealDB 连接 IP（ws 模式下使用）
     #[clap(long)]
-    #[serde(default)]
-    pub v_ip: String,
-    /// 版本库的用户（旧配置兼容）
+    #[serde(default, alias = "v_ip")]
+    pub surreal_ip: String,
+    /// SurrealDB 认证用户名
     #[clap(long)]
-    #[serde(default)]
-    pub v_user: String,
-    /// 版本库的密码（旧配置兼容）
+    #[serde(default, alias = "v_user")]
+    pub surreal_user: String,
+    /// SurrealDB 认证密码
     #[clap(long)]
-    #[serde(default)]
-    pub v_password: String,
-    /// 版本库的端口（旧配置兼容）
+    #[serde(default, alias = "v_password")]
+    pub surreal_password: String,
+    /// SurrealDB 连接端口（ws 模式下使用）
     #[clap(long)]
-    #[serde(default)]
-    pub v_port: u16,
+    #[serde(default, alias = "v_port")]
+    pub surreal_port: u16,
     /// mqtt的host
     #[clap(long)]
     pub mqtt_host: String,
@@ -453,18 +453,23 @@ pub struct DbOption {
     pub gen_model_batch_size: usize,
     /// ArangoDB数据库URL地址
     #[clap(long)]
+    #[serde(default)]
     pub arangodb_url: String,
     /// 服务器发布IP地址
     #[clap(long)]
+    #[serde(default)]
     pub server_release_ip: String,
     /// ArangoDB数据库用户名
     #[clap(long)]
+    #[serde(default)]
     pub arangodb_user: String,
     /// ArangoDB数据库密码
     #[clap(long)]
+    #[serde(default)]
     pub arangodb_password: String,
     /// ArangoDB数据库名称
     #[clap(long)]
+    #[serde(default)]
     pub arangodb_database: String,
     /// 房间内的引用号列表
     #[clap(skip)]
@@ -477,12 +482,14 @@ pub struct DbOption {
     pub save_spatial_tree_to_db: bool,
     /// 是否启用多线程
     #[clap(long)]
+    #[serde(default)]
     pub multi_threads: bool,
     /// 是否仅同步系统
     #[clap(short)]
     pub only_sync_sys: bool,
     /// 平台URL地址
     #[clap(long)]
+    #[serde(default)]
     pub plat_url: String,
     /// 普华数据库IP地址
     #[clap(long)]
@@ -755,11 +762,11 @@ impl DbOption {
 
     /// 获取 SurrealDB 嵌入式模式的数据目录路径
     ///
-    /// 优先使用 `[surrealdb].path`，未配置时默认 `db-data/{project_name}_{v_port}.rdb`
+    /// 优先使用 `[surrealdb].path`，未配置时默认 `db-data/{project_name}_{surreal_port}.rdb`
     #[inline]
     pub fn surrealdb_data_path(&self) -> String {
         self.surrealdb.path.clone().unwrap_or_else(|| {
-            format!("db-data/{}_{}.rdb", self.project_name, self.v_port)
+            format!("db-data/{}_{}.rdb", self.project_name, self.surreal_port)
         })
     }
 
@@ -865,18 +872,22 @@ pub struct SecondUnitDbOption {
     /// SurrealDB 脚本目录路径，默认为 resource/surreal
     #[clap(long)]
     pub surreal_script_dir: Option<String>,
-    /// 二号机组的ip
+    /// 二号机组 SurrealDB IP
     #[clap(long)]
-    pub v_ip: String,
-    /// 二号机组的用户
+    #[serde(alias = "v_ip")]
+    pub surreal_ip: String,
+    /// 二号机组 SurrealDB 用户
     #[clap(long)]
-    pub v_user: String,
-    /// 二号机组的密码
+    #[serde(alias = "v_user")]
+    pub surreal_user: String,
+    /// 二号机组 SurrealDB 密码
     #[clap(long)]
-    pub v_password: String,
-    /// 二号机组的端口
+    #[serde(alias = "v_password")]
+    pub surreal_password: String,
+    /// 二号机组 SurrealDB 端口
     #[clap(long)]
-    pub v_port: u16,
+    #[serde(alias = "v_port")]
+    pub surreal_port: u16,
 }
 
 impl SecondUnitDbOption {
@@ -890,8 +901,8 @@ impl SecondUnitDbOption {
 
     #[inline]
     pub fn get_version_db_conn_str(&self) -> String {
-        let ip = self.v_ip.as_str();
-        let port = self.v_port;
+        let ip = self.surreal_ip.as_str();
+        let port = self.surreal_port;
         format!("ws://{ip}:{port}")
     }
 }

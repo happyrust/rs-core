@@ -205,7 +205,7 @@ pub async fn query_tubi_info_by_ids(
             .map(|id| format!("tubi_info:⟨{}⟩", id))
             .join(",");
 
-        let sql = format!("SELECT * FROM tubi_info WHERE id IN [{}];", id_list);
+        let sql = format!("SELECT * FROM [{}];", id_list);
 
         let rows: Vec<TubiInfoData> = SUL_DB.query_take(&sql, 0).await.unwrap_or_default();
         for row in rows {

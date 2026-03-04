@@ -33,8 +33,8 @@ pub async fn init_surreal_with_signin(db_option: &DbOption) -> anyhow::Result<()
         .await?;
     SUL_DB
         .signin(Root {
-            username: db_option.v_user.clone(),
-            password: db_option.v_password.clone(),
+            username: db_option.surreal_user.clone(),
+            password: db_option.surreal_password.clone(),
         })
         .await?;
     crate::use_ns_db_compat(&SUL_DB, &db_option.surreal_ns, &db_option.project_name).await?;

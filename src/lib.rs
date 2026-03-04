@@ -277,8 +277,8 @@ pub async fn init_test_surreal() -> Result<DbOption, HandleError> {
     // Sign in first (before setting namespace/database)
     SUL_DB
         .signin(Root {
-            username: db_option.v_user.clone(),
-            password: db_option.v_password.clone(),
+            username: db_option.surreal_user.clone(),
+            password: db_option.surreal_password.clone(),
         })
         .await
         .map_err(|e| HandleError::SurrealError {
@@ -344,7 +344,7 @@ pub async fn init_surreal() -> anyhow::Result<()> {
             let connection_str = sdb_cfg.conn_str();
             println!("🌐 后端: WebSocket 远程");
             println!("🌐 连接服务器: {}", connection_str);
-            println!("👤 用户名: {}", db_option.v_user);
+            println!("👤 用户名: {}", db_option.surreal_user);
             match SUL_DB
                 .connect((connection_str, config))
                 .with_capacity(1000)
@@ -360,8 +360,8 @@ pub async fn init_surreal() -> anyhow::Result<()> {
             }
             SUL_DB
                 .signin(Root {
-                    username: db_option.v_user.clone(),
-                    password: db_option.v_password.clone(),
+                    username: db_option.surreal_user.clone(),
+                    password: db_option.surreal_password.clone(),
                 })
                 .await?;
         }
@@ -450,8 +450,8 @@ pub async fn init_second_unit_surreal() -> anyhow::Result<()> {
         .await?;
     SECOND_SUL_DB
         .signin(Root {
-            username: db_option.v_user.clone(),
-            password: db_option.v_password.clone(),
+            username: db_option.surreal_user.clone(),
+            password: db_option.surreal_password.clone(),
         })
         .await?;
     crate::use_ns_db_compat(
@@ -471,8 +471,8 @@ pub async fn b_connected_second_unit() -> anyhow::Result<()> {
     let db_option: SecondUnitDbOption = s.try_deserialize()?;
     SECOND_SUL_DB
         .signin(Root {
-            username: db_option.v_user.clone(),
-            password: db_option.v_password.clone(),
+            username: db_option.surreal_user.clone(),
+            password: db_option.surreal_password.clone(),
         })
         .await?;
     Ok(())
@@ -505,8 +505,8 @@ pub async fn init_demo_test_surreal() -> Result<DbOption, HandleError> {
     // Sign in
     SUL_DB
         .signin(Root {
-            username: db_option.v_user.clone(),
-            password: db_option.v_password.clone(),
+            username: db_option.surreal_user.clone(),
+            password: db_option.surreal_password.clone(),
         })
         .await
         .map_err(|e| HandleError::SurrealError {

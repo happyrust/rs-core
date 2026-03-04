@@ -14,15 +14,15 @@ pub trait DbOptionSurrealExt {
 
 impl DbOptionSurrealExt for DbOption {
     fn validate_connection_config(&self) -> Result<(), String> {
-        if self.v_ip.is_empty() {
+        if self.surreal_ip.is_empty() {
             return Err("数据库IP不能为空".to_string());
         }
 
-        if self.v_port == 0 {
+        if self.surreal_port == 0 {
             return Err("数据库端口不能为0".to_string());
         }
 
-        if self.v_user.is_empty() {
+        if self.surreal_user.is_empty() {
             return Err("数据库用户名不能为空".to_string());
         }
 
@@ -36,7 +36,7 @@ impl DbOptionSurrealExt for DbOption {
     fn connection_summary(&self) -> String {
         format!(
             "host: {}:{} | user: {} | ns: {} | db: {}",
-            self.v_ip, self.v_port, self.v_user, self.surreal_ns, self.project_name
+            self.surreal_ip, self.surreal_port, self.surreal_user, self.surreal_ns, self.project_name
         )
     }
 }
@@ -64,7 +64,7 @@ pub async fn init_surreal_with_retry(db_option: &DbOption) -> Result<()> {
     println!("🌐 连接服务器: {}", db_option.get_version_db_conn_str());
     println!("🏷️  命名空间: {}", db_option.surreal_ns);
     println!("💾 数据库名: {}", db_option.project_name);
-    println!("👤 用户名: {}", db_option.v_user);
+    println!("👤 用户名: {}", db_option.surreal_user);
 
     let max_retries = 3;
     let mut last_error = None;
@@ -275,14 +275,14 @@ static SURREAL_KV_PROCESS: Mutex<Option<std::process::Child>> = Mutex::new(None)
 /// 根据 DbOption 配置启动 SurrealDB 服务进程。
 ///
 /// 使用 `surreal_local_path` 作为 RocksDB 数据目录，
-/// `v_port` 作为绑定端口，`v_user` / `v_password` 作为认证。
+/// `surreal_port` 作为绑定端口，`surreal_user` / `surreal_password` 作为认证。
 /// 启动前会自动清理占用目标端口的进程。
 pub fn start_surreal_server(db_option: &DbOption) -> Result<()> {
-    let port = db_option.v_port;
+    let port = db_option.surreal_port;
     let path_owned = db_option.surrealdb_data_path();
     let path = path_owned.as_str();
-    let user = &db_option.v_user;
-    let password = &db_option.v_password;
+    let user = &db_option.surreal_user;
+    let password = &db_option.surreal_password;
 
     // 先停掉旧进程（如果有）
     stop_surreal_server_inner();

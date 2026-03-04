@@ -130,8 +130,7 @@ pub async fn get_tag_names_by_refnos(
 
         let sql = format!(
             r#"SELECT in, tag_name, full_name
-               FROM tag_name_mapping
-               WHERE in IN [{}]"#,
+               FROM [{}]->tag_name_mapping"#,
             keys
         );
 

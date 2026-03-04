@@ -697,13 +697,20 @@ pub async fn get_owner_refnos_by_types(
         return Ok(vec![]);
     }
     let pe_keys = refnos.into_iter().map(|x| x.to_pe_key()).join(",");
-    let types_str = owner_types.iter().map(|t| format!("'{}'", t)).join(",");
+    let owner_types_vec = owner_types
+        .iter()
+        .map(|t| t.to_string())
+        .collect::<Vec<_>>();
     let sql = format!(
-        "array::distinct(select value owner from [{}] where owner.noun IN [{}])",
-        pe_keys, types_str
+        "array::distinct(select value owner from [{}] where owner.noun IN $owner_types)",
+        pe_keys
     );
     println!("DEBUG: get_owner_refnos_by_types SQL: {}", sql);
-    SUL_DB.query_take::<Vec<Option<RefnoEnum>>>(&sql, 0).await
+    let mut resp = SUL_DB
+        .query(&sql)
+        .bind(("owner_types", owner_types_vec))
+        .await?;
+    resp.take(0).map_err(anyhow::Error::from)
 }
 
 /// 获取元素在父节点下的索引位置
