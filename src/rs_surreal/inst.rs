@@ -398,7 +398,9 @@ pub async fn query_insts_for_export(
                 SELECT
                     refno,
                     refno.owner as owner,
-                    record::id(type::record("inst_relate_aabb", record::id(refno)).aabb_id) as world_aabb_hash,
+                    (if type::record("inst_relate_aabb", record::id(refno)).aabb_id != NONE {{
+                        record::id(type::record("inst_relate_aabb", record::id(refno)).aabb_id)
+                    }} else {{ None }}) as world_aabb_hash,
                     (if type::record("pe_transform", record::id(refno)).world_trans != NONE {{
                         record::id(type::record("pe_transform", record::id(refno)).world_trans)
                     }} else {{ None }}) as world_trans_hash,
@@ -435,7 +437,9 @@ pub async fn query_insts_for_export(
                     SELECT
                         in as refno,
                         in.owner ?? in as owner,
-                        record::id(type::record("inst_relate_aabb", record::id(in)).aabb_id) as world_aabb_hash,
+                        (if type::record("inst_relate_aabb", record::id(in)).aabb_id != NONE {{
+                            record::id(type::record("inst_relate_aabb", record::id(in)).aabb_id)
+                        }} else {{ None }}) as world_aabb_hash,
                         (if type::record("pe_transform", record::id(in)).world_trans != NONE {{
                             record::id(type::record("pe_transform", record::id(in)).world_trans)
                         }} else {{ None }}) as world_trans_hash,
@@ -469,7 +473,9 @@ pub async fn query_insts_for_export(
                 SELECT
                     in as refno,
                     in.owner ?? in as owner,
-                    record::id(type::record("inst_relate_aabb", record::id(in)).aabb_id) as world_aabb_hash,
+                    (if type::record("inst_relate_aabb", record::id(in)).aabb_id != NONE {{
+                        record::id(type::record("inst_relate_aabb", record::id(in)).aabb_id)
+                    }} else {{ None }}) as world_aabb_hash,
                     (if type::record("pe_transform", record::id(in)).world_trans != NONE {{
                         record::id(type::record("pe_transform", record::id(in)).world_trans)
                     }} else {{ None }}) as world_trans_hash,
