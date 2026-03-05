@@ -41,7 +41,8 @@ impl DbOptionSurrealExt for DbOption {
     }
 }
 
-/// 在启用 `local` 特性时，使用 RocksDB 后端连接本地 SurrealDB。
+/// 在启用 `kv-rocksdb` 特性时，使用 RocksDB 后端连接本地 SurrealDB。
+#[cfg(feature = "kv-rocksdb")]
 pub async fn connect_local_rocksdb(project_name: &str) -> Result<()> {
     let config = surrealdb::opt::Config::default().ast_payload();
     SUL_DB
@@ -135,22 +136,32 @@ pub async fn initialize_databases(db_option: &DbOption) -> Result<()> {
 
     match sdb_cfg.mode {
         DbConnMode::File => {
-            let path = db_option.surrealdb_data_path();
-            println!("🗄️  初始化本地 RocksDB 嵌入式...");
-            println!("📂 数据目录: {}", path);
-            let config = surrealdb::opt::Config::default().ast_payload();
-            SUL_DB
-                .connect((&sdb_conn_str, config))
-                .with_capacity(1000)
-                .await
-                .map_err(|e| anyhow::anyhow!("RocksDB 连接失败: {}", e))?;
-            crate::use_ns_db_compat(&SUL_DB, &db_option.surreal_ns, &db_option.project_name)
-                .await
-                .map_err(|e| anyhow::anyhow!("use ns/db 失败: {}", e))?;
-            println!(
-                "✅ RocksDB 嵌入式连接成功: {} -> {}",
-                path, db_option.project_name
-            );
+            #[cfg(feature = "kv-rocksdb")]
+            {
+                let path = db_option.surrealdb_data_path();
+                println!("🗄️  初始化本地 RocksDB 嵌入式...");
+                println!("📂 数据目录: {}", path);
+                let config = surrealdb::opt::Config::default().ast_payload();
+                SUL_DB
+                    .connect((&sdb_conn_str, config))
+                    .with_capacity(1000)
+                    .await
+                    .map_err(|e| anyhow::anyhow!("RocksDB 连接失败: {}", e))?;
+                crate::use_ns_db_compat(&SUL_DB, &db_option.surreal_ns, &db_option.project_name)
+                    .await
+                    .map_err(|e| anyhow::anyhow!("use ns/db 失败: {}", e))?;
+                println!(
+                    "✅ RocksDB 嵌入式连接成功: {} -> {}",
+                    path, db_option.project_name
+                );
+            }
+            #[cfg(not(feature = "kv-rocksdb"))]
+            {
+                return Err(anyhow::anyhow!(
+                    "DbConnMode::File (RocksDB 嵌入式) 需要启用 kv-rocksdb 特性。\
+                    请使用 cargo build --features kv-rocksdb 重新构建。"
+                ));
+            }
         }
         DbConnMode::Ws => {
             println!("🗄️  初始化 SurrealDB（WebSocket）...");
@@ -196,26 +207,36 @@ pub async fn initialize_databases(db_option: &DbOption) -> Result<()> {
 
         match kv_cfg.mode {
             DbConnMode::File => {
-                let path = db_option.surrealkv_data_path();
-                println!("📂 KV 数据目录: {}", path);
-                let config = surrealdb::opt::Config::default().ast_payload();
-                crate::rs_surreal::KV_DB
-                    .connect((&kv_conn_str, config))
-                    .with_capacity(1000)
+                #[cfg(not(any(feature = "kv-rocksdb", feature = "kv-surrealkv")))]
+                {
+                    return Err(anyhow::anyhow!(
+                        "SurrealKV DbConnMode::File 需要启用 kv-rocksdb 或 kv-surrealkv 特性。\
+                        请使用 cargo build --features kv-rocksdb 重新构建。"
+                    ));
+                }
+                #[cfg(any(feature = "kv-rocksdb", feature = "kv-surrealkv"))]
+                {
+                    let path = db_option.surrealkv_data_path();
+                    println!("📂 KV 数据目录: {}", path);
+                    let config = surrealdb::opt::Config::default().ast_payload();
+                    crate::rs_surreal::KV_DB
+                        .connect((&kv_conn_str, config))
+                        .with_capacity(1000)
+                        .await
+                        .map_err(|e| anyhow::anyhow!("SurrealKV 嵌入式连接失败: {}", e))?;
+                    crate::use_ns_db_compat(
+                        &crate::rs_surreal::KV_DB,
+                        &db_option.surreal_ns,
+                        &db_option.project_name,
+                    )
                     .await
-                    .map_err(|e| anyhow::anyhow!("SurrealKV 嵌入式连接失败: {}", e))?;
-                crate::use_ns_db_compat(
-                    &crate::rs_surreal::KV_DB,
-                    &db_option.surreal_ns,
-                    &db_option.project_name,
-                )
-                .await
-                .map_err(|e| anyhow::anyhow!("KV use ns/db 失败: {}", e))?;
-                crate::rs_surreal::mark_model_kv_enabled();
-                println!(
-                    "✅ SurrealKV 嵌入式连接成功: {} -> {}",
-                    path, db_option.project_name
-                );
+                    .map_err(|e| anyhow::anyhow!("KV use ns/db 失败: {}", e))?;
+                    crate::rs_surreal::mark_model_kv_enabled();
+                    println!(
+                        "✅ SurrealKV 嵌入式连接成功: {} -> {}",
+                        path, db_option.project_name
+                    );
+                }
             }
             DbConnMode::Ws => {
                 match crate::rs_surreal::connect_model_kv(

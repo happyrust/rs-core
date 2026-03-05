@@ -76,6 +76,9 @@ pub async fn init_model_tables() -> anyhow::Result<()> {
         exec_schema_sql(&sql).await?;
     }
 
+    // inst_relate: 显式声明 dbnum 字段，供按库号过滤/删旧加速使用
+    exec_schema_sql("DEFINE FIELD IF NOT EXISTS dbnum ON TABLE inst_relate TYPE int;").await?;
+
     // 2. 定义普通表 (NORMAL/SCHEMALESS)
     // 虽然 SurrealDB 默认是 Schemaless，但显式定义是个好习惯
     let normal_tables = ["inst_geo", "inst_info", "tubi_info"];
@@ -89,6 +92,8 @@ pub async fn init_model_tables() -> anyhow::Result<()> {
         DEFINE INDEX IF NOT EXISTS idx_inst_relate_zone_refno ON TABLE inst_relate COLUMNS zone_refno;
         DEFINE INDEX IF NOT EXISTS idx_inst_relate_in ON TABLE inst_relate COLUMNS in;
         DEFINE INDEX IF NOT EXISTS idx_inst_relate_out ON TABLE inst_relate COLUMNS out;
+        DEFINE INDEX IF NOT EXISTS idx_inst_relate_dbnum ON TABLE inst_relate COLUMNS dbnum;
+        DEFINE INDEX IF NOT EXISTS idx_inst_relate_dbnum_in ON TABLE inst_relate COLUMNS dbnum, in;
     ";
     exec_schema_sql(create_index_sql).await?;
 
