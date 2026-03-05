@@ -59,6 +59,13 @@ struct LoopHeightRaw {
     height: Option<f32>,
 }
 
+#[derive(Serialize, Deserialize, Debug, Default, SurrealValue)]
+struct LoopHeightValueRaw {
+    height: Option<f32>,
+    noun: Option<String>,
+    owner: Option<String>,
+}
+
 /// fetch_loops_and_height 函数的返回结构体
 #[derive(Debug, Default, Clone)]
 pub struct LoopHeightResult {
@@ -70,26 +77,36 @@ pub struct LoopHeightResult {
 
 /// 获得当前参考号对应的loops（例如Panel下的loops，可能有多个）
 ///
-/// 注意：顶点数据存储在 LOOP/PLOO 的子元素 PAVE/PONT 上，而不是 LOOP/PLOO 本身
+/// 注意：顶点数据存储在 LOOP/PLOO 的子元素上，支持 PAVE/PONT 及 VERT（部分 NXTR 使用 VERT）
 pub async fn fetch_loops_and_height(refno: RefnoEnum) -> anyhow::Result<LoopHeightResult> {
-    // 使用路径遍历获取 PAVE/PONT 的位置和圆角半径，避免在对象字面量内
-    // 使用 `(SELECT ... FROM id.children)` 子查询（SurrealDB 3.x 不解析外层 id）
+    // 说明：
+    // 1) HEIGHT 必须取目标本体（例如 NXTR/PANE）的 HEIG，不能从 LOOP/PLOO 子元素取；
+    // 2) 顶点走 LOOP/PLOO -> (PAVE/PONT/VERT) 结构，NXTR 下 LOOP 常用 VERT；
     let sql = format!(
         r#"SELECT
-            children[WHERE noun IN ["PAVE", "PONT"]].refno.POS as positions,
-            children[WHERE noun IN ["PAVE", "PONT"]].refno.FRAD as frads,
+            children[WHERE noun IN ["PAVE", "PONT", "VERT"]].refno.POS as positions,
+            children[WHERE noun IN ["PAVE", "PONT", "VERT"]].refno.FRAD as frads,
             refno.HEIG as height
-        FROM {0}.children WHERE noun IN ["LOOP", "PLOO"]"#,
+        FROM {0}.children WHERE noun IN ["LOOP", "PLOO"];
+        SELECT
+            refno.HEIG as height,
+            noun as noun,
+            record::id(owner) as owner
+        FROM {0};"#,
         refno.to_pe_key()
     );
-    let mut response = SUL_DB.query_response(&sql).await.unwrap();
-    let results: Vec<LoopHeightRaw> = response.take(0)?;
+    let mut response = SUL_DB.query_response(&sql).await?;
+    let nested_loop_results: Vec<LoopHeightRaw> = response.take(0).unwrap_or_default();
+    let height_results: Vec<LoopHeightValueRaw> = response.take(1).unwrap_or_default();
+    let nested_height = nested_loop_results
+        .iter()
+        .filter_map(|v| v.height)
+        .find(|h| *h > f32::EPSILON)
+        .unwrap_or_default();
 
-    // 提取所有 loop 的顶点和高度
+    // 提取所有 loop 顶点
     let mut all_loops: Vec<Vec<Vec3>> = Vec::new();
-    let mut height: f32 = 0.0;
-
-    for result in results {
+    for result in nested_loop_results {
         // 将 positions [x,y,z] 和 frads 合并为 [x, y, frad] 格式（与旧逻辑兼容）
         let points: Vec<Vec3> = result
             .positions
@@ -100,10 +117,14 @@ pub async fn fetch_loops_and_height(refno: RefnoEnum) -> anyhow::Result<LoopHeig
         if !points.is_empty() {
             all_loops.push(points);
         }
-        // 使用第一个有效的高度值
-        if height == 0.0 {
-            height = result.height.unwrap_or_default();
-        }
+    }
+
+    let mut height = height_results
+        .first()
+        .and_then(|v| v.height)
+        .unwrap_or_default();
+    if height <= f32::EPSILON {
+        height = nested_height;
     }
 
     Ok(LoopHeightResult {

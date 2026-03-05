@@ -117,6 +117,7 @@ pub async fn query_manifold_boolean_operations_optimized(
             type::record("pe_transform", record::id(in.in)).world_trans.d AS carrier_wt
         FROM {pe_key}<-neg_relate
         WHERE in.trans.d != NONE
+            AND in.geo_type IN ['Neg', 'CataNeg', 'CataCrossNeg']
         "#
     );
     let mut neg_results: Vec<NegInfo> = SUL_DB.query_take(&sql_neg_pe, 0).await.unwrap_or_default();
@@ -132,6 +133,7 @@ pub async fn query_manifold_boolean_operations_optimized(
                 type::record("pe_transform", record::id(in.in)).world_trans.d AS carrier_wt
             FROM {inst_key}<-neg_relate
             WHERE in.trans.d != NONE
+                AND in.geo_type IN ['Neg', 'CataNeg', 'CataCrossNeg']
             "#
         );
         neg_results = SUL_DB
@@ -151,6 +153,7 @@ pub async fn query_manifold_boolean_operations_optimized(
             type::record("pe_transform", record::id(in.in)).world_trans.d AS carrier_wt
         FROM {pe_key}<-ngmr_relate
         WHERE in.trans.d != NONE
+            AND in.geo_type IN ['Neg', 'CataNeg', 'CataCrossNeg']
         "#
     );
     let mut ngmr_results: Vec<NegInfo> =
@@ -167,6 +170,7 @@ pub async fn query_manifold_boolean_operations_optimized(
                 type::record("pe_transform", record::id(in.in)).world_trans.d AS carrier_wt
             FROM {inst_key}<-ngmr_relate
             WHERE in.trans.d != NONE
+                AND in.geo_type IN ['Neg', 'CataNeg', 'CataCrossNeg']
             "#
         );
         ngmr_results = SUL_DB
@@ -370,6 +374,7 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
                 type::record("pe_transform", record::id(pe)).world_trans.d AS carrier_wt
             FROM {pe_key}<-neg_relate
             WHERE in.trans.d != NONE
+                AND in.geo_type IN ['Neg', 'CataNeg', 'CataCrossNeg']
             "#
         );
         let mut neg_results: Vec<NegGeoResult> =
@@ -387,6 +392,7 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
                     type::record("pe_transform", record::id(pe)).world_trans.d AS carrier_wt
                 FROM {inst_key}<-neg_relate
                 WHERE in.trans.d != NONE
+                    AND in.geo_type IN ['Neg', 'CataNeg', 'CataCrossNeg']
                 "#
             );
             neg_results = SUL_DB

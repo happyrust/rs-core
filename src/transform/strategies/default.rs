@@ -39,7 +39,7 @@ impl PoslHandler {
             let mut is_lmirror = false;
 
             let ancestor_refnos =
-                crate::query_filter_ancestors(att.get_owner(), &crate::consts::HAS_PLIN_TYPES)
+                crate::query_filter_ancestors(att.get_refno_or_default(), &crate::consts::HAS_PLIN_TYPES)
                     .await?;
 
             if let Some(plin_owner) = ancestor_refnos.into_iter().next() {
