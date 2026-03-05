@@ -486,15 +486,10 @@ pub async fn update_inst_relate_aabbs_by_refnos(
         };
 
         if !relation_records.is_empty() {
-            // 先删除旧记录（通过 ID），再批量插入新记录
-            let mut sql = String::new();
-            if !relation_ids.is_empty() {
-                sql.push_str(&format!("DELETE [{}];", relation_ids.join(",")));
-            }
-            sql.push_str(&format!(
+            let sql = format!(
                 "INSERT RELATION INTO inst_relate_aabb [{}];",
                 relation_records.join(",")
-            ));
+            );
             model_primary_db().query_response(&sql).await?;
         }
     }
