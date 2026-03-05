@@ -61,7 +61,7 @@ pub async fn query_manifold_boolean_operations_optimized(
             in.sesno AS sesno,
             in.noun AS noun,
             world_trans.d AS wt,
-            ((select value (out.d ?? NONE) from in->inst_relate_aabb where out.d != NONE limit 1)[0] ?? NONE) AS aabb
+            type::record("inst_relate_aabb", record::id(in)).aabb_id.d AS aabb
         FROM {inst_key}
         WHERE in.id != NONE
             AND (bool_status != 'Success' OR bool_status = NONE)
@@ -257,7 +257,7 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
     }
 
     // 步骤1：批量获取所有正实体基础信息
-    // 从 pe_transform 获取 world_trans，从 inst_relate_aabb 关系获取 aabb（允许为空）
+    // 从 pe_transform 获取 world_trans，从 inst_relate_aabb 表获取 aabb（允许为空）
     use anyhow::Context as _;
     let inst_keys = get_inst_relate_keys(refnos);
     let bool_status_filter = if replace_exist {
@@ -265,7 +265,7 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
     } else {
         "AND (bool_status != 'Success' OR bool_status = NONE)".to_string()
     };
-    // 使用 in->inst_relate_aabb->out.d 的 relate 方式访问 aabb
+    // 使用 type::record 直接查找 inst_relate_aabb 表的 aabb_id.d
     let sql_bases = format!(
         r#"
         SELECT 
@@ -273,7 +273,7 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
             in.sesno AS sesno,
             in.noun AS noun,
             type::record("pe_transform", record::id(in)).world_trans.d AS wt,
-            in->inst_relate_aabb[0].out.d AS aabb
+            type::record("inst_relate_aabb", record::id(in)).aabb_id.d AS aabb
         FROM {inst_keys}
         WHERE in.id != NONE
             {bool_status_filter}

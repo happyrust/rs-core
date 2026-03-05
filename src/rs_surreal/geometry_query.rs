@@ -4,17 +4,12 @@
 use crate::error::init_save_database_error;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
 use crate::plant_transform::Transform;
-use crate::types::{PlantAabb, RefnoEnum, Thing};
+use crate::types::{RefnoEnum, Thing};
 use crate::utils::RecordIdExt;
-use crate::{
-    SurrealQueryExt, gen_aabb_hash, get_inst_relate_keys, get_world_transform, model_primary_db,
-};
-use anyhow::anyhow;
+use crate::{SurrealQueryExt, get_inst_relate_keys, model_primary_db};
 use dashmap::DashMap;
-use parry3d::bounding_volume::{Aabb, BoundingVolume};
-use parry3d::math::Isometry;
+use parry3d::bounding_volume::Aabb;
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, HashSet};
 use std::ops::{Deref, DerefMut, Mul};
 use surrealdb::types::{self as surrealdb_types, RecordId, RecordIdKey};
 use surrealdb::types::{Kind, SurrealValue, Value};
@@ -105,19 +100,6 @@ pub struct QueryGeoParam {
     pub param: PdmsGeoParam,
 }
 
-/// 单个几何的变换与局部 AABB
-///
-/// 用于计算实例的全局包围盒
-///
-/// # 字段
-///
-/// * `trans` - 从几何到实例的局部变换
-/// * `aabb` - 几何的局部包围盒
-#[derive(Debug, Clone, Serialize, Deserialize, SurrealValue)]
-pub struct GeoAabbTrans {
-    pub trans: PlantTransform,
-    pub aabb: PlantAabb,
-}
 
 /// inst_geo 查询结果
 ///
@@ -137,31 +119,6 @@ pub struct QueryInstGeoResult {
     pub has_cata_neg: bool,
 }
 
-/// AABB 查询参数结构体
-///
-/// 用于查询 inst_relate 的 AABB 计算所需字段
-///
-/// # 字段
-///
-/// * `id` - inst_relate 的 RecordId
-/// * `refno` - 实例的参考号
-/// * `noun` - 实例的类型名称（可选，某些节点可能没有 noun）
-/// * `geo_aabbs` - 关联的几何 AABB 和变换列表
-/// * `world_trans` - 实例的世界坐标变换
-#[derive(Debug, Clone, Serialize, Deserialize, SurrealValue)]
-pub struct QueryAabbParam {
-    // pub id: RecordId,
-    pub refno: RefnoEnum,
-    pub noun: Option<String>,
-    pub geo_aabbs: Vec<GeoAabbTrans>,
-    pub world_trans: Option<PlantTransform>,
-}
-
-impl QueryAabbParam {
-    pub fn refno(&self) -> RefnoEnum {
-        self.refno.clone().into()
-    }
-}
 
 /// 查询 inst_geo 的几何参数
 ///
@@ -231,92 +188,6 @@ pub async fn query_geo_params(inst_geo_ids: &str) -> anyhow::Result<Vec<QueryGeo
     Ok(result)
 }
 
-/// 查询 inst_relate 的 AABB 计算所需数据
-///
-/// 根据 inst_relate 键集合查询实例的世界变换和关联几何的 AABB
-///
-/// # 参数
-///
-/// * `inst_keys` - inst_relate 的键集合字符串（SurrealDB 查询范围）
-/// * `replace_exist` - 是否替换已存在的 AABB
-///   - true: 查询所有实例
-///   - false: 仅查询尚未写入 inst_relate_aabb 的实例（增量回填）
-///
-/// # 返回值
-///
-/// 返回 `QueryAabbParam` 列表，包含实例 ID、变换和关联几何的 AABB
-pub async fn query_aabb_params(
-    inst_keys: &str,
-    replace_exist: bool,
-) -> anyhow::Result<Vec<QueryAabbParam>> {
-    // 直接从 pe_transform 表获取 world_trans
-    let mut sql = format!(
-        r#"select id, in as refno,
-        type::record("pe_transform", record::id(in)).world_trans.d as world_trans,
-        in.noun as noun,
-        (select out.aabb.d as aabb, trans.d as trans from $parent.out->geo_relate where out.aabb.d != none and trans.d != none)
-        as geo_aabbs from {inst_keys}"#,
-    );
-
-    if !replace_exist {
-        sql.push_str(" where array::len(in->inst_relate_aabb) = 0");
-    }
-
-    // println!("Executing SQL: {}", sql);
-    let mut response = model_primary_db().query_response(&sql).await?;
-    // 注意：历史数据里可能存在 out.aabb.d 的内部字段为 null（mins/maxs 某一维为 null）。
-    // 若直接反序列化为 PlantAabb / QueryAabbParam，会导致整批查询失败。
-    #[derive(Debug, Clone, Deserialize, SurrealValue)]
-    struct RawGeoAabbTrans {
-        pub trans: serde_json::Value,
-        pub aabb: serde_json::Value,
-    }
-
-    #[derive(Debug, Clone, Deserialize, SurrealValue)]
-    struct RawQueryAabbParam {
-        pub refno: RefnoEnum,
-        pub noun: String,
-        pub geo_aabbs: Vec<RawGeoAabbTrans>,
-        pub world_trans: Option<serde_json::Value>,
-    }
-
-    let raw: Vec<RawQueryAabbParam> = response.take(0)?;
-
-    let mut result = Vec::with_capacity(raw.len());
-    for r in raw {
-        // world_trans 允许为 None；若为脏数据则置 None，让调用方跳过该实例
-        let world_trans = match r.world_trans {
-            Some(v) => match serde_json::from_value::<Transform>(v) {
-                Ok(t) => Some(PlantTransform(t)),
-                Err(_) => None,
-            },
-            None => None,
-        };
-
-        let mut geo_aabbs = Vec::with_capacity(r.geo_aabbs.len());
-        for g in r.geo_aabbs {
-            let Ok(trans) = serde_json::from_value::<Transform>(g.trans) else {
-                continue;
-            };
-            let Ok(aabb) = serde_json::from_value::<PlantAabb>(g.aabb) else {
-                continue;
-            };
-            geo_aabbs.push(GeoAabbTrans {
-                trans: PlantTransform(trans),
-                aabb,
-            });
-        }
-
-        result.push(QueryAabbParam {
-            refno: r.refno,
-            noun: Some(r.noun),
-            geo_aabbs,
-            world_trans,
-        });
-    }
-
-    Ok(result)
-}
 
 /// 保存 AABB 数据到 SurrealDB
 ///
@@ -380,122 +251,3 @@ pub async fn save_pts_to_surreal(vec3_map: &DashMap<u64, String>) {
     }
 }
 
-/// 更新实例关联的包围盒数据
-///
-/// 根据参考号批量计算并写入 inst_relate_aabb（不再更新 inst_relate.aabb）
-///
-/// # 参数
-///
-/// * `refnos` - 参考号数组
-/// * `replace_exist` - 是否替换已存在的包围盒数据
-///   - true: 替换所有 AABB
-///   - false: 仅回填尚未写入 inst_relate_aabb 的实例（增量写入）
-///
-/// # 返回值
-///
-/// 返回 `anyhow::Result<()>` 表示更新是否成功
-///
-/// # 说明
-///
-/// 该方法会：
-/// 1. 查询 inst_relate 的世界变换和关联几何的 AABB
-/// 2. 计算每个实例的全局 AABB（通过变换合并所有几何 AABB）
-/// 3. 批量更新到 SurrealDB
-/// 4. 保存 AABB 数据到 aabb 表中去重存储
-///
-/// # SQL 说明
-///
-/// - world_trans.d != none：仅处理拥有世界变换的实例
-/// - 子查询 out->geo_relate 仅保留 out.aabb.d != none 且 trans.d != none 的几何（有局部AABB且有变换）
-/// - 若 !replace_exist 则追加条件 and array::len(in->inst_relate_aabb)=0，避免覆盖已存在的实例 AABB（增量回填）
-pub async fn update_inst_relate_aabbs_by_refnos(
-    refnos: &[RefnoEnum],
-    replace_exist: bool,
-) -> anyhow::Result<()> {
-    const CHUNK: usize = 100;
-
-    let aabb_map = DashMap::new();
-    for chunk in refnos.chunks(CHUNK) {
-        if chunk.is_empty() {
-            continue;
-        }
-        let inst_keys = get_inst_relate_keys(chunk);
-
-        // 查询 AABB 参数
-        let result = query_aabb_params(&inst_keys, replace_exist).await?;
-
-        let mut relation_records: Vec<String> = Vec::new();
-        let mut relation_ids: Vec<String> = Vec::new();
-        let mut processed: HashSet<RefnoEnum> = HashSet::new();
-
-        let compute_aabb =
-            |world_trans: PlantTransform, geo_aabbs: &[GeoAabbTrans]| -> Option<Aabb> {
-                if geo_aabbs.is_empty() {
-                    return None;
-                }
-                let mut aabb = Aabb::new_invalid();
-                for g in geo_aabbs {
-                    let t = world_trans * &g.trans;
-                    let tmp_aabb = g.aabb.scaled(&t.scale.into());
-                    let tmp_aabb = tmp_aabb.transform_by(&Isometry {
-                        rotation: t.rotation.into(),
-                        translation: t.translation.into(),
-                    });
-                    aabb.merge(&tmp_aabb);
-                }
-                if aabb.extents().magnitude().is_nan() || aabb.extents().magnitude().is_infinite() {
-                    return None;
-                }
-                Some(aabb)
-            };
-
-        for r in &result {
-            // 过滤 world_trans 为 None 的记录
-            let Some(world_trans) = r.world_trans else {
-                continue;
-            };
-
-            let Some(aabb) = compute_aabb(world_trans, &r.geo_aabbs) else {
-                #[cfg(feature = "debug_model")]
-                eprintln!("发现无效 AABB for refno: {:?}", r.refno);
-                continue;
-            };
-
-            let aabb_hash = gen_aabb_hash(&aabb).to_string();
-            aabb_map.entry(aabb_hash.clone()).or_insert(aabb);
-
-            let refno = r.refno();
-            processed.insert(refno.clone());
-            let pe_key = refno.to_pe_key();
-            let aabb_key = format!("aabb:⟨{}⟩", aabb_hash);
-
-            // 使用批量插入语法，指定 ID 为 refno，这样导出代码可以通过 inst_relate_aabb:refno 查询
-            let refno_str = refno.to_string();
-            let relation_id = format!("inst_relate_aabb:⟨{}⟩", refno_str);
-            relation_ids.push(relation_id.clone());
-            relation_records.push(format!(
-                "{{ id: {}, in: {}, out: {} }}",
-                relation_id, pe_key, aabb_key
-            ));
-        }
-
-        let candidate_refnos: Vec<RefnoEnum> = if replace_exist {
-            chunk.to_vec()
-        } else {
-            result.iter().map(|r| r.refno()).collect()
-        };
-
-        if !relation_records.is_empty() {
-            let sql = format!(
-                "INSERT RELATION INTO inst_relate_aabb [{}];",
-                relation_records.join(",")
-            );
-            model_primary_db().query_response(&sql).await?;
-        }
-    }
-
-    // 批量保存 AABB 到 aabb 表
-    save_aabb_to_surreal(&aabb_map).await;
-
-    Ok(())
-}

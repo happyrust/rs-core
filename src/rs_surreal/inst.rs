@@ -62,7 +62,6 @@ pub async fn init_model_tables() -> anyhow::Result<()> {
     // 这些表必须显式定义为 TYPE RELATION，否则如果第一条插入不是 relate 语句可能会创建为普通表
     let relation_tables = [
         "inst_relate",
-        "inst_relate_aabb",
         "inst_relate_bool",
         "inst_relate_cata_bool",
         "geo_relate",
@@ -85,6 +84,31 @@ pub async fn init_model_tables() -> anyhow::Result<()> {
     for table in normal_tables {
         let sql = format!("DEFINE TABLE IF NOT EXISTS {} TYPE NORMAL;", table);
         exec_schema_sql(&sql).await?;
+    }
+
+    // 2.5 inst_relate_aabb / inst_relate_booled_aabb 普通表（存储实例 AABB）
+    // 如果旧表是 RELATION 类型则先 REMOVE 再重建
+    for aabb_table in ["inst_relate_aabb", "inst_relate_booled_aabb"] {
+        let info_sql = format!("INFO FOR TABLE {aabb_table};");
+        let is_old_relation = match KV_DB.query(&info_sql).await {
+            Ok(mut resp) => match resp.take::<Option<serde_json::Value>>(0) {
+                Ok(Some(val)) => val.to_string().contains("RELATION"),
+                _ => false,
+            },
+            Err(_) => false,
+        };
+        if is_old_relation {
+            let _ = KV_DB
+                .query(&format!("REMOVE TABLE {aabb_table};"))
+                .await;
+        }
+        let schema_sql = format!(
+            "DEFINE TABLE IF NOT EXISTS {aabb_table} TYPE NORMAL;\
+             DEFINE FIELD IF NOT EXISTS refno ON TABLE {aabb_table} TYPE record<pe>;\
+             DEFINE FIELD IF NOT EXISTS aabb_id ON TABLE {aabb_table} TYPE record<aabb>;\
+             DEFINE INDEX IF NOT EXISTS idx_{aabb_table}_refno ON TABLE {aabb_table} COLUMNS refno UNIQUE;"
+        );
+        exec_schema_sql(&schema_sql).await?;
     }
 
     // 3. 创建 inst_relate 的核心索引
@@ -374,7 +398,7 @@ pub async fn query_insts_for_export(
                 SELECT
                     refno,
                     refno.owner as owner,
-                    (if refno->inst_relate_aabb[0].out {{ record::id(refno->inst_relate_aabb[0].out) }} else {{ None }}) as world_aabb_hash,
+                    record::id(type::record("inst_relate_aabb", record::id(refno)).aabb_id) as world_aabb_hash,
                     (if type::record("pe_transform", record::id(refno)).world_trans != NONE {{
                         record::id(type::record("pe_transform", record::id(refno)).world_trans)
                     }} else {{ None }}) as world_trans_hash,
@@ -411,7 +435,7 @@ pub async fn query_insts_for_export(
                     SELECT
                         in as refno,
                         in.owner ?? in as owner,
-                        (if in->inst_relate_aabb[0].out {{ record::id(in->inst_relate_aabb[0].out) }} else {{ None }}) as world_aabb_hash,
+                        record::id(type::record("inst_relate_aabb", record::id(in)).aabb_id) as world_aabb_hash,
                         (if type::record("pe_transform", record::id(in)).world_trans != NONE {{
                             record::id(type::record("pe_transform", record::id(in)).world_trans)
                         }} else {{ None }}) as world_trans_hash,
@@ -445,7 +469,7 @@ pub async fn query_insts_for_export(
                 SELECT
                     in as refno,
                     in.owner ?? in as owner,
-                    (if in->inst_relate_aabb[0].out {{ record::id(in->inst_relate_aabb[0].out) }} else {{ None }}) as world_aabb_hash,
+                    record::id(type::record("inst_relate_aabb", record::id(in)).aabb_id) as world_aabb_hash,
                     (if type::record("pe_transform", record::id(in)).world_trans != NONE {{
                         record::id(type::record("pe_transform", record::id(in)).world_trans)
                     }} else {{ None }}) as world_trans_hash,
@@ -538,7 +562,7 @@ pub async fn query_insts_with_negative(
 /// 字段来源：
 /// - `owner` → `pe.owner`
 /// - `world_trans` → `pe_transform:{refno}.world_trans.d`
-/// - `world_aabb` → `inst_relate_aabb:{refno}.out.d`
+/// - `world_aabb` → `type::record("inst_relate_aabb", record::id(refno)).aabb_id.d`
 ///
 /// # geo_type 语义约定
 ///
@@ -582,7 +606,7 @@ pub async fn query_insts_with_batch(
                     refno,
                     refno.owner ?? refno as owner,
                     type::record("pe_transform", record::id(refno)).world_trans.d as world_trans,
-                    (refno->inst_relate_aabb[0].out).d as world_aabb,
+                    type::record("inst_relate_aabb", record::id(refno)).aabb_id.d as world_aabb,
                     [{{ "geo_transform": type::record("pe_transform", record::id(refno)).world_trans.d, "geo_hash": mesh_id, "is_tubi": false, "unit_flag": false }}] as insts,
                     true as has_neg
                 FROM [{bool_keys}]
@@ -619,7 +643,7 @@ pub async fn query_insts_with_batch(
                         in as refno,
                         in.owner ?? in as owner,
                         type::record("pe_transform", record::id(in)).world_trans.d as world_trans,
-                        (in->inst_relate_aabb[0].out).d as world_aabb,
+                        type::record("inst_relate_aabb", record::id(in)).aabb_id.d as world_aabb,
                         (SELECT trans.d as geo_transform, record::id(out) as geo_hash, false as is_tubi, out.unit_flag ?? false as unit_flag
                          FROM $parent.out->geo_relate
                          WHERE visible && (out.meshed || out.unit_flag || record::id(out) IN ['1','2','3'])
@@ -652,7 +676,7 @@ pub async fn query_insts_with_batch(
                     in as refno,
                     in.owner ?? in as owner,
                     type::record("pe_transform", record::id(in)).world_trans.d as world_trans,
-                    (in->inst_relate_aabb[0].out).d as world_aabb,
+                    type::record("inst_relate_aabb", record::id(in)).aabb_id.d as world_aabb,
                     (SELECT trans.d as geo_transform, record::id(out) as geo_hash, false as is_tubi, out.unit_flag ?? false as unit_flag
                      FROM $parent.out->geo_relate
                      WHERE visible && (out.meshed || out.unit_flag || record::id(out) IN ['1','2','3'])

@@ -959,12 +959,20 @@ DEFINE FUNCTION OVERWRITE fn::collect_descendants_filter_inst(
 };
 
 -- ============================================================================
--- inst_relate_aabb / inst_relate_bool 表定义
+-- inst_relate_aabb / inst_relate_booled_aabb / inst_relate_bool 表定义
 -- 目的：将 AABB 和布尔结果拆分到独立表，避免频繁 update inst_relate
+-- inst_relate_aabb: 原始几何 AABB
+-- inst_relate_booled_aabb: 布尔运算后 AABB
 -- ============================================================================
 DEFINE TABLE inst_relate_aabb SCHEMALESS;
 DEFINE FIELD refno ON TABLE inst_relate_aabb TYPE record<pe>;
+DEFINE FIELD aabb_id ON TABLE inst_relate_aabb TYPE record<aabb>;
 DEFINE INDEX idx_inst_relate_aabb_refno ON TABLE inst_relate_aabb COLUMNS refno UNIQUE;
+
+DEFINE TABLE inst_relate_booled_aabb SCHEMALESS;
+DEFINE FIELD refno ON TABLE inst_relate_booled_aabb TYPE record<pe>;
+DEFINE FIELD aabb_id ON TABLE inst_relate_booled_aabb TYPE record<aabb>;
+DEFINE INDEX idx_inst_relate_booled_aabb_refno ON TABLE inst_relate_booled_aabb COLUMNS refno UNIQUE;
 
 DEFINE TABLE inst_relate_bool SCHEMALESS;
 DEFINE FIELD refno ON TABLE inst_relate_bool TYPE record<pe>;

@@ -22,10 +22,10 @@ SELECT
   in.noun as noun,
   in.dbnum as dbnum,
   world_trans.d as world_trans,
-  in->inst_relate_aabb.out[0]
+  type::record("inst_relate_aabb", record::id(in)).aabb_id.d
 FROM inst_relate
 WHERE world_trans.d != none
-  AND array::len(in->inst_relate_aabb) > 0
+  AND type::record("inst_relate_aabb", record::id(in)).aabb_id IS NOT NONE
 "#;
 
     let rows: Vec<Row> = SUL_DB.query_take(sql, 0).await?;
