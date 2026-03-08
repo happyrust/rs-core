@@ -135,7 +135,7 @@ pub use runtime::{
     start_surreal_server, stop_surreal_server, try_connect_database,
 };
 #[cfg(feature = "kv-rocksdb")]
-pub use runtime::connect_local_rocksdb;
+pub use runtime::{cleanup_stale_rocksdb_lock, connect_local_rocksdb};
 pub use tree_query::{
     DbMetaInfo, TreeIndex, TreeQuery, TreeQueryFilter, TreeQueryOptions, get_cached_tree_index,
     get_dbnum_by_ref0, get_dbnum_by_refno, get_tree_index_by_refno, load_db_meta_info,
@@ -188,6 +188,28 @@ pub fn get_db_option() -> &'static DbOption {
         if let Ok(port) = std::env::var("SURREAL_CONN_PORT") {
             if let Ok(p) = port.parse::<u16>() {
                 option.surrealdb.port = p;
+            }
+        }
+        if let Ok(enabled) = std::env::var("SURREALKV_ENABLED") {
+            let enabled = matches!(
+                enabled.trim().to_ascii_lowercase().as_str(),
+                "1" | "true" | "yes" | "on"
+            );
+            option.surrealkv.enabled = enabled;
+        }
+        if let Ok(mode) = std::env::var("SURREALKV_MODE") {
+            match mode.as_str() {
+                "ws" => option.surrealkv.mode = options::DbConnMode::Ws,
+                "file" => option.surrealkv.mode = options::DbConnMode::File,
+                _ => {}
+            }
+        }
+        if let Ok(ip) = std::env::var("SURREALKV_IP") {
+            option.surrealkv.ip = ip;
+        }
+        if let Ok(port) = std::env::var("SURREALKV_PORT") {
+            if let Ok(p) = port.parse::<u16>() {
+                option.surrealkv.port = p;
             }
         }
         crate::mesh_precision::set_active_precision(option.mesh_precision.clone());
