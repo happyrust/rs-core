@@ -41,6 +41,92 @@ impl DbOptionSurrealExt for DbOption {
     }
 }
 
+/// 检测是否为 RocksDB LOCK 相关错误（可自动重试）。
+#[cfg(feature = "kv-rocksdb")]
+fn is_rocksdb_lock_error(err: &impl std::fmt::Display) -> bool {
+    let s = err.to_string();
+    s.contains("LOCK")
+        || s.contains("lock file")
+        || s.contains("Resource temporarily unavailable")
+}
+
+/// 清理 RocksDB 残留 LOCK 文件。
+///
+/// - `force=true`：通过 `lsof` 找到持有 LOCK 的进程并 kill，然后删除 LOCK 文件。
+/// - `force=false`：仅在没有 surreal 进程运行时才清理（原有逻辑）。
+#[cfg(feature = "kv-rocksdb")]
+pub fn cleanup_stale_rocksdb_lock(data_path: &str, force: bool) {
+    let lock_path = std::path::Path::new(data_path).join("LOCK");
+    if !lock_path.exists() {
+        return;
+    }
+
+    if force {
+        // --force 模式：用 lsof 精确查找持有 LOCK 文件的进程并 kill
+        println!("   🔧 --force 模式：强制清理 LOCK 文件");
+        #[cfg(unix)]
+        {
+            if let Ok(output) = std::process::Command::new("lsof")
+                .arg(lock_path.to_str().unwrap_or_default())
+                .output()
+            {
+                let stdout = String::from_utf8_lossy(&output.stdout);
+                // lsof 输出格式：第二列为 PID（跳过首行标题）
+                for line in stdout.lines().skip(1) {
+                    let parts: Vec<&str> = line.split_whitespace().collect();
+                    if let Some(pid_str) = parts.get(1) {
+                        if let Ok(pid) = pid_str.parse::<u32>() {
+                            // 不要 kill 自己
+                            if pid == std::process::id() {
+                                continue;
+                            }
+                            println!("   🛑 终止占用 LOCK 的进程 PID={}", pid);
+                            let _ = std::process::Command::new("kill")
+                                .args(["-9", pid_str])
+                                .output();
+                        }
+                    }
+                }
+            }
+            // kill 后等待进程退出
+            std::thread::sleep(std::time::Duration::from_millis(500));
+        }
+        #[cfg(windows)]
+        {
+            // Windows 暂不支持 force kill，仅提示
+            println!("   ⚠️  Windows 暂不支持 --force 自动终止占用进程，请手动关闭后重试");
+        }
+    } else {
+        // 非 force 模式：检查是否有 surreal 相关进程
+        #[cfg(unix)]
+        let has_surreal_process = std::process::Command::new("pgrep")
+            .arg("surreal")
+            .output()
+            .map(|o| o.status.success())
+            .unwrap_or(false);
+
+        #[cfg(windows)]
+        let has_surreal_process = std::process::Command::new("tasklist")
+            .args(["/FI", "IMAGENAME eq surreal.exe", "/NH"])
+            .output()
+            .map(|o| {
+                let out = String::from_utf8_lossy(&o.stdout);
+                out.contains("surreal.exe")
+            })
+            .unwrap_or(false);
+
+        if has_surreal_process {
+            println!("   ⚠️  LOCK 文件存在且有 surreal 进程在运行，跳过清理");
+            return;
+        }
+    }
+
+    match std::fs::remove_file(&lock_path) {
+        Ok(()) => println!("   🧹 已清理残留 LOCK 文件: {}", lock_path.display()),
+        Err(e) => println!("   ⚠️  无法删除 LOCK 文件: {} ({})", lock_path.display(), e),
+    }
+}
+
 /// 在启用 `kv-rocksdb` 特性时，使用 RocksDB 后端连接本地 SurrealDB。
 #[cfg(feature = "kv-rocksdb")]
 pub async fn connect_local_rocksdb(project_name: &str) -> Result<()> {
@@ -142,11 +228,32 @@ pub async fn initialize_databases(db_option: &DbOption) -> Result<()> {
                 println!("🗄️  初始化本地 RocksDB 嵌入式...");
                 println!("📂 数据目录: {}", path);
                 let config = surrealdb::opt::Config::default().ast_payload();
-                SUL_DB
-                    .connect((&sdb_conn_str, config))
-                    .with_capacity(1000)
-                    .await
-                    .map_err(|e| anyhow::anyhow!("RocksDB 连接失败: {}", e))?;
+                let mut last_err: Option<String> = None;
+                for attempt in 1..=2 {
+                    let config = surrealdb::opt::Config::default().ast_payload();
+                    match SUL_DB
+                        .connect((&sdb_conn_str, config))
+                        .with_capacity(1000)
+                        .await
+                    {
+                        Ok(_) => {
+                            last_err = None;
+                            break;
+                        }
+                        Err(e) => {
+                            let err_msg = e.to_string();
+                            last_err = Some(err_msg.clone());
+                            if attempt == 1 && is_rocksdb_lock_error(&err_msg) {
+                                let force = std::env::var("AIOS_FORCE_LOCK").map(|v| v == "1").unwrap_or(false);
+                                println!("⚠️  检测到 RocksDB LOCK 冲突，清理残留锁后重试...");
+                                cleanup_stale_rocksdb_lock(&path, force);
+                                sleep(Duration::from_millis(500)).await;
+                            } else {
+                                return Err(anyhow::anyhow!("RocksDB 连接失败: {}", err_msg));
+                            }
+                        }
+                    }
+                }
                 crate::use_ns_db_compat(&SUL_DB, &db_option.surreal_ns, &db_option.project_name)
                     .await
                     .map_err(|e| anyhow::anyhow!("use ns/db 失败: {}", e))?;
@@ -219,11 +326,27 @@ pub async fn initialize_databases(db_option: &DbOption) -> Result<()> {
                     let path = db_option.surrealkv_data_path();
                     println!("📂 KV 数据目录: {}", path);
                     let config = surrealdb::opt::Config::default().ast_payload();
-                    crate::rs_surreal::KV_DB
-                        .connect((&kv_conn_str, config))
-                        .with_capacity(1000)
-                        .await
-                        .map_err(|e| anyhow::anyhow!("SurrealKV 嵌入式连接失败: {}", e))?;
+                    for attempt in 1..=2 {
+                        let config = surrealdb::opt::Config::default().ast_payload();
+                        match crate::rs_surreal::KV_DB
+                            .connect((&kv_conn_str, config))
+                            .with_capacity(1000)
+                            .await
+                        {
+                            Ok(_) => break,
+                            Err(e) => {
+                                let err_msg = e.to_string();
+                                if attempt == 1 && is_rocksdb_lock_error(&err_msg) {
+                                    let force = std::env::var("AIOS_FORCE_LOCK").map(|v| v == "1").unwrap_or(false);
+                                    println!("⚠️  检测到 SurrealKV LOCK 冲突，清理残留锁后重试...");
+                                    cleanup_stale_rocksdb_lock(&path, force);
+                                    sleep(Duration::from_millis(500)).await;
+                                } else {
+                                    return Err(anyhow::anyhow!("SurrealKV 嵌入式连接失败: {}", err_msg));
+                                }
+                            }
+                        }
+                    }
                     crate::use_ns_db_compat(
                         &crate::rs_surreal::KV_DB,
                         &db_option.surreal_ns,
