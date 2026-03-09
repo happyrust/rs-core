@@ -114,7 +114,7 @@ pub async fn query_manifold_boolean_operations_optimized(
             in.para_type ?? "" AS para_type,
             in.trans.d AS trans,
             in.out.aabb.d AS aabb,
-            type::record("pe_transform", record::id(in.in)).world_trans.d AS carrier_wt
+            type::record("pe_transform", record::id(pe)).world_trans.d AS carrier_wt
         FROM {pe_key}<-neg_relate
         WHERE in.trans.d != NONE
             AND in.geo_type IN ['Neg', 'CataNeg', 'CataCrossNeg']
@@ -130,7 +130,7 @@ pub async fn query_manifold_boolean_operations_optimized(
                 in.para_type ?? "" AS para_type,
                 in.trans.d AS trans,
                 in.out.aabb.d AS aabb,
-                type::record("pe_transform", record::id(in.in)).world_trans.d AS carrier_wt
+                type::record("pe_transform", record::id(pe)).world_trans.d AS carrier_wt
             FROM {inst_key}<-neg_relate
             WHERE in.trans.d != NONE
                 AND in.geo_type IN ['Neg', 'CataNeg', 'CataCrossNeg']
@@ -150,7 +150,7 @@ pub async fn query_manifold_boolean_operations_optimized(
             in.para_type ?? "" AS para_type,
             in.trans.d AS trans,
             in.out.aabb.d AS aabb,
-            type::record("pe_transform", record::id(in.in)).world_trans.d AS carrier_wt
+            type::record("pe_transform", record::id(pe)).world_trans.d AS carrier_wt
         FROM {pe_key}<-ngmr_relate
         WHERE in.trans.d != NONE
             AND in.geo_type IN ['Neg', 'CataNeg', 'CataCrossNeg']
@@ -167,7 +167,7 @@ pub async fn query_manifold_boolean_operations_optimized(
                 in.para_type ?? "" AS para_type,
                 in.trans.d AS trans,
                 in.out.aabb.d AS aabb,
-                type::record("pe_transform", record::id(in.in)).world_trans.d AS carrier_wt
+                type::record("pe_transform", record::id(pe)).world_trans.d AS carrier_wt
             FROM {inst_key}<-ngmr_relate
             WHERE in.trans.d != NONE
                 AND in.geo_type IN ['Neg', 'CataNeg', 'CataCrossNeg']
@@ -449,6 +449,14 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
         // 合并结果
         let mut neg_infos = Vec::new();
         for r in neg_results.into_iter().chain(ngmr_results.into_iter()) {
+            eprintln!(
+                "[bool_query_opt] target={} carrier_pe={:?} geom_id={:?} geo_type={} has_carrier_wt={}",
+                refno,
+                r.carrier_pe,
+                r.id,
+                r.geo_type,
+                r.carrier_wt.is_some()
+            );
             neg_infos.push(NegInfo {
                 id: r.id,
                 geo_type: r.geo_type,

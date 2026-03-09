@@ -74,6 +74,61 @@ impl ManifoldRust {
         }
     }
 
+    /// 原生 BOX：直接使用 Manifold::cube 构造，中心在原点
+    ///
+    /// 约定与 `unit_box_mesh()` 一致：尺寸 (x, y, z)，中心 (0,0,0)。
+    /// Manifold::cube 默认从原点到 (x,y,z)，需平移使中心归零。
+    pub fn native_box(x: f64, y: f64, z: f64) -> Self {
+        let cube = Manifold::cube(x, y, z);
+        Self {
+            inner: cube.translate(-x / 2.0, -y / 2.0, -z / 2.0),
+        }
+    }
+
+    /// 原生圆柱：直接使用 Manifold::cylinder 构造，底面在 z=0
+    ///
+    /// 约定与 `unit_cylinder_mesh()` 一致：半径 `radius`，底面 z=0，顶面 z=`height`。
+    pub fn native_cylinder(radius: f64, height: f64, segments: u32) -> Self {
+        Self {
+            inner: Manifold::cylinder(radius, radius, height, segments),
+        }
+    }
+
+    /// 原生球体：直接使用 Manifold::sphere 构造，中心在原点
+    ///
+    /// 约定与 `unit_sphere_mesh()` 一致：中心 (0,0,0)，半径 `radius`。
+    pub fn native_sphere(radius: f64, segments: u32) -> Self {
+        Self {
+            inner: Manifold::sphere(radius, segments),
+        }
+    }
+
+    /// 对 Manifold 应用 4x4 变换矩阵
+    ///
+    /// 通过 mesh 提取 → f64 变换 → 重建 Manifold 实现通用仿射变换。
+    /// 原生 Manifold 的 mesh 已保证流形拓扑，变换后无需焊接。
+    pub fn apply_transform(&self, mat: DMat4) -> Self {
+        let mesh = self.get_mesh();
+        if mesh.vertices.is_empty() || mesh.indices.is_empty() {
+            return self.clone();
+        }
+        let mut transformed: Vec<f32> = Vec::with_capacity(mesh.vertices.len());
+        for i in (0..mesh.vertices.len()).step_by(3) {
+            let pt = mat.transform_point3(glam::DVec3::new(
+                mesh.vertices[i] as f64,
+                mesh.vertices[i + 1] as f64,
+                mesh.vertices[i + 2] as f64,
+            ));
+            transformed.push(pt.x as f32);
+            transformed.push(pt.y as f32);
+            transformed.push(pt.z as f32);
+        }
+        let new_mesh = Mesh::new(&transformed, &mesh.indices);
+        Self {
+            inner: new_mesh.to_manifold(),
+        }
+    }
+
     /// 从 GLB 文件直接转换为 Manifold
     ///
     /// 注意：GLB 文件中的网格应该已经在 CSG 生成阶段通过 weld_vertices_for_manifold
