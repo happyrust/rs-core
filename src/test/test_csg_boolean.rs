@@ -32,6 +32,41 @@ fn create_wall_section(width: f32, thickness: f32) -> ManifoldCrossSectionRust {
     ManifoldCrossSectionRust::from_points(&pts)
 }
 
+/// 计算三角形面积（从 3 个顶点坐标）
+fn triangle_area(v0: Vec3, v1: Vec3, v2: Vec3) -> f32 {
+    let e1 = v1 - v0;
+    let e2 = v2 - v0;
+    e1.cross(e2).length() * 0.5
+}
+
+/// 统计薄片三角形（面积 < threshold 的比例）
+/// 返回 (薄片数, 总三角形数, 薄片比例)
+fn count_slivers(
+    vertices: &[f32],
+    indices: &[u32],
+    area_threshold: f32,
+) -> (usize, usize, f64) {
+    let tri_count = indices.len() / 3;
+    if tri_count == 0 {
+        return (0, 0, 0.0);
+    }
+    let mut sliver_count = 0;
+    for t in 0..tri_count {
+        let i0 = indices[t * 3] as usize;
+        let i1 = indices[t * 3 + 1] as usize;
+        let i2 = indices[t * 3 + 2] as usize;
+        let v0 = Vec3::new(vertices[i0 * 3], vertices[i0 * 3 + 1], vertices[i0 * 3 + 2]);
+        let v1 = Vec3::new(vertices[i1 * 3], vertices[i1 * 3 + 1], vertices[i1 * 3 + 2]);
+        let v2 = Vec3::new(vertices[i2 * 3], vertices[i2 * 3 + 1], vertices[i2 * 3 + 2]);
+        let area = triangle_area(v0, v1, v2);
+        if area < area_threshold {
+            sliver_count += 1;
+        }
+    }
+    let ratio = sliver_count as f64 / tri_count as f64;
+    (sliver_count, tri_count, ratio)
+}
+
 /// 创建 L 形墙体截面
 fn create_l_wall_section(width: f32, depth: f32, thickness: f32) -> ManifoldCrossSectionRust {
     let pts = vec![
@@ -324,4 +359,284 @@ fn test_wall_subtract_multiple() {
     println!("已导出: {:?}", output_path);
 
     println!("✅ 墙体 - 多个基本体 测试通过");
+}
+
+// ==================== Phase 3: 原生 Manifold 构造 + 共面布尔回归测试 ====================
+
+#[test]
+fn test_native_box_subtract_box_coplanar() {
+    println!("\n=== 测试: 原生 BOX-BOX 共面布尔 ===");
+
+    // 正实体：1x1x1 的盒子，中心在原点
+    let pos = ManifoldRust::native_box(1.0, 1.0, 1.0);
+
+    // 负实体：同样 1x1x1，平移使其与正实体共享一个面（x=0.5）
+    // 负实体中心在 (1.0, 0.0, 0.0)，左面在 x=0.5 恰好与正实体右面重合
+    let neg_transform = DMat4::from_translation(glam::DVec3::new(1.0, 0.0, 0.0));
+    let neg = ManifoldRust::native_box(1.0, 1.0, 1.0).apply_transform(neg_transform);
+
+    let pos_mesh = pos.get_mesh();
+    let neg_mesh = neg.get_mesh();
+    println!(
+        "正实体: {} 顶点, {} 三角形",
+        pos_mesh.vertices.len() / 3,
+        pos_mesh.indices.len() / 3
+    );
+    println!(
+        "负实体: {} 顶点, {} 三角形",
+        neg_mesh.vertices.len() / 3,
+        neg_mesh.indices.len() / 3
+    );
+
+    let result = pos.batch_boolean_subtract(&[neg]);
+    let result_mesh = result.get_mesh();
+
+    println!(
+        "结果: {} 顶点, {} 三角形",
+        result_mesh.vertices.len() / 3,
+        result_mesh.indices.len() / 3
+    );
+
+    assert!(result_mesh.indices.len() > 0, "布尔运算结果不应为空");
+
+    // 薄片检测：面积 < 0.001 的三角形占比应低于 5%
+    let (slivers, total, ratio) = count_slivers(&result_mesh.vertices, &result_mesh.indices, 0.001);
+    println!(
+        "薄片统计: {}/{} ({:.2}%)",
+        slivers,
+        total,
+        ratio * 100.0
+    );
+    assert!(
+        ratio < 0.05,
+        "共面 BOX-BOX 薄片比例 {:.2}% 超过 5% 阈值",
+        ratio * 100.0
+    );
+
+    ensure_output_dir();
+    let output_path = Path::new(OUTPUT_DIR).join("native_box_sub_box_coplanar.glb");
+    result
+        .export_to_glb(&output_path)
+        .expect("导出布尔运算结果失败");
+    println!("已导出: {:?}", output_path);
+
+    println!("✅ 原生 BOX-BOX 共面布尔 测试通过");
+}
+
+#[test]
+fn test_native_box_subtract_box_flush_face() {
+    println!("\n=== 测试: 原生 BOX-BOX 完全贴合面 ===");
+
+    // 最困难的情况：两个盒子完全共享一整面
+    // 正实体：2x1x1，中心在原点
+    let pos = ManifoldRust::native_box(2.0, 1.0, 1.0);
+
+    // 负实体：1x1x1，中心在 (0.5, 0, 0)
+    // 负实体右面在 x=1.0（正实体右面），左面在 x=0.0（正实体中心）
+    // y/z 完全对齐 → 4条边共面
+    let neg_transform = DMat4::from_translation(glam::DVec3::new(0.5, 0.0, 0.0));
+    let neg = ManifoldRust::native_box(1.0, 1.0, 1.0).apply_transform(neg_transform);
+
+    let result = pos.batch_boolean_subtract(&[neg]);
+    let result_mesh = result.get_mesh();
+
+    println!(
+        "结果: {} 顶点, {} 三角形",
+        result_mesh.vertices.len() / 3,
+        result_mesh.indices.len() / 3
+    );
+
+    assert!(result_mesh.indices.len() > 0, "布尔运算结果不应为空");
+
+    let (slivers, total, ratio) = count_slivers(&result_mesh.vertices, &result_mesh.indices, 0.001);
+    println!(
+        "薄片统计: {}/{} ({:.2}%)",
+        slivers,
+        total,
+        ratio * 100.0
+    );
+    assert!(
+        ratio < 0.05,
+        "完全贴合面 BOX-BOX 薄片比例 {:.2}% 超过 5% 阈值",
+        ratio * 100.0
+    );
+
+    ensure_output_dir();
+    let output_path = Path::new(OUTPUT_DIR).join("native_box_sub_box_flush.glb");
+    result
+        .export_to_glb(&output_path)
+        .expect("导出布尔运算结果失败");
+    println!("已导出: {:?}", output_path);
+
+    println!("✅ 原生 BOX-BOX 完全贴合面 测试通过");
+}
+
+#[test]
+fn test_native_cylinder_subtract_cylinder_coplanar() {
+    println!("\n=== 测试: 原生 CYL-CYL 共面布尔 ===");
+
+    // 正实体：半径 0.5，高度 2.0，底面 z=0
+    let pos = ManifoldRust::native_cylinder(0.5, 2.0, 64);
+
+    // 负实体：同样尺寸，Z轴对齐但平移到顶端
+    // 底面在 z=2.0（正实体顶面），共享一整个圆形面
+    let neg_transform = DMat4::from_translation(glam::DVec3::new(0.0, 0.0, 2.0));
+    let neg = ManifoldRust::native_cylinder(0.5, 2.0, 64).apply_transform(neg_transform);
+
+    let pos_mesh = pos.get_mesh();
+    let neg_mesh = neg.get_mesh();
+    println!(
+        "正实体: {} 顶点, {} 三角形",
+        pos_mesh.vertices.len() / 3,
+        pos_mesh.indices.len() / 3
+    );
+    println!(
+        "负实体: {} 顶点, {} 三角形",
+        neg_mesh.vertices.len() / 3,
+        neg_mesh.indices.len() / 3
+    );
+
+    let result = pos.batch_boolean_subtract(&[neg]);
+    let result_mesh = result.get_mesh();
+
+    println!(
+        "结果: {} 顶点, {} 三角形",
+        result_mesh.vertices.len() / 3,
+        result_mesh.indices.len() / 3
+    );
+
+    assert!(result_mesh.indices.len() > 0, "布尔运算结果不应为空");
+
+    let (slivers, total, ratio) = count_slivers(&result_mesh.vertices, &result_mesh.indices, 0.001);
+    println!(
+        "薄片统计: {}/{} ({:.2}%)",
+        slivers,
+        total,
+        ratio * 100.0
+    );
+    assert!(
+        ratio < 0.05,
+        "共面 CYL-CYL 薄片比例 {:.2}% 超过 5% 阈值",
+        ratio * 100.0
+    );
+
+    ensure_output_dir();
+    let output_path = Path::new(OUTPUT_DIR).join("native_cyl_sub_cyl_coplanar.glb");
+    result
+        .export_to_glb(&output_path)
+        .expect("导出布尔运算结果失败");
+    println!("已导出: {:?}", output_path);
+
+    println!("✅ 原生 CYL-CYL 共面布尔 测试通过");
+}
+
+#[test]
+fn test_native_sphere_subtract_box() {
+    println!("\n=== 测试: 原生 SPHERE-BOX 布尔 ===");
+
+    // 正实体：半径 1.0 的球体，中心在原点
+    let pos = ManifoldRust::native_sphere(1.0, 64);
+
+    // 负实体：1x1x1 的盒子，中心在 (0.5, 0, 0)
+    // 盒子右半部分在球体内，产生弧面切割
+    let neg_transform = DMat4::from_translation(glam::DVec3::new(0.5, 0.0, 0.0));
+    let neg = ManifoldRust::native_box(1.0, 1.0, 1.0).apply_transform(neg_transform);
+
+    let pos_mesh = pos.get_mesh();
+    let neg_mesh = neg.get_mesh();
+    println!(
+        "正实体: {} 顶点, {} 三角形",
+        pos_mesh.vertices.len() / 3,
+        pos_mesh.indices.len() / 3
+    );
+    println!(
+        "负实体: {} 顶点, {} 三角形",
+        neg_mesh.vertices.len() / 3,
+        neg_mesh.indices.len() / 3
+    );
+
+    let result = pos.batch_boolean_subtract(&[neg]);
+    let result_mesh = result.get_mesh();
+
+    println!(
+        "结果: {} 顶点, {} 三角形",
+        result_mesh.vertices.len() / 3,
+        result_mesh.indices.len() / 3
+    );
+
+    assert!(result_mesh.indices.len() > 0, "布尔运算结果不应为空");
+
+    let (slivers, total, ratio) = count_slivers(&result_mesh.vertices, &result_mesh.indices, 0.001);
+    println!(
+        "薄片统计: {}/{} ({:.2}%)",
+        slivers,
+        total,
+        ratio * 100.0
+    );
+    assert!(
+        ratio < 0.10,
+        "SPHERE-BOX 薄片比例 {:.2}% 超过 10% 阈值",
+        ratio * 100.0
+    );
+
+    ensure_output_dir();
+    let output_path = Path::new(OUTPUT_DIR).join("native_sphere_sub_box.glb");
+    result
+        .export_to_glb(&output_path)
+        .expect("导出布尔运算结果失败");
+    println!("已导出: {:?}", output_path);
+
+    println!("✅ 原生 SPHERE-BOX 布尔 测试通过");
+}
+
+#[test]
+fn test_native_box_subtract_multiple_cylinders() {
+    println!("\n=== 测试: 原生 BOX - 多个圆柱体穿孔 ===");
+
+    // 正实体：大盒子 10x10x1（类似墙板）
+    let pos = ManifoldRust::native_box(10.0, 10.0, 1.0);
+
+    // 负实体：3 个圆柱体沿 Z 轴穿透墙板
+    let mut negs = Vec::new();
+    for i in 0..3 {
+        let x_pos = -3.0 + i as f64 * 3.0;
+        let transform = DMat4::from_translation(glam::DVec3::new(x_pos, 0.0, -1.0));
+        let cyl = ManifoldRust::native_cylinder(0.5, 3.0, 64).apply_transform(transform);
+        negs.push(cyl);
+    }
+
+    println!("创建了 {} 个孔洞", negs.len());
+
+    let result = pos.batch_boolean_subtract(&negs);
+    let result_mesh = result.get_mesh();
+
+    println!(
+        "结果: {} 顶点, {} 三角形",
+        result_mesh.vertices.len() / 3,
+        result_mesh.indices.len() / 3
+    );
+
+    assert!(result_mesh.indices.len() > 0, "布尔运算结果不应为空");
+
+    let (slivers, total, ratio) = count_slivers(&result_mesh.vertices, &result_mesh.indices, 0.001);
+    println!(
+        "薄片统计: {}/{} ({:.2}%)",
+        slivers,
+        total,
+        ratio * 100.0
+    );
+    assert!(
+        ratio < 0.10,
+        "多圆柱穿孔薄片比例 {:.2}% 超过 10% 阈值",
+        ratio * 100.0
+    );
+
+    ensure_output_dir();
+    let output_path = Path::new(OUTPUT_DIR).join("native_box_sub_multi_cyl.glb");
+    result
+        .export_to_glb(&output_path)
+        .expect("导出布尔运算结果失败");
+    println!("已导出: {:?}", output_path);
+
+    println!("✅ 原生 BOX - 多圆柱穿孔 测试通过");
 }

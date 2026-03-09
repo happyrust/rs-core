@@ -129,6 +129,32 @@ impl ManifoldRust {
         }
     }
 
+    /// 从 PlantMesh 的顶点/索引直接创建 Manifold（无焊接）
+    ///
+    /// 用于已保证流形拓扑的 CSG mesh（如 `gen_csg_shape` 生成的 mesh），
+    /// 跳过 `quantize_vertex` 焊接步骤，仅做坐标变换后直接构造 Manifold。
+    pub fn from_plant_mesh_transformed(
+        vertices: &[Vec3],
+        indices: &[u32],
+        mat: DMat4,
+    ) -> Self {
+        if vertices.is_empty() || indices.is_empty() {
+            return Self::new();
+        }
+        let mut flat: Vec<f32> = Vec::with_capacity(vertices.len() * 3);
+        for v in vertices {
+            let pt = mat.transform_point3(glam::DVec3::new(v.x as f64, v.y as f64, v.z as f64));
+            flat.push(pt.x as f32);
+            flat.push(pt.y as f32);
+            flat.push(pt.z as f32);
+        }
+        let mesh = ManifoldMeshRust {
+            vertices: flat,
+            indices: indices.to_vec(),
+        };
+        Self::from_mesh_with_cap(&mesh)
+    }
+
     /// 从 GLB 文件直接转换为 Manifold
     ///
     /// 注意：GLB 文件中的网格应该已经在 CSG 生成阶段通过 weld_vertices_for_manifold
