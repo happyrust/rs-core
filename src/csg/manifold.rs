@@ -613,8 +613,11 @@ impl ManifoldRust {
     /// 通过将负实体从其 AABB 中心向外扩展 `epsilon_mm`（每边），
     /// 使其略微超出正实体表面，从而产生干净的切割。
     ///
+    /// 实际膨胀量 = max(epsilon_mm, min_extent × 0.001)，
+    /// 确保大尺度模型获得足够的膨胀量，上限 2.0mm 避免过度膨胀。
+    ///
     /// # 参数
-    /// * `epsilon_mm` - 每边扩展量（与模型单位一致，PDMS 中为 mm）
+    /// * `epsilon_mm` - 每边最小扩展量（与模型单位一致，PDMS 中为 mm）
     pub fn inflate_from_center(&self, epsilon_mm: f64) -> Self {
         let mesh = self.get_mesh();
         let aabb = match mesh.cal_aabb() {
@@ -626,14 +629,17 @@ impl ManifoldRust {
         if min_ext < 1e-6 {
             return self.clone();
         }
+        // 自适应：取传入值与尺寸比例值的较大者，上限 1.0mm
+        let adaptive = (min_ext * 0.0003).min(1.0);
+        let epsilon = epsilon_mm.max(adaptive);
         let center = aabb.center();
         let cx = center.x as f64;
         let cy = center.y as f64;
         let cz = center.z as f64;
         // 每个轴的缩放因子 = 1 + 2*epsilon / extent（两端各扩展 epsilon）
-        let sx = 1.0 + 2.0 * epsilon_mm / extents.x as f64;
-        let sy = 1.0 + 2.0 * epsilon_mm / extents.y as f64;
-        let sz = 1.0 + 2.0 * epsilon_mm / extents.z as f64;
+        let sx = 1.0 + 2.0 * epsilon / extents.x as f64;
+        let sy = 1.0 + 2.0 * epsilon / extents.y as f64;
+        let sz = 1.0 + 2.0 * epsilon / extents.z as f64;
         // 平移到原点 → 缩放 → 平移回来
         let step1 = self.inner.translate(-cx, -cy, -cz);
         let step2 = step1.scale(sx, sy, sz);
