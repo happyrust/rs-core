@@ -49,7 +49,6 @@ pub struct SPdmsElement {
     #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tubi_id: Option<Vec<RecordId>>,
-
 }
 
 impl SPdmsElement {

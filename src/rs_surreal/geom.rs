@@ -73,6 +73,8 @@ pub struct LoopHeightResult {
     pub loops: Vec<Vec<Vec3>>,
     /// 高度值
     pub height: f32,
+    /// 轮廓所在平面的 Z 偏移（用于 NXTR 等挤出体保留 POS.z）
+    pub profile_plane_z: f32,
 }
 
 /// 获得当前参考号对应的loops（例如Panel下的loops，可能有多个）
@@ -106,7 +108,13 @@ pub async fn fetch_loops_and_height(refno: RefnoEnum) -> anyhow::Result<LoopHeig
 
     // 提取所有 loop 顶点
     let mut all_loops: Vec<Vec<Vec3>> = Vec::new();
+    let mut profile_plane_z = 0.0f32;
+    let mut profile_plane_z_set = false;
     for result in nested_loop_results {
+        if !profile_plane_z_set && let Some(first_pos) = result.positions.first() {
+            profile_plane_z = first_pos.0.z;
+            profile_plane_z_set = true;
+        }
         // 将 positions [x,y,z] 和 frads 合并为 [x, y, frad] 格式（与旧逻辑兼容）
         let points: Vec<Vec3> = result
             .positions
@@ -130,6 +138,7 @@ pub async fn fetch_loops_and_height(refno: RefnoEnum) -> anyhow::Result<LoopHeig
     Ok(LoopHeightResult {
         loops: all_loops,
         height,
+        profile_plane_z,
     })
 }
 

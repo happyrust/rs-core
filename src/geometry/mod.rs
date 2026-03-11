@@ -480,10 +480,12 @@ impl ShapeInstancesData {
     pub fn insert_negs(&mut self, refno: RefnoEnum, negs: &[RefnoEnum]) {
         // 只有当 negs 不为空时才插入
         if !negs.is_empty() {
-            self.neg_relate_map
-                .entry(refno)
-                .or_insert_with(Vec::new)
-                .extend(negs);
+            let entry = self.neg_relate_map.entry(refno).or_insert_with(Vec::new);
+            for neg in negs {
+                if !entry.contains(neg) {
+                    entry.push(*neg);
+                }
+            }
         }
     }
 
@@ -535,6 +537,24 @@ impl ShapeInstancesData {
 
     ///保存compound的edge关系到arango图数据库
     pub async fn save_compound_edges_to_arango() {}
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::str::FromStr;
+
+    #[test]
+    fn insert_negs_should_dedup_same_target_entries() {
+        let target = RefnoEnum::from_str("24381/180142").unwrap();
+        let neg = RefnoEnum::from_str("24381/180143").unwrap();
+        let mut data = ShapeInstancesData::default();
+
+        data.insert_negs(target, &[neg, neg]);
+        data.insert_negs(target, &[neg]);
+
+        assert_eq!(data.neg_relate_map.get(&target), Some(&vec![neg]));
+    }
 }
 
 //todo mesh 增量传输

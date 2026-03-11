@@ -1,7 +1,49 @@
 use crate::{NamedAttrMap, RefU64, SUL_DB, SurlValue, SurrealQueryExt};
+use anyhow::Context as _;
 use cached::proc_macro::cached;
 use std::io::Read;
 use std::path::PathBuf;
+
+fn collect_surql_files(dir_path: &str) -> anyhow::Result<Vec<PathBuf>> {
+    let mut surql_files: Vec<PathBuf> = std::fs::read_dir(dir_path)?
+        .filter_map(|entry| entry.ok().map(|e| e.path()))
+        .filter(|p| p.is_file())
+        .filter(|p| p.extension().and_then(|e| e.to_str()) == Some("surql"))
+        .collect();
+    surql_files.sort();
+    Ok(surql_files)
+}
+
+async fn execute_surql_files_on_db(
+    db: &surrealdb::Surreal<surrealdb::engine::any::Any>,
+    ns: &str,
+    db_name: &str,
+    surql_files: Vec<PathBuf>,
+    log_prefix: &str,
+) -> anyhow::Result<()> {
+    for file in surql_files {
+        let file_name = file
+            .file_name()
+            .and_then(|v| v.to_str())
+            .unwrap_or("<unknown>")
+            .to_string();
+        println!("载入surreal{} {}", log_prefix, file_name);
+
+        let mut f = std::fs::File::open(&file)
+            .with_context(|| format!("打开 Surreal 脚本失败: {}", file.display()))?;
+        let mut content = String::new();
+        f.read_to_string(&mut content)
+            .with_context(|| format!("读取 Surreal 脚本失败: {}", file.display()))?;
+
+        let sql = format!("USE NS `{}` DB `{}`;\n{}", ns, db_name, content);
+
+        db.query_response(&sql)
+            .await
+            .with_context(|| format!("执行 Surreal 脚本失败: {}", file_name))?;
+    }
+
+    Ok(())
+}
 
 /// 执行 SurrealDB 脚本目录中的所有脚本
 ///
@@ -34,39 +76,8 @@ pub async fn define_common_functions(script_dir: Option<&str>) -> anyhow::Result
     let ns = db_option.surreal_ns.clone();
     let db = db_option.project_name.clone();
 
-    let target_dir = std::fs::read_dir(&dir_path)?
-        .into_iter()
-        .map(|entry| {
-            let entry = entry.unwrap();
-            entry.path()
-        })
-        .collect::<Vec<PathBuf>>();
-
-    // 只加载 SurrealQL 脚本，避免把 .bat/.sh/.md 等文件当成查询执行导致解析失败
-    let mut surql_files: Vec<PathBuf> = target_dir
-        .into_iter()
-        .filter(|p| p.is_file())
-        .filter(|p| p.extension().and_then(|e| e.to_str()) == Some("surql"))
-        .collect();
-    surql_files.sort();
-
-    for file in surql_files {
-        println!(
-            "载入surreal {}",
-            file.file_name().unwrap().to_str().unwrap().to_string()
-        );
-        let mut file = std::fs::File::open(file)?;
-        let mut content = String::new();
-        file.read_to_string(&mut content)?;
-        // ⚠️ SurrealDB 的 NS/DB 选择可能是“连接级会话状态”：
-        // 当底层连接池为每次请求分配不同连接时，先前的 USE 可能不会生效，导致报错：
-        // "Specify a namespace to use"。
-        //
-        // 这里对每个脚本执行都显式前置 USE，保证同一次请求内完成 NS/DB 选择与脚本执行。
-        let wrapped = format!("USE NS `{}` DB `{}`;\n{}", ns, db, content);
-        SUL_DB.query_response(&wrapped).await?;
-    }
-    Ok(())
+    let surql_files = collect_surql_files(&dir_path)?;
+    execute_surql_files_on_db(&SUL_DB, &ns, &db, surql_files, "").await
 }
 
 /// 在指定的数据库连接上执行 SurrealDB 脚本目录中的所有脚本。
@@ -91,25 +102,8 @@ pub async fn define_common_functions_on_db(
     let ns = db_option.surreal_ns.clone();
     let db_name = db_option.project_name.clone();
 
-    let mut surql_files: Vec<PathBuf> = std::fs::read_dir(&dir_path)?
-        .filter_map(|entry| entry.ok().map(|e| e.path()))
-        .filter(|p| p.is_file())
-        .filter(|p| p.extension().and_then(|e| e.to_str()) == Some("surql"))
-        .collect();
-    surql_files.sort();
-
-    for file in surql_files {
-        println!(
-            "载入surreal(KV) {}",
-            file.file_name().unwrap().to_str().unwrap()
-        );
-        let mut f = std::fs::File::open(file)?;
-        let mut content = String::new();
-        f.read_to_string(&mut content)?;
-        let wrapped = format!("USE NS `{}` DB `{}`;\n{}", ns, db_name, content);
-        db.query_response(&wrapped).await?;
-    }
-    Ok(())
+    let surql_files = collect_surql_files(&dir_path)?;
+    execute_surql_files_on_db(db, &ns, &db_name, surql_files, "(KV)").await
 }
 
 /// 定义数据库编号事件

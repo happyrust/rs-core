@@ -28,6 +28,8 @@ pub struct NegInfo {
     pub id: RecordId,
     /// Geometry type
     pub geo_type: String,
+    /// 几何参数（用于文件失败时回退重建）
+    pub param: PdmsGeoParam,
     /// Parameter type
     #[serde(default)]
     pub para_type: String,
@@ -39,6 +41,17 @@ pub struct NegInfo {
     /// 负载体的世界变换（用于计算绝对位置）
     #[serde(default, rename = "carrier_wt")]
     pub carrier_world_trans: Option<PlantTransform>,
+}
+
+/// 正实体几何信息
+#[derive(Debug, Clone, Serialize, Deserialize, SurrealValue)]
+pub struct PosGeoInfo {
+    /// Geometry ID
+    pub id: RecordId,
+    /// 局部变换
+    pub trans: PlantTransform,
+    /// 几何参数（用于文件失败时回退重建）
+    pub param: PdmsGeoParam,
 }
 
 /// Manifold geometry transformation query
@@ -55,9 +68,9 @@ pub struct ManiGeoTransQuery {
     pub inst_world_trans: PlantTransform,
     /// AABB
     pub aabb: PlantAabb,
-    /// 正几何列表：(geo_relate ID, 几何体局部变换)
+    /// 正几何列表
     #[serde(rename = "ts")]
-    pub pos_geos: Vec<(RecordId, PlantTransform)>,
+    pub pos_geos: Vec<PosGeoInfo>,
     /// 负几何列表：(载体refno, 载体世界变换, 负几何信息列表)
     pub neg_ts: Vec<(RefnoEnum, PlantTransform, Vec<NegInfo>)>,
 }

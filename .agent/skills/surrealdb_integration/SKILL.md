@@ -1,11 +1,36 @@
 ---
 name: SurrealDB Integration
-description: Guide and best practices for using SurrealDB 3.0 with rs-core/gen-model-fork
+description: Guide and best practices for using SurrealDB 3.0 with rs-core/gen-model-fork. Covers database schema, query patterns, TreeIndex, and performance optimization.
 ---
 
 # SurrealDB 3.0 Integration Skills for rs-core/gen-model-fork
 
-This skill provides a reference for using SurrealDB (v3.0+) within the current Rust project ecosystem (`rs-core`, `gen-model-fork`). It synthesizes existing documentation and codebase patterns.
+这是针对 rs-core (aios_core) 项目的 SurrealDB 数据库查询和架构知识库。
+
+---
+
+## 核心原则
+
+### 1. 查询优先级
+- **层级查询**：优先使用 TreeIndex（`collect_*` 系列函数），性能提升 10-100 倍
+- **属性关系**：使用 SurrealDB 图遍历（`->GMRE`, `->LSTU->CATR` 等）
+- **批量查询**：使用数据库端函数（`fn::*`）和 `array::map` 模式，避免循环查询
+
+### 2. 类型安全规范
+- **必须使用** `SurrealValue` trait，禁止使用 `serde_json::Value`
+- ID 字段使用 `RefnoEnum` 或 `RefU64`（已兼容自动转换）
+- 时间戳使用 `surrealdb::types::Datetime`
+- 使用 `#[serde(alias = "id")]` 处理字段别名
+
+### 3. 性能优化原则
+- 批量查询优于循环查询（性能提升 N 倍）
+- 使用 ID Range 替代 WHERE 条件（索引查询）
+- 限制递归深度（如 `Some("1..5")`），避免无限递归
+- 使用 `array::distinct()` 去重（SurrealDB 不支持 `SELECT DISTINCT`）
+- 直接访问字段，避免 `record::id()` 函数调用
+- **避免过度防御**：TreeIndex 已保证类型，批量查询时无需再用 noun 过滤（主键查询最快）
+
+---
 
 ## 1. Core Architecture & Setup
 
@@ -155,6 +180,94 @@ let sql = format!(
 | **Get Visible Geometry** | `query_visible_geo_descendants(refno, ...)` |
 | **Check Existence** | `WHERE count(SELECT ... LIMIT 1) > 0` (Don't use `count()` on full set) |
 | **Deduplicate** | `array::distinct(...)` (No `SELECT DISTINCT`) |
+
+---
+
+## 数据库架构速查
+
+### 核心表结构
+
+```
+pe (元素主表) - 统一存储所有工程元素
+├─ pe_owner (层级关系) - child -> parent 父子关系
+├─ inst_relate (几何实例) → inst_info → geo_relate → inst_geo
+├─ inst_relate_aabb (包围盒关系)
+├─ tubi_relate (管道直段) - 复合 ID: [bran_pe, index]
+├─ neg_relate (负实体关系)
+├─ ngmr_relate (NGMR 负实体)
+└─ tag_name_mapping (位号映射)
+```
+
+### PE 表（核心存储表）
+- **ID 格式**: `pe:⟨dbnum_refno⟩` 例如 `pe:⟨21491_10000⟩`
+- **关键字段**: id (RefnoEnum), noun (元素类型), name, owner, children, deleted, sesno, dbnum
+
+### pe_owner 关系表（层级关系）
+- **关系方向**: `child (in) -[pe_owner]-> parent (out)`
+- **⚠️ 推荐**: 层级查询使用 TreeIndex，性能提升 100 倍
+
+### geo_relate 表的 geo_type 字段
+| geo_type | 含义 | 是否导出 |
+|----------|------|----------|
+| `Pos` | 原始几何（未布尔运算） | ✅ 导出 |
+| `DesiPos` | 设计位置 | ✅ 导出 |
+| `CatePos` | 布尔运算后的结果 | ✅ 导出 |
+| `Compound` | 组合几何体（包含负实体引用） | ❌ 不导出 |
+| `CateNeg` | 负实体 | ❌ 不导出 |
+| `CataCrossNeg` | 交叉负实体 | ❌ 不导出 |
+
+**导出条件**: `geo_type IN ['Pos', 'DesiPos', 'CatePos']`
+
+---
+
+## TreeIndex 使用指南
+
+### 何时使用 TreeIndex
+- ✅ **层级查询**（子节点、子孙节点、祖先节点）
+- ❌ **属性关系**（GMRE、GSTR、LSTU、CATR 等）- 仍需使用 SurrealDB
+
+### 性能对比
+| 场景 | SurrealDB 递归 | TreeIndex | 性能提升 |
+|------|---------------|-----------|----------|
+| 查询 1000 个节点的子孙（10 层） | ~500ms | ~5ms | **100 倍** |
+| 查询单层子节点（100 个） | ~50ms | ~0.5ms | **100 倍** |
+| 查询祖先（5 层） | ~30ms | ~0.3ms | **100 倍** |
+| 批量查询（10 个根节点） | ~5s | ~50ms | **100 倍** |
+
+### 迁移建议
+| 旧方式（SurrealDB） | 新方式（TreeIndex） | 性能提升 |
+|-------------------|-------------------|----------|
+| `SELECT VALUE in FROM pe:⟨refno⟩<-pe_owner` | `collect_children_filter_ids(refno, &[])` | **100 倍** |
+| `SELECT VALUE array::flatten(@.{..+collect}.children)` | `collect_descendant_filter_ids(&[refno], &[], None)` | **100 倍** |
+| `SELECT VALUE out FROM pe:⟨refno⟩->pe_owner` | `query_filter_ancestors(refno, &[])` | **100 倍** |
+
+---
+
+## 快速决策树
+
+### 我需要查询层级关系？
+- **是** → 使用 TreeIndex（`collect_children_filter_ids`, `collect_descendant_filter_ids`, `query_filter_ancestors`）
+
+### 我需要查询属性关系？
+- **是** → 使用 SurrealDB 图遍历（`query_single_by_paths`）
+
+### 我需要批量查询多个节点？
+- **是** → 使用 `array::map` + 数据库端函数（`fn::*`）
+
+### 我需要查询几何实例？
+- **是** → 使用封装函数: `query_insts`, `query_tubi_insts_by_brans`, `query_insts_by_zone`
+
+---
+
+## 代码位置参考
+
+### 核心模块（rs-core）
+- **查询扩展**: `src/rs_surreal/query_ext.rs` - SurrealQueryExt trait
+- **实例查询**: `src/rs_surreal/inst.rs` - query_insts, query_tubi_insts_by_brans
+- **层级查询**: `src/rs_surreal/graph.rs` - collect_descendant_*, collect_children_*
+- **PE 查询**: `src/rs_surreal/query.rs` - get_pe, get_named_attmap
+- **结构体定义**: `src/rs_surreal/inst_structs.rs` - GeomInstQuery, TubiInstQuery
+- **数据库函数定义**: `resource/surreal/common.surql`
 
 ## 7. File References
 -   **Query Helpers**: `rs-core/src/rs_surreal/query_ext.rs`

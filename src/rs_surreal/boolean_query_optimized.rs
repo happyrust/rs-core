@@ -3,7 +3,7 @@ use crate::SurrealQueryExt;
 ///
 /// This module provides optimized query functions for boolean operations on geometry,
 /// specifically focusing on neg_relate and ngmr_relate queries.
-use crate::rs_surreal::query_structs::{ManiGeoTransQuery, NegInfo};
+use crate::rs_surreal::query_structs::{ManiGeoTransQuery, NegInfo, PosGeoInfo};
 use crate::types::RefnoEnum;
 use crate::{SUL_DB, get_inst_relate_keys};
 use surrealdb::types as surrealdb_types;
@@ -44,6 +44,7 @@ pub async fn query_manifold_boolean_operations_optimized(
     struct PosGeometry {
         id: crate::types::RecordId,
         trans: crate::rs_surreal::geometry_query::PlantTransform,
+        param: crate::parsed_data::geo_params_data::PdmsGeoParam,
     }
 
     use anyhow::Context as _;
@@ -89,16 +90,23 @@ pub async fn query_manifold_boolean_operations_optimized(
     // 步骤2：获取正几何（Compound/Pos类型）
     let sql_pos_geos = format!(
         r#"
-        SELECT out AS id, trans.d AS trans
+        SELECT out AS id, trans.d AS trans, out.param AS param
         FROM inst_relate:{refno}->out->geo_relate
-        WHERE geo_type IN ["Compound", "Pos"] AND trans.d != NONE
+        WHERE geo_type IN ["Compound", "Pos"] AND trans.d != NONE AND out.param != NONE
         "#
     );
     let pos_geos: Vec<PosGeometry> = SUL_DB
         .query_take(&sql_pos_geos, 0)
         .await
         .with_context(|| format!("sql_pos_geos 查询失败，SQL={}", sql_pos_geos))?;
-    let ts = pos_geos.into_iter().map(|g| (g.id, g.trans)).collect();
+    let ts = pos_geos
+        .into_iter()
+        .map(|g| PosGeoInfo {
+            id: g.id,
+            trans: g.trans,
+            param: g.param,
+        })
+        .collect();
 
     // 步骤3：直接从 neg_relate 和 ngmr_relate 获取切割几何（新结构简化版）
     // neg_relate/ngmr_relate 结构：in = geo_relate (切割几何), out = pe (被切割的正实体)
@@ -111,6 +119,7 @@ pub async fn query_manifold_boolean_operations_optimized(
         SELECT 
             in.out AS id,
             in.geo_type AS geo_type,
+            in.out.param AS param,
             in.para_type ?? "" AS para_type,
             in.trans.d AS trans,
             in.out.aabb.d AS aabb,
@@ -127,6 +136,7 @@ pub async fn query_manifold_boolean_operations_optimized(
             SELECT 
                 in.out AS id,
                 in.geo_type AS geo_type,
+                in.out.param AS param,
                 in.para_type ?? "" AS para_type,
                 in.trans.d AS trans,
                 in.out.aabb.d AS aabb,
@@ -147,6 +157,7 @@ pub async fn query_manifold_boolean_operations_optimized(
         SELECT 
             in.out AS id,
             in.geo_type AS geo_type,
+            in.out.param AS param,
             in.para_type ?? "" AS para_type,
             in.trans.d AS trans,
             in.out.aabb.d AS aabb,
@@ -164,6 +175,7 @@ pub async fn query_manifold_boolean_operations_optimized(
             SELECT 
                 in.out AS id,
                 in.geo_type AS geo_type,
+                in.out.param AS param,
                 in.para_type ?? "" AS para_type,
                 in.trans.d AS trans,
                 in.out.aabb.d AS aabb,
@@ -254,6 +266,7 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
     struct PosGeometry {
         id: crate::types::RecordId,
         trans: crate::rs_surreal::geometry_query::PlantTransform,
+        param: crate::parsed_data::geo_params_data::PdmsGeoParam,
     }
 
     // 步骤1：批量获取所有正实体基础信息
@@ -282,7 +295,11 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
     );
     let base_infos: Vec<PosEntityBase> = SUL_DB.query_take(&sql_bases, 0).await.unwrap_or_default(); // 反序列化失败时返回空列表
     if base_infos.len() != refnos.len() {
-        eprintln!("[bool_query_opt] step1 base_infos={}/{} (部分 refno 被 bool_status/pe_transform 过滤)", base_infos.len(), refnos.len());
+        eprintln!(
+            "[bool_query_opt] step1 base_infos={}/{} (部分 refno 被 bool_status/pe_transform 过滤)",
+            base_infos.len(),
+            refnos.len()
+        );
     }
     let mut base_map: HashMap<RefnoEnum, PosEntityBase> = HashMap::new();
     for base in base_infos {
@@ -295,8 +312,8 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
         r#"
         SELECT 
             in as refno,
-            (SELECT out AS id, trans.d AS trans FROM $parent.out->geo_relate 
-             WHERE geo_type IN ["Compound", "Pos"] AND trans.d != NONE) AS geos
+            (SELECT out AS id, trans.d AS trans, out.param AS param FROM $parent.out->geo_relate 
+             WHERE geo_type IN ["Compound", "Pos"] AND trans.d != NONE AND out.param != NONE) AS geos
         FROM {inst_keys}
         "#
     );
@@ -311,23 +328,28 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
         .query_take(&sql_all_pos_geos, 0)
         .await
         .with_context(|| format!("sql_all_pos_geos 查询失败，SQL={}", sql_all_pos_geos))?;
-    let has_pos_geos = pos_geo_results.iter().filter(|r| !r.geos.is_empty()).count();
+    let has_pos_geos = pos_geo_results
+        .iter()
+        .filter(|r| !r.geos.is_empty())
+        .count();
     if has_pos_geos != refnos.len() {
-        eprintln!("[bool_query_opt] step2 有正实体几何的={}/{}", has_pos_geos, refnos.len());
+        eprintln!(
+            "[bool_query_opt] step2 有正实体几何的={}/{}",
+            has_pos_geos,
+            refnos.len()
+        );
     }
-    let mut pos_geo_map: HashMap<
-        RefnoEnum,
-        Vec<(
-            crate::types::RecordId,
-            crate::rs_surreal::geometry_query::PlantTransform,
-        )>,
-    > = HashMap::new();
+    let mut pos_geo_map: HashMap<RefnoEnum, Vec<PosGeoInfo>> = HashMap::new();
     for result in pos_geo_results {
         for geo in result.geos {
             pos_geo_map
                 .entry(result.refno.clone())
                 .or_insert_with(Vec::new)
-                .push((geo.id, geo.trans));
+                .push(PosGeoInfo {
+                    id: geo.id,
+                    trans: geo.trans,
+                    param: geo.param,
+                });
         }
     }
 
@@ -339,6 +361,7 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
     struct NegGeoResult {
         id: crate::types::RecordId,
         geo_type: String,
+        param: crate::parsed_data::geo_params_data::PdmsGeoParam,
         #[serde(default)]
         para_type: String,
         trans: crate::rs_surreal::geometry_query::PlantTransform,
@@ -367,6 +390,7 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
             SELECT 
                 in.out AS id,
                 in.geo_type AS geo_type, 
+                in.out.param AS param,
                 in.para_type ?? "" AS para_type,
                 in.trans.d AS trans,
                 in.out.aabb.d AS aabb,
@@ -385,6 +409,7 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
                 SELECT 
                     in.out AS id,
                     in.geo_type AS geo_type, 
+                    in.out.param AS param,
                     in.para_type ?? "" AS para_type,
                     in.trans.d AS trans,
                     in.out.aabb.d AS aabb,
@@ -409,6 +434,7 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
             SELECT 
                 in.out AS id,
                 in.geo_type AS geo_type,
+                in.out.param AS param,
                 in.para_type ?? "" AS para_type,
                 in.trans.d AS trans,
                 in.out.aabb.d AS aabb,
@@ -431,6 +457,7 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
                 SELECT 
                     in.out AS id,
                     in.geo_type AS geo_type,
+                    in.out.param AS param,
                     in.para_type ?? "" AS para_type,
                     in.trans.d AS trans,
                     in.out.aabb.d AS aabb,
@@ -460,6 +487,7 @@ pub async fn query_manifold_boolean_operations_batch_optimized(
             neg_infos.push(NegInfo {
                 id: r.id,
                 geo_type: r.geo_type,
+                param: r.param,
                 para_type: r.para_type,
                 geo_local_trans: r.trans,
                 aabb: r.aabb,
@@ -563,7 +591,8 @@ mod tests {
         assert!(optimized_result.is_ok());
 
         // 执行批量优化版本
-        let batch_result = query_manifold_boolean_operations_batch_optimized(&[test_refno], false).await;
+        let batch_result =
+            query_manifold_boolean_operations_batch_optimized(&[test_refno], false).await;
         assert!(batch_result.is_ok());
 
         // 验证结果一致性

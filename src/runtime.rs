@@ -1,5 +1,5 @@
 use crate::init_surreal;
-use crate::options::{DbOption, DbConnMode};
+use crate::options::{DbConnMode, DbOption};
 use crate::rs_surreal::SUL_DB;
 use anyhow::Result;
 use std::sync::Mutex;
@@ -36,7 +36,11 @@ impl DbOptionSurrealExt for DbOption {
     fn connection_summary(&self) -> String {
         format!(
             "host: {}:{} | user: {} | ns: {} | db: {}",
-            self.surreal_ip, self.surreal_port, self.surreal_user, self.surreal_ns, self.project_name
+            self.surreal_ip,
+            self.surreal_port,
+            self.surreal_user,
+            self.surreal_ns,
+            self.project_name
         )
     }
 }
@@ -45,9 +49,7 @@ impl DbOptionSurrealExt for DbOption {
 #[cfg(feature = "kv-rocksdb")]
 fn is_rocksdb_lock_error(err: &impl std::fmt::Display) -> bool {
     let s = err.to_string();
-    s.contains("LOCK")
-        || s.contains("lock file")
-        || s.contains("Resource temporarily unavailable")
+    s.contains("LOCK") || s.contains("lock file") || s.contains("Resource temporarily unavailable")
 }
 
 /// 清理 RocksDB 残留 LOCK 文件。
@@ -244,7 +246,9 @@ pub async fn initialize_databases(db_option: &DbOption) -> Result<()> {
                             let err_msg = e.to_string();
                             last_err = Some(err_msg.clone());
                             if attempt == 1 && is_rocksdb_lock_error(&err_msg) {
-                                let force = std::env::var("AIOS_FORCE_LOCK").map(|v| v == "1").unwrap_or(false);
+                                let force = std::env::var("AIOS_FORCE_LOCK")
+                                    .map(|v| v == "1")
+                                    .unwrap_or(false);
                                 println!("⚠️  检测到 RocksDB LOCK 冲突，清理残留锁后重试...");
                                 cleanup_stale_rocksdb_lock(&path, force);
                                 sleep(Duration::from_millis(500)).await;
@@ -337,12 +341,17 @@ pub async fn initialize_databases(db_option: &DbOption) -> Result<()> {
                             Err(e) => {
                                 let err_msg = e.to_string();
                                 if attempt == 1 && is_rocksdb_lock_error(&err_msg) {
-                                    let force = std::env::var("AIOS_FORCE_LOCK").map(|v| v == "1").unwrap_or(false);
+                                    let force = std::env::var("AIOS_FORCE_LOCK")
+                                        .map(|v| v == "1")
+                                        .unwrap_or(false);
                                     println!("⚠️  检测到 SurrealKV LOCK 冲突，清理残留锁后重试...");
                                     cleanup_stale_rocksdb_lock(&path, force);
                                     sleep(Duration::from_millis(500)).await;
                                 } else {
-                                    return Err(anyhow::anyhow!("SurrealKV 嵌入式连接失败: {}", err_msg));
+                                    return Err(anyhow::anyhow!(
+                                        "SurrealKV 嵌入式连接失败: {}",
+                                        err_msg
+                                    ));
                                 }
                             }
                         }
@@ -386,7 +395,8 @@ pub async fn initialize_databases(db_option: &DbOption) -> Result<()> {
         if crate::rs_surreal::is_model_kv_enabled() {
             println!("📦 在 KV_DB 上定义通用函数...");
             if let Err(e) =
-                crate::function::define_common_functions_on_db(&crate::rs_surreal::KV_DB, None).await
+                crate::function::define_common_functions_on_db(&crate::rs_surreal::KV_DB, None)
+                    .await
             {
                 eprintln!("⚠️  KV_DB 通用函数定义失败: {}（写入可能受影响）", e);
             }
@@ -406,8 +416,6 @@ pub async fn initialize_databases(db_option: &DbOption) -> Result<()> {
 
     Ok(())
 }
-
-
 
 // ============================================================================
 // SurrealDB 服务进程管理
@@ -467,17 +475,31 @@ pub fn start_surreal_server(db_option: &DbOption) -> Result<()> {
     let cpu = num_cpus::get();
     let envs = vec![
         ("SURREAL_SYNC_DATA", "false".to_string()),
-        ("SURREAL_ROCKSDB_THREAD_COUNT", std::cmp::min(cpu, 16).to_string()),
-        ("SURREAL_ROCKSDB_JOBS_COUNT", std::cmp::min(cpu * 2, 32).to_string()),
-        ("SURREAL_ROCKSDB_MAX_CONCURRENT_SUBCOMPACTIONS",
-            if cpu >= 16 { "8" } else { "4" }.to_string()),
+        (
+            "SURREAL_ROCKSDB_THREAD_COUNT",
+            std::cmp::min(cpu, 16).to_string(),
+        ),
+        (
+            "SURREAL_ROCKSDB_JOBS_COUNT",
+            std::cmp::min(cpu * 2, 32).to_string(),
+        ),
+        (
+            "SURREAL_ROCKSDB_MAX_CONCURRENT_SUBCOMPACTIONS",
+            if cpu >= 16 { "8" } else { "4" }.to_string(),
+        ),
         ("SURREAL_ROCKSDB_MAX_OPEN_FILES", "4096".to_string()),
         ("SURREAL_ROCKSDB_BLOCK_CACHE_SIZE", "16GB".to_string()),
         ("SURREAL_ROCKSDB_WRITE_BUFFER_SIZE", "256MB".to_string()),
         ("SURREAL_ROCKSDB_MAX_WRITE_BUFFER_NUMBER", "8".to_string()),
-        ("SURREAL_ROCKSDB_MIN_WRITE_BUFFER_NUMBER_TO_MERGE", "2".to_string()),
+        (
+            "SURREAL_ROCKSDB_MIN_WRITE_BUFFER_NUMBER_TO_MERGE",
+            "2".to_string(),
+        ),
         ("SURREAL_ROCKSDB_TARGET_FILE_SIZE_BASE", "256MB".to_string()),
-        ("SURREAL_ROCKSDB_TARGET_FILE_SIZE_MULTIPLIER", "2".to_string()),
+        (
+            "SURREAL_ROCKSDB_TARGET_FILE_SIZE_MULTIPLIER",
+            "2".to_string(),
+        ),
         ("SURREAL_ROCKSDB_FILE_COMPACTION_TRIGGER", "4".to_string()),
         ("SURREAL_ROCKSDB_STORAGE_LOG_LEVEL", "warn".to_string()),
         ("SURREAL_ROCKSDB_BLOB_COMPRESSION_TYPE", "lz4".to_string()),
@@ -485,7 +507,16 @@ pub fn start_surreal_server(db_option: &DbOption) -> Result<()> {
     ];
 
     let mut cmd = std::process::Command::new("surreal");
-    cmd.args(["start", "--user", user, "--pass", password, "--bind", &bind_addr, &rocksdb_url]);
+    cmd.args([
+        "start",
+        "--user",
+        user,
+        "--pass",
+        password,
+        "--bind",
+        &bind_addr,
+        &rocksdb_url,
+    ]);
     for (k, v) in &envs {
         cmd.env(k, v);
     }
@@ -582,12 +613,17 @@ pub fn start_surreal_kv_server(db_option: &DbOption) -> Result<()> {
     println!("   数据: {}", kv_data_path);
 
     let mut cmd = std::process::Command::new("surreal");
-    cmd.args(["start", "--user", user, "--pass", password, "--bind", &bind_addr, &kv_url]);
+    cmd.args([
+        "start", "--user", user, "--pass", password, "--bind", &bind_addr, &kv_url,
+    ]);
     cmd.stdout(std::process::Stdio::piped());
     cmd.stderr(std::process::Stdio::piped());
 
     let child = cmd.spawn().map_err(|e| {
-        anyhow::anyhow!("启动 SurrealKV 进程失败（请确认 surreal 在 PATH 中）: {}", e)
+        anyhow::anyhow!(
+            "启动 SurrealKV 进程失败（请确认 surreal 在 PATH 中）: {}",
+            e
+        )
     })?;
 
     let pid = child.id();
@@ -619,7 +655,7 @@ fn stop_surreal_kv_server_inner() {
 
 #[cfg(test)]
 mod tests {
-    use crate::options::{DbOption, DbConnMode, SurrealKvConfig};
+    use crate::options::{DbConnMode, DbOption, SurrealKvConfig};
 
     #[test]
     fn effective_surrealkv_ws_conn_str() {

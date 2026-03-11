@@ -1,3 +1,4 @@
+use crate::geometry::triangulation_helper::triangulate_polygon_indices_spade;
 /// 统一的截面处理模块
 ///
 /// 处理流程：
@@ -11,7 +12,6 @@ use crate::prim_geo::wire::{
     export_polyline_svg_for_debug, gen_polyline_from_processed_vertices,
     polyline_to_debug_json_str, process_ploop_vertices,
 };
-use crate::geometry::triangulation_helper::triangulate_polygon_indices_spade;
 use anyhow::{Result, anyhow};
 use cavalier_contours::polyline::{BooleanOp, PlineSource, Polyline};
 use glam::{Vec2, Vec3};

@@ -77,7 +77,11 @@ impl SurrealDbConfig {
                 format!("rocksdb://{}", path)
             }
             DbConnMode::Ws => {
-                let ip = if self.ip == "localhost" { "127.0.0.1" } else { &self.ip };
+                let ip = if self.ip == "localhost" {
+                    "127.0.0.1"
+                } else {
+                    &self.ip
+                };
                 format!("ws://{}:{}", ip, self.port)
             }
         }
@@ -141,10 +145,18 @@ impl WebServerConfig {
     }
 }
 
-fn default_web_server_port() -> u16 { 8080 }
-fn default_true_auto_start() -> bool { true }
-fn default_surreal_bin() -> String { "surreal".to_string() }
-fn default_surreal_bind() -> String { "0.0.0.0:8020".to_string() }
+fn default_web_server_port() -> u16 {
+    8080
+}
+fn default_true_auto_start() -> bool {
+    true
+}
+fn default_surreal_bin() -> String {
+    "surreal".to_string()
+}
+fn default_surreal_bind() -> String {
+    "0.0.0.0:8020".to_string()
+}
 
 /// SurrealKV 连接配置（模型数据写入）
 ///
@@ -198,7 +210,11 @@ impl SurrealKvConfig {
                 format!("surrealkv://{}", path)
             }
             DbConnMode::Ws => {
-                let ip = if self.ip == "localhost" { "127.0.0.1" } else { &self.ip };
+                let ip = if self.ip == "localhost" {
+                    "127.0.0.1"
+                } else {
+                    &self.ip
+                };
                 format!("ws://{}:{}", ip, self.port)
             }
         }
@@ -505,7 +521,6 @@ pub struct DbOption {
 
     pub meshes_path: Option<String>,
     // pub geom_live: Option<bool>,
-
     /// SurrealDB 连接配置（[surrealdb] 子表）
     #[clap(skip)]
     #[serde(default)]
@@ -765,9 +780,10 @@ impl DbOption {
     /// 优先使用 `[surrealdb].path`，未配置时默认 `db-data/{project_name}_{surreal_port}.rdb`
     #[inline]
     pub fn surrealdb_data_path(&self) -> String {
-        self.surrealdb.path.clone().unwrap_or_else(|| {
-            format!("db-data/{}_{}.rdb", self.project_name, self.surreal_port)
-        })
+        self.surrealdb
+            .path
+            .clone()
+            .unwrap_or_else(|| format!("db-data/{}_{}.rdb", self.project_name, self.surreal_port))
     }
 
     /// 获取 SurrealKV 嵌入式模式的数据目录路径
@@ -775,9 +791,10 @@ impl DbOption {
     /// 优先使用 `[surrealkv].path`，未配置时默认 `db-data/{project_name}_{kv_port}.kv`
     #[inline]
     pub fn surrealkv_data_path(&self) -> String {
-        self.surrealkv.path.clone().unwrap_or_else(|| {
-            format!("db-data/{}_{}.kv", self.project_name, self.surrealkv.port)
-        })
+        self.surrealkv
+            .path
+            .clone()
+            .unwrap_or_else(|| format!("db-data/{}_{}.kv", self.project_name, self.surrealkv.port))
     }
 
     /// 获取 SurrealDB 嵌入式模式的完整连接字符串
@@ -798,9 +815,13 @@ impl DbOption {
         match self.surrealkv.mode {
             DbConnMode::File => {
                 #[cfg(feature = "kv-surrealkv")]
-                { format!("surrealkv://{}", self.surrealkv_data_path()) }
+                {
+                    format!("surrealkv://{}", self.surrealkv_data_path())
+                }
                 #[cfg(not(feature = "kv-surrealkv"))]
-                { format!("rocksdb://{}", self.surrealkv_data_path()) }
+                {
+                    format!("rocksdb://{}", self.surrealkv_data_path())
+                }
             }
             DbConnMode::Ws => self.surrealkv.conn_str(),
         }
@@ -989,7 +1010,7 @@ fn default_parse_channel_capacity() -> Option<usize> {
 
 #[cfg(test)]
 mod tests {
-    use super::{DbOption, DbConnMode, SurrealDbConfig, SurrealKvConfig};
+    use super::{DbConnMode, DbOption, SurrealDbConfig, SurrealKvConfig};
 
     #[test]
     fn surrealdb_file_mode_conn_str() {

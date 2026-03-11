@@ -86,8 +86,7 @@ impl SurrealValue for RStarBoundingBox {
 
     fn from_value(value: Value) -> Result<Self, surrealdb::Error> {
         let json = serde_json::Value::from_value(value)?;
-        serde_json::from_value(json)
-            .map_err(|e| surrealdb::Error::internal(e.to_string()))
+        serde_json::from_value(json).map_err(|e| surrealdb::Error::internal(e.to_string()))
     }
 }
 

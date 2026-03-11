@@ -1,9 +1,9 @@
+use crate::geometry::triangulation_helper::triangulate_polygon_indices_spade;
 #[cfg(feature = "truck")]
 use crate::shape::pdms_shape::BrepMathTrait;
 use crate::shape::pdms_shape::LEN_TOL;
 use crate::tool::float_tool::*;
 use crate::tool::float_tool::{cal_vec2_hash_string, cal_xy_hash_string, vec3_round_2};
-use crate::geometry::triangulation_helper::triangulate_polygon_indices_spade;
 use anyhow::anyhow;
 use approx::abs_diff_eq;
 use cavalier_contours::core::math::{Vector2, angle, bulge_from_angle};

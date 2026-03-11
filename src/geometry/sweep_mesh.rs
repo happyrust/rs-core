@@ -1,4 +1,5 @@
 use crate::debug_macros::is_debug_model_enabled;
+use crate::geometry::triangulation_helper::triangulate_polygon_indices_spade;
 use crate::mesh_precision::LodMeshSettings;
 use crate::parsed_data::CateProfileParam;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
@@ -10,7 +11,6 @@ use crate::prim_geo::sweep_solid::SweepSolid;
 use crate::prim_geo::wire::CurveType;
 use crate::shape::pdms_shape::PlantMesh;
 use crate::types::refno::RefnoEnum;
-use crate::geometry::triangulation_helper::triangulate_polygon_indices_spade;
 use glam::{DMat4, DQuat, DVec3, Mat3, Quat, Vec2, Vec3};
 
 /// 截面顶点数据
@@ -237,7 +237,12 @@ fn plin_axis_to_rotation(plin_axis: Vec3) -> f32 {
 /// 2. PLIN 旋转：plin_rotation（来自 PLAX 方向，GJLORI）
 /// 3. 旋转：应用 bangle 绕 Z 轴旋转
 /// 4. 镜像：如果 lmirror，X 轴取反
-fn build_profile_transform_matrix(plin_pos: Vec2, plin_rotation: f32, bangle: f32, lmirror: bool) -> DMat4 {
+fn build_profile_transform_matrix(
+    plin_pos: Vec2,
+    plin_rotation: f32,
+    bangle: f32,
+    lmirror: bool,
+) -> DMat4 {
     // 1. 平移：移到原点（负 plin_pos）
     let translation =
         DMat4::from_translation(DVec3::new(-plin_pos.x as f64, -plin_pos.y as f64, 0.0));
@@ -1246,11 +1251,15 @@ pub fn generate_sweep_solid_mesh(
     if is_debug_model_enabled() {
         println!(
             "[SweepSolid] profile plin_pos={:?} plin_axis={:?} plin_rotation={:.4} bangle={:.3} lmirror={} is_line={}",
-            plin_pos, plin_axis, plin_rotation.to_degrees(), bangle, sweep.lmirror, is_line_path
+            plin_pos,
+            plin_axis,
+            plin_rotation.to_degrees(),
+            bangle,
+            sweep.lmirror,
+            is_line_path
         );
     }
-    let profile =
-        apply_profile_transform(profile, plin_pos, plin_rotation, bangle, sweep.lmirror);
+    let profile = apply_profile_transform(profile, plin_pos, plin_rotation, bangle, sweep.lmirror);
 
     let arc_segments = if sweep.path.is_single_segment() {
         if let Some(arc) = sweep.path.as_single_arc() {

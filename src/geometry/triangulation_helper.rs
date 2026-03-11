@@ -105,8 +105,8 @@ fn point_in_polygon_inclusive(p: Vec2, polygon: &[Vec2]) -> bool {
     for i in 0..polygon.len() {
         let a = polygon[i];
         let b = polygon[(i + 1) % polygon.len()];
-        let intersects = ((a.y > p.y) != (b.y > p.y))
-            && (p.x < (b.x - a.x) * (p.y - a.y) / (b.y - a.y) + a.x);
+        let intersects =
+            ((a.y > p.y) != (b.y > p.y)) && (p.x < (b.x - a.x) * (p.y - a.y) / (b.y - a.y) + a.x);
         if intersects {
             inside = !inside;
         }

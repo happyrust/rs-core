@@ -273,8 +273,15 @@ mod tests {
 
     #[test]
     fn branch_points_should_require_world_transform() {
-        let result = to_world_branch_points(None, Some(CateAxisParam::default()), Some(CateAxisParam::default()));
-        assert!(result.is_none(), "world_trans 缺失时必须跳过，不能返回局部点");
+        let result = to_world_branch_points(
+            None,
+            Some(CateAxisParam::default()),
+            Some(CateAxisParam::default()),
+        );
+        assert!(
+            result.is_none(),
+            "world_trans 缺失时必须跳过，不能返回局部点"
+        );
     }
 
     #[test]
@@ -287,12 +294,8 @@ mod tests {
         let mut world = Transform::IDENTITY;
         world.translation = Vec3::new(10.0, 0.0, 0.0);
 
-        let result = to_world_branch_points(
-            Some(PlantTransform(world)),
-            Some(arrive),
-            Some(leave),
-        )
-        .expect("world_trans 存在时应返回点");
+        let result = to_world_branch_points(Some(PlantTransform(world)), Some(arrive), Some(leave))
+            .expect("world_trans 存在时应返回点");
 
         assert_eq!(result[0].pt.0, Vec3::new(11.0, 2.0, 3.0));
         assert_eq!(result[1].pt.0, Vec3::new(9.0, -2.0, -3.0));

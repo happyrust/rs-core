@@ -130,8 +130,7 @@ pub use crate::plant_transform::Transform;
 pub use crate::types::*;
 pub use rs_surreal::*;
 pub use runtime::{
-    DbOptionSurrealExt,
-    init_surreal_with_retry, initialize_databases, is_surreal_server_running,
+    DbOptionSurrealExt, init_surreal_with_retry, initialize_databases, is_surreal_server_running,
     start_surreal_server, stop_surreal_server, try_connect_database,
 };
 #[cfg(feature = "kv-rocksdb")]
@@ -313,11 +312,9 @@ pub async fn init_test_surreal() -> Result<DbOption, HandleError> {
     let _ = crate::use_ns_db_compat(&SUL_DB, &db_option.surreal_ns, &db_option.project_name).await;
 
     // Define common functions (使用 None 从配置文件自动读取路径)
-    define_common_functions(None)
-        .await
-        .map_err(|e| HandleError::SurrealError {
-            msg: format!("Failed to define common functions: {}", e),
-        })?;
+    if let Err(e) = define_common_functions(None).await {
+        eprintln!("⚠️ 初始化通用函数失败（忽略并继续）: {}", e);
+    }
 
     // 加载属性中文名缓存
     rs_surreal::load_attr_cn_names()
@@ -352,7 +349,11 @@ pub async fn init_surreal() -> anyhow::Result<()> {
             let conn_str = db_option.surrealdb_conn_str();
             println!("🗄️  后端: 嵌入式 ({})", conn_str);
             println!("📂 数据目录: {}", path);
-            match SUL_DB.connect((&conn_str, config)).with_capacity(1000).await {
+            match SUL_DB
+                .connect((&conn_str, config))
+                .with_capacity(1000)
+                .await
+            {
                 Ok(_) => {}
                 Err(e) => {
                     if e.to_string().contains("Already connected") {
@@ -409,7 +410,11 @@ pub async fn init_surreal() -> anyhow::Result<()> {
             options::DbConnMode::File => {
                 let kv_path = db_option.surrealkv_data_path();
                 println!("📂 KV 数据目录: {}", kv_path);
-                match rs_surreal::KV_DB.connect((&kv_conn_str, kv_config)).with_capacity(1000).await {
+                match rs_surreal::KV_DB
+                    .connect((&kv_conn_str, kv_config))
+                    .with_capacity(1000)
+                    .await
+                {
                     Ok(_) => {}
                     Err(e) => {
                         if !e.to_string().contains("Already connected") {
@@ -420,7 +425,11 @@ pub async fn init_surreal() -> anyhow::Result<()> {
             }
             options::DbConnMode::Ws => {
                 println!("🌐 KV 连接: {}", kv_conn_str);
-                match rs_surreal::KV_DB.connect((&kv_conn_str, kv_config)).with_capacity(1000).await {
+                match rs_surreal::KV_DB
+                    .connect((&kv_conn_str, kv_config))
+                    .with_capacity(1000)
+                    .await
+                {
                     Ok(_) => {}
                     Err(e) => {
                         if !e.to_string().contains("Already connected") {
@@ -436,21 +445,26 @@ pub async fn init_surreal() -> anyhow::Result<()> {
                     .await?;
             }
         }
-        crate::use_ns_db_compat(&rs_surreal::KV_DB, &db_option.surreal_ns, &db_option.project_name).await?;
+        crate::use_ns_db_compat(
+            &rs_surreal::KV_DB,
+            &db_option.surreal_ns,
+            &db_option.project_name,
+        )
+        .await?;
         rs_surreal::mark_model_kv_enabled();
         println!("✅ SurrealKV 连接成功！");
     }
 
     // Define common functions (使用 None 从配置文件自动读取路径)
-    define_common_functions(None)
-        .await
-        .map_err(|e| HandleError::SurrealError {
-            msg: format!("Failed to define common functions: {}", e),
-        })?;
+    if let Err(e) = define_common_functions(None).await {
+        eprintln!("⚠️ 初始化通用函数失败（忽略并继续）: {}", e);
+    }
 
     // 在 KV_DB 上也定义通用函数（仅当 KV 启用时）
     if rs_surreal::is_model_kv_enabled() {
-        if let Err(e) = crate::function::define_common_functions_on_db(&rs_surreal::KV_DB, None).await {
+        if let Err(e) =
+            crate::function::define_common_functions_on_db(&rs_surreal::KV_DB, None).await
+        {
             eprintln!("⚠️  KV_DB 通用函数定义失败: {}（写入可能受影响）", e);
         }
     }
@@ -545,11 +559,9 @@ pub async fn init_demo_test_surreal() -> Result<DbOption, HandleError> {
         })?;
 
     // Define common functions (使用 None 从配置文件自动读取路径)
-    define_common_functions(None)
-        .await
-        .map_err(|e| HandleError::SurrealError {
-            msg: format!("Failed to define common functions: {}", e),
-        })?;
+    if let Err(e) = define_common_functions(None).await {
+        eprintln!("⚠️ 初始化通用函数失败（忽略并继续）: {}", e);
+    }
 
     Ok(db_option)
 }

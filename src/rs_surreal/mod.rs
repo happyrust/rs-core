@@ -82,9 +82,9 @@ pub use connection_manager::{CONNECTION_MANAGER, ConnectionConfig, SurrealConnec
 
 use crate::options::DbOption;
 use once_cell::sync::Lazy;
+use surrealdb::IndexedResults as SurrealResponse;
 use surrealdb::Surreal;
 use surrealdb::engine::any::Any;
-use surrealdb::IndexedResults as SurrealResponse;
 use surrealdb::opt::auth::Root;
 
 // pub type SurlValue = surrealdb::Value;
@@ -257,11 +257,7 @@ pub async fn connect_kvdb(
 ///
 /// `db_path` 为 SurrealKV 数据目录，例如 `output/surrealkv_data`。
 /// 连接后 `SUL_DB` 的所有 SurrealQL 读写自动落盘到该目录。
-pub async fn connect_surrealkv(
-    db_path: &str,
-    ns: &str,
-    db: &str,
-) -> Result<(), surrealdb::Error> {
+pub async fn connect_surrealkv(db_path: &str, ns: &str, db: &str) -> Result<(), surrealdb::Error> {
     let conn_str = format!("surrealkv://{}", db_path);
     let config = surrealdb::opt::Config::default().ast_payload();
     SUL_DB

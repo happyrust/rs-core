@@ -292,10 +292,7 @@ impl ManifoldRust {
             (vertices, indices) = build_welded(retry_precision);
         }
 
-        let manifold = Self::from_mesh_with_cap(&ManifoldMeshRust {
-            vertices,
-            indices,
-        });
+        let manifold = Self::from_mesh_with_cap(&ManifoldMeshRust { vertices, indices });
 
         Ok(manifold)
     }
@@ -616,7 +613,8 @@ impl ManifoldRust {
     /// 从 ManifoldMeshRust 创建 ManifoldRust，若 to_manifold 结果为空则尝试补端盖重试
     pub fn from_mesh_with_cap(m: &ManifoldMeshRust) -> Self {
         let manifold = Self::from_mesh(m);
-        if !manifold.get_mesh().indices.is_empty() || m.indices.is_empty() || m.vertices.is_empty() {
+        if !manifold.get_mesh().indices.is_empty() || m.indices.is_empty() || m.vertices.is_empty()
+        {
             return manifold;
         }
 
@@ -976,7 +974,11 @@ impl ManifoldMeshRust {
 
         while let Some(ti) = queue.pop_front() {
             let base = ti * 3;
-            let (a, b, c) = (self.indices[base], self.indices[base + 1], self.indices[base + 2]);
+            let (a, b, c) = (
+                self.indices[base],
+                self.indices[base + 1],
+                self.indices[base + 2],
+            );
             // 有效边：如果当前三角形需要翻转，则边顺序反转
             let edges: [(u32, u32); 3] = if flip[ti] {
                 [(a, c), (c, b), (b, a)]
@@ -1024,17 +1026,34 @@ impl ManifoldMeshRust {
     fn signed_volume(&self) -> f64 {
         let mut vol = 0.0f64;
         for tri in self.indices.chunks_exact(3) {
-            let (ai, bi, ci) = (tri[0] as usize * 3, tri[1] as usize * 3, tri[2] as usize * 3);
-            if ai + 2 >= self.vertices.len() || bi + 2 >= self.vertices.len() || ci + 2 >= self.vertices.len() {
+            let (ai, bi, ci) = (
+                tri[0] as usize * 3,
+                tri[1] as usize * 3,
+                tri[2] as usize * 3,
+            );
+            if ai + 2 >= self.vertices.len()
+                || bi + 2 >= self.vertices.len()
+                || ci + 2 >= self.vertices.len()
+            {
                 continue;
             }
-            let (ax, ay, az) = (self.vertices[ai] as f64, self.vertices[ai + 1] as f64, self.vertices[ai + 2] as f64);
-            let (bx, by, bz) = (self.vertices[bi] as f64, self.vertices[bi + 1] as f64, self.vertices[bi + 2] as f64);
-            let (cx, cy, cz) = (self.vertices[ci] as f64, self.vertices[ci + 1] as f64, self.vertices[ci + 2] as f64);
+            let (ax, ay, az) = (
+                self.vertices[ai] as f64,
+                self.vertices[ai + 1] as f64,
+                self.vertices[ai + 2] as f64,
+            );
+            let (bx, by, bz) = (
+                self.vertices[bi] as f64,
+                self.vertices[bi + 1] as f64,
+                self.vertices[bi + 2] as f64,
+            );
+            let (cx, cy, cz) = (
+                self.vertices[ci] as f64,
+                self.vertices[ci + 1] as f64,
+                self.vertices[ci + 2] as f64,
+            );
             // 有符号体积 = det([a, b, c]) / 6
-            vol += ax * (by * cz - bz * cy)
-                 + ay * (bz * cx - bx * cz)
-                 + az * (bx * cy - by * cx);
+            vol += ax * (by * cz - bz * cy) + ay * (bz * cx - bx * cz) + az * (bx * cy - by * cx);
         }
         vol / 6.0
     }
@@ -1126,7 +1145,6 @@ impl ManifoldMeshRust {
         }
     }
 
-
     /// 保存为二进制文件 (.manifold)
     ///
     /// 格式: [vertex_count: u32][index_count: u32][vertices: f32 × N][indices: u32 × M]
@@ -1146,18 +1164,12 @@ impl ManifoldMeshRust {
 
         // SAFETY: f32 和 u32 都是 4 字节 POD 类型
         let vert_bytes = unsafe {
-            std::slice::from_raw_parts(
-                self.vertices.as_ptr() as *const u8,
-                self.vertices.len() * 4,
-            )
+            std::slice::from_raw_parts(self.vertices.as_ptr() as *const u8, self.vertices.len() * 4)
         };
         file.write_all(vert_bytes)?;
 
         let idx_bytes = unsafe {
-            std::slice::from_raw_parts(
-                self.indices.as_ptr() as *const u8,
-                self.indices.len() * 4,
-            )
+            std::slice::from_raw_parts(self.indices.as_ptr() as *const u8, self.indices.len() * 4)
         };
         file.write_all(idx_bytes)?;
         Ok(())

@@ -921,23 +921,39 @@ impl SurrealValue for RsVec3 {
         match value {
             surrealdb::types::Value::Array(arr) => {
                 if arr.len() != 3 {
-                    return Err(surrealdb::Error::internal("数组长度必须为 3 才能转换为 RsVec3".into()));
+                    return Err(surrealdb::Error::internal(
+                        "数组长度必须为 3 才能转换为 RsVec3".into(),
+                    ));
                 }
                 let x = match &arr[0] {
                     surrealdb::types::Value::Number(n) => n.to_f64().unwrap_or(0.0) as f32,
-                    _ => return Err(surrealdb::Error::internal("数组第一个元素必须是数字".into())),
+                    _ => {
+                        return Err(surrealdb::Error::internal(
+                            "数组第一个元素必须是数字".into(),
+                        ));
+                    }
                 };
                 let y = match &arr[1] {
                     surrealdb::types::Value::Number(n) => n.to_f64().unwrap_or(0.0) as f32,
-                    _ => return Err(surrealdb::Error::internal("数组第二个元素必须是数字".into())),
+                    _ => {
+                        return Err(surrealdb::Error::internal(
+                            "数组第二个元素必须是数字".into(),
+                        ));
+                    }
                 };
                 let z = match &arr[2] {
                     surrealdb::types::Value::Number(n) => n.to_f64().unwrap_or(0.0) as f32,
-                    _ => return Err(surrealdb::Error::internal("数组第三个元素必须是数字".into())),
+                    _ => {
+                        return Err(surrealdb::Error::internal(
+                            "数组第三个元素必须是数字".into(),
+                        ));
+                    }
                 };
                 Ok(RsVec3(Vec3::new(x, y, z)))
             }
-            _ => Err(surrealdb::Error::internal("值必须是数组类型才能转换为 RsVec3".into())),
+            _ => Err(surrealdb::Error::internal(
+                "值必须是数组类型才能转换为 RsVec3".into(),
+            )),
         }
     }
 }

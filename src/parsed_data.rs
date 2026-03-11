@@ -343,8 +343,7 @@ pub mod geo_params_data {
 
         fn from_value(value: surrealdb_types::Value) -> Result<Self, surrealdb::Error> {
             let json = serde_json::Value::from_value(value)?;
-            serde_json::from_value(json)
-                .map_err(|e| surrealdb::Error::internal(e.to_string()))
+            serde_json::from_value(json).map_err(|e| surrealdb::Error::internal(e.to_string()))
         }
     }
 
@@ -587,6 +586,30 @@ pub mod geo_params_data {
             &self,
         ) -> anyhow::Result<crate::prim_geo::basic::CsgSharedMesh> {
             self.build_csg_shape_compat()
+        }
+
+        /// 兼容性包装：优先走直接 mesh 生成路径。
+        ///
+        /// 对 `PrimExtrusion` / `PrimRevolution` 这类 loop 几何，往往只实现了
+        /// `gen_csg_mesh()` 而没有覆写 `gen_csg_shape()`；布尔回退场景应先尝试这里。
+        pub fn gen_csg_mesh_compat(&self) -> Option<crate::shape::pdms_shape::PlantMesh> {
+            match self {
+                PdmsGeoParam::PrimSCylinder(s) => s.gen_csg_mesh(),
+                PdmsGeoParam::PrimLCylinder(s) => s.gen_csg_mesh(),
+                PdmsGeoParam::PrimBox(s) => s.gen_csg_mesh(),
+                PdmsGeoParam::PrimSphere(s) => s.gen_csg_mesh(),
+                PdmsGeoParam::PrimDish(s) => s.gen_csg_mesh(),
+                PdmsGeoParam::PrimCTorus(s) => s.gen_csg_mesh(),
+                PdmsGeoParam::PrimRTorus(s) => s.gen_csg_mesh(),
+                PdmsGeoParam::PrimPyramid(s) => s.gen_csg_mesh(),
+                PdmsGeoParam::PrimLPyramid(s) => s.gen_csg_mesh(),
+                PdmsGeoParam::PrimRevolution(s) => s.gen_csg_mesh(),
+                PdmsGeoParam::PrimExtrusion(s) => s.gen_csg_mesh(),
+                PdmsGeoParam::PrimPolyhedron(s) => s.gen_csg_mesh(),
+                PdmsGeoParam::PrimLoft(s) => s.gen_csg_mesh(),
+                PdmsGeoParam::PrimLSnout(s) => s.gen_csg_mesh(),
+                PdmsGeoParam::Unknown | PdmsGeoParam::CompoundShape => None,
+            }
         }
 
         /// 内部实现：实际生成逻辑

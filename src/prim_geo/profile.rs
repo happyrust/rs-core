@@ -89,8 +89,14 @@ fn convert_spine_to_segments(
 
                 println!(
                     "[convert_spine] THRU: pt0={:?} pt1={:?} thru={:?} center={:?} radius={:.3} angle={:.3}deg axis={:?} pref_axis={:?}",
-                    spine.pt0, spine.pt1, spine.thru_pt, center, radius,
-                    angle.to_degrees(), axis, spine.preferred_dir
+                    spine.pt0,
+                    spine.pt1,
+                    spine.thru_pt,
+                    center,
+                    radius,
+                    angle.to_degrees(),
+                    axis,
+                    spine.preferred_dir
                 );
 
                 result.push(SegmentPath::Arc(Arc3D {
@@ -295,7 +301,13 @@ pub async fn create_profile_geos(
                     let ydir = spine_att.get_vec3("YDIR").unwrap_or(Vec3::Z);
                     println!(
                         "[profile][arc-spine] refno={} CURTYP={} pt0_world={:?} pt1_world={:?} mid_pt={:?} origin={:?} ydir={:?} rad={:?}",
-                        refno, cur_type_str, pt0_world, pt1_world, mid_pt_world, origin, ydir,
+                        refno,
+                        cur_type_str,
+                        pt0_world,
+                        pt1_world,
+                        mid_pt_world,
+                        origin,
+                        ydir,
                         att2.get_f32("RAD")
                     );
                     paths.push(Spine3D {

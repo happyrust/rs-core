@@ -38,9 +38,11 @@ impl PoslHandler {
             let mut pline_plax = DVec3::X;
             let mut is_lmirror = false;
 
-            let ancestor_refnos =
-                crate::query_filter_ancestors(att.get_refno_or_default(), &crate::consts::HAS_PLIN_TYPES)
-                    .await?;
+            let ancestor_refnos = crate::query_filter_ancestors(
+                att.get_refno_or_default(),
+                &crate::consts::HAS_PLIN_TYPES,
+            )
+            .await?;
 
             if let Some(plin_owner) = ancestor_refnos.into_iter().next() {
                 let target_own_att = crate::get_named_attmap(plin_owner)

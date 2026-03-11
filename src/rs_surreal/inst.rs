@@ -38,8 +38,6 @@ use surrealdb::types as surrealdb_types;
 
 use surrealdb::types::{Kind, SurrealValue, Value};
 
-
-
 /// 完整的 Ptset 点数据，包含位置和方向信息
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default, SurrealValue)]
@@ -88,8 +86,6 @@ pub struct FullPtsetPoint {
 
 }
 
-
-
 /// 初始化数据库的所有模型相关表结构和索引
 
 pub async fn init_model_tables() -> anyhow::Result<()> {
@@ -100,8 +96,6 @@ pub async fn init_model_tables() -> anyhow::Result<()> {
 
         SUL_DB.query(sql).await?;
 
-
-
         // 如果 KV 已启用，也在 KV_DB 上执行
 
         if is_model_kv_enabled() {
@@ -110,13 +104,9 @@ pub async fn init_model_tables() -> anyhow::Result<()> {
 
         }
 
-
-
         Ok(())
 
     }
-
-
 
     // 1. 定义关系表 (RELATION)
 
@@ -140,8 +130,6 @@ pub async fn init_model_tables() -> anyhow::Result<()> {
 
     ];
 
-
-
     for table in relation_tables {
 
         let sql = format!("DEFINE TABLE IF NOT EXISTS {} TYPE RELATION;", table);
@@ -150,13 +138,9 @@ pub async fn init_model_tables() -> anyhow::Result<()> {
 
     }
 
-
-
     // inst_relate: 显式声明 dbnum 字段，供按库号过滤/删旧加速使用
 
     exec_schema_sql("DEFINE FIELD IF NOT EXISTS dbnum ON TABLE inst_relate TYPE int;").await?;
-
-
 
     // 2. 定义普通表 (NORMAL/SCHEMALESS)
 
@@ -171,8 +155,6 @@ pub async fn init_model_tables() -> anyhow::Result<()> {
         exec_schema_sql(&sql).await?;
 
     }
-
-
 
     // 2.5 inst_relate_aabb / inst_relate_booled_aabb 普通表（存储实例 AABB）
 
@@ -222,8 +204,6 @@ pub async fn init_model_tables() -> anyhow::Result<()> {
 
     }
 
-
-
     // 3. 创建 inst_relate 的核心索引
 
     let create_index_sql = "
@@ -242,8 +222,6 @@ pub async fn init_model_tables() -> anyhow::Result<()> {
 
     exec_schema_sql(create_index_sql).await?;
 
-
-
     // 4. 清理旧的计算字段定义（已弃用，改为在查询中直接使用 graph traversal）
 
     // world_trans 和 world_aabb 不再使用 <future> 计算字段，避免性能问题和定义不一致
@@ -258,13 +236,9 @@ pub async fn init_model_tables() -> anyhow::Result<()> {
 
     exec_schema_sql(remove_old_fields_sql).await?;
 
-
-
     Ok(())
 
 }
-
-
 
 #[serde_as]
 
@@ -293,8 +267,6 @@ pub struct TubiInstQuery {
     pub spec_value: Option<i64>,
 
 }
-
-
 
 /// 将 SurrealDB 的原始值向量解码为目标类型列表
 
@@ -331,8 +303,6 @@ fn decode_values<T: DeserializeOwned>(values: Vec<SurlValue>) -> anyhow::Result<
         .collect()
 
 }
-
-
 
 /// 根据分支构件编号批量查询 Tubi 实例数据
 
@@ -375,8 +345,6 @@ pub async fn query_tubi_insts_by_brans(
         return Ok(Vec::new());
 
     }
-
-
 
     let mut all_results = Vec::new();
 
@@ -424,8 +392,6 @@ pub async fn query_tubi_insts_by_brans(
 
         let mut results: Vec<TubiInstQuery> = model_primary_db().query_take(&sql, 0).await?;
 
-
-
         all_results.append(&mut results);
 
     }
@@ -433,8 +399,6 @@ pub async fn query_tubi_insts_by_brans(
     Ok(all_results)
 
 }
-
-
 
 /// 根据流程构件编号批量查询 Tubi 实例数据
 
@@ -461,8 +425,6 @@ pub async fn query_tubi_insts_by_flow(refnos: &[RefnoEnum]) -> anyhow::Result<Ve
         return Ok(Vec::new());
 
     }
-
-
 
     let mut all_results = Vec::new();
 
@@ -504,21 +466,15 @@ pub async fn query_tubi_insts_by_flow(refnos: &[RefnoEnum]) -> anyhow::Result<Ve
 
         );
 
-
-
         let mut results: Vec<TubiInstQuery> = model_primary_db().query_take(&sql, 0).await?;
 
         all_results.append(&mut results);
 
     }
 
-
-
     Ok(all_results)
 
 }
-
-
 
 #[serde_as]
 
@@ -546,8 +502,6 @@ pub struct ModelHashInst {
 
 }
 
-
-
 #[derive(Debug)]
 
 pub struct ModelInstData {
@@ -571,8 +525,6 @@ pub struct ModelInstData {
     pub date: NaiveDateTime,
 
 }
-
-
 
 ///
 
@@ -618,8 +570,6 @@ pub struct GeomInstQuery {
 
 }
 
-
-
 /// 几何点集查询结构体
 
 #[derive(Serialize, Deserialize, Debug, SurrealValue)]
@@ -648,15 +598,11 @@ pub struct GeomPtsQuery {
 
 }
 
-
-
 //=============================================================================
 
 // 导出专用查询结构体和函数
 
 //=============================================================================
-
-
 
 /// 导出专用：几何实例的 hash 引用（不含实际数据值）
 
@@ -681,8 +627,6 @@ pub struct ExportInstHash {
     pub unit_flag: bool,
 
 }
-
-
 
 /// 导出专用：构件几何实例查询结果（只含 hash 引用）
 
@@ -724,8 +668,6 @@ pub struct ExportInstQuery {
 
 }
 
-
-
 /// 导出专用：查询几何实例的 hash 引用（不查询实际数据值）
 
 ///
@@ -758,13 +700,9 @@ pub async fn query_insts_for_export(
 
     }
 
-
-
     let batch_size = 50;
 
     let mut results = Vec::new();
-
-
 
     for chunk in refnos.chunks(batch_size) {
 
@@ -781,8 +719,6 @@ pub async fn query_insts_for_export(
                 .collect();
 
             let bool_keys_str = bool_keys.join(",");
-
-
 
             // 只查询 hash ID，不查询实际数据
 
@@ -820,8 +756,6 @@ pub async fn query_insts_for_export(
 
             );
 
-
-
             let mut bool_results: Vec<ExportInstQuery> = model_primary_db()
 
                 .query_take(&bool_sql, 0)
@@ -830,17 +764,11 @@ pub async fn query_insts_for_export(
 
                 .with_context(|| format!("query_insts_for_export bool SQL: {}", bool_sql))?;
 
-
-
             let bool_refnos: std::collections::HashSet<_> =
 
                 bool_results.iter().map(|r| r.refno.clone()).collect();
 
-
-
             results.append(&mut bool_results);
-
-
 
             // ========== 路径 B：原始几何查询（排除已有布尔结果的） ==========
 
@@ -853,8 +781,6 @@ pub async fn query_insts_for_export(
                 .map(|r| r.to_inst_relate_key())
 
                 .collect();
-
-
 
             if !non_bool_keys.is_empty() {
 
@@ -902,8 +828,6 @@ pub async fn query_insts_for_export(
 
                 );
 
-
-
                 let mut geo_results: Vec<ExportInstQuery> = model_primary_db()
 
                     .query_take(&geo_sql, 0)
@@ -925,8 +849,6 @@ pub async fn query_insts_for_export(
                 chunk.iter().map(|r| r.to_inst_relate_key()).collect();
 
             let inst_relate_keys_str = inst_relate_keys.join(",");
-
-
 
             // 只查询 hash ID，不查询实际数据
 
@@ -970,8 +892,6 @@ pub async fn query_insts_for_export(
 
             );
 
-
-
             let mut chunk_result: Vec<ExportInstQuery> = model_primary_db()
 
                 .query_take(&sql, 0)
@@ -986,13 +906,9 @@ pub async fn query_insts_for_export(
 
     }
 
-
-
     Ok(results)
 
 }
-
-
 
 /// 根据最新refno查询最新insts
 
@@ -1027,8 +943,6 @@ pub async fn query_insts(
     query_insts_with_batch(refnos, enable_holes, None).await
 
 }
-
-
 
 /// 查询几何实例信息（支持负实体）
 
@@ -1065,8 +979,6 @@ pub async fn query_insts_with_negative(
     query_insts_with_batch(refnos, enable_holes, None).await
 
 }
-
-
 
 /// 批量查询几何实例信息（支持布尔运算结果）
 
@@ -1172,13 +1084,9 @@ pub async fn query_insts_with_batch(
 
     }
 
-
-
     let batch = batch_size.unwrap_or(50).max(1);
 
     let mut results = Vec::new();
-
-
 
     for chunk in refnos.chunks(batch) {
 
@@ -1197,8 +1105,6 @@ pub async fn query_insts_with_batch(
                 .collect();
 
             let bool_keys_str = bool_keys.join(",");
-
-
 
             // 使用 graph traversal 获取 world_aabb，不依赖计算字段
 
@@ -1230,8 +1136,6 @@ pub async fn query_insts_with_batch(
 
             );
 
-
-
             let mut bool_results: Vec<GeomInstQuery> = model_primary_db()
 
                 .query_take(&bool_sql, 0)
@@ -1240,19 +1144,13 @@ pub async fn query_insts_with_batch(
 
                 .with_context(|| format!("query_insts_with_batch bool SQL: {}", bool_sql))?;
 
-
-
             // 收集已有布尔结果的 refnos
 
             let bool_refnos: std::collections::HashSet<_> =
 
                 bool_results.iter().map(|r| r.refno.clone()).collect();
 
-
-
             results.append(&mut bool_results);
-
-
 
             // ========== 路径 B：原始几何查询（排除已有布尔结果的） ==========
 
@@ -1265,8 +1163,6 @@ pub async fn query_insts_with_batch(
                 .map(|r| r.to_inst_relate_key())
 
                 .collect();
-
-
 
             if !non_bool_keys.is_empty() {
 
@@ -1312,8 +1208,6 @@ pub async fn query_insts_with_batch(
 
                 );
 
-
-
                 let mut geo_results: Vec<GeomInstQuery> = model_primary_db()
 
                     .query_take(&geo_sql, 0)
@@ -1335,8 +1229,6 @@ pub async fn query_insts_with_batch(
                 chunk.iter().map(|r| r.to_inst_relate_key()).collect();
 
             let inst_relate_keys_str = inst_relate_keys.join(",");
-
-
 
             // 直接从 inst_relate:{refno} 查询
 
@@ -1378,8 +1270,6 @@ pub async fn query_insts_with_batch(
 
             );
 
-
-
             let mut chunk_result: Vec<GeomInstQuery> = model_primary_db()
 
                 .query_take(&sql, 0)
@@ -1394,13 +1284,9 @@ pub async fn query_insts_with_batch(
 
     }
 
-
-
     Ok(results)
 
 }
-
-
 
 // todo 生成一个测试案例
 
@@ -1419,8 +1305,6 @@ pub async fn query_insts_with_batch(
 //         .collect::<Vec<_>>()
 
 //         .join(",");
-
-
 
 //     //todo 如果是ngmr relate, 也要测试一下有没有问题
 
@@ -1448,21 +1332,15 @@ pub async fn query_insts_with_batch(
 
 //     let mut geom_insts: Vec<GeomInstQuery> = response.take(0).unwrap();
 
-
-
 //     Ok(geom_insts)
 
 // }
-
-
 
 //=============================================================================
 
 // inst_relate 数据保存相关函数
 
 //=============================================================================
-
-
 
 use crate::geometry::ShapeInstancesData;
 
@@ -1471,8 +1349,6 @@ use futures::StreamExt;
 use futures::stream::FuturesUnordered;
 
 use std::collections::HashMap;
-
-
 
 /// 定义 dbnum_info_table 的更新事件
 
@@ -1554,15 +1430,11 @@ pub async fn define_dbnum_event() -> anyhow::Result<()> {
 
     "#;
 
-
-
     SUL_DB.query_response(event_sql).await?;
 
     Ok(())
 
 }
-
-
 
 /// 定义 dbnum_info_table 的更新事件 (非 surreal-save feature 时的空实现)
 
@@ -1573,8 +1445,6 @@ pub async fn define_dbnum_event() -> anyhow::Result<()> {
     Ok(())
 
 }
-
-
 
 /// 级联删除 inst_relate 及其关联的 geo_relate 和 inst_geo 数据
 
@@ -1622,8 +1492,6 @@ pub async fn delete_inst_relate_cascade(
 
         let mut delete_sql_vec = vec![];
 
-
-
         let mut inst_ids = vec![];
 
         for &refno in chunk {
@@ -1645,8 +1513,6 @@ pub async fn delete_inst_relate_cascade(
             delete_sql_vec.push(delete_sql);
 
         }
-
-
 
         if !delete_sql_vec.is_empty() {
 
@@ -1670,13 +1536,9 @@ pub async fn delete_inst_relate_cascade(
 
     }
 
-
-
     Ok(())
 
 }
-
-
 
 /// 删除所有模型生成相关的数据
 
@@ -1712,27 +1574,18 @@ pub async fn delete_all_model_data() -> anyhow::Result<()> {
 
     let mut sql = "BEGIN TRANSACTION;\n".to_string();
 
-
-
     for table in &tables {
 
         sql.push_str(&format!("delete {};\n", table));
 
     }
 
-
-
     sql.push_str("COMMIT TRANSACTION;");
 
-
-
     println!("Delete Sql is: \n {}", &sql);
-
-
 
     model_query_response(&sql).await.unwrap();
 
     Ok(())
 
 }
-

@@ -100,7 +100,6 @@ pub struct QueryGeoParam {
     pub param: PdmsGeoParam,
 }
 
-
 /// inst_geo 查询结果
 ///
 /// 用于表示 inst_geo 的查询结果
@@ -118,7 +117,6 @@ pub struct QueryInstGeoResult {
     #[serde(default)]
     pub has_cata_neg: bool,
 }
-
 
 /// 查询 inst_geo 的几何参数
 ///
@@ -188,7 +186,6 @@ pub async fn query_geo_params(inst_geo_ids: &str) -> anyhow::Result<Vec<QueryGeo
     Ok(result)
 }
 
-
 /// 保存 AABB 数据到 SurrealDB
 ///
 /// 批量将 AABB 数据保存到 aabb 表中
@@ -250,4 +247,3 @@ pub async fn save_pts_to_surreal(vec3_map: &DashMap<u64, String>) {
         }
     }
 }
-
