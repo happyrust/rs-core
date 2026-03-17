@@ -1349,9 +1349,11 @@ fn generate_sscl_mesh(
 
     // println!("🔧 生成 SSLC #{} (refno: {})", current_count, refno);
 
-    // 在标准局部坐标系中生成：Z 轴朝上，X/Y 是剪切方向
-    let dir = cyl.paxi_dir;
-    let (x_axis, y_axis) = orthonormal_basis(dir);
+    // 局部空间固定基底（Z轴朝上），与 libgm.dll 的 GM_SlopeEndCyl 一致
+    // 外部 transform.rotation 负责旋转到世界空间
+    let dir = Vec3::Z;
+    let x_axis = Vec3::X;
+    let y_axis = Vec3::Y;
 
     let radius = (cyl.pdia * 0.5).abs();
     let height = cyl.phei;
@@ -1359,13 +1361,11 @@ fn generate_sscl_mesh(
         return None;
     }
 
-    // 剪切角规范化到 (-90°, 90°)
-    let x_sign = if x_axis.y < 0.0 { -1.0 } else { 1.0 };
-    let y_sign = if y_axis.x < 0.0 { -1.0 } else { 1.0 };
-    let btm_x_deg = x_sign * normalize_shear_angle(cyl.btm_shear_angles[0]);
-    let btm_y_deg = y_sign * normalize_shear_angle(cyl.btm_shear_angles[1]);
-    let top_x_deg = x_sign * normalize_shear_angle(cyl.top_shear_angles[0]);
-    let top_y_deg = y_sign * normalize_shear_angle(cyl.top_shear_angles[1]);
+    // libgm.dll: 角度 >= 90 || <= -90 时直接返回空 facets（不做 normalize）
+    let btm_x_deg = cyl.btm_shear_angles[0] as f32;
+    let btm_y_deg = cyl.btm_shear_angles[1] as f32;
+    let top_x_deg = cyl.top_shear_angles[0] as f32;
+    let top_y_deg = cyl.top_shear_angles[1] as f32;
     for a in [btm_x_deg, btm_y_deg, top_x_deg, top_y_deg] {
         if a <= -90.0 || a >= 90.0 {
             return None;
@@ -1376,11 +1376,16 @@ fn generate_sscl_mesh(
     if crate::debug_macros::is_debug_model_enabled() || std::env::var_os("AIOS_CSG_DEBUG").is_some()
     {
         crate::debug_model_debug!(
-            "csg shear angles (deg): btm_x={}, btm_y={}, top_x={}, top_y={}",
-            btm_x_deg,
-            btm_y_deg,
-            top_x_deg,
-            top_y_deg
+            "SSCL refno={} dir=({:.3},{:.3},{:.3}) x=({:.3},{:.3},{:.3}) y=({:.3},{:.3},{:.3}) \
+             angles: btm=({},{}) top=({},{}) h={} r={} center_mid={}",
+            refno,
+            dir.x, dir.y, dir.z,
+            x_axis.x, x_axis.y, x_axis.z,
+            y_axis.x, y_axis.y, y_axis.z,
+            btm_x_deg, btm_y_deg,
+            top_x_deg, top_y_deg,
+            height, radius,
+            cyl.center_in_mid
         );
     }
 
@@ -1391,6 +1396,7 @@ fn generate_sscl_mesh(
     let top_tan_y = top_y_deg.to_radians().tan();
 
     // 合法性：高度必须大于剪切差导致的最小厚度
+    // TODO: libgm.dll 在 height - diff*radius <= 0 时做两段拆分 + CSG 交集，而非直接放弃
     let shear_delta = (top_tan_x - btm_tan_x).hypot(top_tan_y - btm_tan_y);
     if height.abs() <= radius * shear_delta + MIN_LEN {
         return None;
@@ -1449,6 +1455,20 @@ fn generate_sscl_mesh(
             z_b,
             z_t,
         });
+    }
+
+    // 调试: 打印底/顶面 θ=0° 和 θ=90° 点的世界坐标（加上 translation 后的位置）
+    if crate::debug_macros::is_debug_model_enabled() {
+        let i0 = 0;
+        let iq = radial / 4; // 90° 处
+        crate::debug_model_debug!(
+            "  btm[0]=({:.1},{:.1},{:.1}) btm[90]=({:.1},{:.1},{:.1}) top[0]=({:.1},{:.1},{:.1}) top[90]=({:.1},{:.1},{:.1}) center=({:.1},{:.1},{:.1})",
+            bottom_rim[i0].x, bottom_rim[i0].y, bottom_rim[i0].z,
+            bottom_rim[iq].x, bottom_rim[iq].y, bottom_rim[iq].z,
+            top_rim[i0].x, top_rim[i0].y, top_rim[i0].z,
+            top_rim[iq].x, top_rim[iq].y, top_rim[iq].z,
+            center.x, center.y, center.z,
+        );
     }
 
     // 侧面：固定径向，沿 z_b -> z_t 插值（两环）

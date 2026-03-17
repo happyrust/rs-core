@@ -82,28 +82,24 @@ pub fn try_convert_cate_geo_to_csg_shape(geom: &CateGeoParam) -> Option<CateCsgS
             let z_axis = paax_dir;
             let mut x_axis = pbax_dir;
             let mut y_axis = pcax_dir;
-            let mut rotation = Quat::IDENTITY;
-            let tmp_axis = z_axis.cross(Vec3::Z).normalize_or_zero();
-            // 有发生旋转，如果没有旋转，直接使用默认坐标系
-            if tmp_axis.is_normalized() {
-                let mut ref_axis = z_axis.cross(x_axis).normalize_or_zero();
-                //如果求不出来y，就要按 z_axis 和 x_axis 结合，需要变通的去求方位
-                if !ref_axis.is_normalized() {
-                    x_axis = tmp_axis;
-                    y_axis = z_axis.cross(x_axis).normalize_or_zero();
-                    if !x_axis.is_normalized() {
-                        println!("Pyramid 求方位失败。{:?}", (x_axis, y_axis, z_axis));
-                        return None;
-                    }
-                    // dbg!((x_axis, y_axis, z_axis));
-                } else {
-                    y_axis = ref_axis;
+            let z_axis = paax_dir.normalize_or_zero();
+            let mut y_axis = z_axis.cross(pbax_dir).normalize_or_zero();
+            let mut x_axis = y_axis.cross(z_axis).normalize_or_zero();
+            
+            if !y_axis.is_normalized() || !x_axis.is_normalized() {
+                // 退化情况：pbax 与 paax 平行，退而求其次尝试 pcax
+                x_axis = pcax_dir.cross(z_axis).normalize_or_zero();
+                y_axis = z_axis.cross(x_axis).normalize_or_zero();
+                
+                if !y_axis.is_normalized() || !x_axis.is_normalized() {
+                    // 若完全退化，构造一个任意的与 z_axis 正交的局部坐标系
+                    let tmp = if z_axis.x.abs() < 0.9 { Vec3::X } else { Vec3::Y };
+                    y_axis = z_axis.cross(tmp).normalize_or_zero();
                     x_axis = y_axis.cross(z_axis).normalize_or_zero();
-                    // dbg!((x_axis, y_axis, z_axis));
                 }
-                rotation = Quat::from_mat3(&Mat3::from_cols(x_axis, y_axis, z_axis));
             }
-            // dbg!((x_axis, y_axis, z_axis));
+            
+            let rotation = Quat::from_mat3(&Mat3::from_cols(x_axis, y_axis, z_axis));
             // 应用 rotation 到轴方向，使 LPyramid 使用标准化坐标系
             // paax_dir -> Z, pbax_dir -> X, pcax_dir -> Y
             let standardized_paax_dir = Vec3::Z;
@@ -421,12 +417,16 @@ pub fn try_convert_cate_geo_to_csg_shape(geom: &CateGeoParam) -> Option<CateCsgS
                 height_raw
             );
 
-            let mut bottom = axis_pt + axis_dir * dist_to_btm;
+            let bottom = axis_pt + axis_dir * dist_to_btm;
             let rotation = construct_basis_from_z_axis(axis_dir * height_raw.signum());
             let phei = height_raw.abs();
             let pdia = d.diameter as f32;
 
-            let translation = bottom;
+            let translation = if d.centre_line_flag {
+                bottom + axis_dir * (phei * 0.5)
+            } else {
+                bottom
+            };
             debug_model_debug!(
                 "   ✅ [SCylinder] phei={}, translation={:?}, rotation={:?}",
                 phei,
@@ -437,7 +437,7 @@ pub fn try_convert_cate_geo_to_csg_shape(geom: &CateGeoParam) -> Option<CateCsgS
             let scyl = SCylinder {
                 phei,
                 pdia,
-                center_in_mid: false,
+                center_in_mid: d.centre_line_flag,
                 ..Default::default()
             };
             let transform = Transform {
@@ -531,19 +531,51 @@ pub fn try_convert_cate_geo_to_csg_shape(geom: &CateGeoParam) -> Option<CateCsgS
             if z_axis.length() == 0.0 {
                 return None;
             }
-            // dbg!(z_axis);
+            let ref_dir = axis
+                .ref_dir
+                .as_ref()
+                .map(|d| d.0.normalize_or_zero())
+                .filter(|d| d.is_normalized());
             let phei = d.height as f32;
             let pdia = d.diameter as f32;
-            let translation = z_axis * (d.dist_to_btm as f32) + axis.pt.0;
+            let bottom = z_axis * (d.dist_to_btm as f32) + axis.pt.0;
+            let translation = if d.centre_line_flag {
+                bottom + z_axis * (phei * 0.5)
+            } else {
+                bottom
+            };
+            // SSCL 在局部空间（Z轴朝上）生成 mesh，与 libgm.dll 的 GM_SlopeEndCyl 一致
+            // 外部 transform.rotation 负责旋转到世界空间（对应 PDMS 的 D3_Transform）
+            //
+            // 重要：PDMS 的 PXTS/PYTS shear 属性是在 mthNormalToEulerAngles(dir) 无 ref
+            // 版本产生的默认坐标系中定义的。不能使用 ref_dir 改变旋转矩阵，
+            // 否则 shear 方向会被映射到错误的世界方向。
+            let rotation = construct_basis_from_z_axis_with_ref(z_axis, None);
+            if crate::debug_macros::is_debug_model_enabled() {
+                let bx = rotation * Vec3::X;
+                let by = rotation * Vec3::Y;
+                crate::debug_model_debug!(
+                    "SSCL category: z_axis=({:.3},{:.3},{:.3}) ref_dir={:?} \
+                     basis_x=({:.3},{:.3},{:.3}) basis_y=({:.3},{:.3},{:.3}) \
+                     shears=({},{},{},{}) trans=({:.1},{:.1},{:.1})",
+                    z_axis.x, z_axis.y, z_axis.z,
+                    ref_dir,
+                    bx.x, bx.y, bx.z,
+                    by.x, by.y, by.z,
+                    d.x_shear, d.y_shear, d.alt_x_shear, d.alt_y_shear,
+                    translation.x, translation.y, translation.z
+                );
+            }
             let transform = Transform {
+                rotation,
                 translation,
                 ..Default::default()
             };
-            // SSLC 网格在局部坐标系（Z轴朝上）中生成，外部 transform 负责旋转
             let csg_shape: Box<dyn BrepShapeTrait> = Box::new(SCylinder {
                 phei,
                 pdia,
-                paxi_dir: z_axis,
+                paxi_dir: Vec3::Z,
+                center_in_mid: d.centre_line_flag,
                 // 底部剪切角 (PXBS, PYBS)
                 btm_shear_angles: [d.alt_x_shear, d.alt_y_shear],
                 // 顶部剪切角 (PXTS, PYTS)
@@ -696,4 +728,107 @@ pub fn try_convert_cate_geo_to_csg_shape(geom: &CateGeoParam) -> Option<CateCsgS
     }
 
     return None;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::parsed_data::geo_params_data::PdmsGeoParam;
+    use crate::parsed_data::CateSCylinderParam;
+    use crate::parsed_data::CateSlopeBottomCylinderParam;
+    use crate::shape::pdms_shape::RsVec3;
+
+    #[test]
+    fn scylinder_preserves_centre_line_flag_semantics() {
+        let axis = crate::parsed_data::CateAxisParam {
+            refno: RefnoEnum::default(),
+            number: 1,
+            pt: RsVec3(Vec3::new(1.0, 2.0, 3.0)),
+            dir: Some(RsVec3(Vec3::new(0.0, 0.0, 1.0))),
+            dir_flag: 1.0,
+            ref_dir: None,
+            pbore: 0.0,
+            pwidth: 0.0,
+            pheight: 0.0,
+            pconnect: String::new(),
+        };
+
+        let geom = CateGeoParam::SCylinder(CateSCylinderParam {
+            refno: RefnoEnum::default(),
+            axis: Some(axis.clone()),
+            dist_to_btm: 10.0,
+            height: 40.0,
+            diameter: 20.0,
+            centre_line_flag: true,
+            tube_flag: true,
+        });
+
+        let shape = try_convert_cate_geo_to_csg_shape(&geom).expect("SCylinder 应该可转换");
+        let geo_param = shape
+            .csg_shape
+            .convert_to_geo_param()
+            .expect("SCylinder 应该能转回 geo_param");
+
+        let PdmsGeoParam::PrimSCylinder(scyl) = geo_param else {
+            panic!("期望得到 PrimSCylinder");
+        };
+
+        assert!(scyl.center_in_mid, "普通 SCylinder 也应保留 centre_line_flag");
+        assert_eq!(
+            shape.transform.translation,
+            axis.pt.0 + Vec3::new(0.0, 0.0, 30.0),
+            "dist_to_btm=10 且 height=40 时，中点应位于 z=30"
+        );
+    }
+
+    #[test]
+    fn slope_bottom_cylinder_uses_local_z_mesh_and_rotation_transform() {
+        let axis = crate::parsed_data::CateAxisParam {
+            refno: RefnoEnum::default(),
+            number: 1,
+            pt: RsVec3(Vec3::new(10.0, 20.0, 30.0)),
+            dir: Some(RsVec3(Vec3::new(0.0, 1.0, 1.0).normalize())),
+            dir_flag: 1.0,
+            ref_dir: Some(RsVec3(Vec3::X)),
+            pbore: 0.0,
+            pwidth: 0.0,
+            pheight: 0.0,
+            pconnect: String::new(),
+        };
+        let axis_dir = axis.dir.as_ref().map(|d| d.0).unwrap();
+
+        let geom = CateGeoParam::SlopeBottomCylinder(CateSlopeBottomCylinderParam {
+            refno: RefnoEnum::default(),
+            axis: Some(axis.clone()),
+            height: 120.0,
+            diameter: 60.0,
+            dist_to_btm: 25.0,
+            x_shear: 15.0,
+            y_shear: -5.0,
+            alt_x_shear: 10.0,
+            alt_y_shear: 0.0,
+            centre_line_flag: true,
+            tube_flag: true,
+        });
+
+        let shape = try_convert_cate_geo_to_csg_shape(&geom).expect("SlopeBottomCylinder 应该可转换");
+        let geo_param = shape
+            .csg_shape
+            .convert_to_geo_param()
+            .expect("SCylinder 应该能转回 geo_param");
+
+        let PdmsGeoParam::PrimSCylinder(scyl) = geo_param else {
+            panic!("期望得到 PrimSCylinder");
+        };
+
+        assert_eq!(scyl.paxi_dir, Vec3::Z);
+        assert!(
+            scyl.center_in_mid,
+            "SlopeBottomCylinder 应保留 centre_line_flag 语义"
+        );
+        assert_eq!(shape.transform.translation, axis.pt.0 + axis_dir * 85.0);
+
+        let rotated_z = shape.transform.rotation * Vec3::Z;
+        assert!(rotated_z.distance(axis_dir) < 1e-4);
+    }
 }

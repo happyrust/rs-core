@@ -5,6 +5,20 @@ All notable changes to the rs-core library will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 2026-03-18
+
+### Fixed
+
+- **方向表达式解析新增 Z 轴旋转补偿 `parse_expr_to_dir_and_quat`**
+  - 解析方向表达式时，返回补偿从 Z 轴旋转的四元数（`quat * Z = dir`），解决方向到四元数转换时的参考基准对齐问题。
+- **导出模型查询 `Neg` 几何体及输出条件过滤修复**
+  - 在生成模型的 `geo_type` 过滤条件中增加对 `'Neg'` 的处理。
+  - 放宽可见性并适配 `out.unit_flag` 等标识条件的检测逻辑。
+
+### Changed
+
+- `db_options/DbOption.toml` 调整默认连接模式为 `file`。
+
 ## 2026-02-27
 
 ### Added

@@ -810,11 +810,11 @@ pub async fn query_insts_for_export(
 
                          FROM $parent.out->geo_relate
 
-                         WHERE visible && out.meshed
+                         WHERE visible && (out.meshed || out.unit_flag || record::id(out) IN ['1','2','3'])
 
                            && (trans.d ?? NONE) != NONE
 
-                           && geo_type IN ['Pos', 'DesiPos', 'CatePos', 'Compound']) as insts,
+                           && geo_type IN ['Pos', 'CatePos', 'Compound']) as insts,
 
                         false as has_neg
 
@@ -874,11 +874,11 @@ pub async fn query_insts_for_export(
 
                      FROM $parent.out->geo_relate
 
-                     WHERE visible && out.meshed
+                     WHERE visible && (out.meshed || out.unit_flag || record::id(out) IN ['1','2','3'])
 
                        && (trans.d ?? NONE) != NONE
 
-                       && geo_type IN ['Pos', 'DesiPos', 'Compound']) as insts,
+                       && geo_type IN ['Pos', 'DesiPos', 'CatePos', 'Compound']) as insts,
 
                     false as has_neg
 

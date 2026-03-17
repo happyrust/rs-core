@@ -263,6 +263,32 @@ impl SCylinder {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn sscl_get_trans_does_not_shift_baked_mesh() {
+        let cyl = SCylinder {
+            pdia: 850.0,
+            phei: 253.613,
+            center_in_mid: true,
+            top_shear_angles: [-11.25, 0.0],
+            ..Default::default()
+        };
+
+        assert!(cyl.is_sscl(), "测试前提：必须是斜切圆柱");
+
+        let trans = cyl.get_trans();
+        assert_eq!(
+            trans.translation,
+            Vec3::ZERO,
+            "SSCL 网格已按真实局部坐标生成，不应再追加半高平移"
+        );
+        assert_eq!(trans.scale, Vec3::ONE);
+    }
+}
+
 impl VerifiedShape for SCylinder {
     #[inline]
     fn check_valid(&self) -> bool {
@@ -399,6 +425,9 @@ impl BrepShapeTrait for SCylinder {
 
     #[inline]
     fn get_trans(&self) -> Transform {
+        if self.is_sscl() {
+            return Transform::IDENTITY;
+        }
         // unit_cylinder_mesh 的 z 范围为 [0..1]（底面在 z=0）。
         // 但 SCylinder/NCYL 在数据语义上常以“中心点”为参考（center_in_mid=true），
         // 因此需要把单位圆柱沿 z 方向下移 half-height，使其中心对齐到原点。
@@ -467,8 +496,6 @@ impl BrepShapeTrait for SCylinder {
         } else {
             self.paxi_pt + dir * half_height // 中心在底面，需要偏移到中点
         };
-
-        // 计算垂直于轴的两个正交向量
         let (u, v) = calculate_perpendicular_vectors(dir);
 
         // 检查是否为 SSCL（倾斜圆柱体）

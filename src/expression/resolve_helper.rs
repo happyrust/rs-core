@@ -384,6 +384,7 @@ pub fn resolve_axis(
     let mut dir = Vec3::ZERO;
     let mut ref_dir = Vec3::ZERO;
     let mut pos = Vec3::ZERO;
+    let mut dir_quat = Quat::IDENTITY;
     // dbg!(dir_str);
     if RE_AXIS_P.is_match(dir_str) {
         if let Some(caps) = RE_AXIS_P.captures(dir_str) {
@@ -408,7 +409,9 @@ pub fn resolve_axis(
             }
         }
     } else {
-        dir = parse_str_axis_to_vec3(dir_str, context).unwrap_or_default();
+        let (d, q) = parse_str_axis_to_vec3_with_quat(dir_str, context).unwrap_or_default();
+        dir = d;
+        dir_quat = q;
     }
 
     if RE_AXIS_P.is_match(ref_dir_str) {
@@ -435,6 +438,13 @@ pub fn resolve_axis(
         ref_dir = parse_str_axis_to_vec3(ref_dir_str, context).unwrap_or_default();
     }
 
+    // 当 ref_dir 未设置（PZAXI=unset）但方向来自旋转表达式（如 Z(22.5)X）时，
+    // 从旋转四元数推导 ref_dir = quat * X，恢复 PDMS 旋转矩阵的 X 轴方向。
+    // quat 已修正为满足 quat * Z = dir，所以 quat * X 始终正确且不退化。
+    if ref_dir.length_squared() < 1e-6 && dir_quat != Quat::IDENTITY {
+        ref_dir = dir_quat * Vec3::X;
+    }
+
     return Ok((dir.normalize_or_zero(), ref_dir.normalize_or_zero(), pos));
 }
 
@@ -449,6 +459,7 @@ pub fn resolve_axis_with_cache(
     let mut dir = Vec3::ZERO;
     let mut ref_dir = Vec3::ZERO;
     let mut pos = Vec3::ZERO;
+    let mut dir_quat = Quat::IDENTITY;
     if RE_AXIS_P.is_match(dir_str) {
         if let Some(caps) = RE_AXIS_P.captures(dir_str) {
             let is_neg = caps.get(1).map(|m| m.as_str() == "-").unwrap_or(false);
@@ -480,7 +491,9 @@ pub fn resolve_axis_with_cache(
         }
     } else {
         let t_parse = std::time::Instant::now();
-        dir = parse_axis_to_vec3_cached(dir_str, context, cache).unwrap_or_default();
+        let (d, q) = parse_str_axis_to_vec3_with_quat(dir_str, context).unwrap_or_default();
+        dir = d;
+        dir_quat = q;
         if cache.axis_trace_enabled {
             cache.axis_trace.parse_dir_ms += t_parse.elapsed().as_millis();
         }
@@ -517,6 +530,18 @@ pub fn resolve_axis_with_cache(
         if cache.axis_trace_enabled {
             cache.axis_trace.parse_ref_dir_ms += t_parse.elapsed().as_millis();
         }
+    }
+
+    // 当 ref_dir 未设置（PZAXI=unset）但方向来自旋转表达式（如 Z(22.5)X）时，
+    // 从旋转四元数推导 ref_dir = quat * X，恢复 PDMS 旋转矩阵的 X 轴方向。
+    if ref_dir.length_squared() < 1e-6 && dir_quat != Quat::IDENTITY {
+        ref_dir = dir_quat * Vec3::X;
+        crate::debug_model_debug!(
+            "  resolve_axis: direction='{}' → dir_quat推导ref_dir=({:.3},{:.3},{:.3}) dir=({:.3},{:.3},{:.3})",
+            axis.direction.trim(),
+            ref_dir.x, ref_dir.y, ref_dir.z,
+            dir.x, dir.y, dir.z
+        );
     }
 
     Ok((dir.normalize_or_zero(), ref_dir.normalize_or_zero(), pos))
@@ -587,14 +612,22 @@ pub fn resolve_axis_with_cache(
 
 ///解析表达式里的axis
 pub fn parse_str_axis_to_vec3(pdir: &str, context: &CataContext) -> anyhow::Result<Vec3> {
+    parse_str_axis_to_vec3_with_quat(pdir, context).map(|(v, _)| v)
+}
+
+/// 解析方向表达式，同时返回旋转四元数。
+/// 当方向表达式为旋转形式（如 `Z(22.5)X`）时，quat 代表完整旋转，
+/// 可用 `quat * Vec3::X` 推导 ref_dir。非旋转情况返回 `Quat::IDENTITY`。
+pub fn parse_str_axis_to_vec3_with_quat(
+    pdir: &str,
+    context: &CataContext,
+) -> anyhow::Result<(Vec3, Quat)> {
+    use crate::tool::direction_parse::parse_expr_to_dir_and_quat;
+
     let pdir = pdir.trim();
-    //TO X (NEG ( 20 )) Z ( 65 ), 直接解析就行了
     if pdir.starts_with("TO") {
-        // dbg!(pdir);
         let v = parse_to_direction(pdir, Some(context))?.unwrap_or_default();
-        // .(anyhow::anyhow!(format!("方向字符串: {} 不正确。", pdir)))?;
-        // dbg!(v);
-        return Ok(v.as_vec3());
+        return Ok((v.as_vec3(), Quat::IDENTITY));
     }
     let dir_str = pdir.to_uppercase().replace("AXIS", "");
     let re = Regex::new(r"^(-?[X|Y|Z])$").unwrap();
@@ -606,7 +639,6 @@ pub fn parse_str_axis_to_vec3(pdir: &str, context: &CataContext) -> anyhow::Resu
 
         let re = Regex::new(r"(-?[X|Y|Z])\s(.*)\s(-?[X|Y|Z])\s(.*)\s(-?[X|Y|Z])").unwrap();
         for caps in re.captures_iter(&dir_str) {
-            // dbg!(&caps);
             if caps.len() == 6 {
                 let val_str = caps[2].to_string();
                 let val_result = eval_str_to_f64(&val_str, context, "ANGL")?.to_string();
@@ -620,24 +652,23 @@ pub fn parse_str_axis_to_vec3(pdir: &str, context: &CataContext) -> anyhow::Resu
         }
 
         if !is_three {
-            // dbg!(is_three);
-            // dbg!(&dir_str);
             let re = Regex::new(r"(-?[X|Y|Z])\s(.*)\s(-?[X|Y|Z])").unwrap();
             for caps in re.captures_iter(&dir_str) {
                 #[cfg(feature = "debug_expr")]
                 dbg!(&caps);
                 if caps.len() == 4 {
                     let val_str = caps[2].to_string();
-                    // dbg!(&val_str);
                     let val_result = eval_str_to_f64(&val_str, context, "ANGL")?.to_string();
                     new_dir_str = dir_str.replace(&val_str, &val_result);
                 }
             }
-            // dbg!(&new_dir_str);
         }
     }
     let dir_str = new_dir_str.replace(" ", "");
-    let v = parse_expr_to_dir(&dir_str)
-        .ok_or(anyhow::anyhow!(format!("方向字符串: {} 不正确。", pdir)))?;
-    Ok(v.as_vec3())
+    if let Some((dir, quat)) = parse_expr_to_dir_and_quat(&dir_str) {
+        let q = Quat::from_xyzw(quat.x as f32, quat.y as f32, quat.z as f32, quat.w as f32);
+        Ok((dir.as_vec3(), q))
+    } else {
+        Err(anyhow::anyhow!(format!("方向字符串: {} 不正确。", pdir)))
+    }
 }
