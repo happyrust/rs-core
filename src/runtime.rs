@@ -245,7 +245,11 @@ pub async fn initialize_databases(db_option: &DbOption) -> Result<()> {
                         Err(e) => {
                             let err_msg = e.to_string();
                             last_err = Some(err_msg.clone());
-                            if attempt == 1 && is_rocksdb_lock_error(&err_msg) {
+                            if err_msg.contains("Already connected") {
+                                println!("⚠️  SUL_DB 已连接，跳过重复初始化");
+                                last_err = None;
+                                break;
+                            } else if attempt == 1 && is_rocksdb_lock_error(&err_msg) {
                                 let force = std::env::var("AIOS_FORCE_LOCK")
                                     .map(|v| v == "1")
                                     .unwrap_or(false);
