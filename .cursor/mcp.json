@@ -1,13 +1,21 @@
 {
-  "mcpServers": {
-    "CursorMCP对话插件": {
-      "command": "node",
-      "args": [
-        "/Users/dongpengcheng/.cursor/extensions/local.xw-cursor-message-9.9.9/dist/mcp-server.mjs"
-      ],
-      "env": {
-        "MESSENGER_DATA_DIR": "/Users/dongpengcheng/.moyu-message/3111eb7a3be4"
-      }
-    }
-  }
+	"mcpServers": {
+		"project-dev-workflow": {
+			"command": "/opt/homebrew/bin/node",
+			"args": [
+				"/Users/dongpengcheng/.cursor/extensions/codefree.codefree-cursor-unlimit-2.2.2/dist/mcp-server.mjs",
+				"--channel",
+				"dynamic",
+				"--workspace",
+				"/Volumes/DPC/work/plant-code/rs-core"
+			],
+			"disabled": false,
+			"autoApprove": [
+				"luug_jg",
+				"tfkm_3w",
+				"fjcu_d1"
+			],
+			"timeoutMs": 1800000
+		}
+	}
 }

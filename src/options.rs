@@ -405,8 +405,9 @@ pub struct DbOption {
     /// 调试用的引用号类型列表
     #[clap(skip)]
     pub debug_refno_types: Vec<String>,
-    /// 是否替换网格
+    /// 是否替换网格（已废弃，固定返回 false；覆盖模式由 pre_cleanup_for_regen 替代）
     #[clap(long)]
+    #[serde(default)]
     pub replace_mesh: Option<bool>,
     /// 是否生成网格
     #[clap(long)]
@@ -579,9 +580,11 @@ impl DbOption {
         self.build_cate_relate.unwrap_or(false)
     }
 
+    /// 已废弃：覆盖模式由 pre_cleanup_for_regen 替代，始终返回 false。
     #[inline]
+    #[deprecated(note = "replace_mesh 已废弃，覆盖模式由 pre_cleanup_for_regen 替代")]
     pub fn is_replace_mesh(&self) -> bool {
-        self.replace_mesh.unwrap_or(false)
+        false
     }
 
     #[inline]
