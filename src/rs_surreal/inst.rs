@@ -189,15 +189,7 @@ pub async fn init_model_tables() -> anyhow::Result<()> {
         }
 
         let schema_sql = format!(
-
-            "DEFINE TABLE IF NOT EXISTS {aabb_table} TYPE NORMAL;\
-
-             DEFINE FIELD IF NOT EXISTS refno ON TABLE {aabb_table} TYPE record<pe>;\
-
-             DEFINE FIELD IF NOT EXISTS aabb_id ON TABLE {aabb_table} TYPE record<aabb>;\
-
-             DEFINE INDEX IF NOT EXISTS idx_{aabb_table}_refno ON TABLE {aabb_table} COLUMNS refno UNIQUE;"
-
+            "DEFINE TABLE IF NOT EXISTS {aabb_table} TYPE NORMAL; DEFINE FIELD IF NOT EXISTS refno ON TABLE {aabb_table} TYPE record<pe>; DEFINE FIELD IF NOT EXISTS aabb_id ON TABLE {aabb_table} TYPE record<aabb>; DEFINE INDEX IF NOT EXISTS idx_{aabb_table}_refno ON TABLE {aabb_table} COLUMNS refno UNIQUE;"
         );
 
         exec_schema_sql(&schema_sql).await?;
