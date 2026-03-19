@@ -41,7 +41,7 @@ pub async fn query_cata_neg_boolean_groups(
     if !replace_exist {
         // 仅处理尚未成功的 catalog 布尔结果（使用独立表，避免与实例级布尔互相覆盖）
         sql.push_str(
-            "and (SELECT status FROM $parent.out->inst_relate_cata_bool WHERE status = 'Success' LIMIT 1)[0] = NONE",
+            "and (SELECT status FROM $parent.out->inst_relate_cata_bool WHERE status = 'Success' LIMIT 1) = []",
         );
     }
 
