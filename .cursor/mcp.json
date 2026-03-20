@@ -1,21 +1,3 @@
 {
-	"mcpServers": {
-		"project-dev-workflow": {
-			"command": "/opt/homebrew/bin/node",
-			"args": [
-				"/Users/dongpengcheng/.cursor/extensions/codefree.codefree-cursor-unlimit-2.2.2/dist/mcp-server.mjs",
-				"--channel",
-				"dynamic",
-				"--workspace",
-				"/Volumes/DPC/work/plant-code/rs-core"
-			],
-			"disabled": false,
-			"autoApprove": [
-				"luug_jg",
-				"tfkm_3w",
-				"fjcu_d1"
-			],
-			"timeoutMs": 1800000
-		}
-	}
+  "mcpServers": {}
 }
