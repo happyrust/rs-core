@@ -418,12 +418,13 @@ pub fn try_convert_cate_geo_to_csg_shape(geom: &CateGeoParam) -> Option<CateCsgS
             );
 
             let bottom = axis_pt + axis_dir * dist_to_btm;
-            let rotation = construct_basis_from_z_axis(axis_dir * height_raw.signum());
+            let effective_dir = axis_dir * height_raw.signum();
+            let rotation = construct_basis_from_z_axis(effective_dir);
             let phei = height_raw.abs();
             let pdia = d.diameter as f32;
 
             let translation = if d.centre_line_flag {
-                bottom + axis_dir * (phei * 0.5)
+                bottom + effective_dir * (phei * 0.5)
             } else {
                 bottom
             };
