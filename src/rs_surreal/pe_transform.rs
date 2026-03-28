@@ -128,7 +128,7 @@ pub async fn save_pe_transform_entries(entries: &[PeTransformEntry]) -> Result<(
             for hash in chunk {
                 if let Some(json) = trans_map.get(hash) {
                     sql.push_str(&format!(
-                        "INSERT IGNORE INTO trans {{'id':trans:⟨{}⟩, 'd':{}}};",
+                        "UPSERT trans:⟨{}⟩ SET d = {};",
                         hash, json
                     ));
                 }
