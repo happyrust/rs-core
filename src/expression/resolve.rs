@@ -609,13 +609,21 @@ pub(crate) fn resolve_gmse_params_with_cache(
         .collect();
     // dbg!(&diameters);
 
+    crate::debug_model_debug!(
+        "🎯 开始求值 DISTANCES: refno={}, type={}, count={}",
+        gm.refno,
+        gm.gm_type,
+        gm.distances.len()
+    );
     let distances = gm
         .distances
         .iter()
         .enumerate()
         .map(|(i, exp)| {
+            crate::debug_model_debug!("   DISTANCES[{}]: {}", i, exp);
             crate::set_expr_debug_info!(context, gm.refno, &gm.gm_type, "DISTANCES", i);
             let val = eval_str_to_f32_cached(exp, context, "DIST", cache);
+            crate::debug_model_debug!("   DISTANCES[{}] 求值结果: {}", i, val);
             crate::clear_expr_debug_info!(context);
             val
         })

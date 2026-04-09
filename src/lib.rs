@@ -101,6 +101,7 @@ pub mod types;
 
 pub mod material;
 pub mod math;
+pub mod mbd;
 pub mod mesh_precision;
 pub mod room;
 
@@ -131,7 +132,8 @@ pub use crate::types::*;
 pub use rs_surreal::*;
 pub use runtime::{
     DbOptionSurrealExt, init_surreal_with_retry, initialize_databases, is_surreal_server_running,
-    start_surreal_server, stop_surreal_server, try_connect_database,
+    release_standalone_surreal_for_embedded_file, start_surreal_server, stop_surreal_server,
+    try_connect_database,
 };
 #[cfg(feature = "kv-rocksdb")]
 pub use runtime::{cleanup_stale_rocksdb_lock, connect_local_rocksdb};

@@ -5,6 +5,30 @@ All notable changes to the rs-core library will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 2026-04-09
+
+### Added
+
+- **新增 `mbd` 公共布局结果结构**
+  - 暴露 `LayoutRequest`、`LayoutResult`、`BranchCalculator` 等通用类型。
+  - 为 branch-level solver 对齐 old PML 语义提供统一的数据出口。
+
+### Fixed
+
+- **嵌入式 SurrealDB 文件模式启动前自动释放冲突进程**
+  - 初始化数据库时，先按配置端口清理独立 `surreal start` 占用，减少 RocksDB LOCK 冲突。
+  - 默认在检测到 LOCK 冲突时自动强制释放占用；可通过 `AIOS_NO_AUTO_ROCKSDB_FORCE=1` 关闭。
+- **PDMS 表达式补齐 `DIFFERENCE` 内置函数识别**
+  - 避免元件库表达式被误判为普通参数，减少求值失败。
+
+### Changed
+
+- **补充 DISTANCES 表达式调试日志**
+  - 输出每项距离表达式与求值结果，便于定位几何参数计算问题。
+- **清理仓库中的历史备份与 Cursor 规则文件**
+  - 删除 `MBD/backup_20251203_112753` 下的大量备份文件。
+  - 移除旧的 `.cursor/rules/*` 配置，并更新 `.cursor/mcp.json` 的 MCP 工作区配置。
+
 ## 2026-03-18
 
 ### Fixed
@@ -222,4 +246,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Previous Changes]
 See git history for previous changes.
-

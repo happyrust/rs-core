@@ -45,6 +45,65 @@ impl DbOptionSurrealExt for DbOption {
     }
 }
 
+/// 从 `[web_server].surreal_bind`（如 `0.0.0.0:8021`）解析监听端口。
+fn parse_port_from_surreal_bind(bind: &str) -> Option<u16> {
+    bind.rsplit(':').next()?.trim().parse().ok()
+}
+
+/// 终止占用指定 TCP 端口的进程（Unix: `lsof` + `kill -9`），用于释放 `surreal start` 监听。
+#[cfg(unix)]
+fn kill_processes_listening_on_port(port: u16) {
+    let Ok(output) = std::process::Command::new("lsof")
+        .args(["-ti", &format!(":{}", port)])
+        .output()
+    else {
+        return;
+    };
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let pids: Vec<&str> = stdout
+        .lines()
+        .map(|s| s.trim())
+        .filter(|s| !s.is_empty())
+        .collect();
+    if pids.is_empty() {
+        return;
+    }
+    for pid_str in &pids {
+        println!("🔪 关闭占用端口 {} 的进程 (PID={})...", port, pid_str);
+        let _ = std::process::Command::new("kill")
+            .args(["-9", pid_str])
+            .output();
+    }
+    std::thread::sleep(Duration::from_millis(500));
+}
+
+#[cfg(not(unix))]
+fn kill_processes_listening_on_port(_port: u16) {}
+
+/// 嵌入式 `surrealdb.mode=file` 连接 RocksDB 之前：关闭可能占用同一数据目录的独立 `surreal start`。
+///
+/// 会尝试 `[surrealdb].port`、顶层 `surreal_port`、`[web_server].surreal_bind` 中的端口
+///（避免仅默认 8020 而实际监听 8021 时杀不到进程）。
+pub fn release_standalone_surreal_for_embedded_file(db_option: &DbOption) {
+    if db_option.effective_surrealdb().mode != DbConnMode::File {
+        return;
+    }
+    let sdb = db_option.effective_surrealdb();
+    let mut ports = vec![sdb.port, db_option.surreal_port];
+    if let Some(p) = parse_port_from_surreal_bind(&db_option.web_server.surreal_bind) {
+        ports.push(p);
+    }
+    ports.sort_unstable();
+    ports.dedup();
+    println!(
+        "🔌 SurrealDB 嵌入式(file)：先释放可能冲突的监听端口 {:?}（避免与 surreal start 争用 RocksDB）",
+        ports
+    );
+    for p in ports {
+        kill_processes_listening_on_port(p);
+    }
+}
+
 /// 检测是否为 RocksDB LOCK 相关错误（可自动重试）。
 #[cfg(feature = "kv-rocksdb")]
 fn is_rocksdb_lock_error(err: &impl std::fmt::Display) -> bool {
@@ -218,6 +277,8 @@ pub async fn initialize_databases(db_option: &DbOption) -> Result<()> {
     // 修复 SurrealDB 3.x 图遍历在默认 planner 下可能返回空的问题
     unsafe { std::env::set_var("SURREAL_PLANNER_STRATEGY", "compute-only") };
 
+    release_standalone_surreal_for_embedded_file(db_option);
+
     // 1. 初始化 SurrealDB（输入数据源）
     let sdb_cfg = db_option.effective_surrealdb();
     let sdb_conn_str = db_option.surrealdb_conn_str();
@@ -250,10 +311,16 @@ pub async fn initialize_databases(db_option: &DbOption) -> Result<()> {
                                 last_err = None;
                                 break;
                             } else if attempt == 1 && is_rocksdb_lock_error(&err_msg) {
-                                let force = std::env::var("AIOS_FORCE_LOCK")
+                                // 默认自动释放：终止占用本数据目录 LOCK 的进程（等同 CLI --force）。
+                                // 设置 AIOS_NO_AUTO_ROCKSDB_FORCE=1 可恢复旧行为（仅无 surreal 进程时删 LOCK）。
+                                let no_auto = std::env::var("AIOS_NO_AUTO_ROCKSDB_FORCE")
                                     .map(|v| v == "1")
                                     .unwrap_or(false);
-                                println!("⚠️  检测到 RocksDB LOCK 冲突，清理残留锁后重试...");
+                                let force_cli = std::env::var("AIOS_FORCE_LOCK")
+                                    .map(|v| v == "1")
+                                    .unwrap_or(false);
+                                let force = force_cli || !no_auto;
+                                println!("⚠️  检测到 RocksDB LOCK 冲突，释放占用后重试...");
                                 cleanup_stale_rocksdb_lock(&path, force);
                                 sleep(Duration::from_millis(500)).await;
                             } else {
@@ -345,10 +412,14 @@ pub async fn initialize_databases(db_option: &DbOption) -> Result<()> {
                             Err(e) => {
                                 let err_msg = e.to_string();
                                 if attempt == 1 && is_rocksdb_lock_error(&err_msg) {
-                                    let force = std::env::var("AIOS_FORCE_LOCK")
+                                    let no_auto = std::env::var("AIOS_NO_AUTO_ROCKSDB_FORCE")
                                         .map(|v| v == "1")
                                         .unwrap_or(false);
-                                    println!("⚠️  检测到 SurrealKV LOCK 冲突，清理残留锁后重试...");
+                                    let force_cli = std::env::var("AIOS_FORCE_LOCK")
+                                        .map(|v| v == "1")
+                                        .unwrap_or(false);
+                                    let force = force_cli || !no_auto;
+                                    println!("⚠️  检测到 SurrealKV LOCK 冲突，释放占用后重试...");
                                     cleanup_stale_rocksdb_lock(&path, force);
                                     sleep(Duration::from_millis(500)).await;
                                 } else {

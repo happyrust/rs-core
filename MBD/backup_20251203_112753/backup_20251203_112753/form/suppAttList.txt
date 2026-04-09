@@ -1,3 +1,0 @@
-Materialattarr:order/序号,itemcode/编号,desc/品名,ns/型号,material/材料牌号,materialstandard/材料标准,specstandard/规格标准,size/尺寸mm,generateStyle/制造形式,rccm/RCC-M,qualitylevel/质保等级,quantity/数量,weight/重量Kg,remark/备注
-EleMaterialattarr:order/序号,itemcode/编号,desc/品名,ns/型号,material/材料牌号,materialstandard/材料标准,specstandard/规格标准,size/尺寸mm,generateStyle/制造形式,rccm/RCC-M,qualitylevel/质保等级,quantity/数量,weight/重量Kg,rev/版本,changetype/升版说明,remark/备注
-suppAttarr:suppname/支吊架,spcl/RCCM,Function/功能,room/房间号,swzj/室外,sgzj/生根支架,nbbm/图号,rev/版本,status/状态

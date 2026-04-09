@@ -1,4 +1,0 @@
-Materialattarr:order/序号,desc/材料描述,ns/N.S,itemcode/Item code,quantity/数量,perweight/单重,weight/重量
-EleMaterialattarr:order/序号,desc/材料描述,ns/N.S,itemcode/Item code,quantity/数量,perweight/单重,weight/重量,rev/版本,changetype/升版说明,remark/备注
-BranAttarr:Fluid/流体类型,ispec/保温,tspec/伴热,azbz/安装标准,protectgroup/保护组,room/房间号,tssm/特殊说明,wjbm/外部编码,nbbm/内部编码,rev/版本,status/状态
-cutpipelengthAttarr:tubinum/编号,quantity/长度,ns/管径,remark/备注
