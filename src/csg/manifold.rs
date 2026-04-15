@@ -133,11 +133,7 @@ impl ManifoldRust {
     ///
     /// 用于已保证流形拓扑的 CSG mesh（如 `gen_csg_shape` 生成的 mesh），
     /// 跳过 `quantize_vertex` 焊接步骤，仅做坐标变换后直接构造 Manifold。
-    pub fn from_plant_mesh_transformed(
-        vertices: &[Vec3],
-        indices: &[u32],
-        mat: DMat4,
-    ) -> Self {
+    pub fn from_plant_mesh_transformed(vertices: &[Vec3], indices: &[u32], mat: DMat4) -> Self {
         if vertices.is_empty() || indices.is_empty() {
             return Self::new();
         }

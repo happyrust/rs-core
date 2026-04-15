@@ -60,9 +60,35 @@ pub fn check_unit_compatible(unit_a: &str, unit_b: &str) -> bool {
 }
 
 pub const INTERNAL_PDMS_EXPRESS: [&'static str; 29] = [
-    "MAX", "MIN", "COS", "SIN", "LOG", "ABS", "POW", "SQR", "SQRT", "NOT", "AND", "OR", "ATAN",
-    "ACOS", "ATAN2", "ASIN", "INT", "OF", "MOD", "NEGATE", "SUM", "DIFFERENCE", "TANF", "TAN",
-    "TIMES", "MULT", "DIV", "ADD", "MINUS",
+    "MAX",
+    "MIN",
+    "COS",
+    "SIN",
+    "LOG",
+    "ABS",
+    "POW",
+    "SQR",
+    "SQRT",
+    "NOT",
+    "AND",
+    "OR",
+    "ATAN",
+    "ACOS",
+    "ATAN2",
+    "ASIN",
+    "INT",
+    "OF",
+    "MOD",
+    "NEGATE",
+    "SUM",
+    "DIFFERENCE",
+    "TANF",
+    "TAN",
+    "TIMES",
+    "MULT",
+    "DIV",
+    "ADD",
+    "MINUS",
 ];
 
 /// 元件库表达式相关的参数

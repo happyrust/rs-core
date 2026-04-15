@@ -85,20 +85,24 @@ pub fn try_convert_cate_geo_to_csg_shape(geom: &CateGeoParam) -> Option<CateCsgS
             let z_axis = paax_dir.normalize_or_zero();
             let mut y_axis = z_axis.cross(pbax_dir).normalize_or_zero();
             let mut x_axis = y_axis.cross(z_axis).normalize_or_zero();
-            
+
             if !y_axis.is_normalized() || !x_axis.is_normalized() {
                 // 退化情况：pbax 与 paax 平行，退而求其次尝试 pcax
                 x_axis = pcax_dir.cross(z_axis).normalize_or_zero();
                 y_axis = z_axis.cross(x_axis).normalize_or_zero();
-                
+
                 if !y_axis.is_normalized() || !x_axis.is_normalized() {
                     // 若完全退化，构造一个任意的与 z_axis 正交的局部坐标系
-                    let tmp = if z_axis.x.abs() < 0.9 { Vec3::X } else { Vec3::Y };
+                    let tmp = if z_axis.x.abs() < 0.9 {
+                        Vec3::X
+                    } else {
+                        Vec3::Y
+                    };
                     y_axis = z_axis.cross(tmp).normalize_or_zero();
                     x_axis = y_axis.cross(z_axis).normalize_or_zero();
                 }
             }
-            
+
             let rotation = Quat::from_mat3(&Mat3::from_cols(x_axis, y_axis, z_axis));
             // 应用 rotation 到轴方向，使 LPyramid 使用标准化坐标系
             // paax_dir -> Z, pbax_dir -> X, pcax_dir -> Y
@@ -559,12 +563,23 @@ pub fn try_convert_cate_geo_to_csg_shape(geom: &CateGeoParam) -> Option<CateCsgS
                     "SSCL category: z_axis=({:.3},{:.3},{:.3}) ref_dir={:?} \
                      basis_x=({:.3},{:.3},{:.3}) basis_y=({:.3},{:.3},{:.3}) \
                      shears=({},{},{},{}) trans=({:.1},{:.1},{:.1})",
-                    z_axis.x, z_axis.y, z_axis.z,
+                    z_axis.x,
+                    z_axis.y,
+                    z_axis.z,
                     ref_dir,
-                    bx.x, bx.y, bx.z,
-                    by.x, by.y, by.z,
-                    d.x_shear, d.y_shear, d.alt_x_shear, d.alt_y_shear,
-                    translation.x, translation.y, translation.z
+                    bx.x,
+                    bx.y,
+                    bx.z,
+                    by.x,
+                    by.y,
+                    by.z,
+                    d.x_shear,
+                    d.y_shear,
+                    d.alt_x_shear,
+                    d.alt_y_shear,
+                    translation.x,
+                    translation.y,
+                    translation.z
                 );
             }
             let transform = Transform {
@@ -734,9 +749,9 @@ pub fn try_convert_cate_geo_to_csg_shape(geom: &CateGeoParam) -> Option<CateCsgS
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::parsed_data::geo_params_data::PdmsGeoParam;
     use crate::parsed_data::CateSCylinderParam;
     use crate::parsed_data::CateSlopeBottomCylinderParam;
+    use crate::parsed_data::geo_params_data::PdmsGeoParam;
     use crate::shape::pdms_shape::RsVec3;
 
     #[test]
@@ -774,7 +789,10 @@ mod tests {
             panic!("期望得到 PrimSCylinder");
         };
 
-        assert!(scyl.center_in_mid, "普通 SCylinder 也应保留 centre_line_flag");
+        assert!(
+            scyl.center_in_mid,
+            "普通 SCylinder 也应保留 centre_line_flag"
+        );
         assert_eq!(
             shape.transform.translation,
             axis.pt.0 + Vec3::new(0.0, 0.0, 30.0),
@@ -812,7 +830,8 @@ mod tests {
             tube_flag: true,
         });
 
-        let shape = try_convert_cate_geo_to_csg_shape(&geom).expect("SlopeBottomCylinder 应该可转换");
+        let shape =
+            try_convert_cate_geo_to_csg_shape(&geom).expect("SlopeBottomCylinder 应该可转换");
         let geo_param = shape
             .csg_shape
             .convert_to_geo_param()

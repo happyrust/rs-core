@@ -7,8 +7,8 @@
 //!
 //! 运行: cargo run --example verify_fitt_local_mat4
 
-use aios_core::transform::get_local_mat4;
 use aios_core::RefnoEnum;
+use aios_core::transform::get_local_mat4;
 use glam::DVec3;
 
 #[tokio::main]
@@ -70,7 +70,10 @@ async fn main() -> anyhow::Result<()> {
         let diff = (DVec3::new(trans.x, trans.y, trans.z) - expected_pos).length();
         println!("\n=== 对比 PDMS 实际值 ===");
         println!("  PDMS:     {:?}", expected_pos);
-        println!("  computed: [{:.1}, {:.1}, {:.1}]", trans.x, trans.y, trans.z);
+        println!(
+            "  computed: [{:.1}, {:.1}, {:.1}]",
+            trans.x, trans.y, trans.z
+        );
         println!("  差异:     {:.2}mm", diff);
 
         if diff < 1.0 {
