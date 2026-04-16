@@ -262,6 +262,242 @@ async fn collect_support_descendants(root: RefnoEnum) -> anyhow::Result<Vec<Supp
     Ok(descendants)
 }
 
+async fn resolve_span_fallback_subjects(
+    refno: RefnoEnum,
+    anchor_point: DVec3,
+) -> anyhow::Result<Vec<RefnoEnum>> {
+    let root_type = get_named_attmap(refno)
+        .await?
+        .get_type_str()
+        .trim()
+        .to_uppercase();
+    if root_type != "STRU" {
+        return Ok(Vec::new());
+    }
+
+    let mut candidates = Vec::<(RefnoEnum, f64)>::new();
+    for child in get_children_refnos(refno).await? {
+        let child_type = match get_named_attmap(child).await {
+            Ok(att) => att.get_type_str().trim().to_uppercase(),
+            Err(_) => continue,
+        };
+        if child_type != "FRMW" {
+            continue;
+        }
+        let child_anchor = match resolve_supp_anchor(child).await {
+            Ok(anchor) => anchor.point_world,
+            Err(_) => continue,
+        };
+        let distance = (child_anchor - anchor_point).length();
+        if distance <= 1.0 {
+            candidates.push((child, distance));
+        }
+    }
+    candidates.sort_by(|a, b| point_cmp(&a.1, &b.1));
+    Ok(candidates.into_iter().map(|item| item.0).collect())
+}
+
+async fn compute_supp_span_for_subject(
+    subject_refno: RefnoEnum,
+    current_anchor: &SuppAnchorInfo,
+    window: f64,
+) -> anyhow::Result<Option<SuppSpanResult>> {
+    fn build_span_result(
+        current_anchor: DVec3,
+        current_bran: &SuppBranMatch,
+        neighbor_refs: &[(RefnoEnum, DVec3)],
+        window: f64,
+    ) -> Option<SuppSpanResult> {
+        if neighbor_refs.is_empty() {
+            return None;
+        }
+
+        let dominant_axis = {
+            let mut max_x = 0.0_f64;
+            let mut max_y = 0.0_f64;
+            for (_, point) in neighbor_refs {
+                max_x = max_x.max((point.x - current_anchor.x).abs());
+                max_y = max_y.max((point.y - current_anchor.y).abs());
+            }
+            if max_x >= max_y { 0 } else { 1 }
+        };
+
+        let mut left: Option<(RefnoEnum, f64)> = None;
+        let mut right: Option<(RefnoEnum, f64)> = None;
+        for (support_refno, point) in neighbor_refs {
+            let signed = if dominant_axis == 0 {
+                point.x - current_anchor.x
+            } else {
+                point.y - current_anchor.y
+            };
+            let distance = (*point - current_anchor).length();
+            if signed < 0.0 {
+                if left.is_none_or(|best| distance < best.1) {
+                    left = Some((*support_refno, distance));
+                }
+            } else if signed > 0.0 {
+                if right.is_none_or(|best| distance < best.1) {
+                    right = Some((*support_refno, distance));
+                }
+            }
+        }
+
+        Some(SuppSpanResult {
+            bran_refno: current_bran.bran_refno,
+            current_anchor,
+            left_suppo_refno: left.map(|item| item.0),
+            right_suppo_refno: right.map(|item| item.0),
+            left_distance: left.map(|item| item.1),
+            right_distance: right.map(|item| item.1),
+            neighbor_window: window,
+        })
+    }
+
+    let debug_span = matches!(
+        subject_refno.refno().to_slash_string().as_str(),
+        "24383/86525" | "24383/86526"
+    );
+    let current_bran_matches = resolve_supp_bran(subject_refno, None).await?;
+    if current_bran_matches.is_empty() {
+        return Ok(None);
+    }
+
+    let root_type = get_named_attmap(subject_refno)
+        .await?
+        .get_type_str()
+        .trim()
+        .to_uppercase();
+    let nearby = query_nearby_world_elements_filtered(
+        subject_refno,
+        current_anchor.point_world,
+        window,
+        &["SCTN", "PNOD"]
+            .into_iter()
+            .map(str::to_string)
+            .collect::<Vec<_>>(),
+        400,
+        true,
+    )
+    .await?;
+    let mut support_roots = BTreeMap::<String, (RefnoEnum, f64)>::new();
+
+    for row in nearby {
+        let ancestor_types = vec![root_type.as_str()];
+        let root_candidates = query_filter_ancestors(row.refno, &ancestor_types).await?;
+        let Some(root_refno) = root_candidates.last().copied() else {
+            continue;
+        };
+        if root_refno == subject_refno {
+            continue;
+        }
+        let point = parse_center(row.center.clone()).unwrap_or(current_anchor.point_world);
+        let distance = (point - current_anchor.point_world).length();
+        let key = root_refno.refno().to_slash_string();
+        match support_roots.get(&key) {
+            Some((_, best_distance)) if *best_distance <= distance => {}
+            _ => {
+                support_roots.insert(key, (root_refno, distance));
+            }
+        }
+    }
+
+    let mut support_items = support_roots.into_values().collect::<Vec<_>>();
+    support_items.sort_by(|a, b| point_cmp(&a.1, &b.1));
+    let support_items = support_items
+        .into_iter()
+        .take(32)
+        .map(|item| item.0)
+        .collect::<Vec<_>>();
+    if debug_span {
+        eprintln!(
+            "[supp-span-debug] subject={} support_items={:?}",
+            subject_refno.refno().to_slash_string(),
+            support_items
+                .iter()
+                .map(|item| item.refno().to_slash_string())
+                .collect::<Vec<_>>()
+        );
+    }
+
+    let mut support_match_cache = BTreeMap::<String, Vec<SuppBranMatch>>::new();
+    let mut support_anchor_cache = BTreeMap::<String, DVec3>::new();
+    for support_refno in &support_items {
+        let key = support_refno.refno().to_slash_string();
+        let bran_matches = match resolve_supp_bran(*support_refno, None).await {
+            Ok(matches) => matches,
+            Err(_) => continue,
+        };
+        let anchor = match resolve_supp_anchor(*support_refno).await {
+            Ok(anchor) => anchor.point_world,
+            Err(_) => continue,
+        };
+        support_match_cache.insert(key.clone(), bran_matches);
+        support_anchor_cache.insert(key, anchor);
+    }
+
+    let mut bran_candidates = current_bran_matches;
+    bran_candidates.sort_by(|a, b| {
+        a.match_method.cmp(&b.match_method).then_with(|| {
+            a.bran_refno
+                .refno()
+                .to_slash_string()
+                .cmp(&b.bran_refno.refno().to_slash_string())
+        })
+    });
+
+    let mut best_partial: Option<SuppSpanResult> = None;
+    for current_bran in &bran_candidates {
+        let mut neighbor_refs = Vec::<(RefnoEnum, DVec3)>::new();
+        for support_refno in &support_items {
+            let key = support_refno.refno().to_slash_string();
+            let Some(bran_matches) = support_match_cache.get(&key) else {
+                continue;
+            };
+            if !bran_matches
+                .iter()
+                .any(|item| item.bran_refno == current_bran.bran_refno)
+            {
+                continue;
+            }
+            let Some(anchor_point) = support_anchor_cache.get(&key) else {
+                continue;
+            };
+            neighbor_refs.push((*support_refno, *anchor_point));
+        }
+        if debug_span {
+            eprintln!(
+                "[supp-span-debug] subject={} bran={} neighbors={:?}",
+                subject_refno.refno().to_slash_string(),
+                current_bran.bran_refno.refno().to_slash_string(),
+                neighbor_refs
+                    .iter()
+                    .map(|(item, point)| {
+                        (item.refno().to_slash_string(), [point.x, point.y, point.z])
+                    })
+                    .collect::<Vec<_>>()
+            );
+        }
+
+        let Some(result) = build_span_result(
+            current_anchor.point_world,
+            current_bran,
+            &neighbor_refs,
+            window,
+        ) else {
+            continue;
+        };
+
+        if result.left_suppo_refno.is_some() && result.right_suppo_refno.is_some() {
+            return Ok(Some(result));
+        }
+        if best_partial.is_none() {
+            best_partial = Some(result);
+        }
+    }
+
+    Ok(best_partial)
+}
+
 async fn panel_center_world(refno: RefnoEnum) -> anyhow::Result<DVec3> {
     let world_mat = transform::get_world_mat4(refno, false)
         .await?
@@ -529,7 +765,8 @@ pub async fn resolve_supp_panel(
         .filter(|value| !value.trim().is_empty())
         .unwrap_or(get_default_full_name(row.refno).await?);
     let panel_center_world = panel_center_world(row.refno).await?;
-    let match_method = direct_panel_match_method(panel_center_world - anchor.point_world, tolerance);
+    let match_method =
+        direct_panel_match_method(panel_center_world - anchor.point_world, tolerance);
 
     Ok(Some(SuppPanelMatch {
         panel_refno: row.refno,
@@ -649,7 +886,10 @@ pub async fn resolve_supp_bran(
             .then_with(|| point_cmp(&a.2, &b.2))
             .then_with(|| a.0.bran_name.cmp(&b.0.bran_name))
     });
-    Ok(matches.into_iter().map(|(candidate, _, _)| candidate).collect())
+    Ok(matches
+        .into_iter()
+        .map(|(candidate, _, _)| candidate)
+        .collect())
 }
 
 // https://gitee.com/happydpc/rs-server/issues/IB8RUF
@@ -679,131 +919,24 @@ pub async fn compute_supp_span(
     neighbor_window: Option<f64>,
 ) -> anyhow::Result<Option<SuppSpanResult>> {
     let current_anchor = resolve_supp_anchor(refno).await?;
-    let current_bran_matches = resolve_supp_bran(refno, None).await?;
-    let Some(current_bran) = current_bran_matches
-        .iter()
-        .find(|item| item.match_method == "direct_contact")
-        .cloned()
-        .or_else(|| current_bran_matches.into_iter().next())
-    else {
-        return Ok(None);
-    };
-    let root_type = get_named_attmap(refno)
-        .await?
-        .get_type_str()
-        .trim()
-        .to_uppercase();
     let window = neighbor_window
         .filter(|value| value.is_finite() && *value > 0.0)
         .map(|value| value.max(500.0))
         .unwrap_or(5000.0);
-    let nearby = query_nearby_world_elements_filtered(
-        refno,
-        current_anchor.point_world,
-        window,
-        &["SCTN", "PNOD"]
-            .into_iter()
-            .map(str::to_string)
-            .collect::<Vec<_>>(),
-        400,
-        true,
-    )
-    .await?;
-    let mut support_roots = BTreeMap::<String, (RefnoEnum, f64)>::new();
 
-    for row in nearby {
-        let ancestor_types = vec![root_type.as_str()];
-        let root_candidates = query_filter_ancestors(row.refno, &ancestor_types).await?;
-        let Some(root_refno) = root_candidates.last().copied() else {
-            continue;
-        };
-        if root_refno == refno {
-            continue;
-        }
-        let point = parse_center(row.center.clone()).unwrap_or(current_anchor.point_world);
-        let distance = (point - current_anchor.point_world).length();
-        let key = root_refno.refno().to_slash_string();
-        match support_roots.get(&key) {
-            Some((_, best_distance)) if *best_distance <= distance => {}
-            _ => {
-                support_roots.insert(key, (root_refno, distance));
-            }
-        }
+    if let Some(result) = compute_supp_span_for_subject(refno, &current_anchor, window).await? {
+        return Ok(Some(result));
     }
 
-    let mut support_items = support_roots.into_values().collect::<Vec<_>>();
-    support_items.sort_by(|a, b| point_cmp(&a.1, &b.1));
-    let support_items = support_items
-        .into_iter()
-        .take(4)
-        .map(|item| item.0)
-        .collect::<Vec<_>>();
-
-    let mut neighbor_items = Vec::<(RefnoEnum, DVec3)>::new();
-    for support_refno in support_items {
-        let bran_matches = resolve_supp_bran(support_refno, None).await?;
-        let bran_matches = if let Some(primary) = bran_matches
-            .iter()
-            .find(|item| item.match_method == "direct_contact")
-            .cloned()
+    for subject_refno in resolve_span_fallback_subjects(refno, current_anchor.point_world).await? {
+        if let Some(result) =
+            compute_supp_span_for_subject(subject_refno, &current_anchor, window).await?
         {
-            vec![primary]
-        } else {
-            bran_matches
-        };
-        if bran_matches
-            .iter()
-            .any(|item| item.bran_refno == current_bran.bran_refno)
-        {
-            if let Ok(anchor) = resolve_supp_anchor(support_refno).await {
-                neighbor_items.push((support_refno, anchor.point_world));
-            }
+            return Ok(Some(result));
         }
     }
 
-    if neighbor_items.is_empty() {
-        return Ok(None);
-    }
-
-    let dominant_axis = {
-        let mut max_x = 0.0_f64;
-        let mut max_y = 0.0_f64;
-        for (_, point) in &neighbor_items {
-            max_x = max_x.max((point.x - current_anchor.point_world.x).abs());
-            max_y = max_y.max((point.y - current_anchor.point_world.y).abs());
-        }
-        if max_x >= max_y { 0 } else { 1 }
-    };
-
-    let mut left: Option<(RefnoEnum, f64)> = None;
-    let mut right: Option<(RefnoEnum, f64)> = None;
-    for (support_refno, point) in &neighbor_items {
-        let signed = if dominant_axis == 0 {
-            point.x - current_anchor.point_world.x
-        } else {
-            point.y - current_anchor.point_world.y
-        };
-        let distance = (*point - current_anchor.point_world).length();
-        if signed < 0.0 {
-            if left.is_none_or(|best| distance < best.1) {
-                left = Some((*support_refno, distance));
-            }
-        } else if signed > 0.0 {
-            if right.is_none_or(|best| distance < best.1) {
-                right = Some((*support_refno, distance));
-            }
-        }
-    }
-
-    Ok(Some(SuppSpanResult {
-        bran_refno: current_bran.bran_refno,
-        current_anchor: current_anchor.point_world,
-        left_suppo_refno: left.map(|item| item.0),
-        right_suppo_refno: right.map(|item| item.0),
-        left_distance: left.map(|item| item.1),
-        right_distance: right.map(|item| item.1),
-        neighbor_window: window,
-    }))
+    Ok(None)
 }
 
 pub async fn get_supp_span(refno: RefnoEnum) -> anyhow::Result<[f32; 2]> {
@@ -832,9 +965,15 @@ pub async fn resolve_supp_wall(
         .filter(|value| value.is_finite() && *value > 0.0)
         .map(|value| value.max(500.0))
         .unwrap_or(5000.0);
-    let rows =
-        query_nearby_world_elements_filtered(refno, anchor.point_world, radius, target_nouns, 200, false)
-            .await?;
+    let rows = query_nearby_world_elements_filtered(
+        refno,
+        anchor.point_world,
+        radius,
+        target_nouns,
+        200,
+        false,
+    )
+    .await?;
     let mut candidates = Vec::<SuppDistanceCandidate>::new();
     for row in rows {
         let center = parse_center(row.center.clone()).unwrap_or(anchor.point_world);

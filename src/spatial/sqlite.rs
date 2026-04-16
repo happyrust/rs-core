@@ -71,6 +71,20 @@ fn verify_rtree_support(conn: &Connection) -> Result<()> {
     }
 }
 
+#[derive(Debug, Clone, Copy, Default)]
+pub struct ItemColumnSupport {
+    pub has_noun: bool,
+    pub has_spec_value: bool,
+    pub has_confidence: bool,
+}
+
+#[derive(Debug, Clone)]
+pub struct SqliteItemMetadata {
+    pub noun: Option<String>,
+    pub spec_value: Option<i64>,
+    pub confidence: f32,
+}
+
 /// 创建 RTree 虚拟表
 ///
 /// 如果表已存在，则不会报错（使用 IF NOT EXISTS）
@@ -92,10 +106,23 @@ pub fn create_rtree_table(conn: &Connection) -> Result<()> {
     conn.execute(
         "CREATE TABLE IF NOT EXISTS items (
             id INTEGER PRIMARY KEY,
-            noun TEXT
+            noun TEXT,
+            spec_value INTEGER NOT NULL DEFAULT 0,
+            confidence REAL NOT NULL DEFAULT 1.0
         )",
         [],
     )?;
+
+    // 兼容旧数据库：按需补列，失败时忽略（列已存在时 SQLite 会报错）。
+    let _ = conn.execute("ALTER TABLE items ADD COLUMN noun TEXT", []);
+    let _ = conn.execute(
+        "ALTER TABLE items ADD COLUMN spec_value INTEGER NOT NULL DEFAULT 0",
+        [],
+    );
+    let _ = conn.execute(
+        "ALTER TABLE items ADD COLUMN confidence REAL NOT NULL DEFAULT 1.0",
+        [],
+    );
 
     // 为 items 表创建索引以提高 JOIN 性能
     conn.execute("CREATE INDEX IF NOT EXISTS idx_items_id ON items(id)", [])?;
@@ -105,7 +132,91 @@ pub fn create_rtree_table(conn: &Connection) -> Result<()> {
         [],
     )?;
 
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_items_spec_value ON items(spec_value)",
+        [],
+    )?;
+
     Ok(())
+}
+
+pub fn detect_item_columns(conn: &Connection) -> Result<ItemColumnSupport> {
+    let mut support = ItemColumnSupport::default();
+    let mut stmt = conn
+        .prepare("PRAGMA table_info(items)")
+        .context("读取 items 表结构失败")?;
+    let rows = stmt.query_map([], |row| row.get::<_, String>(1))?;
+    for row in rows {
+        match row?.as_str() {
+            "noun" => support.has_noun = true,
+            "spec_value" => support.has_spec_value = true,
+            "confidence" => support.has_confidence = true,
+            _ => {}
+        }
+    }
+    Ok(support)
+}
+
+pub fn query_item_metadata(
+    conn: &Connection,
+    refno: RefU64,
+    support: ItemColumnSupport,
+) -> Result<SqliteItemMetadata> {
+    let mut select_cols = Vec::new();
+    if support.has_noun {
+        select_cols.push("noun");
+    }
+    if support.has_spec_value {
+        select_cols.push("spec_value");
+    }
+    if support.has_confidence {
+        select_cols.push("confidence");
+    }
+
+    if select_cols.is_empty() {
+        return Ok(SqliteItemMetadata {
+            noun: None,
+            spec_value: None,
+            confidence: 1.0,
+        });
+    }
+
+    let sql = format!("SELECT {} FROM items WHERE id = ?1", select_cols.join(", "));
+    let row = conn
+        .query_row(&sql, params![refno.0 as i64], |row| {
+            let mut idx = 0;
+            let noun = if support.has_noun {
+                let value = row.get(idx)?;
+                idx += 1;
+                value
+            } else {
+                None
+            };
+            let spec_value = if support.has_spec_value {
+                let value = row.get(idx)?;
+                idx += 1;
+                value
+            } else {
+                None
+            };
+            let confidence = if support.has_confidence {
+                row.get::<_, Option<f32>>(idx)?.unwrap_or(1.0)
+            } else {
+                1.0
+            };
+            Ok(SqliteItemMetadata {
+                noun,
+                spec_value,
+                confidence,
+            })
+        })
+        .optional()?;
+
+    Ok(row.unwrap_or(SqliteItemMetadata {
+        noun: None,
+        spec_value: None,
+        confidence: 1.0,
+    }))
 }
 
 fn map_row_to_aabb(row: &Row<'_>) -> rusqlite::Result<Aabb> {
@@ -183,6 +294,7 @@ pub fn query_aabb_with_conn(conn: &Connection, refno: RefU64) -> Result<Option<A
 /// * `noun` - 可选的类型名称（存储到 items 表）
 pub fn insert_or_update_aabb(refno: RefU64, aabb: &Aabb, noun: Option<&str>) -> Result<()> {
     let conn = open_connection_rw()?;
+    create_rtree_table(&conn)?;
 
     // 插入或更新 RTree 表
     conn.execute(
@@ -202,7 +314,7 @@ pub fn insert_or_update_aabb(refno: RefU64, aabb: &Aabb, noun: Option<&str>) -> 
     // 如果有 noun，插入或更新 items 表
     if let Some(noun_str) = noun {
         conn.execute(
-            "INSERT OR REPLACE INTO items (id, noun) VALUES (?1, ?2)",
+            "INSERT OR REPLACE INTO items (id, noun, spec_value, confidence) VALUES (?1, ?2, 0, 1.0)",
             params![refno.0 as i64, noun_str],
         )?;
     }
@@ -213,6 +325,7 @@ pub fn insert_or_update_aabb(refno: RefU64, aabb: &Aabb, noun: Option<&str>) -> 
 /// 批量插入或更新 AABB 数据
 pub fn insert_or_update_aabbs_batch(data: &[(RefU64, Aabb, Option<String>)]) -> Result<()> {
     let mut conn = open_connection_rw()?;
+    create_rtree_table(&conn)?;
     let tx = conn.transaction()?;
 
     for (refno, aabb, noun) in data {
@@ -232,7 +345,7 @@ pub fn insert_or_update_aabbs_batch(data: &[(RefU64, Aabb, Option<String>)]) -> 
 
         if let Some(noun_str) = noun {
             tx.execute(
-                "INSERT OR REPLACE INTO items (id, noun) VALUES (?1, ?2)",
+                "INSERT OR REPLACE INTO items (id, noun, spec_value, confidence) VALUES (?1, ?2, 0, 1.0)",
                 params![refno.0 as i64, noun_str.as_str()],
             )?;
         }

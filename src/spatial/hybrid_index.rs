@@ -156,13 +156,27 @@ impl HybridSpatialIndex {
         use crate::spatial::sqlite;
 
         let conn = sqlite::open_connection()?;
-        let mut stmt = conn.prepare(
-            "SELECT i.refno, i.element_type, i.confidence, 
+        let item_columns = sqlite::detect_item_columns(&conn)?;
+        let noun_expr = if item_columns.has_noun {
+            "COALESCE(i.noun, '')"
+        } else {
+            "''"
+        };
+        let confidence_expr = if item_columns.has_confidence {
+            "COALESCE(i.confidence, 1.0)"
+        } else {
+            "1.0"
+        };
+        let sql = format!(
+            "SELECT i.id, {noun_expr}, {confidence_expr},
                     r.min_x, r.max_x, r.min_y, r.max_y, r.min_z, r.max_z
-             FROM items i 
-             JOIN aabb_index r ON i.refno = r.id 
-             WHERE i.confidence >= ?1
-             ORDER BY i.confidence DESC",
+             FROM items i
+             JOIN aabb_index r ON i.id = r.id
+             WHERE {confidence_expr} >= ?1
+             ORDER BY {confidence_expr} DESC"
+        );
+        let mut stmt = conn.prepare(
+            &sql,
         )?;
 
         let rows = stmt.query_map([self.preload_threshold], |row| {
@@ -327,16 +341,25 @@ impl HybridSpatialIndex {
         use crate::spatial::sqlite;
 
         let conn = sqlite::open_connection()?;
-        let mut stmt = conn.prepare(
-            "SELECT i.refno, i.confidence,
+        let item_columns = sqlite::detect_item_columns(&conn)?;
+        let confidence_expr = if item_columns.has_confidence {
+            "COALESCE(i.confidence, 1.0)"
+        } else {
+            "1.0"
+        };
+        let sql = format!(
+            "SELECT i.id, {confidence_expr},
                     r.min_x, r.max_x, r.min_y, r.max_y, r.min_z, r.max_z
              FROM items i 
-             JOIN aabb_index r ON i.refno = r.id 
+             JOIN aabb_index r ON i.id = r.id 
              WHERE r.min_x <= ?1 AND r.max_x >= ?1
                AND r.min_y <= ?2 AND r.max_y >= ?2  
                AND r.min_z <= ?3 AND r.max_z >= ?3
-             ORDER BY i.confidence DESC
-             LIMIT ?4",
+             ORDER BY {confidence_expr} DESC
+             LIMIT ?4"
+        );
+        let mut stmt = conn.prepare(
+            &sql,
         )?;
 
         let rows = stmt.query_map(
