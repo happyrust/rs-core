@@ -2,6 +2,17 @@ use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize};
 
+pub mod iso_dim;
+pub mod iso_extras;
+pub mod iso_params;
+
+pub use iso_dim::compute_linear_dim_layout;
+pub use iso_extras::{
+    BendInput, SlopeInput, TagInput, WeldInput, classify_horizontal_axis, solve_bend,
+    solve_cut_tubi, solve_slope, solve_tag, solve_weld,
+};
+pub use iso_params::{BranchContext, IsoParams, SegmentInput};
+
 pub type LayoutVec3 = [f32; 3];
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Default)]
@@ -218,9 +229,96 @@ pub struct LegacyPlacedLayoutSections {
     pub legacy_diff_summary: Vec<String>,
 }
 
+/// `solve_branch` 的输入束，把各类 iso* 子模块的输入打包到一起，避免签名爆炸。
+pub struct SolveBranchInput<'a> {
+    pub context: &'a iso_params::BranchContext,
+    pub params: &'a iso_params::IsoParams,
+    pub linear_dims: &'a [iso_params::SegmentInput],
+    pub cut_tubis: &'a [iso_params::SegmentInput],
+    pub slopes: &'a [iso_extras::SlopeInput],
+    pub welds: &'a [iso_extras::WeldInput],
+    pub tags: &'a [iso_extras::TagInput],
+    pub bends: &'a [iso_extras::BendInput],
+}
+
+impl<'a> SolveBranchInput<'a> {
+    /// 构造只填 linear_dims 的最小输入（其它字段默认空切片）。
+    pub fn linear_only(
+        context: &'a iso_params::BranchContext,
+        params: &'a iso_params::IsoParams,
+        linear_dims: &'a [iso_params::SegmentInput],
+    ) -> Self {
+        Self {
+            context,
+            params,
+            linear_dims,
+            cut_tubis: &[],
+            slopes: &[],
+            welds: &[],
+            tags: &[],
+            bends: &[],
+        }
+    }
+}
+
 pub struct BranchCalculator;
 
 impl BranchCalculator {
+    /// MVP solver：逐模块对齐 PML isoXxx 语义，产出完整 `LegacyPlacedLayoutSections`。
+    ///
+    /// 覆盖：
+    /// - `linear_dims` ↔ [`isoDim.pmlobj`](../../MBD/markpipe/object/isoDim.pmlobj)
+    /// - `slopes` ↔ [`isoSlope.pmlobj`](../../MBD/markpipe/object/isoSlope.pmlobj)
+    /// - `welds` ↔ [`isoWeldText.pmlobj`](../../MBD/markpipe/object/isoWeldText.pmlobj)
+    /// - `tags` ↔ [`isoTag.pmlobj`](../../MBD/markpipe/object/isoTag.pmlobj)
+    /// - `bends` ↔ [`isoelbopad.pmlobj`](../../MBD/markpipe/object/isoelbopad.pmlobj) +
+    ///   [`isombdangle.pmlobj`](../../MBD/markpipe/object/isombdangle.pmlobj)
+    /// - `cut_tubis` 沿用 `iso_dim`
+    ///
+    /// iso_branch 在 MVP 里仅做"单 lane"处理；
+    /// 多层 lane 分配 + `isoUsedDir` 已用方向惩罚留给后续迭代。
+    pub fn solve_branch(input: SolveBranchInput<'_>) -> LegacyPlacedLayoutSections {
+        let mut sections = LegacyPlacedLayoutSections::default();
+
+        for seg in input.linear_dims {
+            sections
+                .linear_dims
+                .push(iso_dim::compute_linear_dim_layout(seg, input.context, input.params));
+        }
+        for seg in input.cut_tubis {
+            sections
+                .cut_tubis
+                .push(iso_extras::solve_cut_tubi(seg, input.context, input.params));
+        }
+        for slope in input.slopes {
+            sections.slopes.push(iso_extras::solve_slope(slope, input.params));
+        }
+        for weld in input.welds {
+            sections.welds.push(iso_extras::solve_weld(weld));
+        }
+        for tag in input.tags {
+            sections.tags.push(iso_extras::solve_tag(tag));
+        }
+        for bend in input.bends {
+            sections
+                .bends
+                .push(iso_extras::solve_bend(bend, input.context, input.params));
+        }
+
+        sections.notes.push(format!(
+            "solve_branch: {} linear_dims, {} cut_tubis, {} slopes, {} welds, {} tags, {} bends (branch {})",
+            sections.linear_dims.len(),
+            sections.cut_tubis.len(),
+            sections.slopes.len(),
+            sections.welds.len(),
+            sections.tags.len(),
+            sections.bends.len(),
+            input.context.branch_refno,
+        ));
+        sections.isoline_count = 1;
+        sections
+    }
+
     pub fn assemble_prelaid_out(
         request: &LayoutRequest,
         mut sections: LegacyPlacedLayoutSections,
