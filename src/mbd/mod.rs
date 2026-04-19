@@ -2,10 +2,12 @@ use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize};
 
+pub mod iso_branch;
 pub mod iso_dim;
 pub mod iso_extras;
 pub mod iso_params;
 
+pub use iso_branch::{UsedDirEntry, UsedDirRegistry, solve_linear_dim_series};
 pub use iso_dim::compute_linear_dim_layout;
 pub use iso_extras::{
     BendInput, SlopeInput, TagInput, WeldInput, classify_horizontal_axis, solve_bend,
@@ -261,6 +263,57 @@ impl<'a> SolveBranchInput<'a> {
     }
 }
 
+/// 内部辅助：按 registry 逐条求解一批 SegmentInput，返回 PlacedLinearDim 序列。
+/// 参数 `registry` 被就地更新，供后续序列复用（linear + cut_tubi 之间互相感知）。
+fn solve_series_with_registry(
+    inputs: &[iso_params::SegmentInput],
+    context: &iso_params::BranchContext,
+    params: &iso_params::IsoParams,
+    registry: &mut iso_branch::UsedDirRegistry,
+) -> Vec<PlacedLinearDim> {
+    use glam::Vec3;
+    let mut out = Vec::with_capacity(inputs.len());
+    for input in inputs {
+        let probe = iso_dim::compute_linear_dim_layout(
+            input,
+            &iso_params::BranchContext {
+                dim_times: 1,
+                ..context.clone()
+            },
+            params,
+        );
+        let dir = Vec3::from_array(probe.direction);
+        let mid = (input.start + input.end) * 0.5;
+        let length = input.start.distance(input.end);
+        let dis_start = input.start.length();
+        let dis_end = input.end.length();
+        let dim_times = registry.next_dim_times(dir, dis_start, dis_end, mid, length);
+        let placed = if dim_times == 1 {
+            probe
+        } else {
+            iso_dim::compute_linear_dim_layout(
+                input,
+                &iso_params::BranchContext {
+                    dim_times,
+                    ..context.clone()
+                },
+                params,
+            )
+        };
+        registry.record(
+            dir,
+            dis_start,
+            dis_end,
+            input.kind.clone(),
+            dim_times,
+            mid,
+            length,
+        );
+        out.push(placed);
+    }
+    out
+}
+
 pub struct BranchCalculator;
 
 impl BranchCalculator {
@@ -280,16 +333,25 @@ impl BranchCalculator {
     pub fn solve_branch(input: SolveBranchInput<'_>) -> LegacyPlacedLayoutSections {
         let mut sections = LegacyPlacedLayoutSections::default();
 
-        for seg in input.linear_dims {
-            sections
-                .linear_dims
-                .push(iso_dim::compute_linear_dim_layout(seg, input.context, input.params));
-        }
-        for seg in input.cut_tubis {
-            sections
-                .cut_tubis
-                .push(iso_extras::solve_cut_tubi(seg, input.context, input.params));
-        }
+        // linear_dims 和 cut_tubis 共享同一个 UsedDirRegistry，这样两类线性尺寸之间也会
+        // 互相 stagger（PML 里它们都属于 isoline 的 mainDim/useddirs 体系）。
+        let mut registry = iso_branch::UsedDirRegistry::new();
+        let linear_placed = solve_series_with_registry(
+            input.linear_dims,
+            input.context,
+            input.params,
+            &mut registry,
+        );
+        sections.linear_dims.extend(linear_placed);
+
+        let cut_placed = solve_series_with_registry(
+            input.cut_tubis,
+            input.context,
+            input.params,
+            &mut registry,
+        );
+        sections.cut_tubis.extend(cut_placed);
+
         for slope in input.slopes {
             sections.slopes.push(iso_extras::solve_slope(slope, input.params));
         }
@@ -306,13 +368,14 @@ impl BranchCalculator {
         }
 
         sections.notes.push(format!(
-            "solve_branch: {} linear_dims, {} cut_tubis, {} slopes, {} welds, {} tags, {} bends (branch {})",
+            "solve_branch: {} linear_dims, {} cut_tubis, {} slopes, {} welds, {} tags, {} bends, used_dir_entries={} (branch {})",
             sections.linear_dims.len(),
             sections.cut_tubis.len(),
             sections.slopes.len(),
             sections.welds.len(),
             sections.tags.len(),
             sections.bends.len(),
+            registry.len(),
             input.context.branch_refno,
         ));
         sections.isoline_count = 1;
