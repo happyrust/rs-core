@@ -1379,12 +1379,21 @@ fn generate_sscl_mesh(
             "SSCL refno={} dir=({:.3},{:.3},{:.3}) x=({:.3},{:.3},{:.3}) y=({:.3},{:.3},{:.3}) \
              angles: btm=({},{}) top=({},{}) h={} r={} center_mid={}",
             refno,
-            dir.x, dir.y, dir.z,
-            x_axis.x, x_axis.y, x_axis.z,
-            y_axis.x, y_axis.y, y_axis.z,
-            btm_x_deg, btm_y_deg,
-            top_x_deg, top_y_deg,
-            height, radius,
+            dir.x,
+            dir.y,
+            dir.z,
+            x_axis.x,
+            x_axis.y,
+            x_axis.z,
+            y_axis.x,
+            y_axis.y,
+            y_axis.z,
+            btm_x_deg,
+            btm_y_deg,
+            top_x_deg,
+            top_y_deg,
+            height,
+            radius,
             cyl.center_in_mid
         );
     }
@@ -1463,11 +1472,21 @@ fn generate_sscl_mesh(
         let iq = radial / 4; // 90° 处
         crate::debug_model_debug!(
             "  btm[0]=({:.1},{:.1},{:.1}) btm[90]=({:.1},{:.1},{:.1}) top[0]=({:.1},{:.1},{:.1}) top[90]=({:.1},{:.1},{:.1}) center=({:.1},{:.1},{:.1})",
-            bottom_rim[i0].x, bottom_rim[i0].y, bottom_rim[i0].z,
-            bottom_rim[iq].x, bottom_rim[iq].y, bottom_rim[iq].z,
-            top_rim[i0].x, top_rim[i0].y, top_rim[i0].z,
-            top_rim[iq].x, top_rim[iq].y, top_rim[iq].z,
-            center.x, center.y, center.z,
+            bottom_rim[i0].x,
+            bottom_rim[i0].y,
+            bottom_rim[i0].z,
+            bottom_rim[iq].x,
+            bottom_rim[iq].y,
+            bottom_rim[iq].z,
+            top_rim[i0].x,
+            top_rim[i0].y,
+            top_rim[i0].z,
+            top_rim[iq].x,
+            top_rim[iq].y,
+            top_rim[iq].z,
+            center.x,
+            center.y,
+            center.z,
         );
     }
 

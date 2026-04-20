@@ -399,66 +399,51 @@ impl BranchCalculator {
                 .iter()
                 .filter_map(|item| suppressed_item_from_linear(item, "cut_tubi")),
         );
-        suppressed_items.extend(
-            sections
-                .welds
-                .iter()
-                .filter_map(|item| suppressed_item_from_aux(
-                    item.visible,
-                    item.suppressed_reason.as_deref(),
-                    &item.id,
-                    "weld",
-                )),
-        );
-        suppressed_items.extend(
-            sections
-                .slopes
-                .iter()
-                .filter_map(|item| suppressed_item_from_aux(
-                    item.visible,
-                    item.suppressed_reason.as_deref(),
-                    &item.id,
-                    "slope",
-                )),
-        );
-        suppressed_items.extend(
-            sections
-                .bends
-                .iter()
-                .filter_map(|item| suppressed_item_from_aux(
-                    item.visible,
-                    item.suppressed_reason.as_deref(),
-                    &item.id,
-                    "bend",
-                )),
-        );
+        suppressed_items.extend(sections.welds.iter().filter_map(|item| {
+            suppressed_item_from_aux(
+                item.visible,
+                item.suppressed_reason.as_deref(),
+                &item.id,
+                "weld",
+            )
+        }));
+        suppressed_items.extend(sections.slopes.iter().filter_map(|item| {
+            suppressed_item_from_aux(
+                item.visible,
+                item.suppressed_reason.as_deref(),
+                &item.id,
+                "slope",
+            )
+        }));
+        suppressed_items.extend(sections.bends.iter().filter_map(|item| {
+            suppressed_item_from_aux(
+                item.visible,
+                item.suppressed_reason.as_deref(),
+                &item.id,
+                "bend",
+            )
+        }));
         suppressed_items.extend(sections.bends.iter().flat_map(|bend| {
             bend.size_dims
                 .iter()
                 .filter_map(|item| suppressed_item_from_linear(item, "bend_size_dim"))
         }));
-        suppressed_items.extend(
-            sections
-                .tags
-                .iter()
-                .filter_map(|item| suppressed_item_from_aux(
-                    item.visible,
-                    item.suppressed_reason.as_deref(),
-                    &item.id,
-                    "tag",
-                )),
-        );
-        suppressed_items.extend(
-            sections
-                .fittings
-                .iter()
-                .filter_map(|item| suppressed_item_from_aux(
-                    item.visible,
-                    item.suppressed_reason.as_deref(),
-                    &item.id,
-                    "fitting",
-                )),
-        );
+        suppressed_items.extend(sections.tags.iter().filter_map(|item| {
+            suppressed_item_from_aux(
+                item.visible,
+                item.suppressed_reason.as_deref(),
+                &item.id,
+                "tag",
+            )
+        }));
+        suppressed_items.extend(sections.fittings.iter().filter_map(|item| {
+            suppressed_item_from_aux(
+                item.visible,
+                item.suppressed_reason.as_deref(),
+                &item.id,
+                "fitting",
+            )
+        }));
 
         let mut suppressed_by_reason = BTreeMap::new();
         for item in &suppressed_items {
@@ -505,11 +490,13 @@ impl BranchCalculator {
 }
 
 fn suppressed_item_from_linear(item: &PlacedLinearDim, kind: &str) -> Option<SuppressedItem> {
-    item.suppressed_reason.as_ref().map(|reason| SuppressedItem {
-        id: item.id.clone(),
-        kind: kind.to_string(),
-        reason: reason.clone(),
-    })
+    item.suppressed_reason
+        .as_ref()
+        .map(|reason| SuppressedItem {
+            id: item.id.clone(),
+            kind: kind.to_string(),
+            reason: reason.clone(),
+        })
 }
 
 fn suppressed_item_from_aux(
@@ -576,7 +563,10 @@ mod tests {
             Some(1)
         );
         assert_eq!(
-            result.debug_info.as_ref().map(|info| info.inferred_face_center_count),
+            result
+                .debug_info
+                .as_ref()
+                .map(|info| info.inferred_face_center_count),
             Some(2)
         );
         assert_eq!(

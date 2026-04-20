@@ -539,8 +539,12 @@ pub fn resolve_axis_with_cache(
         crate::debug_model_debug!(
             "  resolve_axis: direction='{}' → dir_quat推导ref_dir=({:.3},{:.3},{:.3}) dir=({:.3},{:.3},{:.3})",
             axis.direction.trim(),
-            ref_dir.x, ref_dir.y, ref_dir.z,
-            dir.x, dir.y, dir.z
+            ref_dir.x,
+            ref_dir.y,
+            ref_dir.z,
+            dir.x,
+            dir.y,
+            dir.z
         );
     }
 

@@ -127,10 +127,7 @@ pub async fn save_pe_transform_entries(entries: &[PeTransformEntry]) -> Result<(
             let mut sql = String::new();
             for hash in chunk {
                 if let Some(json) = trans_map.get(hash) {
-                    sql.push_str(&format!(
-                        "UPSERT trans:⟨{}⟩ SET d = {};",
-                        hash, json
-                    ));
+                    sql.push_str(&format!("UPSERT trans:⟨{}⟩ SET d = {};", hash, json));
                 }
             }
             if !sql.is_empty() {

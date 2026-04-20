@@ -41,11 +41,7 @@ fn triangle_area(v0: Vec3, v1: Vec3, v2: Vec3) -> f32 {
 
 /// 统计薄片三角形（面积 < threshold 的比例）
 /// 返回 (薄片数, 总三角形数, 薄片比例)
-fn count_slivers(
-    vertices: &[f32],
-    indices: &[u32],
-    area_threshold: f32,
-) -> (usize, usize, f64) {
+fn count_slivers(vertices: &[f32], indices: &[u32], area_threshold: f32) -> (usize, usize, f64) {
     let tri_count = indices.len() / 3;
     if tri_count == 0 {
         return (0, 0, 0.0);
@@ -401,12 +397,7 @@ fn test_native_box_subtract_box_coplanar() {
 
     // 薄片检测：面积 < 0.001 的三角形占比应低于 5%
     let (slivers, total, ratio) = count_slivers(&result_mesh.vertices, &result_mesh.indices, 0.001);
-    println!(
-        "薄片统计: {}/{} ({:.2}%)",
-        slivers,
-        total,
-        ratio * 100.0
-    );
+    println!("薄片统计: {}/{} ({:.2}%)", slivers, total, ratio * 100.0);
     assert!(
         ratio < 0.05,
         "共面 BOX-BOX 薄片比例 {:.2}% 超过 5% 阈值",
@@ -449,12 +440,7 @@ fn test_native_box_subtract_box_flush_face() {
     assert!(result_mesh.indices.len() > 0, "布尔运算结果不应为空");
 
     let (slivers, total, ratio) = count_slivers(&result_mesh.vertices, &result_mesh.indices, 0.001);
-    println!(
-        "薄片统计: {}/{} ({:.2}%)",
-        slivers,
-        total,
-        ratio * 100.0
-    );
+    println!("薄片统计: {}/{} ({:.2}%)", slivers, total, ratio * 100.0);
     assert!(
         ratio < 0.05,
         "完全贴合面 BOX-BOX 薄片比例 {:.2}% 超过 5% 阈值",
@@ -508,12 +494,7 @@ fn test_native_cylinder_subtract_cylinder_coplanar() {
     assert!(result_mesh.indices.len() > 0, "布尔运算结果不应为空");
 
     let (slivers, total, ratio) = count_slivers(&result_mesh.vertices, &result_mesh.indices, 0.001);
-    println!(
-        "薄片统计: {}/{} ({:.2}%)",
-        slivers,
-        total,
-        ratio * 100.0
-    );
+    println!("薄片统计: {}/{} ({:.2}%)", slivers, total, ratio * 100.0);
     assert!(
         ratio < 0.05,
         "共面 CYL-CYL 薄片比例 {:.2}% 超过 5% 阈值",
@@ -567,12 +548,7 @@ fn test_native_sphere_subtract_box() {
     assert!(result_mesh.indices.len() > 0, "布尔运算结果不应为空");
 
     let (slivers, total, ratio) = count_slivers(&result_mesh.vertices, &result_mesh.indices, 0.001);
-    println!(
-        "薄片统计: {}/{} ({:.2}%)",
-        slivers,
-        total,
-        ratio * 100.0
-    );
+    println!("薄片统计: {}/{} ({:.2}%)", slivers, total, ratio * 100.0);
     assert!(
         ratio < 0.10,
         "SPHERE-BOX 薄片比例 {:.2}% 超过 10% 阈值",
@@ -619,12 +595,7 @@ fn test_native_box_subtract_multiple_cylinders() {
     assert!(result_mesh.indices.len() > 0, "布尔运算结果不应为空");
 
     let (slivers, total, ratio) = count_slivers(&result_mesh.vertices, &result_mesh.indices, 0.001);
-    println!(
-        "薄片统计: {}/{} ({:.2}%)",
-        slivers,
-        total,
-        ratio * 100.0
-    );
+    println!("薄片统计: {}/{} ({:.2}%)", slivers, total, ratio * 100.0);
     assert!(
         ratio < 0.10,
         "多圆柱穿孔薄片比例 {:.2}% 超过 10% 阈值",

@@ -9,13 +9,8 @@ use crate::shape::pdms_shape::RsVec3;
 use crate::types::PlantAabb;
 
 use crate::{
-
-    RefU64, RefnoEnum, SUL_DB, SurlValue, SurrealQueryExt,
-
-    get_inst_relate_keys, is_model_kv_enabled, KV_DB,
-
-    model_primary_db, model_query_response,
-
+    KV_DB, RefU64, RefnoEnum, SUL_DB, SurlValue, SurrealQueryExt, get_inst_relate_keys,
+    is_model_kv_enabled, model_primary_db, model_query_response,
 };
 
 use anyhow::Context;
@@ -43,55 +38,44 @@ use surrealdb::types::{Kind, SurrealValue, Value};
 #[derive(Serialize, Deserialize, Debug, Clone, Default, SurrealValue)]
 
 pub struct FullPtsetPoint {
-
     /// 点位置
-
     pub pt: RsVec3,
 
     /// 主方向（连接方向）
 
     #[serde(default)]
-
     pub dir: Option<RsVec3>,
 
     /// 参考方向
 
     #[serde(default)]
-
     pub ref_dir: Option<RsVec3>,
 
     /// 点编号
 
     #[serde(default)]
-
     pub number: i32,
 
     /// 方向标志
 
     #[serde(default)]
-
     pub dir_flag: f32,
 
     /// 口径
 
     #[serde(default)]
-
     pub pbore: f32,
 
     /// 连接类型
 
     #[serde(default)]
-
     pub pconnect: String,
-
 }
 
 /// 初始化数据库的所有模型相关表结构和索引
 
 pub async fn init_model_tables() -> anyhow::Result<()> {
-
     async fn exec_schema_sql(sql: &str) -> anyhow::Result<()> {
-
         // 在主 SurrealDB 上执行
 
         SUL_DB.query(sql).await?;
@@ -99,13 +83,10 @@ pub async fn init_model_tables() -> anyhow::Result<()> {
         // 如果 KV 已启用，也在 KV_DB 上执行
 
         if is_model_kv_enabled() {
-
             KV_DB.query(sql).await?;
-
         }
 
         Ok(())
-
     }
 
     // 1. 定义关系表 (RELATION)
@@ -113,29 +94,19 @@ pub async fn init_model_tables() -> anyhow::Result<()> {
     // 这些表必须显式定义为 TYPE RELATION，否则如果第一条插入不是 relate 语句可能会创建为普通表
 
     let relation_tables = [
-
         "inst_relate",
-
         "inst_relate_bool",
-
         "inst_relate_cata_bool",
-
         "geo_relate",
-
         "ngmr_relate",
-
         "neg_relate",
-
         "tubi_relate",
-
     ];
 
     for table in relation_tables {
-
         let sql = format!("DEFINE TABLE IF NOT EXISTS {} TYPE RELATION;", table);
 
         exec_schema_sql(&sql).await?;
-
     }
 
     // inst_relate: 显式声明 dbnum 字段，供按库号过滤/删旧加速使用
@@ -149,11 +120,9 @@ pub async fn init_model_tables() -> anyhow::Result<()> {
     let normal_tables = ["inst_geo", "inst_info", "tubi_info"];
 
     for table in normal_tables {
-
         let sql = format!("DEFINE TABLE IF NOT EXISTS {} TYPE NORMAL;", table);
 
         exec_schema_sql(&sql).await?;
-
     }
 
     // 2.5 inst_relate_aabb / inst_relate_booled_aabb 普通表（存储实例 AABB）
@@ -161,31 +130,20 @@ pub async fn init_model_tables() -> anyhow::Result<()> {
     // 如果旧表是 RELATION 类型则先 REMOVE 再重建
 
     for aabb_table in ["inst_relate_aabb", "inst_relate_booled_aabb"] {
-
         let info_sql = format!("INFO FOR TABLE {aabb_table};");
 
         let is_old_relation = match KV_DB.query(&info_sql).await {
-
             Ok(mut resp) => match resp.take::<Option<serde_json::Value>>(0) {
-
                 Ok(Some(val)) => val.to_string().contains("RELATION"),
 
                 _ => false,
-
             },
 
             Err(_) => false,
-
         };
 
         if is_old_relation {
-
-            let _ = KV_DB
-
-                .query(&format!("REMOVE TABLE {aabb_table};"))
-
-                .await;
-
+            let _ = KV_DB.query(&format!("REMOVE TABLE {aabb_table};")).await;
         }
 
         let schema_sql = format!(
@@ -193,7 +151,6 @@ pub async fn init_model_tables() -> anyhow::Result<()> {
         );
 
         exec_schema_sql(&schema_sql).await?;
-
     }
 
     // 3. 创建 inst_relate 的核心索引
@@ -229,15 +186,12 @@ pub async fn init_model_tables() -> anyhow::Result<()> {
     exec_schema_sql(remove_old_fields_sql).await?;
 
     Ok(())
-
 }
 
 #[serde_as]
-
 #[derive(Serialize, Deserialize, Debug, SurrealValue)]
 
 pub struct TubiInstQuery {
-
     pub refno: RefnoEnum,
 
     pub leave: RefnoEnum,
@@ -245,7 +199,6 @@ pub struct TubiInstQuery {
     pub generic: Option<String>,
 
     #[serde(default)]
-
     pub world_aabb: Option<PlantAabb>,
 
     pub world_trans: PlantTransform,
@@ -255,9 +208,7 @@ pub struct TubiInstQuery {
     pub date: Option<surrealdb::types::Datetime>,
 
     /// 规格值（来自 ZONE 的 owner.spec_value）
-
     pub spec_value: Option<i64>,
-
 }
 
 /// 将 SurrealDB 的原始值向量解码为目标类型列表
@@ -279,21 +230,14 @@ pub struct TubiInstQuery {
 /// 返回解码后的目标类型向量，若解码失败则返回错误
 
 fn decode_values<T: DeserializeOwned>(values: Vec<SurlValue>) -> anyhow::Result<Vec<T>> {
-
     values
-
         .into_iter()
-
         .map(|value| {
-
             let json = value.into_json_value();
 
             serde_json::from_value(json).context("failed to deserialize Surreal value")
-
         })
-
         .collect()
-
 }
 
 /// 根据分支构件编号批量查询 Tubi 实例数据
@@ -327,21 +271,15 @@ fn decode_values<T: DeserializeOwned>(values: Vec<SurlValue>) -> anyhow::Result<
 /// 然后用它来查询 `tubi_relate`。
 
 pub async fn query_tubi_insts_by_brans(
-
     bran_refnos: &[RefnoEnum],
-
 ) -> anyhow::Result<Vec<TubiInstQuery>> {
-
     if bran_refnos.is_empty() {
-
         return Ok(Vec::new());
-
     }
 
     let mut all_results = Vec::new();
 
     for bran_refno in bran_refnos {
-
         let pe_key = bran_refno.to_pe_key();
 
         // 使用 ID range 查询：tubi_relate 的 ID 格式是 [pe:branch_refno, index]
@@ -349,7 +287,6 @@ pub async fn query_tubi_insts_by_brans(
         // 直接用 range 查询比 WHERE 条件更高效
 
         let sql = format!(
-
             r#"
 
             SELECT
@@ -377,19 +314,15 @@ pub async fn query_tubi_insts_by_brans(
             }}
 
             "#,
-
             pe_key, pe_key
-
         );
 
         let mut results: Vec<TubiInstQuery> = model_primary_db().query_take(&sql, 0).await?;
 
         all_results.append(&mut results);
-
     }
 
     Ok(all_results)
-
 }
 
 /// 根据流程构件编号批量查询 Tubi 实例数据
@@ -411,21 +344,16 @@ pub async fn query_tubi_insts_by_brans(
 /// 返回符合条件的 `TubiInstQuery` 列表
 
 pub async fn query_tubi_insts_by_flow(refnos: &[RefnoEnum]) -> anyhow::Result<Vec<TubiInstQuery>> {
-
     if refnos.is_empty() {
-
         return Ok(Vec::new());
-
     }
 
     let mut all_results = Vec::new();
 
     for refno in refnos {
-
         let pe_key = refno.to_pe_key();
 
         let sql = format!(
-
             r#"
 
             SELECT
@@ -453,35 +381,27 @@ pub async fn query_tubi_insts_by_flow(refnos: &[RefnoEnum]) -> anyhow::Result<Ve
             WHERE (in = {} OR out = {})
 
             "#,
-
             pe_key, pe_key
-
         );
 
         let mut results: Vec<TubiInstQuery> = model_primary_db().query_take(&sql, 0).await?;
 
         all_results.append(&mut results);
-
     }
 
     Ok(all_results)
-
 }
 
 #[serde_as]
-
 #[derive(Serialize, Deserialize, Debug, Default, SurrealValue)]
 
 pub struct ModelHashInst {
-
     pub geo_hash: String,
 
     #[serde(default)]
-
     pub geo_transform: PlantTransform,
 
     #[serde(default)]
-
     pub is_tubi: bool,
 
     /// 是否为单位 mesh：true=通过 transform 缩放，false=通过 mesh 顶点缩放
@@ -489,15 +409,12 @@ pub struct ModelHashInst {
     /// SQL 查询需使用 `?? false` 处理 NULL 值
 
     #[serde(default)]
-
     pub unit_flag: bool,
-
 }
 
 #[derive(Debug)]
 
 pub struct ModelInstData {
-
     pub owner: RefnoEnum,
 
     pub has_neg: bool,
@@ -515,7 +432,6 @@ pub struct ModelInstData {
     pub is_bran_tubi: bool,
 
     pub date: NaiveDateTime,
-
 }
 
 ///
@@ -525,29 +441,23 @@ pub struct ModelInstData {
 #[derive(Serialize, Deserialize, Debug, SurrealValue)]
 
 pub struct GeomInstQuery {
-
     /// 构件编号，别名为id
 
     #[serde(alias = "id")]
-
     pub refno: RefnoEnum,
 
     /// 所属构件编号
-
     pub owner: RefnoEnum,
 
     /// 世界坐标系下的包围盒（可能为空）
 
     #[serde(default)]
-
     pub world_aabb: Option<PlantAabb>,
 
     /// 世界坐标系下的变换矩阵
-
     pub world_trans: PlantTransform,
 
     /// 几何实例列表
-
     pub insts: Vec<ModelHashInst>,
 
     /// 是否为布尔运算结果
@@ -557,9 +467,7 @@ pub struct GeomInstQuery {
     /// false: 普通几何体，导出时需要 world_transform × local_transform
 
     #[serde(default)]
-
     pub has_neg: bool,
-
 }
 
 /// 几何点集查询结构体
@@ -567,27 +475,21 @@ pub struct GeomInstQuery {
 #[derive(Serialize, Deserialize, Debug, SurrealValue)]
 
 pub struct GeomPtsQuery {
-
     /// 构件编号，别名为id
 
     #[serde(alias = "id")]
-
     pub refno: RefnoEnum,
 
     /// 世界坐标系下的变换矩阵
-
     pub world_trans: PlantTransform,
 
     /// 世界坐标系下的包围盒（可能为空）
 
     #[serde(default)]
-
     pub world_aabb: Option<PlantAabb>,
 
     /// 点集组，每组包含一个变换矩阵和可选的点集数据
-
     pub pts_group: Vec<(PlantTransform, Option<Vec<RsVec3>>)>,
-
 }
 
 //=============================================================================
@@ -601,23 +503,18 @@ pub struct GeomPtsQuery {
 #[derive(Serialize, Deserialize, Debug, Clone, Default, SurrealValue)]
 
 pub struct ExportInstHash {
-
     /// 几何体 hash（geo 表的 record ID）
-
     pub geo_hash: String,
 
     /// 几何体变换 hash（trans 表的 record ID）
 
     #[serde(default)]
-
     pub trans_hash: Option<String>,
 
     /// 是否为单位 mesh
 
     #[serde(default)]
-
     pub unit_flag: bool,
-
 }
 
 /// 导出专用：构件几何实例查询结果（只含 hash 引用）
@@ -625,39 +522,31 @@ pub struct ExportInstHash {
 #[derive(Serialize, Deserialize, Debug, SurrealValue)]
 
 pub struct ExportInstQuery {
-
     /// 构件编号
 
     #[serde(alias = "id")]
-
     pub refno: RefnoEnum,
 
     /// 所属构件编号
-
     pub owner: RefnoEnum,
 
     /// 世界包围盒 hash（aabb 表的 record ID）
 
     #[serde(default)]
-
     pub world_aabb_hash: Option<String>,
 
     /// 世界变换 hash（trans 表的 record ID）
 
     #[serde(default)]
-
     pub world_trans_hash: Option<String>,
 
     /// 几何实例列表（只含 hash 引用）
-
     pub insts: Vec<ExportInstHash>,
 
     /// 是否为布尔运算结果
 
     #[serde(default)]
-
     pub has_neg: bool,
-
 }
 
 /// 导出专用：查询几何实例的 hash 引用（不查询实际数据值）
@@ -677,19 +566,14 @@ pub struct ExportInstQuery {
 /// 返回只包含 hash 引用的查询结果，用于导出时直接引用 trans.json 和 aabb.json
 
 pub async fn query_insts_for_export(
-
     refnos: impl IntoIterator<Item = &RefnoEnum>,
 
     enable_holes: bool,
-
 ) -> anyhow::Result<Vec<ExportInstQuery>> {
-
     let refnos = refnos.into_iter().cloned().collect::<Vec<_>>();
 
     if refnos.is_empty() {
-
         return Ok(Vec::new());
-
     }
 
     let batch_size = 50;
@@ -697,17 +581,12 @@ pub async fn query_insts_for_export(
     let mut results = Vec::new();
 
     for chunk in refnos.chunks(batch_size) {
-
         if enable_holes {
-
             // ========== 路径 A：布尔结果查询 ==========
 
             let bool_keys: Vec<String> = chunk
-
                 .iter()
-
                 .map(|r| format!("inst_relate_bool:{}", r))
-
                 .collect();
 
             let bool_keys_str = bool_keys.join(",");
@@ -717,7 +596,6 @@ pub async fn query_insts_for_export(
             // 布尔运算结果的 mesh 已经在世界坐标系下，geo_instances 的 trans_hash 应该是单位矩阵 "0"
 
             let bool_sql = format!(
-
                 r#"
 
                 SELECT
@@ -743,21 +621,15 @@ pub async fn query_insts_for_export(
                 WHERE status = 'Success' AND type::record("pe_transform", record::id(refno)).world_trans.d != NONE
 
                 "#,
-
                 bool_keys = bool_keys_str
-
             );
 
             let mut bool_results: Vec<ExportInstQuery> = model_primary_db()
-
                 .query_take(&bool_sql, 0)
-
                 .await
-
                 .with_context(|| format!("query_insts_for_export bool SQL: {}", bool_sql))?;
 
             let bool_refnos: std::collections::HashSet<_> =
-
                 bool_results.iter().map(|r| r.refno.clone()).collect();
 
             results.append(&mut bool_results);
@@ -765,23 +637,17 @@ pub async fn query_insts_for_export(
             // ========== 路径 B：原始几何查询（排除已有布尔结果的） ==========
 
             let non_bool_keys: Vec<String> = chunk
-
                 .iter()
-
                 .filter(|r| !bool_refnos.contains(*r))
-
                 .map(|r| r.to_inst_relate_key())
-
                 .collect();
 
             if !non_bool_keys.is_empty() {
-
                 let non_bool_keys_str = non_bool_keys.join(",");
 
                 // 只查询 hash ID，不查询实际数据
 
                 let geo_sql = format!(
-
                     r#"
 
                     SELECT
@@ -815,29 +681,20 @@ pub async fn query_insts_for_export(
                     WHERE type::record("pe_transform", record::id(in)).world_trans.d != NONE
 
                     "#,
-
                     non_bool_keys = non_bool_keys_str
-
                 );
 
                 let mut geo_results: Vec<ExportInstQuery> = model_primary_db()
-
                     .query_take(&geo_sql, 0)
-
                     .await
-
                     .with_context(|| format!("query_insts_for_export geo SQL: {}", geo_sql))?;
 
                 results.append(&mut geo_results);
-
             }
-
         } else {
-
             // ========== enable_holes=false：始终返回原始几何 ==========
 
             let inst_relate_keys: Vec<String> =
-
                 chunk.iter().map(|r| r.to_inst_relate_key()).collect();
 
             let inst_relate_keys_str = inst_relate_keys.join(",");
@@ -845,7 +702,6 @@ pub async fn query_insts_for_export(
             // 只查询 hash ID，不查询实际数据
 
             let sql = format!(
-
                 r#"
 
                 SELECT
@@ -879,27 +735,19 @@ pub async fn query_insts_for_export(
                 WHERE type::record("pe_transform", record::id(in)).world_trans.d != NONE
 
                 "#,
-
                 inst_relate_keys = inst_relate_keys_str
-
             );
 
             let mut chunk_result: Vec<ExportInstQuery> = model_primary_db()
-
                 .query_take(&sql, 0)
-
                 .await
-
                 .with_context(|| format!("query_insts_for_export SQL: {}", sql))?;
 
             results.append(&mut chunk_result);
-
         }
-
     }
 
     Ok(results)
-
 }
 
 /// 根据最新refno查询最新insts
@@ -925,15 +773,11 @@ pub async fn query_insts_for_export(
 /// 返回几何实例查询结果的向量
 
 pub async fn query_insts(
-
     refnos: impl IntoIterator<Item = &RefnoEnum>,
 
     enable_holes: bool,
-
 ) -> anyhow::Result<Vec<GeomInstQuery>> {
-
     query_insts_with_batch(refnos, enable_holes, None).await
-
 }
 
 /// 查询几何实例信息（支持负实体）
@@ -959,17 +803,13 @@ pub async fn query_insts(
 /// 返回几何实例查询结果的向量
 
 pub async fn query_insts_with_negative(
-
     refnos: impl IntoIterator<Item = &RefnoEnum>,
 
     enable_holes: bool,
 
     _include_negative: bool,
-
 ) -> anyhow::Result<Vec<GeomInstQuery>> {
-
     query_insts_with_batch(refnos, enable_holes, None).await
-
 }
 
 /// 批量查询几何实例信息（支持布尔运算结果）
@@ -1059,21 +899,16 @@ pub async fn query_insts_with_negative(
 /// 查询条件：`geo_type IN ['Pos', 'DesiPos', 'CatePos']`
 
 pub async fn query_insts_with_batch(
-
     refnos: impl IntoIterator<Item = &RefnoEnum>,
 
     enable_holes: bool,
 
     batch_size: Option<usize>,
-
 ) -> anyhow::Result<Vec<GeomInstQuery>> {
-
     let refnos = refnos.into_iter().cloned().collect::<Vec<_>>();
 
     if refnos.is_empty() {
-
         return Ok(Vec::new());
-
     }
 
     let batch = batch_size.unwrap_or(50).max(1);
@@ -1081,19 +916,14 @@ pub async fn query_insts_with_batch(
     let mut results = Vec::new();
 
     for chunk in refnos.chunks(batch) {
-
         if enable_holes {
-
             // ========== 路径 A：布尔结果查询 ==========
 
             // 直接从 inst_relate_bool:{refno} 获取有成功布尔结果的记录
 
             let bool_keys: Vec<String> = chunk
-
                 .iter()
-
                 .map(|r| format!("inst_relate_bool:{}", r))
-
                 .collect();
 
             let bool_keys_str = bool_keys.join(",");
@@ -1101,7 +931,6 @@ pub async fn query_insts_with_batch(
             // 使用 graph traversal 获取 world_aabb，不依赖计算字段
 
             let bool_sql = format!(
-
                 r#"
 
                 SELECT
@@ -1123,23 +952,17 @@ pub async fn query_insts_with_batch(
                 WHERE status = 'Success' AND type::record("pe_transform", record::id(refno)).world_trans.d != NONE
 
                 "#,
-
                 bool_keys = bool_keys_str
-
             );
 
             let mut bool_results: Vec<GeomInstQuery> = model_primary_db()
-
                 .query_take(&bool_sql, 0)
-
                 .await
-
                 .with_context(|| format!("query_insts_with_batch bool SQL: {}", bool_sql))?;
 
             // 收集已有布尔结果的 refnos
 
             let bool_refnos: std::collections::HashSet<_> =
-
                 bool_results.iter().map(|r| r.refno.clone()).collect();
 
             results.append(&mut bool_results);
@@ -1147,17 +970,12 @@ pub async fn query_insts_with_batch(
             // ========== 路径 B：原始几何查询（排除已有布尔结果的） ==========
 
             let non_bool_keys: Vec<String> = chunk
-
                 .iter()
-
                 .filter(|r| !bool_refnos.contains(*r))
-
                 .map(|r| r.to_inst_relate_key())
-
                 .collect();
 
             if !non_bool_keys.is_empty() {
-
                 let non_bool_keys_str = non_bool_keys.join(",");
 
                 // 直接从 inst_relate:{refno} 查询
@@ -1165,7 +983,6 @@ pub async fn query_insts_with_batch(
                 // 使用 graph traversal 获取 world_aabb
 
                 let geo_sql = format!(
-
                     r#"
 
                     SELECT
@@ -1195,29 +1012,20 @@ pub async fn query_insts_with_batch(
                     WHERE type::record("pe_transform", record::id(in)).world_trans.d != NONE
 
                     "#,
-
                     non_bool_keys = non_bool_keys_str
-
                 );
 
                 let mut geo_results: Vec<GeomInstQuery> = model_primary_db()
-
                     .query_take(&geo_sql, 0)
-
                     .await
-
                     .with_context(|| format!("query_insts_with_batch geo SQL: {}", geo_sql))?;
 
                 results.append(&mut geo_results);
-
             }
-
         } else {
-
             // ========== enable_holes=false：始终返回原始几何 ==========
 
             let inst_relate_keys: Vec<String> =
-
                 chunk.iter().map(|r| r.to_inst_relate_key()).collect();
 
             let inst_relate_keys_str = inst_relate_keys.join(",");
@@ -1227,7 +1035,6 @@ pub async fn query_insts_with_batch(
             // 使用 graph traversal 获取 world_aabb
 
             let sql = format!(
-
                 r#"
 
                 SELECT
@@ -1257,27 +1064,19 @@ pub async fn query_insts_with_batch(
                 WHERE type::record("pe_transform", record::id(in)).world_trans.d != NONE
 
                 "#,
-
                 inst_relate_keys = inst_relate_keys_str
-
             );
 
             let mut chunk_result: Vec<GeomInstQuery> = model_primary_db()
-
                 .query_take(&sql, 0)
-
                 .await
-
                 .with_context(|| format!("query_insts_with_batch SQL: {}", sql))?;
 
             results.append(&mut chunk_result);
-
         }
-
     }
 
     Ok(results)
-
 }
 
 // todo 生成一个测试案例
@@ -1351,7 +1150,6 @@ use std::collections::HashMap;
 #[cfg(feature = "surreal-save")]
 
 pub async fn define_dbnum_event() -> anyhow::Result<()> {
-
     let event_sql = r#"
 
     DEFINE EVENT OVERWRITE update_dbnum_event ON pe WHEN $event = "CREATE" OR $event = "UPDATE" OR $event = "DELETE" THEN {
@@ -1425,7 +1223,6 @@ pub async fn define_dbnum_event() -> anyhow::Result<()> {
     SUL_DB.query_response(event_sql).await?;
 
     Ok(())
-
 }
 
 /// 定义 dbnum_info_table 的更新事件 (非 surreal-save feature 时的空实现)
@@ -1433,9 +1230,7 @@ pub async fn define_dbnum_event() -> anyhow::Result<()> {
 #[cfg(not(feature = "surreal-save"))]
 
 pub async fn define_dbnum_event() -> anyhow::Result<()> {
-
     Ok(())
-
 }
 
 /// 级联删除 inst_relate 及其关联的 geo_relate 和 inst_geo 数据
@@ -1473,41 +1268,31 @@ pub async fn define_dbnum_event() -> anyhow::Result<()> {
 /// 4. inst_relate (关系边)
 
 pub async fn delete_inst_relate_cascade(
-
     refnos: &[RefnoEnum],
 
     chunk_size: usize,
-
 ) -> anyhow::Result<()> {
-
     for chunk in refnos.chunks(chunk_size) {
-
         let mut delete_sql_vec = vec![];
 
         let mut inst_ids = vec![];
 
         for &refno in chunk {
-
             inst_ids.push(refno.to_inst_relate_key());
 
             let delete_sql = format!(
-
                 r#"
 
                     delete array::flatten(select value [out, id, in] from {}->inst_info->geo_relate);
 
                 "#,
-
                 refno.to_inst_relate_key()
-
             );
 
             delete_sql_vec.push(delete_sql);
-
         }
 
         if !delete_sql_vec.is_empty() {
-
             let mut sql = "BEGIN TRANSACTION;\n".to_string();
 
             sql.push_str(&delete_sql_vec.join(""));
@@ -1519,17 +1304,12 @@ pub async fn delete_inst_relate_cascade(
             // println!("Delete Sql is {}", &sql);
 
             model_query_response(&sql)
-
                 .await
-
                 .expect("delete model insts info failed");
-
         }
-
     }
 
     Ok(())
-
 }
 
 /// 删除所有模型生成相关的数据
@@ -1545,31 +1325,20 @@ pub async fn delete_inst_relate_cascade(
 /// * `chunk_size` - 分批处理的大小
 
 pub async fn delete_all_model_data() -> anyhow::Result<()> {
-
     let tables = [
-
         "inst_relate",
-
         "inst_geo",
-
         "inst_info",
-
         "tubi_relate",
-
         "geo_relate",
-
         "neg_relate",
-
         "ngmr_relate",
-
     ];
 
     let mut sql = "BEGIN TRANSACTION;\n".to_string();
 
     for table in &tables {
-
         sql.push_str(&format!("delete {};\n", table));
-
     }
 
     sql.push_str("COMMIT TRANSACTION;");
@@ -1579,5 +1348,4 @@ pub async fn delete_all_model_data() -> anyhow::Result<()> {
     model_query_response(&sql).await.unwrap();
 
     Ok(())
-
 }
