@@ -192,9 +192,13 @@ where
     let namespace = namespace.to_string();
     let database = database.to_string();
 
-    // 优先尝试 SDK 原生的 use_ns/use_db（可能在某些版本组合下返回值反序列化不兼容）。
-    // 即便报错，也不直接失败，继续走下方的“字面量 USE 语句”兜底。
-    let _ = db.use_ns(&namespace).use_db(&database).await;
+    // 优先使用 SDK 原生的 use_ns/use_db，这一步会把 NS/DB 写入客户端会话。
+    // 某些链路只执行原始 `USE NS ... DB ...` 语句时，后续请求仍可能丢失上下文，
+    // 最终随机报出 “Specify a namespace to use”。
+    if db.use_ns(&namespace).use_db(&database).await.is_ok() {
+        db.query("INFO FOR DB").await?;
+        return Ok(());
+    }
 
     // 注意：SurrealQL 的 `USE NS ... DB ...` 对“绑定参数”在不同版本/SDK 组合下兼容性不稳定；
     // 这里用反引号包裹的字面量，确保服务端实际切换 NS/DB。
@@ -202,6 +206,7 @@ where
     // 若未来确有包含反引号的命名，可在此处做转义；目前项目内 ns/db 名称均为简单字串/数字。
     let sql = format!("USE NS `{}` DB `{}`;", namespace, database);
     let _ = db.query(sql).await?;
+    db.query("INFO FOR DB").await?;
 
     Ok(())
 }

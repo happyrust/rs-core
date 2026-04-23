@@ -1,6 +1,7 @@
 use anyhow::{Context, Result};
 use surrealdb::IndexedResults as Response;
 use surrealdb::Surreal;
+use surrealdb::Connection;
 use surrealdb::engine::any::Any;
 use surrealdb::opt::QueryResult as SurrealQueryResult;
 use surrealdb::types::SurrealValue;
@@ -32,15 +33,21 @@ pub trait SurrealQueryExt {
 }
 
 #[track_caller]
-pub async fn query_response(db: &Surreal<Any>, sql: impl AsRef<str>) -> Result<Response> {
+pub async fn query_response<C>(db: &Surreal<C>, sql: impl AsRef<str>) -> Result<Response>
+where
+    C: Connection,
+{
     query_response_with_location(db, sql, std::panic::Location::caller()).await
 }
 
-async fn query_response_with_location(
-    db: &Surreal<Any>,
+async fn query_response_with_location<C>(
+    db: &Surreal<C>,
     sql: impl AsRef<str>,
     location: &'static std::panic::Location<'static>,
-) -> Result<Response> {
+) -> Result<Response>
+where
+    C: Connection,
+{
     let sql_str = sql.as_ref();
     let location = location.to_string();
     db.query(sql_str).await.map_err(|e| {
@@ -49,7 +56,10 @@ async fn query_response_with_location(
     })
 }
 
-impl SurrealQueryExt for Surreal<Any> {
+impl<C> SurrealQueryExt for Surreal<C>
+where
+    C: Connection,
+{
     #[track_caller]
     async fn query_response(&self, sql: impl AsRef<str>) -> Result<Response> {
         let location = std::panic::Location::caller();

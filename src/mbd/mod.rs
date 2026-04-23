@@ -6,6 +6,7 @@ pub mod iso_branch;
 pub mod iso_dim;
 pub mod iso_extras;
 pub mod iso_params;
+pub mod v2;
 
 pub use iso_branch::{UsedDirEntry, UsedDirRegistry, solve_linear_dim_series};
 pub use iso_dim::compute_linear_dim_layout;

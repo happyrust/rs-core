@@ -22,6 +22,7 @@ async fn execute_surql_files_on_db(
     log_prefix: &str,
 ) -> anyhow::Result<()> {
     for file in surql_files {
+        crate::use_ns_db_compat(db, ns, db_name).await?;
         let file_name = file
             .file_name()
             .and_then(|v| v.to_str())
@@ -35,9 +36,7 @@ async fn execute_surql_files_on_db(
         f.read_to_string(&mut content)
             .with_context(|| format!("读取 Surreal 脚本失败: {}", file.display()))?;
 
-        let sql = format!("USE NS `{}` DB `{}`;\n{}", ns, db_name, content);
-
-        db.query_response(&sql)
+        db.query_response(&content)
             .await
             .with_context(|| format!("执行 Surreal 脚本失败: {}", file_name))?;
     }
