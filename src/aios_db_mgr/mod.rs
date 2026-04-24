@@ -6,7 +6,6 @@ use async_trait::async_trait;
 use std::collections::BTreeSet;
 use std::collections::HashMap;
 
-pub mod aios_mgr;
 pub mod provider_impl;
 
 #[async_trait]
