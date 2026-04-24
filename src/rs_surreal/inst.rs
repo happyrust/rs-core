@@ -311,8 +311,6 @@ pub async fn query_tubi_insts_by_brans(
 
             FROM tubi_relate:[{}, 0]..[{}, 999999]
 
-            }}
-
             "#,
             pe_key, pe_key
         );
@@ -618,7 +616,8 @@ pub async fn query_insts_for_export(
 
                 FROM [{bool_keys}]
 
-                WHERE status = 'Success' AND type::record("pe_transform", record::id(refno)).world_trans.d != NONE
+                WHERE status = 'Success'
+                  AND refno != NONE
 
                 "#,
                 bool_keys = bool_keys_str
@@ -668,7 +667,9 @@ pub async fn query_insts_for_export(
 
                          FROM $parent.out->geo_relate
 
-                         WHERE visible && (out.meshed || out.unit_flag || record::id(out) IN ['1','2','3'])
+                         WHERE visible
+                           && out != NONE
+                           && (out.meshed || out.unit_flag || out.id IN ['1','2','3'])
 
                            && (trans.d ?? NONE) != NONE
 
@@ -678,7 +679,7 @@ pub async fn query_insts_for_export(
 
                     FROM [{non_bool_keys}]
 
-                    WHERE type::record("pe_transform", record::id(in)).world_trans.d != NONE
+                    WHERE in != NONE
 
                     "#,
                     non_bool_keys = non_bool_keys_str
@@ -722,7 +723,9 @@ pub async fn query_insts_for_export(
 
                      FROM $parent.out->geo_relate
 
-                     WHERE visible && (out.meshed || out.unit_flag || record::id(out) IN ['1','2','3'])
+                     WHERE visible
+                       && out != NONE
+                       && (out.meshed || out.unit_flag || out.id IN ['1','2','3'])
 
                        && (trans.d ?? NONE) != NONE
 
@@ -732,7 +735,7 @@ pub async fn query_insts_for_export(
 
                 FROM [{inst_relate_keys}]
 
-                WHERE type::record("pe_transform", record::id(in)).world_trans.d != NONE
+                WHERE in != NONE
 
                 "#,
                 inst_relate_keys = inst_relate_keys_str
@@ -949,7 +952,8 @@ pub async fn query_insts_with_batch(
 
                 FROM [{bool_keys}]
 
-                WHERE status = 'Success' AND type::record("pe_transform", record::id(refno)).world_trans.d != NONE
+                WHERE status = 'Success'
+                  AND refno != NONE
 
                 "#,
                 bool_keys = bool_keys_str
@@ -999,7 +1003,9 @@ pub async fn query_insts_with_batch(
 
                          FROM $parent.out->geo_relate
 
-                         WHERE visible && (out.meshed || out.unit_flag || record::id(out) IN ['1','2','3'])
+                         WHERE visible
+                           && out != NONE
+                           && (out.meshed || out.unit_flag || out.id IN ['1','2','3'])
 
                            && (trans.d ?? NONE) != NONE
 
@@ -1009,7 +1015,7 @@ pub async fn query_insts_with_batch(
 
                     FROM [{non_bool_keys}]
 
-                    WHERE type::record("pe_transform", record::id(in)).world_trans.d != NONE
+                    WHERE in != NONE
 
                     "#,
                     non_bool_keys = non_bool_keys_str
@@ -1051,7 +1057,9 @@ pub async fn query_insts_with_batch(
 
                      FROM $parent.out->geo_relate
 
-                     WHERE visible && (out.meshed || out.unit_flag || record::id(out) IN ['1','2','3'])
+                     WHERE visible
+                       && out != NONE
+                       && (out.meshed || out.unit_flag || out.id IN ['1','2','3'])
 
                        && (trans.d ?? NONE) != NONE
 
@@ -1061,7 +1069,7 @@ pub async fn query_insts_with_batch(
 
                 FROM [{inst_relate_keys}]
 
-                WHERE type::record("pe_transform", record::id(in)).world_trans.d != NONE
+                WHERE in != NONE
 
                 "#,
                 inst_relate_keys = inst_relate_keys_str
