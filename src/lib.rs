@@ -155,67 +155,89 @@ use crate::function::define_common_functions;
 use crate::options::{DbOption, SecondUnitDbOption};
 use once_cell_serde::sync::OnceCell;
 use surrealdb::opt::auth::Root;
+use std::sync::{Arc, RwLock};
+
+static DB_OPTION: OnceCell<RwLock<Arc<DbOption>>> = OnceCell::new();
 
 /// 获取配置文件名，支持环境变量
 fn get_config_file_name() -> String {
     std::env::var("DB_OPTION_FILE").unwrap_or_else(|_| "db_options/DbOption".to_string())
 }
 
-///获得db option
+fn load_db_option() -> DbOption {
+    use config::{Config, File};
+
+    let config_file_name = get_config_file_name();
+    let s = Config::builder()
+        .add_source(File::with_name(&config_file_name))
+        .build()
+        .unwrap();
+    let mut option = s.try_deserialize::<DbOption>().unwrap();
+    apply_env_overrides(&mut option);
+    crate::mesh_precision::set_active_precision(option.mesh_precision.clone());
+    option
+}
+
+fn apply_env_overrides(option: &mut DbOption) {
+    if let Ok(mode) = std::env::var("SURREAL_CONN_MODE") {
+        match mode.as_str() {
+            "ws" => option.surrealdb.mode = options::DbConnMode::Ws,
+            "file" => option.surrealdb.mode = options::DbConnMode::File,
+            _ => {}
+        }
+    }
+    if let Ok(ip) = std::env::var("SURREAL_CONN_IP") {
+        option.surrealdb.ip = ip;
+    }
+    if let Ok(port) = std::env::var("SURREAL_CONN_PORT") {
+        if let Ok(p) = port.parse::<u16>() {
+            option.surrealdb.port = p;
+        }
+    }
+    if let Ok(enabled) = std::env::var("SURREALKV_ENABLED") {
+        let enabled = matches!(
+            enabled.trim().to_ascii_lowercase().as_str(),
+            "1" | "true" | "yes" | "on"
+        );
+        option.surrealkv.enabled = enabled;
+    }
+    if let Ok(mode) = std::env::var("SURREALKV_MODE") {
+        match mode.as_str() {
+            "ws" => option.surrealkv.mode = options::DbConnMode::Ws,
+            "file" => option.surrealkv.mode = options::DbConnMode::File,
+            _ => {}
+        }
+    }
+    if let Ok(ip) = std::env::var("SURREALKV_IP") {
+        option.surrealkv.ip = ip;
+    }
+    if let Ok(port) = std::env::var("SURREALKV_PORT") {
+        if let Ok(p) = port.parse::<u16>() {
+            option.surrealkv.port = p;
+        }
+    }
+}
+
+/// 获取当前 DbOption 快照（Arc 引用计数，零拷贝读取）
 #[inline]
-pub fn get_db_option() -> &'static DbOption {
-    static INSTANCE: OnceCell<DbOption> = OnceCell::new();
-    INSTANCE.get_or_init(|| {
-        use config::{Config, ConfigError, Environment, File};
+pub fn get_db_option() -> Arc<DbOption> {
+    DB_OPTION
+        .get_or_init(|| RwLock::new(Arc::new(load_db_option())))
+        .read()
+        .expect("DB_OPTION RwLock poisoned")
+        .clone()
+}
 
-        let config_file_name = get_config_file_name();
-
-        let s = Config::builder()
-            .add_source(File::with_name(&config_file_name))
-            .build()
-            .unwrap();
-        let mut option = s.try_deserialize::<DbOption>().unwrap();
-        // 环境变量覆盖 surrealdb 连接模式（web_server auto_start 场景）
-        if let Ok(mode) = std::env::var("SURREAL_CONN_MODE") {
-            match mode.as_str() {
-                "ws" => option.surrealdb.mode = options::DbConnMode::Ws,
-                "file" => option.surrealdb.mode = options::DbConnMode::File,
-                _ => {}
-            }
-        }
-        if let Ok(ip) = std::env::var("SURREAL_CONN_IP") {
-            option.surrealdb.ip = ip;
-        }
-        if let Ok(port) = std::env::var("SURREAL_CONN_PORT") {
-            if let Ok(p) = port.parse::<u16>() {
-                option.surrealdb.port = p;
-            }
-        }
-        if let Ok(enabled) = std::env::var("SURREALKV_ENABLED") {
-            let enabled = matches!(
-                enabled.trim().to_ascii_lowercase().as_str(),
-                "1" | "true" | "yes" | "on"
-            );
-            option.surrealkv.enabled = enabled;
-        }
-        if let Ok(mode) = std::env::var("SURREALKV_MODE") {
-            match mode.as_str() {
-                "ws" => option.surrealkv.mode = options::DbConnMode::Ws,
-                "file" => option.surrealkv.mode = options::DbConnMode::File,
-                _ => {}
-            }
-        }
-        if let Ok(ip) = std::env::var("SURREALKV_IP") {
-            option.surrealkv.ip = ip;
-        }
-        if let Ok(port) = std::env::var("SURREALKV_PORT") {
-            if let Ok(p) = port.parse::<u16>() {
-                option.surrealkv.port = p;
-            }
-        }
-        crate::mesh_precision::set_active_precision(option.mesh_precision.clone());
-        option
-    })
+/// 从 TOML 文件重新加载 DbOption 并替换全局实例。
+/// 失败时不替换，保留旧值。
+pub fn set_db_option_from_file() -> Result<Arc<DbOption>, String> {
+    let new_option = std::panic::catch_unwind(load_db_option)
+        .map_err(|e| format!("load_db_option panicked: {:?}", e))?;
+    let new_arc = Arc::new(new_option);
+    let cell = DB_OPTION.get_or_init(|| RwLock::new(new_arc.clone()));
+    let mut writer = cell.write().expect("DB_OPTION RwLock poisoned");
+    *writer = new_arc.clone();
+    Ok(new_arc)
 }
 
 ///获取默认的数据库属性元数据信息
