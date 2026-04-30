@@ -82,9 +82,7 @@ pub fn calculate_dim_chardirs(bran_center: Vec3, seg_mid: Vec3) -> ([Vec3; 3], [
     for (i, d) in horiz.iter().enumerate() {
         scored[i] = (i, angle_deg(*d, dir));
     }
-    scored.sort_by(|a, b| {
-        a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal)
-    });
+    scored.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal));
 
     let i0 = scored[0].0;
     let i1 = scored[1].0;
@@ -260,7 +258,11 @@ mod tests {
     #[test]
     fn select_dim_dir_for_horizontal_pipe_prefers_up() {
         let pipe_dir = Vec3::new(-0.6721017, 0.7371828, 0.069576345).normalize();
-        let dim_dirs = [Vec3::new(-0.6721017, 0.7371828, 0.0).normalize(), Vec3::X, Vec3::Z];
+        let dim_dirs = [
+            Vec3::new(-0.6721017, 0.7371828, 0.0).normalize(),
+            Vec3::X,
+            Vec3::Z,
+        ];
         let out = select_dim_dir(pipe_dir, dim_dirs);
         let angle_to_z = angle_deg(out, Vec3::Z).min(180.0 - angle_deg(out, Vec3::Z));
         assert!(
@@ -276,7 +278,10 @@ mod tests {
         let pipe_dir = Vec3::Z;
         let dim_dirs = [Vec3::NEG_X, Vec3::NEG_Y, Vec3::Z];
         let out = select_dim_dir(pipe_dir, dim_dirs);
-        assert!(out.z.abs() < 1e-4, "vertical pipe dim_dir should be horizontal, got {out:?}");
+        assert!(
+            out.z.abs() < 1e-4,
+            "vertical pipe dim_dir should be horizontal, got {out:?}"
+        );
     }
 
     /// `dim_offset`：第一层 = OD；第二层 = OD + 1.2·cheight。
@@ -338,9 +343,17 @@ mod tests {
         let placed = compute_linear_dim_layout(&segment, &ctx, &params);
 
         assert_eq!(placed.text, "22221");
-        assert!((placed.offset - 229.0).abs() < 1e-3, "offset should be OD=229, got {}", placed.offset);
+        assert!(
+            (placed.offset - 229.0).abs() < 1e-3,
+            "offset should be OD=229, got {}",
+            placed.offset
+        );
 
-        let dim_dir = Vec3::new(placed.direction[0], placed.direction[1], placed.direction[2]);
+        let dim_dir = Vec3::new(
+            placed.direction[0],
+            placed.direction[1],
+            placed.direction[2],
+        );
         let ang = angle_deg(dim_dir, Vec3::Z).min(180.0 - angle_deg(dim_dir, Vec3::Z));
         assert!(
             ang < 15.0,

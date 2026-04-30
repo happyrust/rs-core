@@ -26,9 +26,7 @@ use glam::Vec3;
 
 use crate::mbd::iso_dim::{angle_deg, compute_linear_dim_layout};
 use crate::mbd::iso_params::{BranchContext, IsoParams, SegmentInput};
-use crate::mbd::{
-    PlacedAngle, PlacedBend, PlacedLinearDim, PlacedSlope, PlacedTag, PlacedWeld,
-};
+use crate::mbd::{PlacedAngle, PlacedBend, PlacedLinearDim, PlacedSlope, PlacedTag, PlacedWeld};
 
 /// iso_slope 输入。
 #[derive(Debug, Clone)]
@@ -169,11 +167,7 @@ pub fn solve_tag(input: &TagInput) -> PlacedTag {
 ///
 /// `size_dims[i]` 用 `compute_linear_dim_layout` 处理从 `vertex → face_center_i` 的线性尺寸，
 /// OD/cheight 从 [`IsoParams`] 读取。
-pub fn solve_bend(
-    input: &BendInput,
-    context: &BranchContext,
-    params: &IsoParams,
-) -> PlacedBend {
+pub fn solve_bend(input: &BendInput, context: &BranchContext, params: &IsoParams) -> PlacedBend {
     let mut size_dims = Vec::new();
     for (i, face_center) in [input.face_center_1, input.face_center_2]
         .iter()
@@ -182,7 +176,11 @@ pub fn solve_bend(
         if let Some(face) = face_center {
             let pipe_dir = {
                 let d = (*face - input.vertex).normalize_or_zero();
-                if d.length_squared() < 1e-6 { Vec3::X } else { d }
+                if d.length_squared() < 1e-6 {
+                    Vec3::X
+                } else {
+                    d
+                }
             };
             let seg = SegmentInput {
                 id: format!("{}::size_dim_{}", input.id, i + 1),
@@ -244,17 +242,14 @@ pub fn solve_cut_tubi(
 /// 统计方向辅助：返回 pipe_dir 对应的"主轴水平方向"（E/N/W/S 中最接近投影方向的那个），
 /// 对应 PML `isoori` 的辅助判定。主要给 Stage 3.6 iso_branch 用于 lane 分配时区分方向簇。
 pub fn classify_horizontal_axis(pipe_dir: Vec3) -> [f32; 3] {
-    let horiz = [
-        Vec3::X,
-        Vec3::Y,
-        -Vec3::X,
-        -Vec3::Y,
-    ];
+    let horiz = [Vec3::X, Vec3::Y, -Vec3::X, -Vec3::Y];
     let mut best = horiz[0];
     let mut best_angle = f32::INFINITY;
     let projected = {
         let h = Vec3::new(pipe_dir.x, pipe_dir.y, 0.0);
-        if h.length_squared() < 1e-9 { return [0.0, 0.0, 1.0]; }
+        if h.length_squared() < 1e-9 {
+            return [0.0, 0.0, 1.0];
+        }
         h.normalize()
     };
     for axis in horiz.iter() {

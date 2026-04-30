@@ -154,8 +154,8 @@ pub type BHashMap<K, V> = BTreeMap<K, V>;
 use crate::function::define_common_functions;
 use crate::options::{DbOption, SecondUnitDbOption};
 use once_cell_serde::sync::OnceCell;
-use surrealdb::opt::auth::Root;
 use std::sync::{Arc, RwLock};
+use surrealdb::opt::auth::Root;
 
 static DB_OPTION: OnceCell<RwLock<Arc<DbOption>>> = OnceCell::new();
 

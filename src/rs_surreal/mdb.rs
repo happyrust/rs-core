@@ -194,10 +194,7 @@ pub async fn get_mdb_world_site_ele_nodes(
         mdb = mdb_name
     );
     //
-    // 执行查询
-    let mut response = SUL_DB.query_response(&sql).await?;
-    // 获取结果
-    let mut nodes: Vec<EleTreeNode> = response.take(2).unwrap();
+    let mut nodes: Vec<EleTreeNode> = SUL_DB.query_take(&sql, 2).await?;
     // 处理节点顺序和名称
     for (i, node) in nodes.iter_mut().enumerate() {
         node.order = i as _;

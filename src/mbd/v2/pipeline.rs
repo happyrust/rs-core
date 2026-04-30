@@ -4,14 +4,17 @@
 //! [`MbdV2PipeData`]，提供给上游 `plant-model-gen` 或其它调用方作为
 //! 最薄的"契约入口"。
 //!
-//! 本模块 **不** 做 AvoidanceEngine、SmallDimSolver 集成、PolarSystem
-//! 这些仍在 Phase 3 后续 step / Phase 2.5 中实现；当前实现只负责：
+//! 当前已经接入 V2 primitive 组装、SmallDimSolver 链式小尺寸错层、Label/Leader
+//! 避让与问题汇总；`PolarSystem` 和真正直接产出 primitive 的
+//! `BranchCalculator v2` 仍在后续阶段实现。
 //!
-//! 1. 调用 [`assemble_v2_primitives`] 把 `Placed*` 翻成 primitive 列表；
-//! 2. 汇总 [`MbdV2Meta`]（段数、焊缝数、`dims_by_kind`、生成时间戳）；
-//! 3. 把 `LayoutResult.suppressed_items` 翻译成 [`MbdV2Issue`]，与
-//!    assembler 产出的 issues 合并；
-//! 4. 填入调用方提供的 `input_refno` / `branch_refno` / `branch_attrs`。
+//! 1. 调用 [`assemble_v2_primitives`] 或
+//!    [`assemble_v2_primitives_with_chain_stacking`] 把 `Placed*` 翻成 primitive 列表；
+//! 2. 可选执行 label 避让、leader 重路由与 leader-label 冲突检测；
+//! 3. 汇总 [`MbdV2Meta`]（段数、焊缝数、`dims_by_kind`、生成时间戳）；
+//! 4. 把 `LayoutResult.suppressed_items` 翻译成 [`MbdV2Issue`]，与
+//!    assembler/avoidance 产出的 issues 合并；
+//! 5. 填入调用方提供的 `input_refno` / `branch_refno` / `branch_attrs`。
 //!
 //! # 用法
 //!
@@ -40,12 +43,10 @@ use super::assembler::{
     assemble_v2_primitives_with_chain_stacking,
 };
 use super::avoidance::{
-    AvoidanceConfig, detect_leader_line_label_conflicts,
-    reroute_leader_lines_around_labels, resolve_label_label_conflicts,
+    AvoidanceConfig, detect_leader_line_label_conflicts, reroute_leader_lines_around_labels,
+    resolve_label_label_conflicts, resolve_linear_dim_text_conflicts,
 };
-use super::primitive::{
-    IssueCategory, IssueSeverity, MbdV2Issue, MbdV2Meta, MbdV2PipeData,
-};
+use super::primitive::{IssueCategory, IssueSeverity, MbdV2Issue, MbdV2Meta, MbdV2PipeData};
 
 /// V2 pipeline 的上下文；承载**非 LayoutResult 所能提供**的字段。
 #[derive(Debug, Clone)]
@@ -93,15 +94,30 @@ impl Default for MbdV2PipelineContext {
     }
 }
 
+impl MbdV2PipelineContext {
+    /// Web/API 场景使用的默认配置。
+    ///
+    /// `Default` 保持迁移期兼容，不改变库内旧调用行为；真实接口应使用此配置，
+    /// 让小尺寸错层和避让默认生效。
+    pub fn production_defaults() -> Self {
+        Self {
+            assembler: AssemblerContext {
+                default_cheight: 100.0,
+                ..AssemblerContext::default()
+            },
+            enable_small_dim_stacking: true,
+            enable_avoidance: true,
+            ..Self::default()
+        }
+    }
+}
+
 /// 从 V1 `LayoutResult` 构建 V2 响应主载荷。
 ///
-/// 这是 Phase 3 Step 1 的最薄入口：不做任何几何决策，只做数据组装。
-/// 未来 `BranchCalculator v2` 会直接产出 `MbdV2PipeData`，届时本函数
-/// 保留供迁移期过渡使用。
-pub fn build_mbd_v2_pipe_data(
-    layout: &LayoutResult,
-    ctx: &MbdV2PipelineContext,
-) -> MbdV2PipeData {
+/// 这是迁移期入口：复用 V1 `LayoutResult` 的已排版结果，补齐 V2 primitive、
+/// 小尺寸错层、leader 与避让。未来 `BranchCalculator v2` 会直接产出
+/// `MbdV2PipeData`，届时本函数保留供兼容过渡使用。
+pub fn build_mbd_v2_pipe_data(layout: &LayoutResult, ctx: &MbdV2PipelineContext) -> MbdV2PipeData {
     let (mut primitives, mut issues) = if ctx.enable_small_dim_stacking {
         assemble_v2_primitives_with_chain_stacking(
             layout,
@@ -114,6 +130,10 @@ pub fn build_mbd_v2_pipe_data(
     };
 
     if ctx.enable_avoidance {
+        issues.extend(resolve_linear_dim_text_conflicts(
+            &mut primitives,
+            &ctx.avoidance_config,
+        ));
         issues.extend(resolve_label_label_conflicts(
             &mut primitives,
             &ctx.avoidance_config,
@@ -197,11 +217,11 @@ fn collect_suppression_issues(layout: &LayoutResult) -> Vec<MbdV2Issue> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::mbd::v2::primitive::MbdPrimitive;
     use crate::mbd::{
         LayoutResult, PlacedBend, PlacedLinearDim, PlacedSlope, PlacedTag, PlacedWeld,
         SuppressedItem,
     };
-    use crate::mbd::v2::primitive::MbdPrimitive;
 
     fn linear_dim(id: &str, kind: &str, end_x: f32) -> PlacedLinearDim {
         PlacedLinearDim {
@@ -534,7 +554,10 @@ mod tests {
             MbdPrimitive::LinearDim(d) => d.common.id.contains("/r") && d.common.id.contains("s"),
             _ => false,
         });
-        assert!(has_expanded_id, "至少一条 primitive 用 chain expand 的 id 规则");
+        assert!(
+            has_expanded_id,
+            "至少一条 primitive 用 chain expand 的 id 规则"
+        );
     }
 
     #[test]
@@ -624,7 +647,10 @@ mod tests {
             .collect();
         assert_eq!(label_ys.len(), 2);
         for y in label_ys {
-            assert!((y - 0.0).abs() < 1e-6, "without avoidance label stays at y=0");
+            assert!(
+                (y - 0.0).abs() < 1e-6,
+                "without avoidance label stays at y=0"
+            );
         }
     }
 

@@ -254,6 +254,7 @@ pub enum LinearDimSubKind {
     Chain,
     Overall,
     Port,
+    CutTubi,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]

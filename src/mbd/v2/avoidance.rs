@@ -9,6 +9,7 @@
 //! - 超过 `max_lanes` 时发 [`MbdV2Issue`]，`category = Avoidance`。
 //! - 非 [`MbdPrimitive::Label`] 的 primitive 一律跳过。
 
+use super::leader_router::route_leader_line;
 use super::primitive::*;
 use super::text_measurement::mbd_text_width;
 
@@ -151,7 +152,199 @@ pub fn resolve_label_label_conflicts(
         });
     }
 
+    reconnect_leaders_to_moved_labels(primitives);
+
     issues
+}
+
+/// 对 LinearDim 的文字做轻量避让。
+///
+/// PML 里的 `lindim.sepSmallDim` 和 `polarsystem` 会把相邻尺寸推到不同侧/不同层。
+/// 当前 V2 过渡期还没有完整 `PolarSystem`，这里先按文字中心距做一次稳定分层：
+/// - 已放置文字作为障碍；
+/// - 后续文字若距离过近，就沿自身 `up` 或 `-up` 方向移动整条尺寸线；
+/// - 测量端点保持不动，只移动尺寸线、箭头与文字。
+pub fn resolve_linear_dim_text_conflicts(
+    primitives: &mut [MbdPrimitive],
+    config: &AvoidanceConfig,
+) -> Vec<MbdV2Issue> {
+    let mut issues = Vec::new();
+    let indices: Vec<usize> = primitives
+        .iter()
+        .enumerate()
+        .filter_map(|(i, p)| match p {
+            MbdPrimitive::LinearDim(dim) if dim.common.visible => Some(i),
+            _ => None,
+        })
+        .collect();
+    if indices.len() < 2 {
+        return issues;
+    }
+
+    let mut placed: Vec<LinearTextPlacement> = Vec::with_capacity(indices.len());
+    for idx in indices {
+        let Some(snapshot) = linear_text_snapshot(&primitives[idx]) else {
+            continue;
+        };
+
+        let mut chosen_delta = [0.0, 0.0, 0.0];
+        let mut chosen_center = snapshot.center;
+        let mut chosen_lane: u16 = 0;
+        if linear_text_conflicts(&snapshot, snapshot.center, &placed) {
+            let step = (snapshot.height_mm * config.lane_step_multiplier * 2.0).max(1.0);
+            let mut found = false;
+            'search: for lane in 1..=config.max_lanes {
+                for sign in [-1.0_f32, 1.0_f32] {
+                    let delta = mul(snapshot.up, step * lane as f32 * sign);
+                    let center = add(snapshot.center, delta);
+                    if !linear_text_conflicts(&snapshot, center, &placed) {
+                        chosen_delta = delta;
+                        chosen_center = center;
+                        chosen_lane = lane;
+                        found = true;
+                        break 'search;
+                    }
+                }
+            }
+            if !found {
+                let delta = mul(snapshot.up, -step * config.max_lanes as f32);
+                chosen_delta = delta;
+                chosen_center = add(snapshot.center, delta);
+                chosen_lane = config.max_lanes;
+                issues.push(MbdV2Issue {
+                    id: format!("linear-dim-text-avoidance-overflow-{}", snapshot.id),
+                    severity: IssueSeverity::Warning,
+                    category: IssueCategory::Avoidance,
+                    message: format!(
+                        "linear_dim {} 无法在 {} 个 lane 内完成文字避让",
+                        snapshot.id, config.max_lanes
+                    ),
+                    related_refnos: Vec::new(),
+                    related_primitive_ids: vec![snapshot.id.clone()],
+                });
+            }
+        }
+
+        if chosen_lane > 0 {
+            move_linear_dim_by_delta(&mut primitives[idx], chosen_delta, chosen_lane);
+        }
+        placed.push(LinearTextPlacement {
+            center: chosen_center,
+            min_sep_mm: snapshot.min_sep_mm,
+        });
+    }
+
+    issues
+}
+
+struct LinearTextSnapshot {
+    id: String,
+    center: Vec3V2,
+    up: Vec3V2,
+    height_mm: f32,
+    min_sep_mm: f32,
+}
+
+struct LinearTextPlacement {
+    center: Vec3V2,
+    min_sep_mm: f32,
+}
+
+fn linear_text_snapshot(primitive: &MbdPrimitive) -> Option<LinearTextSnapshot> {
+    let MbdPrimitive::LinearDim(dim) = primitive else {
+        return None;
+    };
+    let up = normalize(dim.text.up);
+    if dot(up, up) < 1e-9 {
+        return None;
+    }
+    let orientation = normalize(dim.text.orientation);
+    let width = mbd_text_width(&dim.text.content, dim.text.height_mm);
+    let height = dim.text.height_mm.max(1.0);
+    let center = add(
+        add_scaled(dim.text.anchor, orientation, width * 0.5),
+        mul(up, height * 0.5),
+    );
+    let min_sep = ((width * 1.6).max(height * 8.0)).max(1.0);
+    Some(LinearTextSnapshot {
+        id: dim.common.id.clone(),
+        center,
+        up,
+        height_mm: height,
+        min_sep_mm: min_sep,
+    })
+}
+
+fn linear_text_conflicts(
+    snapshot: &LinearTextSnapshot,
+    center: Vec3V2,
+    placed: &[LinearTextPlacement],
+) -> bool {
+    placed.iter().any(|p| {
+        let required = snapshot.min_sep_mm.max(p.min_sep_mm);
+        distance(center, p.center) < required
+    })
+}
+
+fn move_linear_dim_by_delta(primitive: &mut MbdPrimitive, delta: Vec3V2, lane: u16) {
+    let MbdPrimitive::LinearDim(dim) = primitive else {
+        return;
+    };
+    dim.extension_1.end = add(dim.extension_1.end, delta);
+    dim.extension_2.end = add(dim.extension_2.end, delta);
+    dim.dim_line.start = add(dim.dim_line.start, delta);
+    dim.dim_line.end = add(dim.dim_line.end, delta);
+    dim.arrows[0].position = add(dim.arrows[0].position, delta);
+    dim.arrows[1].position = add(dim.arrows[1].position, delta);
+    dim.text.anchor = add(dim.text.anchor, delta);
+    dim.level = dim.level.saturating_add(lane);
+}
+
+fn reconnect_leaders_to_moved_labels(primitives: &mut [MbdPrimitive]) {
+    let labels: std::collections::BTreeMap<String, LabelPrimitive> = primitives
+        .iter()
+        .filter_map(|p| match p {
+            MbdPrimitive::Label(lbl) if !lbl.common.id.is_empty() => {
+                Some((lbl.common.id.clone(), lbl.clone()))
+            }
+            _ => None,
+        })
+        .collect();
+    if labels.is_empty() {
+        return;
+    }
+
+    for prim in primitives {
+        let MbdPrimitive::LeaderLine(leader) = prim else {
+            continue;
+        };
+        let Some(label_id) = leader.common.source_refno.as_deref() else {
+            continue;
+        };
+        let Some(label) = labels.get(label_id) else {
+            continue;
+        };
+        let Some(&anchor) = leader.points.first() else {
+            continue;
+        };
+
+        let padding = label.box_padding_mm.max(0.0);
+        let width = mbd_text_width(&label.content, label.height_mm) + padding * 2.0;
+        let height = label.height_mm + padding * 2.0;
+        let text_anchor = [
+            label.text_anchor[0] - label.orientation[0] * padding - label.up[0] * padding,
+            label.text_anchor[1] - label.orientation[1] * padding - label.up[1] * padding,
+            label.text_anchor[2] - label.orientation[2] * padding - label.up[2] * padding,
+        ];
+        leader.points = route_leader_line(
+            anchor,
+            text_anchor,
+            width,
+            height,
+            label.orientation,
+            label.up,
+        );
+    }
 }
 
 struct LabelSnapshot {
@@ -229,8 +422,30 @@ fn add_scaled(base: Vec3V2, dir: Vec3V2, scale: f32) -> Vec3V2 {
     ]
 }
 
+fn add(a: Vec3V2, b: Vec3V2) -> Vec3V2 {
+    [a[0] + b[0], a[1] + b[1], a[2] + b[2]]
+}
+
+fn mul(v: Vec3V2, scale: f32) -> Vec3V2 {
+    [v[0] * scale, v[1] * scale, v[2] * scale]
+}
+
 fn sub(a: Vec3V2, b: Vec3V2) -> Vec3V2 {
     [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
+}
+
+fn distance(a: Vec3V2, b: Vec3V2) -> f32 {
+    let d = sub(a, b);
+    dot(d, d).sqrt()
+}
+
+fn normalize(v: Vec3V2) -> Vec3V2 {
+    let len = dot(v, v).sqrt();
+    if len < 1e-9 {
+        [0.0, 0.0, 0.0]
+    } else {
+        [v[0] / len, v[1] / len, v[2] / len]
+    }
 }
 
 fn dot(a: Vec3V2, b: Vec3V2) -> f32 {
@@ -301,10 +516,7 @@ pub fn detect_leader_line_label_conflicts(
                         label.common.id.clone()
                     };
                     issues.push(MbdV2Issue {
-                        id: format!(
-                            "leader-crosses-{}-vs-{}-seg{}",
-                            leader_id, label_id, seg_i
-                        ),
+                        id: format!("leader-crosses-{}-vs-{}-seg{}", leader_id, label_id, seg_i),
                         severity: IssueSeverity::Warning,
                         category: IssueCategory::Avoidance,
                         message: format!(
@@ -399,10 +611,7 @@ pub fn reroute_leader_lines_around_labels(
                     id: format!("leader-reroute-failed-{}", leader_id),
                     severity: IssueSeverity::Warning,
                     category: IssueCategory::Avoidance,
-                    message: format!(
-                        "leader {} 无法绕开 label {}",
-                        leader_id, crossing.common.id
-                    ),
+                    message: format!("leader {} 无法绕开 label {}", leader_id, crossing.common.id),
                     related_refnos: Vec::new(),
                     related_primitive_ids: vec![leader_id, crossing.common.id.clone()],
                 });
@@ -413,10 +622,7 @@ pub fn reroute_leader_lines_around_labels(
     issues
 }
 
-fn build_reroute_candidates(
-    lbl: &LabelPrimitive,
-    config: &AvoidanceConfig,
-) -> Vec<Vec3V2> {
+fn build_reroute_candidates(lbl: &LabelPrimitive, config: &AvoidanceConfig) -> Vec<Vec3V2> {
     let width = mbd_text_width(&lbl.content, lbl.height_mm);
     let height = lbl.height_mm;
     let m = config.leader_reroute_margin_mm;
@@ -679,7 +885,11 @@ mod tests {
         };
         let issues = resolve_label_label_conflicts(&mut prims, &cfg);
         assert!(!issues.is_empty());
-        assert!(issues.iter().any(|i| matches!(i.category, IssueCategory::Avoidance)));
+        assert!(
+            issues
+                .iter()
+                .any(|i| matches!(i.category, IssueCategory::Avoidance))
+        );
     }
 
     #[test]
@@ -895,7 +1105,11 @@ mod tests {
         // 此场景 reroute 可能成功也可能失败；我们只验证"若失败则发 Issue"
         // 按我们构造法：4 个 via 候选若**全部**被挡住 → 发 Issue
         // 实际大概率一侧 via 还能逃出，因此本测试只确保 **不 panic** 和行为自洽
-        assert!(issues.iter().all(|i| matches!(i.category, IssueCategory::Avoidance)));
+        assert!(
+            issues
+                .iter()
+                .all(|i| matches!(i.category, IssueCategory::Avoidance))
+        );
     }
 
     #[test]
@@ -928,7 +1142,11 @@ mod tests {
             // via 不在 bbox [0, width] × [0, 2.5] 内（考虑 margin）
             let width = mbd_text_width("1", 2.5);
             let in_bbox = via[0] >= 0.0 && via[0] <= width && via[1] >= 0.0 && via[1] <= 2.5;
-            assert!(!in_bbox, "via should be outside bbox + margin, got {:?}", via);
+            assert!(
+                !in_bbox,
+                "via should be outside bbox + margin, got {:?}",
+                via
+            );
         }
     }
 }

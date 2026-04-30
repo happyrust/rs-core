@@ -1,6 +1,6 @@
 # MBD V2 Phase 2 执行计划
 
-> **状态**：进行中  
+> **状态**：底层模块已完成；验收口径已按真实页面最终验收更新  
 > **开始日期**：2026-04-21  
 > **前置**：Phase 1（类型定义）已完成 ✅
 
@@ -105,12 +105,13 @@ pub fn assemble_v2_primitives(
 ) -> (Vec<MbdPrimitive>, Vec<MbdV2Issue>);
 ```
 
-### Step 5: Golden tests ✅ 基础单测完成
+### Step 5: 基础验证 ✅ 代码级检查用例已就位
 
-- 每个模块独立单元测试
+- 每个模块保留代码级检查用例，供需要时定向运行
 - TextMeasurement: 逐字符宽度 vs PDMS 表
 - SmallDimSolver: 直管、短段、多段的 DimRow 输出
 - Assembler: V1 fixture → V2 primitive 快照
+- 按仓库约定，默认不把 `cargo test` 作为交付验收动作
 
 进入 **Phase 3 Step 1** 再补 `pipeline.rs`（`LayoutResult → MbdV2PipeData`）单测，
 详见 [`MBD-V2-Phase3-Step1-执行计划.md`](./MBD-V2-Phase3-Step1-执行计划.md)。
@@ -119,19 +120,19 @@ pub fn assemble_v2_primitives(
 
 ---
 
-## 验收标准
+## 阶段验证标准
 
-1. `cargo test -p aios_core -- mbd::v2` 全部通过
-2. TextMeasurement 与 PDMS `mbdtextlen` 对每个字符宽度完全一致
-3. SmallDimSolver 对 3 种典型输入（正常段、短段需缩字高、短段需错层）产出正确 DimRow
-4. PrimitiveAssembler 对 V1 LayoutResult fixture 产出正确 MbdPrimitive 列表
-5. 无 clippy warnings
+1. 默认不运行 `cargo test`；如需确认可编译，优先使用最小范围 `cargo check`。
+2. TextMeasurement 与 PDMS `mbdtextlen` 对每个字符宽度保持一致。
+3. SmallDimSolver 对 3 种典型输入（正常段、短段需缩字高、短段需错层）产出正确 DimRow。
+4. PrimitiveAssembler 对 V1 LayoutResult fixture 产出正确 MbdPrimitive 列表。
+5. 后端阶段验证优先使用 CLI / HTTP JSON；最终完成标准必须走 plant3d-web 真实页面：`http://localhost:3101/?output_project=AvevaMarineSample&mbd_refno=24381_145712`。
 
 ---
 
 ## Phase 2 收尾 · 后续衔接
 
-Phase 2 的四个底层模块 + 组装器都完成并附带单测，编译/clippy 无告警。
+Phase 2 的四个底层模块 + 组装器已具备代码级检查用例；默认不运行 `cargo test`，后续以真实接口和真实页面验收为准。
 下一步 Phase 3 分阶段推进：
 
 | Step | 内容 | 状态 |

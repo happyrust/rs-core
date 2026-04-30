@@ -17,9 +17,9 @@
 
 use glam::Vec3;
 
+use crate::mbd::PlacedLinearDim;
 use crate::mbd::iso_dim::{angle_deg, compute_linear_dim_layout};
 use crate::mbd::iso_params::{BranchContext, IsoParams, SegmentInput};
-use crate::mbd::PlacedLinearDim;
 
 const DIRECTION_ALIGN_COS_THRESHOLD: f32 = 0.94; // ~20° 内视为同方向（含反向）
 const DISTANCE_OVERLAP_TOLERANCE_MM: f32 = 0.5;
@@ -91,7 +91,8 @@ impl UsedDirRegistry {
             if !ranges_overlap(q_min, q_max, e_min, e_max, DISTANCE_OVERLAP_TOLERANCE_MM) {
                 continue;
             }
-            let e_threshold = (entry.length * SPATIAL_PROXIMITY_FACTOR).max(SPATIAL_PROXIMITY_FLOOR_MM);
+            let e_threshold =
+                (entry.length * SPATIAL_PROXIMITY_FACTOR).max(SPATIAL_PROXIMITY_FLOOR_MM);
             let proximity_threshold = q_threshold.max(e_threshold);
             if (mid - entry.mid).length() > proximity_threshold {
                 // 空间上不邻近：即便方向相同，也属于不同管段的独立尺寸，不冲突
@@ -214,20 +215,17 @@ mod tests {
         }
     }
 
-    fn record_at(
-        reg: &mut UsedDirRegistry,
-        dir: Vec3,
-        mid: Vec3,
-        length: f32,
-        times: u32,
-    ) {
+    fn record_at(reg: &mut UsedDirRegistry, dir: Vec3, mid: Vec3, length: f32, times: u32) {
         reg.record(dir, 0.0, length, "segment", times, mid, length);
     }
 
     #[test]
     fn registry_returns_1_when_empty() {
         let reg = UsedDirRegistry::new();
-        assert_eq!(reg.next_dim_times(Vec3::Z, 0.0, 100.0, Vec3::ZERO, 100.0), 1);
+        assert_eq!(
+            reg.next_dim_times(Vec3::Z, 0.0, 100.0, Vec3::ZERO, 100.0),
+            1
+        );
     }
 
     #[test]
@@ -267,13 +265,7 @@ mod tests {
         record_at(&mut reg, Vec3::Z, Vec3::new(0.0, 0.0, 0.0), 1000.0, 1);
         // 另一个 mid 距离 10m（≥ 0.25*长度 = 250mm 阈值，也超过 SPATIAL_PROXIMITY_FLOOR 300mm）
         assert_eq!(
-            reg.next_dim_times(
-                Vec3::Z,
-                0.0,
-                1000.0,
-                Vec3::new(10000.0, 0.0, 0.0),
-                1000.0,
-            ),
+            reg.next_dim_times(Vec3::Z, 0.0, 1000.0, Vec3::new(10000.0, 0.0, 0.0), 1000.0,),
             1,
         );
     }
@@ -306,7 +298,11 @@ mod tests {
         };
         let (placed, reg) = solve_linear_dim_series(&segs, &ctx, &params);
         assert_eq!(placed.len(), 2);
-        assert!((placed[0].offset - 229.0).abs() < 1e-3, "first dim offset should be od=229, got {}", placed[0].offset);
+        assert!(
+            (placed[0].offset - 229.0).abs() < 1e-3,
+            "first dim offset should be od=229, got {}",
+            placed[0].offset
+        );
         assert!(
             (placed[1].offset - (229.0 + 120.0)).abs() < 1e-3,
             "second dim offset should be od+1.2*cheight=349, got {}",

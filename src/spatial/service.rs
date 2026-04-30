@@ -1,13 +1,13 @@
 use thiserror::Error;
 
+#[cfg(feature = "sqlite")]
+use crate::RefU64;
+#[cfg(feature = "sqlite")]
+use crate::spatial::sqlite::{self, ItemColumnSupport, detect_item_columns, query_item_metadata};
 use crate::spatial::types::{
     AabbDto, Point3Dto, QueryShape, SpatialQueryFilter, SpatialQueryItem, SpatialQueryOptions,
     SpatialQueryRequest, SpatialQueryResponse, SpatialQueryTarget, SpatialStatsResponse,
 };
-#[cfg(feature = "sqlite")]
-use crate::spatial::sqlite::{self, ItemColumnSupport, detect_item_columns, query_item_metadata};
-#[cfg(feature = "sqlite")]
-use crate::RefU64;
 #[cfg(feature = "sqlite")]
 use parry3d::bounding_volume::Aabb;
 #[cfg(feature = "sqlite")]
@@ -144,9 +144,7 @@ impl SpatialQueryService {
                 &options,
             )?;
             records.sort_by(|lhs, rhs| match (lhs.distance, rhs.distance) {
-                (Some(a), Some(b)) => a
-                    .partial_cmp(&b)
-                    .unwrap_or(std::cmp::Ordering::Equal),
+                (Some(a), Some(b)) => a.partial_cmp(&b).unwrap_or(std::cmp::Ordering::Equal),
                 (Some(_), None) => std::cmp::Ordering::Less,
                 (None, Some(_)) => std::cmp::Ordering::Greater,
                 (None, None) => lhs.refno.0.cmp(&rhs.refno.0),
@@ -200,8 +198,16 @@ impl SpatialQueryService {
                 let center = validate_center(*center)?;
                 let radius = validate_radius(*radius)?;
                 let query_aabb = Aabb::new(
-                    parry3d::math::Point::new(center.x - radius, center.y - radius, center.z - radius),
-                    parry3d::math::Point::new(center.x + radius, center.y + radius, center.z + radius),
+                    parry3d::math::Point::new(
+                        center.x - radius,
+                        center.y - radius,
+                        center.z - radius,
+                    ),
+                    parry3d::math::Point::new(
+                        center.x + radius,
+                        center.y + radius,
+                        center.z + radius,
+                    ),
                 );
                 let ids = sqlite::query_overlap_with_conn(
                     conn,
@@ -236,10 +242,7 @@ impl SpatialQueryService {
                 let mut query_aabb = sqlite::query_aabb_with_conn(conn, refno)
                     .map_err(|err| SpatialQueryError::QueryFailed(err.to_string()))?
                     .ok_or_else(|| {
-                        SpatialQueryError::QueryFailed(format!(
-                            "空间索引中不存在 refno: {}",
-                            refno
-                        ))
+                        SpatialQueryError::QueryFailed(format!("空间索引中不存在 refno: {}", refno))
                     })?;
                 if *expand_distance > 0.0 {
                     query_aabb.mins.x -= *expand_distance;
@@ -352,7 +355,9 @@ fn normalize_options(
     let options = options.unwrap_or_default();
     let limit = options.limit.unwrap_or(DEFAULT_LIMIT).clamp(1, HARD_LIMIT);
     let scan_limit = if has_post_filter {
-        limit.saturating_mul(POST_FILTER_SCAN_FACTOR).clamp(limit, HARD_LIMIT)
+        limit
+            .saturating_mul(POST_FILTER_SCAN_FACTOR)
+            .clamp(limit, HARD_LIMIT)
     } else {
         limit.saturating_add(1).clamp(limit, HARD_LIMIT)
     };

@@ -80,8 +80,8 @@ mod tests {
         let result = route_leader_line(
             [-10.0, -10.0, 0.0], // dim_pos
             [0.0, 0.0, 0.0],     // text_anchor
-            20.0,                 // width
-            5.0,                  // height
+            20.0,                // width
+            5.0,                 // height
             [1.0, 0.0, 0.0],     // orientation
             [0.0, 1.0, 0.0],     // up
         );

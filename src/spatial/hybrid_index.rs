@@ -175,9 +175,7 @@ impl HybridSpatialIndex {
              WHERE {confidence_expr} >= ?1
              ORDER BY {confidence_expr} DESC"
         );
-        let mut stmt = conn.prepare(
-            &sql,
-        )?;
+        let mut stmt = conn.prepare(&sql)?;
 
         let rows = stmt.query_map([self.preload_threshold], |row| {
             let refno: i64 = row.get(0)?;
@@ -358,9 +356,7 @@ impl HybridSpatialIndex {
              ORDER BY {confidence_expr} DESC
              LIMIT ?4"
         );
-        let mut stmt = conn.prepare(
-            &sql,
-        )?;
+        let mut stmt = conn.prepare(&sql)?;
 
         let rows = stmt.query_map(
             [point.x, point.y, point.z, options.max_results as f32],

@@ -7,9 +7,10 @@
 > - [管道标注绘制流程](./管道标注绘制流程.md) — PDMS 绘制流程
 > - [标注重构开发计划](./标注重构开发计划.md) — rs-core 侧已有的方向性规划
 >
-> **状态**：草案，待评审。
+> **状态**：分阶段实施中；最终验收以 plant3d-web 真实页面显示为准。
 >
 > **编写时间**：2026-04-21
+> **当前最终验收入口**：`http://localhost:3101/?output_project=AvevaMarineSample&mbd_refno=24381_145712`
 
 ---
 
@@ -75,6 +76,34 @@ V2 架构（单算）：
 ```
 
 ---
+
+### 1.3 当前实现状态与最终验收边界
+
+当前 V2 已具备数据合同、V1 `LayoutResult` 到 V2 primitive 的过渡组装、`SmallDimSolver` 基础集成、label 避让、leader 生成 / 重连 / reroute、leader-label 冲突检测、`plant-model-gen` 的真实 V2 后端 API，以及 plant3d-web 对 V2 primitive 的过渡渲染接入：
+
+```text
+GET /api/mbd/v2/pipe/{refno}
+```
+
+它还不是完整新版算法：`PolarSystem`、直接产出 V2 primitive 的 `BranchCalculatorV2` 仍需继续完成。plant3d-web 现阶段通过 `getMbdPipeV2Annotations()` 消费 `/api/mbd/v2/pipe/{refno}`，并把 V2 primitive 适配到现有三维标注渲染器。
+
+后续开发不能只以 rs-core JSON 输出作为完成标准。阶段性 JSON 验证可以用于定位后端问题，但最终验收必须通过真实页面：
+
+```text
+http://localhost:3101/?output_project=AvevaMarineSample&mbd_refno=24381_145712
+```
+
+该页面必须自动进入 `AvevaMarineSample` 项目，自动触发 `mbd_refno=24381_145712` 的管道标注加载，并在三维视图中正确显示 BRAN 管道标注。`24381_145018` 仅保留为历史 / 辅助排查样本，不再作为主验收 BRAN。
+
+当前前端入口事实：
+
+- `output_project` 在 plant3d-web `App.vue` 中用于项目直达；项目真值来自后端 `/api/projects` 返回的真实项目。
+- `mbd_refno` 在 plant3d-web `ViewerPanel.vue` 中作为 URL 预加载优先参数，会触发 `requestMbdPipeAnnotation(refno)`；`mbd_pipe` 只是兼容参数。
+- 当前前端 MBD 请求入口在 layout_first 模式优先使用 `getMbdPipeV2Annotations()`；URL 加 `mbd_api=v1` / `mbd_version=v1` 可回滚到 `getMbdPipeAnnotations()`。
+- 正式验收 URL 使用 `mbd_refno`；`mbd_pipe` 只作为历史兼容入口，不作为文档里的最终验收入口。
+- V2 最终验收不能绕过上述 URL，不能只看后端 JSON。
+- 当前 V1 `/api/mbd/pipe/{refno}` 随 `web_server` feature 默认启用 `mbd-iso`，`mode=layout_first` 会返回 `layout_result`，用于保证现有页面验收入口继续可用。
+
 
 ## 二、V2 数据契约（前后端单一真相源）
 
@@ -426,9 +455,8 @@ PDMS 用 `mbdtextlen.pmlfnc` 查表算字符宽。V2 有两个选项：
 - 实现 `AvoidanceEngine::resolve_conflicts`：多 lane 分配、已用方向惩罚
 - 实现 `PrimitiveAssembler`
 - 新 route `GET /api/mbd/v2/pipe/{refno}`
-- 验收：
-  - 10 条管道 fixture 的 primitive 输出与手动预期图 1:1 对应（无重叠、方向正确、字高合理）
-  - `issues` 字段对 3 种故意构造的异常管道正确报出
+- 阶段验收：后端 JSON 可返回 `MbdV2PipeData`，且 `issues` 字段对 3 种故意构造的异常管道正确报出
+- 最终验收：必须继续接入 plant3d-web，并通过 `localhost:3101/?output_project=AvevaMarineSample&mbd_refno=24381_145712` 真实页面显示验证
 
 ### Phase 4 · 前端 V2 Renderer（2 周）
 
@@ -439,6 +467,7 @@ PDMS 用 `mbdtextlen.pmlfnc` 查表算字符宽。V2 有两个选项：
 - UI 加 V1/V2 切换开关
 - 验收：
   - 10 条 fixture 用 V2 渲染，与 V1 视觉对比 **不低于** V1 的正确率
+  - `localhost:3101/?output_project=AvevaMarineSample&mbd_refno=24381_145712` 可自动加载并显示管道标注
   - V2 首屏渲染时间 ≤ V1（因为省去前端计算）
 
 ### Phase 5 · 并行运行 + 差异 QA（2 周）
@@ -447,7 +476,7 @@ PDMS 用 `mbdtextlen.pmlfnc` 查表算字符宽。V2 有两个选项：
 
 - 批量跑 50–100 条管道，对比截图
 - 建立 regression test harness：对每条 fixture 存 V2 输出快照，改动后 diff
-- 验收：V2 在 95% fixtures 上视觉与 PDMS 对齐（或比 V1 更接近 PDMS）
+- 验收：V2 在 95% fixtures 上视觉与 PDMS 对齐（或比 V1 更接近 PDMS）；主验收 BRAN `24381_145712` 必须在真实页面稳定显示
 
 ### Phase 6 · V1 Deprecation（1 周）
 
@@ -488,6 +517,24 @@ PDMS 用 `mbdtextlen.pmlfnc` 查表算字符宽。V2 有两个选项：
 - 后端 V2 接口 p95 延迟 ≤ V1 `mode=layout_first` 延迟 + 30%（因为做更多工作）
 - 前端首屏渲染 p95 ≤ V1 （因为前端更轻）
 - 内存：前端 mbd 相关 JS 堆使用 ≤ V1 的 80%
+
+### 6.5 真实页面最终验收
+
+最终验收只认以下入口：
+
+```text
+http://localhost:3101/?output_project=AvevaMarineSample&mbd_refno=24381_145712
+```
+
+必须满足：页面正常打开且不长期停在项目加载；当前项目为 `AvevaMarineSample`；`mbd_refno=24381_145712` 自动触发；后端成功返回该 BRAN 的管道标注数据；三维视图能看到该 BRAN 的管道模型和尺寸标注；MBD 面板显示当前 BRAN/HANG 为 `24381_145712`；浏览器控制台没有导致标注中断的 error；后端接口没有返回 error 级 `issues`。
+
+尺寸显示必须满足：不缺失、不重复、方向不明显偏转、文字不堆叠到不可读，小尺寸能错层或缩字高。
+
+后端阶段验证命令如下，但它只能证明后端数据可用，不能代表最终完成：
+
+```bash
+curl -s "http://127.0.0.1:3100/api/mbd/v2/pipe/24381_145712?debug=true" | jq .
+```
 
 ---
 

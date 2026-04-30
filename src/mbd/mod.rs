@@ -345,16 +345,14 @@ impl BranchCalculator {
         );
         sections.linear_dims.extend(linear_placed);
 
-        let cut_placed = solve_series_with_registry(
-            input.cut_tubis,
-            input.context,
-            input.params,
-            &mut registry,
-        );
+        let cut_placed =
+            solve_series_with_registry(input.cut_tubis, input.context, input.params, &mut registry);
         sections.cut_tubis.extend(cut_placed);
 
         for slope in input.slopes {
-            sections.slopes.push(iso_extras::solve_slope(slope, input.params));
+            sections
+                .slopes
+                .push(iso_extras::solve_slope(slope, input.params));
         }
         for weld in input.welds {
             sections.welds.push(iso_extras::solve_weld(weld));
