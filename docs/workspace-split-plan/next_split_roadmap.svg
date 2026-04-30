@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 660" width="1080" height="660">
+  <style>
+    text { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+    .title { fill: #111827; font-size: 21px; font-weight: 700; }
+    .label { fill: #111827; font-size: 14px; font-weight: 700; }
+    .sub { fill: #6b7280; font-size: 12px; }
+    .small { fill: #6b7280; font-size: 11px; }
+    .lane { fill-opacity: 0.07; stroke-width: 1.2; stroke-dasharray: 6 4; }
+    .box { fill: #ffffff; stroke: #d1d5db; stroke-width: 1.5; }
+    .blue { fill: #eff6ff; stroke: #bfdbfe; }
+    .green { fill: #f0fdf4; stroke: #bbf7d0; }
+    .orange { fill: #fff7ed; stroke: #fed7aa; }
+    .purple { fill: #faf5ff; stroke: #e9d5ff; }
+    .red { fill: #fef2f2; stroke: #fecaca; }
+  </style>
+  <defs>
+    <marker id="arrow-blue" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-green" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#16a34a"/>
+    </marker>
+    <marker id="arrow-orange" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#ea580c"/>
+    </marker>
+    <marker id="arrow-red" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#dc2626"/>
+    </marker>
+  </defs>
+
+  <rect width="1080" height="660" fill="#ffffff"/>
+  <text x="540" y="36" text-anchor="middle" class="title">Next Workspace Split Roadmap</text>
+  <text x="540" y="58" text-anchor="middle" class="sub">Move pure utilities first; keep IO, DB, geometry generation inside aios_core for later phases</text>
+
+  <rect x="48" y="92" width="984" height="112" rx="10" class="lane blue"/>
+  <text x="68" y="116" class="small" font-weight="700">CURRENT BASELINE</text>
+  <rect x="110" y="138" width="190" height="46" rx="8" class="box blue"/>
+  <text x="205" y="158" text-anchor="middle" class="label">aios_core</text>
+  <text x="205" y="176" text-anchor="middle" class="sub">root crate</text>
+  <rect x="445" y="138" width="190" height="46" rx="8" class="box blue"/>
+  <text x="540" y="158" text-anchor="middle" class="label">aios-mbd</text>
+  <text x="540" y="176" text-anchor="middle" class="sub">MBD layout solver</text>
+  <rect x="780" y="138" width="190" height="46" rx="8" class="box blue"/>
+  <text x="875" y="158" text-anchor="middle" class="label">validation</text>
+  <text x="875" y="176" text-anchor="middle" class="sub">check + targeted tests</text>
+
+  <rect x="48" y="240" width="984" height="152" rx="10" class="lane green"/>
+  <text x="68" y="264" class="small" font-weight="700">NEXT SAFE SPLIT</text>
+  <rect x="92" y="294" width="190" height="62" rx="8" class="box green"/>
+  <text x="187" y="316" text-anchor="middle" class="label">pdms_hash</text>
+  <text x="187" y="336" text-anchor="middle" class="sub">pure name hash</text>
+  <rect x="326" y="294" width="190" height="62" rx="8" class="box green"/>
+  <text x="421" y="316" text-anchor="middle" class="label">float_util</text>
+  <text x="421" y="336" text-anchor="middle" class="sub">round/hash helpers</text>
+  <rect x="560" y="286" width="220" height="78" rx="8" class="box green"/>
+  <text x="670" y="310" text-anchor="middle" class="label">aios-pdms-core</text>
+  <text x="670" y="330" text-anchor="middle" class="sub">new pure utility crate</text>
+  <text x="670" y="348" text-anchor="middle" class="sub">no aios_core dependency</text>
+  <rect x="824" y="294" width="166" height="62" rx="8" class="box green"/>
+  <text x="907" y="316" text-anchor="middle" class="label">re-export</text>
+  <text x="907" y="336" text-anchor="middle" class="sub">old paths stable</text>
+
+  <rect x="48" y="428" width="984" height="108" rx="10" class="lane orange"/>
+  <text x="68" y="452" class="small" font-weight="700">ADAPTER LAYER</text>
+  <rect x="122" y="474" width="214" height="42" rx="8" class="box orange"/>
+  <text x="229" y="500" text-anchor="middle" class="sub">types/hash stays adapter first</text>
+  <rect x="433" y="474" width="214" height="42" rx="8" class="box orange"/>
+  <text x="540" y="500" text-anchor="middle" class="sub">PlantAabb / Transform stay root</text>
+  <rect x="744" y="474" width="214" height="42" rx="8" class="box orange"/>
+  <text x="851" y="500" text-anchor="middle" class="sub">compat tests guard paths</text>
+
+  <rect x="48" y="568" width="984" height="54" rx="10" class="lane red"/>
+  <text x="68" y="592" class="small" font-weight="700">DEFER</text>
+  <text x="162" y="592" class="sub">rs_surreal</text>
+  <text x="282" y="592" class="sub">runtime</text>
+  <text x="392" y="592" class="sub">db_pool</text>
+  <text x="500" y="592" class="sub">tree_query</text>
+  <text x="620" y="592" class="sub">prim_geo</text>
+  <text x="735" y="592" class="sub">shape</text>
+  <text x="835" y="592" class="sub">tool/db_tool</text>
+
+  <path d="M300 161 L445 161" fill="none" stroke="#2563eb" stroke-width="1.8" marker-end="url(#arrow-blue)"/>
+  <path d="M635 161 L780 161" fill="none" stroke="#2563eb" stroke-width="1.8" marker-end="url(#arrow-blue)"/>
+  <path d="M282 325 L326 325" fill="none" stroke="#16a34a" stroke-width="1.8" marker-end="url(#arrow-green)"/>
+  <path d="M516 325 L560 325" fill="none" stroke="#16a34a" stroke-width="1.8" marker-end="url(#arrow-green)"/>
+  <path d="M780 325 L824 325" fill="none" stroke="#16a34a" stroke-width="1.8" marker-end="url(#arrow-green)"/>
+  <path d="M670 364 L540 474" fill="none" stroke="#ea580c" stroke-width="1.8" marker-end="url(#arrow-orange)"/>
+  <path d="M907 356 L851 474" fill="none" stroke="#ea580c" stroke-width="1.8" marker-end="url(#arrow-orange)"/>
+  <path d="M540 516 L540 568" fill="none" stroke="#dc2626" stroke-width="1.8" marker-end="url(#arrow-red)" stroke-dasharray="5 4"/>
+
+  <rect x="340" y="150" width="68" height="22" rx="4" fill="#ffffff" opacity="0.95"/>
+  <text x="374" y="166" text-anchor="middle" class="small">depends</text>
+  <rect x="675" y="150" width="68" height="22" rx="4" fill="#ffffff" opacity="0.95"/>
+  <text x="709" y="166" text-anchor="middle" class="small">guards</text>
+  <rect x="673" y="402" width="92" height="22" rx="4" fill="#ffffff" opacity="0.95"/>
+  <text x="719" y="418" text-anchor="middle" class="small">pure input API</text>
+  <rect x="792" y="402" width="96" height="22" rx="4" fill="#ffffff" opacity="0.95"/>
+  <text x="840" y="418" text-anchor="middle" class="small">compat layer</text>
+
+  <g transform="translate(58,636)">
+    <line x1="0" y1="8" x2="28" y2="8" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+    <text x="36" y="12" class="small">safe split</text>
+    <line x1="132" y1="8" x2="160" y2="8" stroke="#ea580c" stroke-width="1.5" marker-end="url(#arrow-orange)"/>
+    <text x="168" y="12" class="small">adapter boundary</text>
+    <line x1="302" y1="8" x2="330" y2="8" stroke="#dc2626" stroke-width="1.5" marker-end="url(#arrow-red)" stroke-dasharray="5 4"/>
+    <text x="338" y="12" class="small">defer</text>
+  </g>
+</svg>

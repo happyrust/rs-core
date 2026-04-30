@@ -8,6 +8,8 @@
 cargo check --workspace
 cargo test -p aios-mbd
 cargo test -p aios_core --test mbd_reexport
+cargo test -p aios-pdms-core
+cargo test -p aios_core --test pdms_core_reexport
 ```
 
 这些命令分别覆盖：
@@ -15,6 +17,8 @@ cargo test -p aios_core --test mbd_reexport
 - workspace 级编译检查，确保根 crate 与子 crate 能一起解析、编译。
 - `aios-mbd` 独立 crate 的单元测试。
 - `aios_core::mbd::*` 旧路径兼容性，避免下游调用路径被拆分破坏。
+- `aios-pdms-core` 独立 crate 的单元测试。
+- `aios_core::types::pdms_hash::*` 与 `aios_core::types::float_util::*` 旧路径兼容性。
 
 ## 当前不建议作为阻塞项
 
@@ -43,6 +47,8 @@ PR 的测试说明可以写为：
 - cargo check --workspace
 - cargo test -p aios-mbd
 - cargo test -p aios_core --test mbd_reexport
+- cargo test -p aios-pdms-core
+- cargo test -p aios_core --test pdms_core_reexport
 
 未作为阻塞项：
 - cargo test --workspace

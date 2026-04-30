@@ -39,6 +39,14 @@
 - `src/prim_geo/attmap_csg.rs` 依赖多个 `prim_geo::*` shape、`BrepShapeTrait`、`AttrMap`、`NamedAttrMap`，应等几何/属性 DTO 边界清楚后再拆。
 - `src/tool/db_tool.rs` 依赖 `PdmsDatabaseInfo`、全局 UDA map、文件读取和 `types::pdms_hash` re-export，应保留在根 crate 或拆成更晚的 IO/配置层。
 
+## PDMS 基础工具拆分结果
+
+- 已新增 `crates/aios-pdms-core`，当前只包含 `pdms_hash` 与 `float_util` 两个纯工具模块。
+- 根 crate 的 `src/types/pdms_hash.rs` 与 `src/types/float_util.rs` 已改为 re-export 新 crate，保留旧调用路径。
+- 新增 `tests/pdms_core_reexport.rs`，先验证 RED，再通过新 crate 实现转绿。
+- `ordered-float` 已提升到 `[workspace.dependencies]`，由根 crate 和 `aios-pdms-core` 共享。
+- `tool/db_tool` 暂未迁移，只继续调用 `crate::types::pdms_hash` 兼容层，保留缓存和文件 IO 责任在根 crate。
+
 ## 不建议现在做的事
 
 - 不建议在同一个 PR 中修复所有历史 examples。

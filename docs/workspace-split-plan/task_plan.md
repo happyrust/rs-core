@@ -6,7 +6,7 @@
 
 ## 当前状态
 
-- 状态：规划中
+- 状态：已完成 MBD 与 PDMS 基础工具首轮拆分
 - 当前 worktree：`/Volumes/DPC/work/plant-code/rs-core-ws-split`
 - 已有拆分：`crates/aios-mbd`
 - 根 crate：`aios_core`
@@ -38,9 +38,18 @@
 
 ### Phase 4：后续拆分候选
 
-- [ ] 从依赖最少、业务边界清晰的模块继续拆分。
-- [ ] 每次拆分必须满足：无反向依赖、保留旧 API re-export、补兼容性测试、最小可验证命令通过。
-- [ ] 暂不拆数据库、运行时、全局配置相关模块，避免过早引入跨 crate 初始化和 feature 复杂度。
+- [x] 从依赖最少、业务边界清晰的模块继续规划拆分候选。
+- [x] 明确每次拆分必须满足：无反向依赖、保留旧 API re-export、补兼容性测试、最小可验证命令通过。
+- [x] 明确暂不拆数据库、运行时、全局配置相关模块，避免过早引入跨 crate 初始化和 feature 复杂度。
+
+### Phase 5：执行 PDMS 基础工具拆分
+
+- [x] 先添加 `pdms_core_reexport` 兼容性测试并确认 RED。
+- [x] 新增 `crates/aios-pdms-core`。
+- [x] 将 `pdms_hash` 与 `float_util` 纯函数迁移到新 crate。
+- [x] 根 crate 保留 `aios_core::types::pdms_hash::*` 与 `aios_core::types::float_util::*` 兼容路径。
+- [x] 更新 workspace 成员和共享依赖。
+- [x] 运行新 crate、兼容性测试和 workspace check。
 
 ## 验收标准
 
