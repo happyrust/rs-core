@@ -9,8 +9,13 @@ use crate::mbd::{
     LayoutResult, LayoutVec3, PlacedBend, PlacedLinearDim, PlacedSlope, PlacedTag, PlacedWeld,
 };
 
+use super::dim_direction::{calculate_dim_char_dirs, resolve_dim_direction, PreferredDirs};
+use super::iso_ori::compute_iso_ori;
+use super::leader_router::route_leader_line;
 use super::primitive::*;
 use super::small_dim::{DimRow, SmallDimInput, solve_small_dims};
+use super::text_measurement::mbd_text_width;
+use super::used_dir::{IsoUsedDir, UsedDirRegistry};
 
 /// 组装上下文：提供 V1 `PlacedXxx` 中缺失但 V2 需要的默认值。
 #[derive(Debug, Clone)]
@@ -23,6 +28,13 @@ pub struct AssemblerContext {
     pub default_up: Vec3V2,
     /// 默认箭头长度（用于合成 arrow direction）。
     pub default_arrow_len: f32,
+    /// 管道分支包围盒中心（可选）。
+    /// 提供后 `resolve_dim_direction` 会根据包围盒位置自动推断最佳标注方向。
+    pub bran_bbox_center: Option<Vec3V2>,
+    /// 每层偏移的乘数系数。PML 中 dimtimes 每增加 1，offset 增加 `cheight * lane_step_multiplier`。
+    pub lane_step_multiplier: f32,
+    /// 管段外径（mm），用于计算标注到管段表面的基础偏移。
+    pub pipe_od: f32,
 }
 
 impl Default for AssemblerContext {
@@ -32,6 +44,9 @@ impl Default for AssemblerContext {
             default_orientation: [1.0, 0.0, 0.0],
             default_up: [0.0, 1.0, 0.0],
             default_arrow_len: 3.0,
+            bran_bbox_center: None,
+            lane_step_multiplier: 1.2,
+            pipe_od: 0.0,
         }
     }
 }
@@ -47,6 +62,7 @@ pub fn assemble_v2_primitives(
     let mut primitives = Vec::new();
     let mut issues = Vec::new();
     let mut id_counter = 0u32;
+    let mut used_dir_registry = UsedDirRegistry::new();
 
     let mut next_id = |prefix: &str| -> String {
         id_counter += 1;
@@ -55,32 +71,41 @@ pub fn assemble_v2_primitives(
 
     for dim in &layout.linear_dims {
         match assemble_linear_dim(dim, ctx, &mut next_id) {
-            Ok(prim) => primitives.push(prim),
+            Ok(prim) => {
+                register_linear_dim_used_dir(&prim, &mut used_dir_registry);
+                primitives.push(prim);
+            }
             Err(issue) => issues.push(issue),
         }
     }
 
     for dim in &layout.cut_tubis {
-        match assemble_linear_dim(dim, ctx, &mut next_id) {
-            Ok(prim) => primitives.push(prim),
+        match assemble_linear_dim_as(dim, ctx, &mut next_id, Some(LinearDimSubKind::CutTubi)) {
+            Ok(prim) => {
+                register_linear_dim_used_dir(&prim, &mut used_dir_registry);
+                primitives.push(prim);
+            }
             Err(issue) => issues.push(issue),
         }
     }
 
     for weld in &layout.welds {
-        let (weld_prim, label_prim) = assemble_weld(weld, ctx, &mut next_id);
+        let (weld_prim, label_prim, leader_prim) = assemble_weld(weld, ctx, &mut next_id);
         primitives.push(weld_prim);
         if let Some(lbl) = label_prim {
             primitives.push(lbl);
         }
+        if let Some(leader) = leader_prim {
+            primitives.push(leader);
+        }
     }
 
     for slope in &layout.slopes {
-        primitives.push(assemble_slope(slope, ctx, &mut next_id));
+        primitives.extend(assemble_slope(slope, ctx, &mut next_id));
     }
 
     for tag in &layout.tags {
-        primitives.push(assemble_tag(tag, ctx, &mut next_id));
+        primitives.extend(assemble_tag(tag, ctx, &mut next_id));
     }
 
     for bend in &layout.bends {
@@ -90,10 +115,44 @@ pub fn assemble_v2_primitives(
     (primitives, issues)
 }
 
+fn register_linear_dim_used_dir(prim: &MbdPrimitive, registry: &mut UsedDirRegistry) {
+    if let MbdPrimitive::LinearDim(dim) = prim {
+        let dir = dim.text.orientation;
+        let start_proj = dot_v3(dim.extension_1.start, dir);
+        let end_proj = dot_v3(dim.extension_2.start, dir);
+        let min_dis = start_proj.min(end_proj);
+        let max_dis = start_proj.max(end_proj);
+        let dim_dir = [
+            dim.dim_line.start[0] - dim.extension_1.start[0],
+            dim.dim_line.start[1] - dim.extension_1.start[1],
+            dim.dim_line.start[2] - dim.extension_1.start[2],
+        ];
+        let dim_dir_norm = normalize(dim_dir);
+        if length(dim_dir_norm) > 1e-6 {
+            registry.register(IsoUsedDir::new(
+                &dim.common.id,
+                dim_dir_norm,
+                min_dis,
+                max_dis,
+                "MainDim",
+            ));
+        }
+    }
+}
+
 fn assemble_linear_dim(
     dim: &PlacedLinearDim,
     ctx: &AssemblerContext,
     next_id: &mut dyn FnMut(&str) -> String,
+) -> Result<MbdPrimitive, MbdV2Issue> {
+    assemble_linear_dim_as(dim, ctx, next_id, None)
+}
+
+fn assemble_linear_dim_as(
+    dim: &PlacedLinearDim,
+    ctx: &AssemblerContext,
+    next_id: &mut dyn FnMut(&str) -> String,
+    sub_kind_override: Option<LinearDimSubKind>,
 ) -> Result<MbdPrimitive, MbdV2Issue> {
     let start: Vec3V2 = dim.start;
     let end: Vec3V2 = dim.end;
@@ -125,14 +184,17 @@ fn assemble_linear_dim(
     let text_anchor = dim
         .text_anchor
         .unwrap_or_else(|| add_scaled_v3(mid, dir, offset));
+    let (text_orientation, text_up) =
+        text_frame_from_linear_dim(dim_line_start, dim_line_end, start, end, dir, ctx, None);
 
-    let sub_kind = match dim.kind.as_str() {
+    let sub_kind = sub_kind_override.unwrap_or_else(|| match dim.kind.as_str() {
         "segment" => LinearDimSubKind::Segment,
         "chain" => LinearDimSubKind::Chain,
         "overall" => LinearDimSubKind::Overall,
         "port" => LinearDimSubKind::Port,
+        "cut_tubi" => LinearDimSubKind::CutTubi,
         _ => LinearDimSubKind::Segment,
-    };
+    });
 
     Ok(MbdPrimitive::LinearDim(LinearDimPrimitive {
         common: CommonFields {
@@ -172,8 +234,8 @@ fn assemble_linear_dim(
             anchor: text_anchor,
             content: dim.text.clone(),
             height_mm: ctx.default_cheight,
-            orientation: ctx.default_orientation,
-            up: ctx.default_up,
+            orientation: text_orientation,
+            up: text_up,
         },
         level: 0,
     }))
@@ -183,20 +245,25 @@ fn assemble_weld(
     weld: &PlacedWeld,
     ctx: &AssemblerContext,
     next_id: &mut dyn FnMut(&str) -> String,
-) -> (MbdPrimitive, Option<MbdPrimitive>) {
+) -> (MbdPrimitive, Option<MbdPrimitive>, Option<MbdPrimitive>) {
     let weld_id = if weld.id.is_empty() {
         next_id("weld")
     } else {
         weld.id.clone()
     };
 
+    let mut linked_label_id: Option<String> = None;
+    let mut leader_prim: Option<MbdPrimitive> = None;
     let label_prim = if !weld.label.is_empty() {
         let label_id = next_id("weld-lbl");
+        linked_label_id = Some(label_id.clone());
+        let orientation = normalize_or(ctx.default_orientation, [1.0, 0.0, 0.0]);
+        let up = orthogonal_up(orientation, ctx.default_up);
         let label_pos = weld
             .label_offset_world
             .map(|off| add_v3(weld.position, off))
-            .unwrap_or(weld.position);
-        Some(MbdPrimitive::Label(LabelPrimitive {
+            .unwrap_or_else(|| add_scaled_v3(weld.position, up, default_label_offset(ctx)));
+        let label = LabelPrimitive {
             common: CommonFields {
                 id: label_id.clone(),
                 visible: weld.visible,
@@ -208,22 +275,24 @@ fn assemble_weld(
             text_anchor: label_pos,
             content: weld.label.clone(),
             height_mm: ctx.default_cheight,
-            orientation: ctx.default_orientation,
-            up: ctx.default_up,
+            orientation,
+            up,
             box_shape: LabelBoxShape::None,
             box_padding_mm: 0.0,
-        }))
+        };
+        leader_prim = build_leader_for_label(
+            &label,
+            weld.position,
+            "weld-leader",
+            "焊",
+            weld.visible,
+            weld.suppressed_reason.clone(),
+            next_id,
+        );
+        Some(MbdPrimitive::Label(label))
     } else {
         None
     };
-
-    let linked_label_id = label_prim.as_ref().map(|p| {
-        if let MbdPrimitive::Label(lbl) = p {
-            lbl.common.id.clone()
-        } else {
-            String::new()
-        }
-    });
 
     let weld_prim = MbdPrimitive::WeldMark(WeldMarkPrimitive {
         common: CommonFields {
@@ -243,27 +312,31 @@ fn assemble_weld(
         linked_label_id,
     });
 
-    (weld_prim, label_prim)
+    (weld_prim, label_prim, leader_prim)
 }
 
 fn assemble_slope(
     slope: &PlacedSlope,
     ctx: &AssemblerContext,
     next_id: &mut dyn FnMut(&str) -> String,
-) -> MbdPrimitive {
+) -> Vec<MbdPrimitive> {
+    let mut prims = Vec::new();
+
     let mid = midpoint(slope.start, slope.end);
     let text_pos = slope
         .label_offset_world
         .map(|off| add_v3(mid, off))
         .unwrap_or(mid);
 
-    MbdPrimitive::SlopeMark(SlopeMarkPrimitive {
+    let slope_id = if slope.id.is_empty() {
+        next_id("slope")
+    } else {
+        slope.id.clone()
+    };
+
+    prims.push(MbdPrimitive::SlopeMark(SlopeMarkPrimitive {
         common: CommonFields {
-            id: if slope.id.is_empty() {
-                next_id("slope")
-            } else {
-                slope.id.clone()
-            },
+            id: slope_id.clone(),
             visible: slope.visible,
             suppressed_reason: slope.suppressed_reason.clone(),
             function: Some("坡度".to_string()),
@@ -279,26 +352,148 @@ fn assemble_slope(
             orientation: ctx.default_orientation,
             up: ctx.default_up,
         },
-    })
+    }));
+
+    let height_diff = (slope.start[2] - slope.end[2]).abs();
+    if height_diff > 0.5 {
+        let (high, low) = if slope.start[2] >= slope.end[2] {
+            (slope.start, slope.end)
+        } else {
+            (slope.end, slope.start)
+        };
+
+        let projected = [high[0], high[1], low[2]];
+
+        let vert_len = (high[2] - low[2]).abs();
+        if vert_len > 0.5 {
+            prims.push(MbdPrimitive::AidLine(AidLinePrimitive {
+                common: CommonFields {
+                    id: next_id("slope-vert"),
+                    visible: slope.visible,
+                    suppressed_reason: slope.suppressed_reason.clone(),
+                    function: Some("尺寸".to_string()),
+                    ..CommonFields::default()
+                },
+                points: vec![projected, high],
+                style: AidLineStyle::Solid,
+            }));
+
+            let vert_mid = midpoint(projected, high);
+            let vert_text = format!("{}", vert_len.round() as i32);
+            prims.push(MbdPrimitive::AidText(AidTextPrimitive {
+                common: CommonFields {
+                    id: next_id("slope-vert-text"),
+                    visible: slope.visible,
+                    function: Some("尺寸".to_string()),
+                    ..CommonFields::default()
+                },
+                position: vert_mid,
+                content: vert_text,
+                height_mm: ctx.default_cheight,
+                orientation: ctx.default_orientation,
+                up: ctx.default_up,
+            }));
+        }
+
+        let horiz_len = distance(projected, low);
+        if horiz_len > 0.5 {
+            prims.push(MbdPrimitive::AidLine(AidLinePrimitive {
+                common: CommonFields {
+                    id: next_id("slope-horiz"),
+                    visible: slope.visible,
+                    suppressed_reason: slope.suppressed_reason.clone(),
+                    function: Some("尺寸".to_string()),
+                    ..CommonFields::default()
+                },
+                points: vec![projected, low],
+                style: AidLineStyle::Solid,
+            }));
+
+            let horiz_mid = midpoint(projected, low);
+            let horiz_text = format!("{}", horiz_len.round() as i32);
+            prims.push(MbdPrimitive::AidText(AidTextPrimitive {
+                common: CommonFields {
+                    id: next_id("slope-horiz-text"),
+                    visible: slope.visible,
+                    function: Some("尺寸".to_string()),
+                    ..CommonFields::default()
+                },
+                position: horiz_mid,
+                content: horiz_text,
+                height_mm: ctx.default_cheight,
+                orientation: ctx.default_orientation,
+                up: ctx.default_up,
+            }));
+        }
+
+        if vert_len > 0.5 && horiz_len > 0.5 {
+            let corner_size = (vert_len.min(horiz_len) / 4.0).min(ctx.default_cheight);
+
+            let horiz_dir = normalize(sub_v3(low, projected));
+            let vert_dir = normalize(sub_v3(high, projected));
+            let corner_pt = add_scaled_v3(
+                add_scaled_v3(projected, horiz_dir, corner_size),
+                vert_dir,
+                corner_size,
+            );
+
+            prims.push(MbdPrimitive::AidLine(AidLinePrimitive {
+                common: CommonFields {
+                    id: next_id("slope-right-angle-h"),
+                    visible: slope.visible,
+                    function: Some("尺寸".to_string()),
+                    ..CommonFields::default()
+                },
+                points: vec![
+                    corner_pt,
+                    add_scaled_v3(corner_pt, negate(horiz_dir), corner_size),
+                ],
+                style: AidLineStyle::Solid,
+            }));
+
+            prims.push(MbdPrimitive::AidLine(AidLinePrimitive {
+                common: CommonFields {
+                    id: next_id("slope-right-angle-v"),
+                    visible: slope.visible,
+                    function: Some("尺寸".to_string()),
+                    ..CommonFields::default()
+                },
+                points: vec![
+                    corner_pt,
+                    add_scaled_v3(corner_pt, negate(vert_dir), corner_size),
+                ],
+                style: AidLineStyle::Solid,
+            }));
+        }
+    }
+
+    prims
+}
+
+fn distance(a: Vec3V2, b: Vec3V2) -> f32 {
+    let d = sub_v3(a, b);
+    length(d)
 }
 
 fn assemble_tag(
     tag: &PlacedTag,
     ctx: &AssemblerContext,
     next_id: &mut dyn FnMut(&str) -> String,
-) -> MbdPrimitive {
-    let text_pos = tag
-        .label_offset_world
-        .map(|off| add_v3(tag.position, off))
-        .unwrap_or(tag.position);
+) -> Vec<MbdPrimitive> {
+    let text_pos = tag.label_offset_world.map(|off| add_v3(tag.position, off));
+    let label_id = if tag.id.is_empty() {
+        next_id("tag")
+    } else {
+        tag.id.clone()
+    };
+    let orientation = normalize_or(ctx.default_orientation, [1.0, 0.0, 0.0]);
+    let up = orthogonal_up(orientation, ctx.default_up);
+    let text_pos =
+        text_pos.unwrap_or_else(|| add_scaled_v3(tag.position, up, default_label_offset(ctx)));
 
-    MbdPrimitive::Label(LabelPrimitive {
+    let label = LabelPrimitive {
         common: CommonFields {
-            id: if tag.id.is_empty() {
-                next_id("tag")
-            } else {
-                tag.id.clone()
-            },
+            id: label_id,
             visible: tag.visible,
             suppressed_reason: tag.suppressed_reason.clone(),
             function: Some("标签".to_string()),
@@ -308,11 +503,25 @@ fn assemble_tag(
         text_anchor: text_pos,
         content: tag.text.clone(),
         height_mm: ctx.default_cheight,
-        orientation: ctx.default_orientation,
-        up: ctx.default_up,
+        orientation,
+        up,
         box_shape: LabelBoxShape::Rect,
         box_padding_mm: 1.0,
-    })
+    };
+
+    let mut out = vec![MbdPrimitive::Label(label.clone())];
+    if let Some(leader) = build_leader_for_label(
+        &label,
+        tag.position,
+        "tag-leader",
+        "标签",
+        tag.visible,
+        tag.suppressed_reason.clone(),
+        next_id,
+    ) {
+        out.push(leader);
+    }
+    out
 }
 
 fn assemble_bend(
@@ -421,6 +630,14 @@ fn sub_v3(a: LayoutVec3, b: LayoutVec3) -> Vec3V2 {
     [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
 }
 
+fn mid_v3(a: LayoutVec3, b: LayoutVec3) -> Vec3V2 {
+    [(a[0] + b[0]) * 0.5, (a[1] + b[1]) * 0.5, (a[2] + b[2]) * 0.5]
+}
+
+fn dot_v3(a: Vec3V2, b: Vec3V2) -> f32 {
+    a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
+}
+
 fn add_scaled_v3(base: LayoutVec3, dir: LayoutVec3, scale: f32) -> Vec3V2 {
     [
         base[0] + dir[0] * scale,
@@ -443,6 +660,140 @@ fn normalize(v: Vec3V2) -> Vec3V2 {
         return [0.0, 0.0, 0.0];
     }
     [v[0] / len, v[1] / len, v[2] / len]
+}
+
+fn normalize_or(v: Vec3V2, fallback: Vec3V2) -> Vec3V2 {
+    let normalized = normalize(v);
+    if length(normalized) > 1e-6 {
+        normalized
+    } else {
+        let fallback = normalize(fallback);
+        if length(fallback) > 1e-6 {
+            fallback
+        } else {
+            [1.0, 0.0, 0.0]
+        }
+    }
+}
+
+fn orthogonal_up(orientation: Vec3V2, up: Vec3V2) -> Vec3V2 {
+    let orientation = normalize_or(orientation, [1.0, 0.0, 0.0]);
+    let up = normalize_or(up, [0.0, 1.0, 0.0]);
+    let projected = sub_v3(up, mul_v3(orientation, dot(up, orientation)));
+    if length(projected) > 1e-6 {
+        return normalize(projected);
+    }
+
+    let candidates = [[0.0, 1.0, 0.0], [0.0, 0.0, 1.0], [1.0, 0.0, 0.0]];
+    for candidate in candidates {
+        let projected = sub_v3(candidate, mul_v3(orientation, dot(candidate, orientation)));
+        if length(projected) > 1e-6 {
+            return normalize(projected);
+        }
+    }
+    [0.0, 1.0, 0.0]
+}
+
+fn text_frame_from_linear_dim(
+    dim_line_start: Vec3V2,
+    dim_line_end: Vec3V2,
+    start: Vec3V2,
+    end: Vec3V2,
+    dim_dir: Vec3V2,
+    ctx: &AssemblerContext,
+    used_dirs: Option<&UsedDirRegistry>,
+) -> (Vec3V2, Vec3V2) {
+    let pipe_vec = sub_v3(end, start);
+    let pipe_len_sq = dot_v3(pipe_vec, pipe_vec);
+
+    if pipe_len_sq > 1e-6 {
+        let pipedir = normalize_or(pipe_vec, ctx.default_orientation);
+        let segment_mid = mid_v3(start, end);
+
+        let preferred = match ctx.bran_bbox_center {
+            Some(center) => calculate_dim_char_dirs(segment_mid, center),
+            None => PreferredDirs::default(),
+        };
+
+        if let Some(registry) = used_dirs {
+            if !registry.is_empty() {
+                let ori = compute_iso_ori(
+                    pipedir,
+                    &preferred.dim_dirs,
+                    &preferred.char_dirs,
+                    registry,
+                    60.0,
+                );
+                return (ori.pipedir, ori.chardir);
+            }
+        }
+
+        if ctx.bran_bbox_center.is_some() {
+            let result = resolve_dim_direction(pipedir, segment_mid, ctx.bran_bbox_center);
+            return (result.text_orientation, result.text_up);
+        }
+    }
+
+    let orientation = normalize_or(
+        sub_v3(dim_line_end, dim_line_start),
+        normalize_or(pipe_vec, ctx.default_orientation),
+    );
+    let up = orthogonal_up(orientation, normalize_or(dim_dir, ctx.default_up));
+    (orientation, up)
+}
+
+fn build_leader_for_label(
+    label: &LabelPrimitive,
+    anchor: Vec3V2,
+    id_prefix: &str,
+    function_name: &str,
+    visible: bool,
+    suppressed_reason: Option<String>,
+    next_id: &mut dyn FnMut(&str) -> String,
+) -> Option<MbdPrimitive> {
+    if distance_sq(anchor, label.text_anchor) <= 1e-6 {
+        return None;
+    }
+    let padding = label.box_padding_mm.max(0.0);
+    let width = mbd_text_width(&label.content, label.height_mm) + padding * 2.0;
+    let height = label.height_mm + padding * 2.0;
+    let text_anchor = [
+        label.text_anchor[0] - label.orientation[0] * padding - label.up[0] * padding,
+        label.text_anchor[1] - label.orientation[1] * padding - label.up[1] * padding,
+        label.text_anchor[2] - label.orientation[2] * padding - label.up[2] * padding,
+    ];
+    let points = route_leader_line(
+        anchor,
+        text_anchor,
+        width,
+        height,
+        label.orientation,
+        label.up,
+    );
+    if points.len() < 2 || distance_sq(points[0], points[1]) <= 1e-6 {
+        return None;
+    }
+    Some(MbdPrimitive::LeaderLine(LeaderLinePrimitive {
+        common: CommonFields {
+            id: next_id(id_prefix),
+            visible,
+            suppressed_reason,
+            function: Some(function_name.to_string()),
+            // 用 source_refno 暂存关联 label id，避让阶段可据此在 label 被移动后重连 leader。
+            source_refno: Some(label.common.id.clone()),
+            ..CommonFields::default()
+        },
+        points,
+        arrow_at: LeaderArrowAt::None,
+    }))
+}
+
+fn default_label_offset(ctx: &AssemblerContext) -> f32 {
+    (ctx.default_cheight * 1.5).max(1.0)
+}
+
+fn mul_v3(v: Vec3V2, s: f32) -> Vec3V2 {
+    [v[0] * s, v[1] * s, v[2] * s]
 }
 
 fn dot(a: Vec3V2, b: Vec3V2) -> f32 {
@@ -507,6 +858,15 @@ pub fn expand_linear_dim_chain(
     ctx: &AssemblerContext,
     next_id: &mut dyn FnMut(&str) -> String,
 ) -> Vec<MbdPrimitive> {
+    expand_linear_dim_chain_as(chain, ctx, next_id, None)
+}
+
+fn expand_linear_dim_chain_as(
+    chain: &LinearDimChain<'_>,
+    ctx: &AssemblerContext,
+    next_id: &mut dyn FnMut(&str) -> String,
+    sub_kind_override: Option<LinearDimSubKind>,
+) -> Vec<MbdPrimitive> {
     let n = chain.dims.len();
     if n == 0 {
         return Vec::new();
@@ -549,7 +909,15 @@ pub fn expand_linear_dim_chain(
         for i in 0..row.points.len() - 1 {
             let source_idx = seg_cursor.min(n - 1);
             let source = &chain.dims[source_idx];
-            let prim = build_primitive_for_row_segment(source, row, i, xdir, ctx, next_id);
+            let prim = build_primitive_for_row_segment(
+                source,
+                row,
+                i,
+                xdir,
+                ctx,
+                sub_kind_override,
+                next_id,
+            );
             primitives.push(prim);
             seg_cursor += 1;
         }
@@ -582,6 +950,7 @@ pub fn assemble_v2_primitives_with_chain_stacking(
             &group,
             small_dim_params,
             ctx,
+            None,
             &mut next_id,
             &mut primitives,
             &mut issues,
@@ -595,6 +964,7 @@ pub fn assemble_v2_primitives_with_chain_stacking(
             &group,
             small_dim_params,
             ctx,
+            Some(LinearDimSubKind::CutTubi),
             &mut next_id,
             &mut primitives,
             &mut issues,
@@ -602,17 +972,20 @@ pub fn assemble_v2_primitives_with_chain_stacking(
     }
 
     for weld in &layout.welds {
-        let (weld_prim, label_prim) = assemble_weld(weld, ctx, &mut next_id);
+        let (weld_prim, label_prim, leader_prim) = assemble_weld(weld, ctx, &mut next_id);
         primitives.push(weld_prim);
         if let Some(lbl) = label_prim {
             primitives.push(lbl);
         }
+        if let Some(leader) = leader_prim {
+            primitives.push(leader);
+        }
     }
     for slope in &layout.slopes {
-        primitives.push(assemble_slope(slope, ctx, &mut next_id));
+        primitives.extend(assemble_slope(slope, ctx, &mut next_id));
     }
     for tag in &layout.tags {
-        primitives.push(assemble_tag(tag, ctx, &mut next_id));
+        primitives.extend(assemble_tag(tag, ctx, &mut next_id));
     }
     for bend in &layout.bends {
         assemble_bend(bend, ctx, &mut next_id, &mut primitives, &mut issues);
@@ -626,13 +999,15 @@ fn assemble_chain_group(
     group: &ChainGroup,
     small_dim_params: &SmallDimChainParams,
     ctx: &AssemblerContext,
+    sub_kind_override: Option<LinearDimSubKind>,
     next_id: &mut dyn FnMut(&str) -> String,
     primitives: &mut Vec<MbdPrimitive>,
     issues: &mut Vec<MbdV2Issue>,
 ) {
     match group.indices.len() {
         0 => {}
-        1 => match assemble_linear_dim(&dims[group.indices[0]], ctx, next_id) {
+        1 => match assemble_linear_dim_as(&dims[group.indices[0]], ctx, next_id, sub_kind_override)
+        {
             Ok(p) => primitives.push(p),
             Err(i) => issues.push(i),
         },
@@ -643,7 +1018,7 @@ fn assemble_chain_group(
                 dims: &chain_dims,
                 small_dim_params: small_dim_params.clone(),
             };
-            let expanded = expand_linear_dim_chain(&chain, ctx, next_id);
+            let expanded = expand_linear_dim_chain_as(&chain, ctx, next_id, sub_kind_override);
             primitives.extend(expanded);
         }
     }
@@ -703,21 +1078,15 @@ pub fn group_dims_into_chains(
 
     let mut groups: Vec<ChainGroup> = Vec::new();
     for (_, mut indices) in buckets {
-        // 桶内按 start 点的 "沿 direction 投影" 排序，让端点连接顺序稳定
-        let probe_dir = if let Some(&i0) = indices.first() {
-            dims[i0].direction
-        } else {
-            continue;
-        };
-        indices.sort_by(|&a, &b| {
-            project_along(dims[a].start, probe_dir)
-                .partial_cmp(&project_along(dims[b].start, probe_dir))
-                .unwrap_or(std::cmp::Ordering::Equal)
-        });
+        // 桶内只保留原输入顺序作为 tie-break；真正的链顺序由端点拓扑决定。
+        indices.sort_unstable();
 
-        // 贪心串联：扫描每个未用过的 i 作为起点，沿 end→start 连接后续
+        // 贪心串联：优先选择“没有前驱”的端点拓扑头，沿 end→start 连接后续。
         let mut used = vec![false; indices.len()];
-        for start_pos in 0..indices.len() {
+        loop {
+            let Some(start_pos) = find_chain_head(&indices, &used, dims, tolerance) else {
+                break;
+            };
             if used[start_pos] {
                 continue;
             }
@@ -727,16 +1096,22 @@ pub fn group_dims_into_chains(
 
             loop {
                 let mut best_next: Option<usize> = None;
+                let mut best_dist = f32::MAX;
                 for j in 0..indices.len() {
                     if used[j] {
                         continue;
                     }
                     let cand = indices[j];
-                    if distance_sq(tail_end, dims[cand].start)
-                        <= tolerance.endpoint_tolerance * tolerance.endpoint_tolerance
+                    let dist = distance_sq(tail_end, dims[cand].start);
+                    if dist <= tolerance.endpoint_tolerance * tolerance.endpoint_tolerance
+                        && (dist < best_dist
+                            || (dist == best_dist
+                                && best_next
+                                    .map(|prev| indices[j] < indices[prev])
+                                    .unwrap_or(true)))
                     {
                         best_next = Some(j);
-                        break;
+                        best_dist = dist;
                     }
                 }
                 if let Some(j) = best_next {
@@ -770,16 +1145,41 @@ fn bucket_key(dim: &PlacedLinearDim, tolerance: &ChainTolerance) -> BucketKey {
     (qx, qy, qz, qo)
 }
 
-fn project_along(p: Vec3V2, dir: Vec3V2) -> f32 {
-    // dir 不要求归一化；投影到任意参考方向用于稳定排序即可
-    p[0] * dir[0] + p[1] * dir[1] + p[2] * dir[2]
-}
-
 fn distance_sq(a: Vec3V2, b: Vec3V2) -> f32 {
     let dx = a[0] - b[0];
     let dy = a[1] - b[1];
     let dz = a[2] - b[2];
     dx * dx + dy * dy + dz * dz
+}
+
+fn find_chain_head(
+    indices: &[usize],
+    used: &[bool],
+    dims: &[PlacedLinearDim],
+    tolerance: &ChainTolerance,
+) -> Option<usize> {
+    let tol_sq = tolerance.endpoint_tolerance * tolerance.endpoint_tolerance;
+    let mut fallback: Option<usize> = None;
+
+    for (pos, &idx) in indices.iter().enumerate() {
+        if used[pos] {
+            continue;
+        }
+        fallback = fallback
+            .map(|prev| if idx < indices[prev] { pos } else { prev })
+            .or(Some(pos));
+
+        let has_predecessor = indices.iter().enumerate().any(|(other_pos, &other_idx)| {
+            !used[other_pos]
+                && other_pos != pos
+                && distance_sq(dims[other_idx].end, dims[idx].start) <= tol_sq
+        });
+        if !has_predecessor {
+            return Some(pos);
+        }
+    }
+
+    fallback
 }
 
 fn build_primitive_for_row_segment(
@@ -788,6 +1188,7 @@ fn build_primitive_for_row_segment(
     seg_i: usize,
     xdir: Vec3V2,
     ctx: &AssemblerContext,
+    sub_kind_override: Option<LinearDimSubKind>,
     next_id: &mut dyn FnMut(&str) -> String,
 ) -> MbdPrimitive {
     let p_start = row.points[seg_i];
@@ -801,17 +1202,27 @@ fn build_primitive_for_row_segment(
 
     let text_shift = (xshift_start + xshift_end) * 0.5;
     let text_anchor = add_scaled_v3(row.pos, xdir, text_shift);
+    let (text_orientation, text_up) = text_frame_from_linear_dim(
+        dim_line_start,
+        dim_line_end,
+        p_start,
+        p_end,
+        source.direction,
+        ctx,
+        None,
+    );
 
     let arrow1_dir = xdir;
     let arrow2_dir = negate(xdir);
 
-    let sub_kind = match source.kind.as_str() {
+    let sub_kind = sub_kind_override.unwrap_or_else(|| match source.kind.as_str() {
         "segment" => LinearDimSubKind::Segment,
         "chain" => LinearDimSubKind::Chain,
         "overall" => LinearDimSubKind::Overall,
         "port" => LinearDimSubKind::Port,
+        "cut_tubi" => LinearDimSubKind::CutTubi,
         _ => LinearDimSubKind::Segment,
-    };
+    });
 
     let id = if source.id.is_empty() {
         next_id("ld")
@@ -853,8 +1264,8 @@ fn build_primitive_for_row_segment(
             anchor: text_anchor,
             content: row.texts[seg_i].clone(),
             height_mm: row.cheight,
-            orientation: ctx.default_orientation,
-            up: ctx.default_up,
+            orientation: text_orientation,
+            up: text_up,
         },
         level: row.level,
     })
@@ -925,7 +1336,9 @@ mod tests {
         let ctx = AssemblerContext::default();
         let (primitives, _) = assemble_v2_primitives(&layout, &ctx);
 
-        let dim = primitives.iter().find(|p| matches!(p, MbdPrimitive::LinearDim(_)));
+        let dim = primitives
+            .iter()
+            .find(|p| matches!(p, MbdPrimitive::LinearDim(_)));
         assert!(dim.is_some());
         if let Some(MbdPrimitive::LinearDim(d)) = dim {
             assert_eq!(d.common.id, "dim-1");
@@ -948,9 +1361,7 @@ mod tests {
         if let Some(MbdPrimitive::WeldMark(w)) = weld {
             assert!(w.linked_label_id.is_some());
             let label_id = w.linked_label_id.as_ref().unwrap();
-            let label = primitives
-                .iter()
-                .find(|p| p.id() == label_id.as_str());
+            let label = primitives.iter().find(|p| p.id() == label_id.as_str());
             assert!(label.is_some(), "linked label should exist");
         }
     }
@@ -1007,10 +1418,7 @@ mod tests {
         assert_eq!(primitives.len(), 1);
         assert!(!primitives[0].visible());
         if let MbdPrimitive::LinearDim(d) = &primitives[0] {
-            assert_eq!(
-                d.common.suppressed_reason.as_deref(),
-                Some("too_dense")
-            );
+            assert_eq!(d.common.suppressed_reason.as_deref(), Some("too_dense"));
         }
     }
 
@@ -1125,9 +1533,9 @@ mod tests {
         let mut next_id = next_id_factory();
 
         let prims = expand_linear_dim_chain(&chain, &ctx, &mut next_id);
-        let shrunk = prims.iter().any(|p| {
-            matches!(p, MbdPrimitive::LinearDim(d) if d.text.height_mm < 2.5 - 1e-6)
-        });
+        let shrunk = prims
+            .iter()
+            .any(|p| matches!(p, MbdPrimitive::LinearDim(d) if d.text.height_mm < 2.5 - 1e-6));
         assert!(
             shrunk,
             "change_cheight_auto should shrink at least one primitive text height"
@@ -1166,7 +1574,10 @@ mod tests {
         let suppressed = prims.iter().any(|p| {
             matches!(p, MbdPrimitive::LinearDim(d) if d.common.suppressed_reason.as_deref() == Some("too_dense"))
         });
-        assert!(suppressed, "d-2 的 suppressed_reason 应当透传到对应 primitive");
+        assert!(
+            suppressed,
+            "d-2 的 suppressed_reason 应当透传到对应 primitive"
+        );
     }
 
     #[test]
@@ -1350,9 +1761,9 @@ mod tests {
             &ChainTolerance::default(),
             &params,
         );
-        let has_bump = prims.iter().any(|p| {
-            matches!(p, MbdPrimitive::LinearDim(d) if d.level > 0)
-        });
+        let has_bump = prims
+            .iter()
+            .any(|p| matches!(p, MbdPrimitive::LinearDim(d) if d.level > 0));
         assert!(has_bump, "short 1mm segment should bump to level > 0");
     }
 

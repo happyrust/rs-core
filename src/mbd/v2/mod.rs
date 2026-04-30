@@ -26,22 +26,32 @@
 
 pub mod assembler;
 pub mod avoidance;
+pub mod dim_direction;
+pub mod iso_ori;
 pub mod leader_router;
+pub mod member_positions;
 pub mod pipeline;
 pub mod primitive;
 pub mod small_dim;
 pub mod text_measurement;
+pub mod used_dir;
 
 pub use assembler::{
     AssemblerContext, ChainGroup, ChainTolerance, LinearDimChain, SmallDimChainParams,
-    assemble_v2_primitives, assemble_v2_primitives_with_chain_stacking,
-    expand_linear_dim_chain, group_dims_into_chains,
+    assemble_v2_primitives, assemble_v2_primitives_with_chain_stacking, expand_linear_dim_chain,
+    group_dims_into_chains,
 };
 pub use avoidance::{
     AvoidanceConfig, detect_leader_line_label_conflicts, reroute_leader_lines_around_labels,
     resolve_label_label_conflicts,
 };
+pub use dim_direction::{
+    DimDirectionResult, PreferredDirs, calculate_dim_char_dirs, iso_get_best_dir, iso_get_dim_dir,
+    resolve_dim_direction,
+};
+pub use iso_ori::{IsoOri, compute_iso_ori};
 pub use pipeline::{MbdV2PipelineContext, build_mbd_v2_pipe_data};
+pub use used_dir::{IsoUsedDir, UsedDirRegistry};
 pub use primitive::{
     AidArcPrimitive, AidCirclePrimitive, AidLinePrimitive, AidLineStyle, AidPointPrimitive,
     AidTextPrimitive, AngleDimArrow, AngleDimPrimitive, IssueCategory, IssueSeverity,
