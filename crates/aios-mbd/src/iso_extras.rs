@@ -24,9 +24,9 @@
 
 use glam::Vec3;
 
-use crate::mbd::iso_dim::{angle_deg, compute_linear_dim_layout};
-use crate::mbd::iso_params::{BranchContext, IsoParams, SegmentInput};
-use crate::mbd::{
+use crate::iso_dim::{angle_deg, compute_linear_dim_layout};
+use crate::iso_params::{BranchContext, IsoParams, SegmentInput};
+use crate::{
     PlacedAngle, PlacedBend, PlacedLinearDim, PlacedSlope, PlacedTag, PlacedWeld,
 };
 

@@ -101,7 +101,7 @@ pub mod types;
 
 pub mod material;
 pub mod math;
-pub mod mbd;
+pub use aios_mbd as mbd;
 pub mod mesh_precision;
 pub mod room;
 

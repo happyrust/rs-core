@@ -1,3 +1,4 @@
+pub mod attmap_csg;
 pub mod ctorus;
 pub mod cylinder;
 pub mod dish;

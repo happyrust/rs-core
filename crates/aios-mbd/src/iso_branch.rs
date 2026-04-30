@@ -1,6 +1,6 @@
-//! Branch 级协调：对标 PML [`isobran.pmlobj`](../../MBD/markpipe/object/isobran.pmlobj) 的
+//! Branch 级协调：对标 PML [`isobran.pmlobj`](../../../MBD/markpipe/object/isobran.pmlobj) 的
 //! `split() / getisolines() / putIntoIsoLine()` 语义，同时实现
-//! [`isoUsedDir.pmlobj`](../../MBD/markpipe/object/isoUsedDir.pmlobj) 的"方向已用计数"。
+//! [`isoUsedDir.pmlobj`](../../../MBD/markpipe/object/isoUsedDir.pmlobj) 的"方向已用计数"。
 //!
 //! 本模块做两件事：
 //!
@@ -17,9 +17,9 @@
 
 use glam::Vec3;
 
-use crate::mbd::iso_dim::{angle_deg, compute_linear_dim_layout};
-use crate::mbd::iso_params::{BranchContext, IsoParams, SegmentInput};
-use crate::mbd::PlacedLinearDim;
+use crate::iso_dim::compute_linear_dim_layout;
+use crate::iso_params::{BranchContext, IsoParams, SegmentInput};
+use crate::PlacedLinearDim;
 
 const DIRECTION_ALIGN_COS_THRESHOLD: f32 = 0.94; // ~20° 内视为同方向（含反向）
 const DISTANCE_OVERLAP_TOLERANCE_MM: f32 = 0.5;
@@ -199,7 +199,7 @@ pub fn solve_linear_dim_series(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::mbd::iso_params::{BranchContext, IsoParams, SegmentInput};
+    use crate::iso_params::{BranchContext, IsoParams, SegmentInput};
 
     fn test_seg(id: &str, start: Vec3, end: Vec3, od: f32) -> SegmentInput {
         SegmentInput {
@@ -347,6 +347,6 @@ mod tests {
         let dir_b = Vec3::new(0.0, 0.2, 1.0).normalize();
         let dot = dir_a.dot(dir_b);
         assert!(dot >= DIRECTION_ALIGN_COS_THRESHOLD);
-        let _ = angle_deg(dir_a, dir_b); // 只是确认 angle_deg 可用
+        let _ = crate::iso_dim::angle_deg(dir_a, dir_b); // 只是确认 angle_deg 可用
     }
 }

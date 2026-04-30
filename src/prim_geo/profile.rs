@@ -10,10 +10,6 @@ use crate::prim_geo::spine::{
     Arc3D, Line3D, SegmentPath, Spine3D, SpineCurveType, SweepPath3D, circum_center,
 };
 use crate::prim_geo::{CateCsgShapeMap, SweepSolid};
-use crate::rs_surreal::query::{get_owner_refno_by_type, get_owner_type_name};
-use crate::rs_surreal::spatial::{
-    construct_basis_z_default, construct_basis_z_y_hint, get_spline_pts,
-};
 use crate::shape::pdms_shape::BrepShapeTrait;
 use crate::tool::dir_tool::parse_ori_str_to_quat;
 use crate::tool::float_tool::{f32_round_3, vec3_round_3};

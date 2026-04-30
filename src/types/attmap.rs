@@ -1,19 +1,10 @@
 use crate::consts::{ATT_CURD, ATT_STYP, UNSET_STR};
 use crate::pdms_types::*;
-use crate::prim_geo::ctorus::CTorus;
-use crate::prim_geo::cylinder::SCylinder;
-use crate::prim_geo::dish::Dish;
-use crate::prim_geo::pyramid::Pyramid;
-use crate::prim_geo::rtorus::RTorus;
-use crate::prim_geo::sbox::SBox;
-use crate::prim_geo::snout::LSnout;
-use crate::prim_geo::sphere::Sphere;
 use crate::ref64vec::RefU64Vec;
-use crate::shape::pdms_shape::BrepShapeTrait;
-use crate::tool::db_tool::{db1_dehash, db1_hash, db1_hash_i32};
-use crate::tool::float_tool::{hash_f32, hash_f64_slice};
 use crate::types::attval::AttrVal;
 use crate::types::attval::AttrVal::*;
+use crate::types::float_util::{hash_f32, hash_f64_slice};
+use crate::types::pdms_hash::{db1_dehash, db1_hash, db1_hash_i32};
 use crate::{BHashMap, RefI32Tuple, RefU64};
 use derive_more::{Deref, DerefMut};
 use glam::*;
@@ -639,26 +630,6 @@ impl AttrMap {
             return Some(d.clone());
         }
         None
-    }
-
-    ///生成具有几何属性的element的shape
-    pub fn create_csg_shape(&self, limit_size: Option<f32>) -> Option<Box<dyn BrepShapeTrait>> {
-        let type_noun = self.get_type();
-        let mut r: Option<Box<dyn BrepShapeTrait>> = match type_noun {
-            "BOX" | "NBOX" => Some(Box::new(SBox::from(self))),
-            "CYLI" | "SLCY" | "NCYL" => Some(Box::new(SCylinder::from(self))),
-            "SPHE" => Some(Box::new(Sphere::from(self))),
-            "CONE" | "NCON" | "SNOU" | "NSNO" => Some(Box::new(LSnout::from(self))),
-            "DISH" | "NDIS" => Some(Box::new(Dish::from(self))),
-            "CTOR" | "NCTO" => Some(Box::new(CTorus::from(self))),
-            "RTOR" | "NRTO" => Some(Box::new(RTorus::from(self))),
-            "PYRA" | "NPYR" => Some(Box::new(Pyramid::from(self))),
-            _ => None,
-        };
-        if r.is_some() && limit_size.is_some() {
-            r.as_mut().unwrap().apply_limit_by_size(limit_size.unwrap());
-        }
-        r
     }
 
     /// 获取string属性数组，忽略为空的值

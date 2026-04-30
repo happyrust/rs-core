@@ -1,8 +1,10 @@
 pub mod attmap;
 pub mod attval;
 pub mod db_info;
+pub mod float_util;
 pub mod named_attmap;
 pub mod named_attvalue;
+pub mod pdms_hash;
 pub mod query_sql;
 pub mod ref64vec;
 pub mod refno;

@@ -320,12 +320,12 @@ impl BranchCalculator {
     /// MVP solver：逐模块对齐 PML isoXxx 语义，产出完整 `LegacyPlacedLayoutSections`。
     ///
     /// 覆盖：
-    /// - `linear_dims` ↔ [`isoDim.pmlobj`](../../MBD/markpipe/object/isoDim.pmlobj)
-    /// - `slopes` ↔ [`isoSlope.pmlobj`](../../MBD/markpipe/object/isoSlope.pmlobj)
-    /// - `welds` ↔ [`isoWeldText.pmlobj`](../../MBD/markpipe/object/isoWeldText.pmlobj)
-    /// - `tags` ↔ [`isoTag.pmlobj`](../../MBD/markpipe/object/isoTag.pmlobj)
-    /// - `bends` ↔ [`isoelbopad.pmlobj`](../../MBD/markpipe/object/isoelbopad.pmlobj) +
-    ///   [`isombdangle.pmlobj`](../../MBD/markpipe/object/isombdangle.pmlobj)
+    /// - `linear_dims` ↔ [`isoDim.pmlobj`](../../../MBD/markpipe/object/isoDim.pmlobj)
+    /// - `slopes` ↔ [`isoSlope.pmlobj`](../../../MBD/markpipe/object/isoSlope.pmlobj)
+    /// - `welds` ↔ [`isoWeldText.pmlobj`](../../../MBD/markpipe/object/isoWeldText.pmlobj)
+    /// - `tags` ↔ [`isoTag.pmlobj`](../../../MBD/markpipe/object/isoTag.pmlobj)
+    /// - `bends` ↔ [`isoelbopad.pmlobj`](../../../MBD/markpipe/object/isoelbopad.pmlobj) +
+    ///   [`isombdangle.pmlobj`](../../../MBD/markpipe/object/isombdangle.pmlobj)
     /// - `cut_tubis` 沿用 `iso_dim`
     ///
     /// iso_branch 在 MVP 里仅做"单 lane"处理；

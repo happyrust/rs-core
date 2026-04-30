@@ -30,22 +30,26 @@ pub fn gen_plant_aabb_hash(aabb: &crate::types::PlantAabb) -> u64 {
     gen_aabb_hash(&aabb.0)
 }
 
-/// 生成 Transform 的稳定 hash（基于保留3位有效数字的字符串拼接）
-pub fn gen_transform_hash(trans: &crate::rs_surreal::PlantTransform) -> u64 {
+/// 生成 TRS (translation/rotation/scale) 的稳定 hash
+pub fn gen_trs_hash(
+    translation: glam::Vec3,
+    rotation: glam::Quat,
+    scale: glam::Vec3,
+) -> u64 {
     use core::hash::Hasher;
 
     let s = format!(
         "{}_{}_{}_{}_{}_{}_{}_{}_{}_{}",
-        format_f32_3digits(trans.translation.x),
-        format_f32_3digits(trans.translation.y),
-        format_f32_3digits(trans.translation.z),
-        format_f32_3digits(trans.rotation.x),
-        format_f32_3digits(trans.rotation.y),
-        format_f32_3digits(trans.rotation.z),
-        format_f32_3digits(trans.rotation.w),
-        format_f32_3digits(trans.scale.x),
-        format_f32_3digits(trans.scale.y),
-        format_f32_3digits(trans.scale.z),
+        format_f32_3digits(translation.x),
+        format_f32_3digits(translation.y),
+        format_f32_3digits(translation.z),
+        format_f32_3digits(rotation.x),
+        format_f32_3digits(rotation.y),
+        format_f32_3digits(rotation.z),
+        format_f32_3digits(rotation.w),
+        format_f32_3digits(scale.x),
+        format_f32_3digits(scale.y),
+        format_f32_3digits(scale.z),
     );
 
     let mut hasher = std::collections::hash_map::DefaultHasher::new();
@@ -77,27 +81,9 @@ pub fn gen_dmat4_hash(mat: &glam::DMat4) -> u64 {
     hasher.finish()
 }
 
-/// 生成 Transform 的稳定 hash（基于保留3位有效数字的字符串拼接）
+/// 生成 Transform 的稳定 hash（委托到 gen_trs_hash）
 pub fn gen_plant_transform_hash(trans: &crate::plant_transform::Transform) -> u64 {
-    use core::hash::Hasher;
-
-    let s = format!(
-        "{}_{}_{}_{}_{}_{}_{}_{}_{}_{}",
-        format_f32_3digits(trans.translation.x),
-        format_f32_3digits(trans.translation.y),
-        format_f32_3digits(trans.translation.z),
-        format_f32_3digits(trans.rotation.x),
-        format_f32_3digits(trans.rotation.y),
-        format_f32_3digits(trans.rotation.z),
-        format_f32_3digits(trans.rotation.w),
-        format_f32_3digits(trans.scale.x),
-        format_f32_3digits(trans.scale.y),
-        format_f32_3digits(trans.scale.z),
-    );
-
-    let mut hasher = std::collections::hash_map::DefaultHasher::new();
-    std::hash::Hash::hash(&s, &mut hasher);
-    hasher.finish()
+    gen_trs_hash(trans.translation, trans.rotation, trans.scale)
 }
 
 /// 生成字符串的 hash

@@ -11,8 +11,8 @@
 
 use glam::Vec3;
 
-use crate::mbd::iso_params::{BranchContext, IsoParams, SegmentInput};
-use crate::mbd::{LayoutVec3, PlacedLinearDim};
+use crate::iso_params::{BranchContext, IsoParams, SegmentInput};
+use crate::{LayoutVec3, PlacedLinearDim};
 
 /// 入口函数：一条线性尺寸的版面求解。
 ///

@@ -1,7 +1,7 @@
 use super::RefnoEnum;
 use crate::RefU64;
 use crate::pdms_types::{EleOperation, PdmsElement};
-use crate::tool::db_tool::db1_hash;
+use crate::types::pdms_hash::db1_hash;
 use crate::types::named_attmap::NamedAttrMap;
 use crate::types::named_attvalue::NamedAttrValue;
 use serde::{Deserialize, Serialize};

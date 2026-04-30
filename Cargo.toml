@@ -1,9 +1,15 @@
+[workspace]
+members = ["crates/aios-mbd"]
+
+[workspace.dependencies]
+glam = { version = "0.30.8", features = ["serde"] }
+serde = { version = "1.0.133", features = ["derive"] }
+
 [package]
 name = "aios_core"
 version = "0.3.2"
 edition = "2024"
 resolver = "2"
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [features]
 default = [
     # "gen_model",
@@ -40,10 +46,11 @@ test = [] # Test module feature
 
 
 [dependencies]
+aios-mbd = { path = "crates/aios-mbd" }
 strum = { version = "0.27.2", features = ["derive"] }
 strum_macros = "0.27.2"
 smol_str = { version = "0.3.2", features = ["serde"] }
-glam = { version = "0.30.8", features = ["serde", "rkyv"] }
+glam = { workspace = true, features = ["rkyv"] }
 id_tree = { git = "https://github.com/happyrust/id_tree", features = [
     "serde_support",
 ] }
@@ -88,7 +95,7 @@ num_cpus = "1.16"
 gltf = { version = "1.4", optional = true }
 
 base64 = "0.22.0"
-serde = { version = "1.0.133", features = ["derive"] }
+serde = { workspace = true }
 serde_derive = "1.0.133"
 serde_json = { version = "1.0" }
 toml = "0.8"

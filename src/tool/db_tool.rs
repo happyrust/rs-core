@@ -73,7 +73,6 @@ pub fn get_uda_index(hash: u32) -> Option<u32> {
 /// 反哈希后的属性名称字符串
 #[inline]
 pub fn db1_dehash(hash: u32) -> String {
-    // 先检查缓存
     {
         let mut cache = DEHASH_CACHE.lock();
         if let Some(cached) = cache.get(&hash) {
@@ -81,10 +80,8 @@ pub fn db1_dehash(hash: u32) -> String {
         }
     }
 
-    // 缓存未命中，计算结果
-    let result = db1_dehash_uncached(hash);
+    let result = crate::types::pdms_hash::db1_dehash(hash);
 
-    // 将结果存入缓存
     {
         let mut cache = DEHASH_CACHE.lock();
         cache.put(hash, result.clone());
@@ -93,101 +90,10 @@ pub fn db1_dehash(hash: u32) -> String {
     result
 }
 
-/// 不使用缓存的哈希反查（内部函数）
-#[inline]
-fn db1_dehash_uncached(hash: u32) -> String {
-    let mut result = String::new();
-    if hash > 0x171FAD39 {
-        let mut k = ((hash - 0x171FAD39) % 0x1000000) as i32;
-        result.push(':');
-        for _i in 0..6 {
-            if k <= 0 {
-                break;
-            }
-            result.push((k % 64 + 32) as u8 as char);
-            k /= 64;
-        }
-    } else {
-        if hash <= 0x81BF1 {
-            return String::new();
-        }
-        let mut k = (hash - 0x81BF1) as i32;
-        while k > 0 {
-            result.push((k % 27 + 64) as u8 as char);
-            k /= 27;
-        }
-    }
-    result
-}
+pub use crate::types::pdms_hash::{db1_hash, db1_hash_const, db1_hash_i32};
+pub use crate::types::pdms_hash::db1_dehash as db1_dehash_const;
 
-#[inline]
-pub fn db1_hash_i32(hash_str: &str) -> i32 {
-    db1_hash(hash_str) as _
-}
-
-//类似于POSF，这种它的hash是POSI，这里需要强制的把名称缓过来
-// static ALIAS_ATT_NAME_MAP: Lazy<DashMap<&'static str, u32>> = Lazy::new(|| {
-//     let mut m = DashMap::new();
-//     m.insert("POSF", db1_hash("POSI"));
-//     m
-// });
-
-//todo 处理出错的情况
-#[inline]
-pub fn db1_hash(hash_str: &str) -> u32 {
-    let chars = hash_str.as_bytes();
-    if chars.len() < 1 {
-        return 0; //出错的暂时用0 表达
-    }
-    let mut val = 0i64;
-    let mut i = (chars.len() - 1) as i32;
-    while i >= 0 {
-        val = val.overflowing_mul(27).0 + (chars[i as usize] as i64 - 64);
-        i -= 1;
-    }
-    val.saturating_add_unsigned(0x81BF1) as u32
-}
-
-#[inline]
-pub fn db1_dehash_const(hash: u32) -> String {
-    let mut result = String::new();
-    if hash > 0x171FAD39 {
-        // UDA的情况
-        let mut k = ((hash - 0x171FAD39) % 0x1000000) as i32;
-        result.push(':');
-        for _i in 0..6 {
-            if k <= 0 {
-                break;
-            }
-            result.push((k % 64 + 32) as u8 as char);
-            k /= 64;
-        }
-    } else {
-        if hash <= 0x81BF1 {
-            return "".to_string();
-        }
-        let mut k = (hash - 0x81BF1) as i32;
-        while k > 0 {
-            result.push((k % 27 + 64) as u8 as char);
-            k /= 27;
-        }
-    }
-    result
-}
-
-pub const fn db1_hash_const(hash_str: &str) -> u32 {
-    let chars = hash_str.as_bytes();
-    if chars.len() < 1 {
-        return 0; //出错的暂时用0 表达
-    }
-    let mut val = 0i64;
-    let mut i = (chars.len() - 1) as i32;
-    while i >= 0 {
-        val = val.overflowing_mul(27).0 + (chars[i as usize] as i64 - 64);
-        i -= 1;
-    }
-    val.saturating_add_unsigned(0x81BF1) as u32
-}
+// Re-export from types::pdms_hash; kept here for backward compatibility.
 
 #[test]
 fn db1_dehash_test() {
