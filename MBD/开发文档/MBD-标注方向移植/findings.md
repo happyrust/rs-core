@@ -108,6 +108,44 @@ pub struct PlacedLinearDim {
 | 斜管分解 | dimslope → 水平+垂直+直角标 | PlacedSlope 简化处理 |
 | 字符方向 | isoOri.chardir 独立于管段方向 | 默认 up 方向 |
 
+## 集成点分析（Phase 6 准备）
+
+### plant-model-gen 中的 V2 调用位置
+
+```rust
+// plant-model-gen/src/web_api/mbd_pipe_api.rs L614-620
+let ctx = MbdV2PipelineContext {
+    input_refno: input_refno_enum.to_string(),
+    branch_refno: data.branch_refno.clone(),
+    branch_attrs: branch_attrs_to_mbd_v2_map(&data.branch_attrs),
+    ..MbdV2PipelineContext::production_defaults()
+};
+let v2_data = build_mbd_v2_pipe_data(layout, &ctx);
+```
+
+**发现**：当前代码使用 `production_defaults()` 创建 ctx，
+`bran_bbox_center` 默认为 `None`。要启用方向自动推断需要：
+
+1. 在 `generate_mbd_data` 或 `get_mbd_pipe_v2` 中查询 bran 包围盒
+2. 设置 `ctx.assembler.bran_bbox_center = Some([cx, cy, cz])`
+
+### bran 包围盒查询方案
+
+方案 A：从 SurrealDB 查询（推荐）
+```sql
+SELECT math::mean(poss) AS center FROM inst_geo WHERE pe = $bran_refno
+```
+
+方案 B：从 LayoutResult 的管段端点计算
+```rust
+let all_points: Vec<[f32;3]> = layout.linear_dims.iter()
+    .flat_map(|d| [d.start, d.end])
+    .collect();
+let center = compute_aabb_center(&all_points);
+```
+
+方案 B 更简单且不需要额外数据库查询，推荐先用方案 B 快速集成。
+
 ## 移植风险
 
 1. **CalculateDimChardirs 依赖 bran volume**：V2 pipeline 可能缺少包围盒信息，

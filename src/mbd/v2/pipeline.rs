@@ -118,15 +118,20 @@ impl MbdV2PipelineContext {
 /// 小尺寸错层、leader 与避让。未来 `BranchCalculator v2` 会直接产出
 /// `MbdV2PipeData`，届时本函数保留供兼容过渡使用。
 pub fn build_mbd_v2_pipe_data(layout: &LayoutResult, ctx: &MbdV2PipelineContext) -> MbdV2PipeData {
+    let mut assembler_ctx = ctx.assembler.clone();
+    if assembler_ctx.bran_bbox_center.is_none() {
+        assembler_ctx.bran_bbox_center = infer_bbox_center_from_layout(layout);
+    }
+
     let (mut primitives, mut issues) = if ctx.enable_small_dim_stacking {
         assemble_v2_primitives_with_chain_stacking(
             layout,
-            &ctx.assembler,
+            &assembler_ctx,
             &ctx.chain_tolerance,
             &ctx.small_dim_params,
         )
     } else {
-        assemble_v2_primitives(layout, &ctx.assembler)
+        assemble_v2_primitives(layout, &assembler_ctx)
     };
 
     if ctx.enable_avoidance {
@@ -197,6 +202,32 @@ fn compute_meta(
         branch_attrs: branch_attrs.clone(),
         generated_at,
     }
+}
+
+fn infer_bbox_center_from_layout(layout: &LayoutResult) -> Option<[f32; 3]> {
+    let mut min = [f32::MAX; 3];
+    let mut max = [f32::MIN; 3];
+    let mut has_points = false;
+
+    for dim in layout.linear_dims.iter().chain(layout.cut_tubis.iter()) {
+        for pt in [dim.start, dim.end] {
+            for i in 0..3 {
+                min[i] = min[i].min(pt[i]);
+                max[i] = max[i].max(pt[i]);
+            }
+            has_points = true;
+        }
+    }
+
+    if !has_points {
+        return None;
+    }
+
+    Some([
+        (min[0] + max[0]) * 0.5,
+        (min[1] + max[1]) * 0.5,
+        (min[2] + max[2]) * 0.5,
+    ])
 }
 
 fn collect_suppression_issues(layout: &LayoutResult) -> Vec<MbdV2Issue> {
