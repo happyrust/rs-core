@@ -565,6 +565,17 @@ fn assemble_bend(
         let tangent_1 = cross(normal, ray_1);
         let tangent_2 = cross(ray_2, normal);
 
+        let arrow1_pos = [
+            angle.vertex[0] + angle.arc_radius * ray_1[0],
+            angle.vertex[1] + angle.arc_radius * ray_1[1],
+            angle.vertex[2] + angle.arc_radius * ray_1[2],
+        ];
+        let arrow2_pos = [
+            angle.vertex[0] + angle.arc_radius * ray_2[0],
+            angle.vertex[1] + angle.arc_radius * ray_2[1],
+            angle.vertex[2] + angle.arc_radius * ray_2[2],
+        ];
+
         primitives.push(MbdPrimitive::AngleDim(AngleDimPrimitive {
             common: CommonFields {
                 id: next_id("angle"),
@@ -585,19 +596,11 @@ fn assemble_bend(
             },
             arrows: [
                 AngleDimArrow {
-                    position: [
-                        angle.vertex[0] + angle.arc_radius * ray_1[0],
-                        angle.vertex[1] + angle.arc_radius * ray_1[1],
-                        angle.vertex[2] + angle.arc_radius * ray_1[2],
-                    ],
+                    position: arrow1_pos,
                     tangent: tangent_1,
                 },
                 AngleDimArrow {
-                    position: [
-                        angle.vertex[0] + angle.arc_radius * ray_2[0],
-                        angle.vertex[1] + angle.arc_radius * ray_2[1],
-                        angle.vertex[2] + angle.arc_radius * ray_2[2],
-                    ],
+                    position: arrow2_pos,
                     tangent: tangent_2,
                 },
             ],
@@ -608,6 +611,44 @@ fn assemble_bend(
                 orientation: ctx.default_orientation,
                 up: ctx.default_up,
             },
+        }));
+
+        primitives.push(MbdPrimitive::AidLine(AidLinePrimitive {
+            common: CommonFields {
+                id: next_id("bend-ray1"),
+                visible: bend.visible,
+                suppressed_reason: bend.suppressed_reason.clone(),
+                function: Some("弯头参考线".to_string()),
+                ..CommonFields::default()
+            },
+            points: vec![angle.vertex, arrow1_pos],
+            style: AidLineStyle::Dashed,
+        }));
+        primitives.push(MbdPrimitive::AidLine(AidLinePrimitive {
+            common: CommonFields {
+                id: next_id("bend-ray2"),
+                visible: bend.visible,
+                suppressed_reason: bend.suppressed_reason.clone(),
+                function: Some("弯头参考线".to_string()),
+                ..CommonFields::default()
+            },
+            points: vec![angle.vertex, arrow2_pos],
+            style: AidLineStyle::Dashed,
+        }));
+
+        primitives.push(MbdPrimitive::AidArc(AidArcPrimitive {
+            common: CommonFields {
+                id: next_id("bend-arc"),
+                visible: bend.visible,
+                suppressed_reason: bend.suppressed_reason.clone(),
+                function: Some("弯头弧线".to_string()),
+                ..CommonFields::default()
+            },
+            center: angle.vertex,
+            radius_mm: angle.arc_radius,
+            start_angle_rad,
+            sweep_rad,
+            normal,
         }));
     }
 }

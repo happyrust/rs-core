@@ -75,6 +75,12 @@ pub struct MbdV2PipelineContext {
     pub enable_avoidance: bool,
     /// 避让引擎配置；仅在 `enable_avoidance = true` 时生效。
     pub avoidance_config: AvoidanceConfig,
+    /// 是否启用 PolarSystem 方向增强（Phase 4.2）。默认 `false`。
+    /// 启用后，pipeline 在组装前用 PolarSystem 重新计算标注方向，
+    /// 覆盖 V1 LayoutResult 的硬编码 `direction` 字段。
+    pub enable_polar_direction: bool,
+    /// PolarSystem 配置；仅在 `enable_polar_direction = true` 时生效。
+    pub polar_config: super::branch_calculator::BranchCalculatorV2Config,
 }
 
 impl Default for MbdV2PipelineContext {
@@ -90,6 +96,8 @@ impl Default for MbdV2PipelineContext {
             small_dim_params: SmallDimChainParams::default(),
             enable_avoidance: false,
             avoidance_config: AvoidanceConfig::default(),
+            enable_polar_direction: false,
+            polar_config: super::branch_calculator::BranchCalculatorV2Config::default(),
         }
     }
 }
@@ -107,6 +115,7 @@ impl MbdV2PipelineContext {
             },
             enable_small_dim_stacking: true,
             enable_avoidance: true,
+            enable_polar_direction: true,
             ..Self::default()
         }
     }
@@ -118,20 +127,32 @@ impl MbdV2PipelineContext {
 /// 小尺寸错层、leader 与避让。未来 `BranchCalculator v2` 会直接产出
 /// `MbdV2PipeData`，届时本函数保留供兼容过渡使用。
 pub fn build_mbd_v2_pipe_data(layout: &LayoutResult, ctx: &MbdV2PipelineContext) -> MbdV2PipeData {
+    let mut layout_enhanced;
+    let layout_ref = if ctx.enable_polar_direction {
+        layout_enhanced = layout.clone();
+        super::branch_calculator::enhance_layout_with_polar_directions(
+            &mut layout_enhanced,
+            &ctx.polar_config,
+        );
+        &layout_enhanced
+    } else {
+        layout
+    };
+
     let mut assembler_ctx = ctx.assembler.clone();
     if assembler_ctx.bran_bbox_center.is_none() {
-        assembler_ctx.bran_bbox_center = infer_bbox_center_from_layout(layout);
+        assembler_ctx.bran_bbox_center = infer_bbox_center_from_layout(layout_ref);
     }
 
     let (mut primitives, mut issues) = if ctx.enable_small_dim_stacking {
         assemble_v2_primitives_with_chain_stacking(
-            layout,
+            layout_ref,
             &assembler_ctx,
             &ctx.chain_tolerance,
             &ctx.small_dim_params,
         )
     } else {
-        assemble_v2_primitives(layout, &assembler_ctx)
+        assemble_v2_primitives(layout_ref, &assembler_ctx)
     };
 
     if ctx.enable_avoidance {
@@ -153,14 +174,14 @@ pub fn build_mbd_v2_pipe_data(layout: &LayoutResult, ctx: &MbdV2PipelineContext)
         ));
     }
 
-    issues.extend(collect_suppression_issues(layout));
+    issues.extend(collect_suppression_issues(layout_ref));
 
     let generated_at = ctx
         .generated_at_override
         .clone()
         .unwrap_or_else(current_utc_rfc3339);
 
-    let meta = compute_meta(layout, &ctx.branch_attrs, generated_at);
+    let meta = compute_meta(layout_ref, &ctx.branch_attrs, generated_at);
 
     MbdV2PipeData {
         version: "v2".to_string(),

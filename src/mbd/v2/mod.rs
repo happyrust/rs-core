@@ -26,11 +26,13 @@
 
 pub mod assembler;
 pub mod avoidance;
+pub mod branch_calculator;
 pub mod dim_direction;
 pub mod iso_ori;
 pub mod leader_router;
 pub mod member_positions;
 pub mod pipeline;
+pub mod polar_system;
 pub mod primitive;
 pub mod small_dim;
 pub mod text_measurement;
@@ -50,7 +52,13 @@ pub use dim_direction::{
     resolve_dim_direction,
 };
 pub use iso_ori::{IsoOri, compute_iso_ori};
+pub use branch_calculator::{
+    BranchCalculatorV2Config, IsolineInfo, compute_path_total_length,
+    compute_straight_distance, enhance_layout_with_polar_directions, extract_isolines,
+    is_folded_branch,
+};
 pub use pipeline::{MbdV2PipelineContext, build_mbd_v2_pipe_data};
+pub use polar_system::{PlacementResult, PolarElement, PolarSystem, SpaceNeeds};
 pub use used_dir::{IsoUsedDir, UsedDirRegistry};
 pub use primitive::{
     AidArcPrimitive, AidCirclePrimitive, AidLinePrimitive, AidLineStyle, AidPointPrimitive,

@@ -5,6 +5,37 @@ All notable changes to the rs-core library will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 2026-05-02
+
+### Added
+
+- **MBD V2 Phase 4-5: PolarSystem 方向增强 + 精细化**
+  - 新增 `polar_system.rs`（~500 行）：柱坐标系统，从 PML ~5600 行精简提取核心算法。
+  - 新增 `branch_calculator.rs`（~300 行）：V2 增量集成，含 `UsedDirRegistry` dimtimes 偏移计算。
+  - pipeline.rs 接入 `enhance_layout_with_polar_directions()`，启用 PolarSystem 方向优化。
+  - assembler.rs 扩展支持 AngleDim 弯头标注、AidLine/AidArc 辅助图元、weld_type 推断。
+- **MBD V2 生产环境 cheight=100mm 避让测试**
+  - 在 `avoidance.rs` 新增 6 个 cheight=100mm 的生产 scale 测试：
+    `production_cheight_overlapping_labels_get_separated`、
+    `production_cheight_spaced_labels_no_conflict`、
+    `production_cheight_leader_crossing_detected`、
+    `production_cheight_leader_reroute_succeeds`、
+    `production_cheight_multiple_lane_bumps`。
+  - 验证避让算法在 40 倍字高差异下的正确性。
+- **dimtimes offset 公式 PDMS 兼容选项**
+  - `BranchCalculatorV2Config` 新增 `use_pdms_offset_formula` 字段。
+  - 默认使用 V2 公式 `od/2 + cheight + step`；设 `true` 切回 PDMS 原文 `od + step`。
+  - 3 个单元测试覆盖两种公式及小管径场景。
+- **MBD V2 Phase 6 验收计划文档**
+  - 新增 `MBD/开发文档/MBD-V2-Phase6-验收计划.md`：含模块架构、风险矩阵、执行计划。
+
+### Changed
+
+- **pipeline.rs `production_defaults()` 增强**
+  - 默认启用 `enable_small_dim_stacking`、`enable_avoidance`、`enable_polar_direction`。
+- **mod.rs 导出扩展**
+  - 新增 `BranchCalculatorV2Config`、`IsolineInfo`、`PlacementResult` 等公共类型导出。
+
 ## 2026-04-09
 
 ### Added

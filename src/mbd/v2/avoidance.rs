@@ -1149,4 +1149,152 @@ mod tests {
             );
         }
     }
+
+    // ── cheight=100mm 生产环境验证（P0 风险项） ──
+
+    fn make_label_production(id: &str, anchor: Vec3V2, content: &str) -> MbdPrimitive {
+        MbdPrimitive::Label(LabelPrimitive {
+            common: CommonFields {
+                id: id.to_string(),
+                visible: true,
+                ..CommonFields::default()
+            },
+            anchor,
+            text_anchor: anchor,
+            content: content.to_string(),
+            height_mm: 100.0,
+            orientation: [1.0, 0.0, 0.0],
+            up: [0.0, 1.0, 0.0],
+            box_shape: LabelBoxShape::None,
+            box_padding_mm: 0.0,
+        })
+    }
+
+    #[test]
+    fn production_cheight_overlapping_labels_get_separated() {
+        // cheight=100mm, "500" em≈1.726 → width≈172.6mm, height=100mm
+        // 两个 label 在同一位置 → 必须被避让引擎分开
+        let mut prims = vec![
+            make_label_production("a", [0.0, 0.0, 0.0], "500"),
+            make_label_production("b", [0.0, 0.0, 0.0], "600"),
+        ];
+        let issues = resolve_label_label_conflicts(&mut prims, &AvoidanceConfig::default());
+        assert!(issues.is_empty(), "两个 label 应被成功分开，不应报 issue");
+
+        let anchors: Vec<Vec3V2> = prims
+            .iter()
+            .filter_map(|p| match p {
+                MbdPrimitive::Label(l) => Some(l.text_anchor),
+                _ => None,
+            })
+            .collect();
+        assert_ne!(
+            anchors[0], anchors[1],
+            "cheight=100mm: 重叠 label 必须被分开"
+        );
+        let dy = (anchors[1][1] - anchors[0][1]).abs();
+        let expected_step = 100.0 * 1.2; // lane_step = cheight * multiplier
+        assert!(
+            (dy - expected_step).abs() < 1.0,
+            "lane bump 应为 ~{expected_step}mm, 实际 {dy}mm"
+        );
+    }
+
+    #[test]
+    fn production_cheight_spaced_labels_no_conflict() {
+        // cheight=100mm, "500" width≈172.6mm
+        // 两个 label 在 X 方向间距 300mm → 不应冲突
+        let mut prims = vec![
+            make_label_production("a", [0.0, 0.0, 0.0], "500"),
+            make_label_production("b", [300.0, 0.0, 0.0], "600"),
+        ];
+        let issues = resolve_label_label_conflicts(&mut prims, &AvoidanceConfig::default());
+        assert!(issues.is_empty());
+        let anchors: Vec<Vec3V2> = prims
+            .iter()
+            .filter_map(|p| match p {
+                MbdPrimitive::Label(l) => Some(l.text_anchor),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(
+            anchors[0],
+            [0.0, 0.0, 0.0],
+            "足够间距的 label 不应被移动"
+        );
+        assert_eq!(anchors[1], [300.0, 0.0, 0.0]);
+    }
+
+    #[test]
+    fn production_cheight_leader_crossing_detected() {
+        // cheight=100mm, "500" width≈172.6mm, height=100mm
+        // bbox = [0, 172.6] × [0, 100]
+        // leader 从 (-50, 50) 到 (200, 50) 水平穿过 → 必须检测到
+        let prims = vec![
+            make_label_production("lbl", [0.0, 0.0, 0.0], "500"),
+            make_leader("ld", vec![[-50.0, 50.0, 0.0], [200.0, 50.0, 0.0]]),
+        ];
+        let issues = detect_leader_line_label_conflicts(&prims, &AvoidanceConfig::default());
+        assert_eq!(
+            issues.len(),
+            1,
+            "cheight=100mm: leader 穿过 label bbox 应被检测到"
+        );
+    }
+
+    #[test]
+    fn production_cheight_leader_reroute_succeeds() {
+        // cheight=100mm → bbox 约 [0, 172.6] × [0, 100]
+        // leader 穿过中心 → reroute 应绕过
+        let mut prims = vec![
+            make_label_production("lbl", [0.0, 0.0, 0.0], "500"),
+            make_leader("ld", vec![[-50.0, 50.0, 0.0], [200.0, 50.0, 0.0]]),
+        ];
+        let issues = reroute_leader_lines_around_labels(&mut prims, &AvoidanceConfig::default());
+        assert!(
+            issues.is_empty(),
+            "cheight=100mm: leader 应被成功重路由"
+        );
+        if let MbdPrimitive::LeaderLine(ld) = &prims[1] {
+            assert_eq!(
+                ld.points.len(),
+                3,
+                "cheight=100mm: rerouted leader 应为 3 点 L 形"
+            );
+        }
+        let residual = detect_leader_line_label_conflicts(&prims, &AvoidanceConfig::default());
+        assert!(
+            residual.is_empty(),
+            "cheight=100mm: reroute 后不应再有 leader-label 冲突"
+        );
+    }
+
+    #[test]
+    fn production_cheight_multiple_lane_bumps() {
+        // 4 个重叠 label → 应产生 3 次 lane bump
+        let mut prims = vec![
+            make_label_production("a", [0.0, 0.0, 0.0], "100"),
+            make_label_production("b", [0.0, 0.0, 0.0], "200"),
+            make_label_production("c", [0.0, 0.0, 0.0], "300"),
+            make_label_production("d", [0.0, 0.0, 0.0], "400"),
+        ];
+        let issues = resolve_label_label_conflicts(&mut prims, &AvoidanceConfig::default());
+        assert!(issues.is_empty(), "4 labels < max_lanes=6, 不应报 issue");
+
+        let ys: Vec<f32> = prims
+            .iter()
+            .filter_map(|p| match p {
+                MbdPrimitive::Label(l) => Some(l.text_anchor[1]),
+                _ => None,
+            })
+            .collect();
+        let lane_step = 100.0 * 1.2;
+        for i in 1..ys.len() {
+            let dy = (ys[i] - ys[i - 1]).abs();
+            assert!(
+                dy > lane_step * 0.5,
+                "cheight=100mm: label {i} 的间距 {dy}mm 太小 (期望 >={lane_step}mm)"
+            );
+        }
+    }
 }
