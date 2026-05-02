@@ -27,6 +27,7 @@
 pub mod assembler;
 pub mod avoidance;
 pub mod branch_calculator;
+pub mod data_source;
 pub mod dim_direction;
 pub mod iso_ori;
 pub mod leader_router;
@@ -57,9 +58,13 @@ pub use branch_calculator::{
     compute_straight_distance, enhance_layout_with_polar_directions, extract_isolines,
     is_folded_branch,
 };
-pub use pipeline::{MbdV2PipelineContext, build_mbd_v2_pipe_data};
+pub use pipeline::{MbdV2PipelineContext, build_mbd_v2_pipe_data, build_mbd_v2_pipe_data_direct};
 pub use polar_system::{PlacementResult, PolarElement, PolarSystem, SpaceNeeds};
 pub use used_dir::{IsoUsedDir, UsedDirRegistry};
+pub use data_source::{
+    BendData, BranchAttrs, BranchMember, BranchQueryResult, InMemoryDataSource, SlopeData, TagData,
+    WeldData,
+};
 pub use primitive::{
     AidArcPrimitive, AidCirclePrimitive, AidLinePrimitive, AidLineStyle, AidPointPrimitive,
     AidTextPrimitive, AngleDimArrow, AngleDimPrimitive, IssueCategory, IssueSeverity,

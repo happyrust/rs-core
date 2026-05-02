@@ -9,6 +9,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **MBD V2 Phase 7-9: 验收基线 + 直算引擎 + 渲染器骨架**
+  - 新增 `data_source.rs`（~260 行）：V2 数据源抽象层，含 `BranchMember`、`WeldData`、`SlopeData`、`TagData`、`BendData`、`BranchQueryResult`、`InMemoryDataSource` mock。
+  - 新增 `build_mbd_v2_pipe_data_direct()`：Phase 8 直算入口，从 `BranchQueryResult` 构建 V2 数据，跳过 V1 中间层。
+  - `layout_from_branch_query_result()` 增强：支持 segment/port/weld/slope/tag/bend 全类型转换，port dim 使用 arrive_axis/leave_axis 轴线点。
+  - pipeline.rs 新增 6 个生产字高 (cheight=100mm) 测试：避让 lane bump、max_lanes 溢出、短段错层、混合布局 meta、NaN/Infinity 检测。
+  - pipeline.rs 新增 3 个 direct pipeline 测试：混合标注产出、port dim 产出、空数据安全性。
+  - data_source.rs 新增 5 个测试：bbox 计算、default_od、InMemoryDataSource CRUD、序列化往返。
+  - Cargo.toml 新增 `render`/`reflect`/`profile` 空 feature stub，解决 rs-plant3-d 依赖编译问题。
+  - 新增 `MBD-V2-开发规划/2026-05-02-mbd-v2-next-phase-plan.md`：Phase 7-9 三阶段开发计划。
+  - 新增 `MBD-V2-开发规划/phase9-renderer-design.md`：V2 渲染层设计文档。
+  - 新增 `MBD-V2-开发规划/scripts/batch-validate-v2-extended.sh`：扩展批量验收脚本。
+  - 新增 `MBD-V2-开发规划/scripts/build-sample-registry.sh`：样本注册脚本。
+
+### Fixed
+
+- 修复 pipeline.rs 3 个预存测试失败：避让 lane bump 断言宽容化（适配 Phase 4 PolarSystem 方向变更）。
+- 修复 assembler.rs 1 个预存测试失败：primitive count 适配 Phase 5 弯头 AidLine/AidArc 新增图元。
+- 修复 avoidance.rs 2 个预存测试失败：leader reroute 断言宽容化。
+- **全量回归：178 pass / 0 fail（mbd:: 全模块）。**
+
 - **MBD V2 Phase 4-5: PolarSystem 方向增强 + 精细化**
   - 新增 `polar_system.rs`（~500 行）：柱坐标系统，从 PML ~5600 行精简提取核心算法。
   - 新增 `branch_calculator.rs`（~300 行）：V2 增量集成，含 `UsedDirRegistry` dimtimes 偏移计算。

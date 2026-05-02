@@ -37,6 +37,9 @@ sqlite = ["dep:rusqlite"] # SQLite 空间索引功能
 mem-kv-save = [] # 额外保存PE数据到内存KV数据库
 hh = []
 test = [] # Test module feature
+render = [] # rs-plant3-d 渲染集成 feature（预留；pdms_shape.rs 的 gen_render_mesh 需要 bevy 依赖）
+reflect = [] # Bevy Reflect 集成 feature（预留；后续可为类型实现 Reflect trait）
+profile = [] # 性能分析 feature（预留）
 
 
 [dependencies]

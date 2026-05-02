@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MBD V2 Phase 5 开发计划</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #eef2f6;
+    color: #21364d;
+    font-family: 'Geist', sans-serif;
+    padding: 2rem;
+    min-height: 100vh;
+  }
+  .page-header {
+    max-width: 1060px;
+    margin: 0 auto 1.5rem;
+  }
+  .eyebrow {
+    font-family: 'Geist Mono', monospace;
+    font-size: 8px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #6b7f95;
+    margin-bottom: 0.5rem;
+  }
+  h1 {
+    font-family: 'Instrument Serif', serif;
+    font-size: 1.75rem;
+    font-weight: 400;
+    color: #21364d;
+    margin-bottom: 0.25rem;
+  }
+  .subtitle {
+    font-size: 14px;
+    color: #6b7f95;
+  }
+  .diagram-container {
+    max-width: 1060px;
+    margin: 0 auto 2rem;
+    background: #f8fbfe;
+    border: 1px solid rgba(33,54,77,0.12);
+    border-radius: 8px;
+    overflow-x: auto;
+    padding: 1rem;
+  }
+  .cards-grid {
+    max-width: 1060px;
+    margin: 0 auto 2rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+  .card {
+    background: #ffffff;
+    border: 1px solid rgba(33,54,77,0.12);
+    border-radius: 6px;
+    padding: 1.25rem;
+  }
+  .card .eyebrow { margin-bottom: 0.75rem; }
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+  .card-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .card-dot.accent { background: #2d67b2; }
+  .card-dot.ink { background: #21364d; }
+  .card-dot.muted { background: #6b7f95; }
+  .card-dot.green { background: #2d8a4e; }
+  .card h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: #21364d;
+  }
+  .card ul {
+    list-style: none;
+    padding: 0;
+  }
+  .card li {
+    font-size: 12px;
+    color: #6b7f95;
+    padding: 0.25rem 0;
+    border-bottom: 1px solid rgba(33,54,77,0.06);
+  }
+  .card li:last-child { border-bottom: none; }
+  .card li code {
+    font-family: 'Geist Mono', monospace;
+    font-size: 10px;
+    color: #21364d;
+    background: rgba(33,54,77,0.06);
+    padding: 1px 4px;
+    border-radius: 2px;
+  }
+  .card li .done { color: #2d8a4e; font-weight: 600; }
+  .card li .todo { color: #2d67b2; font-weight: 600; }
+  .colophon {
+    max-width: 1060px;
+    margin: 0 auto;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(33,54,77,0.12);
+    font-family: 'Geist Mono', monospace;
+    font-size: 9px;
+    color: #8aa0b6;
+  }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <p class="eyebrow">RS-CORE / MBD / V2 / PHASE 5</p>
+  <h1>MBD V2 数据流（Phase 4 完成后）</h1>
+  <p class="subtitle">PolarSystem + UsedDirRegistry 已集成到 V2 Pipeline。Phase 5 聚焦精细化标注。</p>
+</div>
+
+<div class="diagram-container">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1040 560" width="1040" height="560">
+<defs>
+  <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse">
+    <circle cx="1" cy="1" r="0.9" fill="rgba(33,54,77,0.10)"/>
+  </pattern>
+  <marker id="arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+    <polygon points="0 0, 8 3, 0 6" fill="#6b7f95"/>
+  </marker>
+  <marker id="arr-a" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+    <polygon points="0 0, 8 3, 0 6" fill="#2d67b2"/>
+  </marker>
+  <marker id="arr-g" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+    <polygon points="0 0, 8 3, 0 6" fill="#2d8a4e"/>
+  </marker>
+</defs>
+<rect width="1040" height="560" fill="#f8fbfe"/>
+<rect width="1040" height="560" fill="url(#dots)" opacity="0.4"/>
+
+<!-- ===== Arrows ===== -->
+<!-- V1 Layout → PolarSystem Enhancement (NEW in Phase 4) -->
+<line x1="240" y1="108" x2="240" y2="188" stroke="#2d8a4e" stroke-width="1.6" marker-end="url(#arr-g)"/>
+<rect x="204" y="136" width="72" height="14" rx="2" fill="#f8fbfe"/>
+<text x="240" y="147" fill="#2d8a4e" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">PHASE 4</text>
+
+<!-- PolarSystem → Assembler -->
+<line x1="240" y1="248" x2="240" y2="312" stroke="#2d67b2" stroke-width="1.4" marker-end="url(#arr-a)"/>
+
+<!-- Assembler → Avoidance -->
+<line x1="240" y1="368" x2="240" y2="428" stroke="#2d67b2" stroke-width="1.4" marker-end="url(#arr-a)"/>
+
+<!-- Avoidance → Output -->
+<line x1="240" y1="484" x2="240" y2="508" stroke="#2d67b2" stroke-width="1" marker-end="url(#arr-a)"/>
+
+<!-- PolarSystem → UsedDirRegistry -->
+<line x1="360" y1="212" x2="500" y2="212" stroke="#2d8a4e" stroke-width="1.2" marker-end="url(#arr-g)"/>
+
+<!-- UsedDirRegistry → dimtimes -->
+<line x1="624" y1="204" x2="624" y2="264" stroke="#2d8a4e" stroke-width="1" marker-end="url(#arr-g)"/>
+
+<!-- Phase 5 items arrows -->
+<line x1="624" y1="380" x2="624" y2="428" stroke="#6b7f95" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#arr)"/>
+
+<!-- ===== Nodes ===== -->
+
+<!-- V1 LayoutResult (top) -->
+<rect x="120" y="60" rx="6" width="240" height="48" fill="#f8fbfe"/>
+<rect x="120" y="60" rx="6" width="240" height="48" fill="rgba(33,54,77,0.05)" stroke="#6b7f95" stroke-width="1"/>
+<rect x="128" y="66" width="48" height="12" rx="2" fill="transparent" stroke="rgba(107,127,149,0.40)" stroke-width="0.8"/>
+<text x="152" y="75" fill="rgba(107,127,149,0.8)" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">V1 DATA</text>
+<text x="240" y="92" fill="#21364d" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">LayoutResult (V1 Bridge)</text>
+<text x="240" y="104" fill="#6b7f95" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">linear_dims + welds + slopes + tags</text>
+
+<!-- PolarSystem Enhancement (NEW) -->
+<rect x="120" y="192" rx="6" width="240" height="52" fill="#f8fbfe"/>
+<rect x="120" y="192" rx="6" width="240" height="52" fill="rgba(45,138,78,0.08)" stroke="#2d8a4e" stroke-width="1.4"/>
+<rect x="128" y="198" width="68" height="12" rx="2" fill="transparent" stroke="rgba(45,138,78,0.50)" stroke-width="0.8"/>
+<text x="162" y="207" fill="rgba(45,138,78,0.8)" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">PHASE 4 NEW</text>
+<text x="240" y="224" fill="#21364d" font-size="11" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">PolarSystem 方向增强</text>
+<text x="240" y="236" fill="#6b7f95" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">polar_system + branch_calculator</text>
+
+<!-- UsedDirRegistry -->
+<rect x="504" y="188" rx="6" width="176" height="40" fill="#f8fbfe"/>
+<rect x="504" y="188" rx="6" width="176" height="40" fill="rgba(45,138,78,0.08)" stroke="#2d8a4e" stroke-width="1"/>
+<text x="592" y="208" fill="#21364d" font-size="11" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">UsedDirRegistry</text>
+<text x="592" y="222" fill="#6b7f95" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">dimtimes → 多层偏移</text>
+
+<!-- dimtimes offset result -->
+<rect x="536" y="268" rx="6" width="176" height="36" fill="#f8fbfe"/>
+<rect x="536" y="268" rx="6" width="176" height="36" fill="rgba(45,138,78,0.08)" stroke="#2d8a4e" stroke-width="1"/>
+<text x="624" y="288" fill="#21364d" font-size="10" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">offset = od/2 + ch + lane*(n-1)</text>
+<text x="624" y="300" fill="#6b7f95" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">lane_step_multiplier: 1.2</text>
+
+<!-- Assembler + Chain Stacking -->
+<rect x="120" y="316" rx="6" width="240" height="48" fill="#f8fbfe"/>
+<rect x="120" y="316" rx="6" width="240" height="48" fill="rgba(45,103,178,0.10)" stroke="#2d67b2" stroke-width="1.2"/>
+<text x="240" y="340" fill="#21364d" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Assembler + SmallDimSolver</text>
+<text x="240" y="356" fill="#6b7f95" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">chain stacking + V1→V2 翻译</text>
+
+<!-- Phase 5 items (TODO) -->
+<rect x="504" y="332" rx="6" width="200" height="48" fill="#f8fbfe"/>
+<rect x="504" y="332" rx="6" width="200" height="48" fill="rgba(45,103,178,0.05)" stroke="#2d67b2" stroke-width="1" stroke-dasharray="6,4"/>
+<rect x="512" y="338" width="56" height="12" rx="2" fill="transparent" stroke="rgba(45,103,178,0.40)" stroke-width="0.8"/>
+<text x="540" y="347" fill="rgba(45,103,178,0.7)" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">PHASE 5</text>
+<text x="604" y="360" fill="#21364d" font-size="11" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">精细化标注（待实现）</text>
+<text x="604" y="372" fill="#6b7f95" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">AngleDim / overall / port</text>
+
+<!-- Avoidance Engine -->
+<rect x="120" y="432" rx="6" width="240" height="48" fill="#f8fbfe"/>
+<rect x="120" y="432" rx="6" width="240" height="48" fill="rgba(45,103,178,0.10)" stroke="#2d67b2" stroke-width="1.2"/>
+<text x="240" y="456" fill="#21364d" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">避让引擎</text>
+<text x="240" y="468" fill="#6b7f95" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">dim-text + label + leader</text>
+
+<!-- Phase 5 integrations -->
+<rect x="504" y="432" rx="6" width="200" height="48" fill="#f8fbfe"/>
+<rect x="504" y="432" rx="6" width="200" height="48" fill="rgba(45,103,178,0.05)" stroke="#2d67b2" stroke-width="1" stroke-dasharray="6,4"/>
+<text x="604" y="452" fill="#21364d" font-size="11" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">焊缝推断 / Aid 图元</text>
+<text x="604" y="468" fill="#6b7f95" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">weld_type + AidLine/Arc</text>
+
+<!-- Output -->
+<rect x="120" y="512" rx="6" width="240" height="36" fill="#f8fbfe"/>
+<rect x="120" y="512" rx="6" width="240" height="36" fill="rgba(45,103,178,0.10)" stroke="#2d67b2" stroke-width="1.2"/>
+<text x="240" y="534" fill="#21364d" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">MbdV2PipeData</text>
+
+<!-- ===== Legend ===== -->
+<line x1="28" y1="516" x2="1012" y2="516" stroke="rgba(33,54,77,0.10)" stroke-width="0.8"/>
+<text x="28" y="536" fill="#6b7f95" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">LEGEND</text>
+
+<rect x="104" y="524" width="12" height="12" rx="2" fill="rgba(45,138,78,0.08)" stroke="#2d8a4e" stroke-width="1"/>
+<text x="124" y="534" fill="#6b7f95" font-size="9" font-family="'Geist', sans-serif">Phase 4 新增（已完成）</text>
+
+<rect x="268" y="524" width="12" height="12" rx="2" fill="rgba(45,103,178,0.10)" stroke="#2d67b2" stroke-width="1"/>
+<text x="288" y="534" fill="#6b7f95" font-size="9" font-family="'Geist', sans-serif">现有 V2 核心</text>
+
+<rect x="404" y="524" width="12" height="12" rx="2" fill="rgba(45,103,178,0.05)" stroke="#2d67b2" stroke-width="1" stroke-dasharray="4,3"/>
+<text x="424" y="534" fill="#6b7f95" font-size="9" font-family="'Geist', sans-serif">Phase 5 待实现</text>
+
+</svg>
+</div>
+
+<div class="cards-grid">
+  <div class="card">
+    <p class="eyebrow">PHASE 4 COMPLETED</p>
+    <div class="card-header">
+      <span class="card-dot green"></span>
+      <h3>已完成里程碑</h3>
+    </div>
+    <ul>
+      <li><span class="done">4.1</span> <code>polar_system.rs</code> ~500行 — 柱坐标放置优化器</li>
+      <li><span class="done">4.2</span> <code>branch_calculator.rs</code> ~300行 — PolarSystem 增量集成</li>
+      <li><span class="done">4.3</span> UsedDirRegistry 完整集成 — dimtimes 多层偏移</li>
+      <li><span class="done">4.4</span> offset 公式配置化 — <code>od/2 + ch + lane*(n-1)</code></li>
+      <li>14 个模块 · 11 种 Primitive · <code>cargo check</code> ✓</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <p class="eyebrow">PHASE 5 ROADMAP</p>
+    <div class="card-header">
+      <span class="card-dot accent"></span>
+      <h3>Phase 5 精细化计划</h3>
+    </div>
+    <ul>
+      <li><span class="todo">5.1</span> overall dim 折线路径长度</li>
+      <li><span class="todo">5.2</span> port dim 端口间距标注</li>
+      <li><span class="todo">5.3</span> AngleDim 弯头角度标注</li>
+      <li><span class="todo">5.4</span> weld_type 推断（TreeIndex noun）</li>
+      <li><span class="todo">5.5</span> Aid 辅助图元（AidLine/AidArc）</li>
+    </ul>
+  </div>
+</div>
+
+<div class="colophon">
+  MBD V2 Phase 5 Plan — 14 modules, Phase 4 complete, 5 refinement tasks ahead — 2026-05-01
+</div>
+
+</body>
+</html>
