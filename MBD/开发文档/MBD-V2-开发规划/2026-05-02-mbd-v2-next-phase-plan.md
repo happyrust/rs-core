@@ -34,8 +34,8 @@
 |---|---|---|
 | 10 条 BRAN 真实页面验收 | 验收覆盖率不足（需运行中 web_server） | P0 |
 | 100 条批量 JSON 验收 | 回归基线缺失（脚本已就绪） | P0 |
-| rs-plant3-d Bevy fork 修复 | 渲染器编译受阻 | P1 |
-| Phase 9b-c 渲染实现（WeldMark/AngleDim/AidLine 等真实 mesh 渲染） | 辅助图元未渲染 | P1 |
+| plant3d-web V2 Primitive 原生渲染（取代现有适配层） | 前端仍用 V1 翻译 | P1 |
+| Phase 9b-c 渲染实现（WeldMark/AngleDim/AidLine 等 three.js 渲染） | 辅助图元未渲染 | P1 |
 | V1 API 退役 | 维护成本 | P2 |
 | Overall dim 折线 BRAN 支持 | 功能缺失 | P2 |
 
@@ -175,17 +175,26 @@ BranchMember[] → extract_isolines → PolarSystem per isoline
 
 ### 9.1 前端 V2 Primitive 原生渲染
 
+**前端项目**：`plant3d-web`（Vue 3 + three.js）
+
+**已有基础**：
+- `src/types/mbdV2.ts` — V2 类型定义已完整（与后端镜像）
+- `src/api/mbdPipeApi.ts` — API 调用层
+- `src/composables/useMbdPipeAnnotationThree.ts` — 现有标注渲染逻辑
+- `src/composables/mbd/` — branchLayoutEngine、mbdDimensionMode 等
+
 **任务**：
-1. plant3d-web 的 `useMbdPipeAnnotationThree.ts` 增加 `renderV2Primitive(prim: MbdPrimitive)` 分发器
+1. 在 `useMbdPipeAnnotationThree.ts` 增加 `renderV2Primitive(prim: MbdPrimitive)` 分发器
 2. 按 `primitive.kind` 分发到对应的 three.js 渲染器：
-   - `linear_dim` → DimensionLine3D
-   - `label` → TextSprite3D
-   - `leader_line` → PolyLine3D
-   - `weld_mark` → WeldCrossSymbol3D
-   - `slope_mark` → SlopeIndicator3D
-   - `angle_dim` → ArcDimension3D
-   - `aid_line` / `aid_arc` / `aid_circle` → HelperGeometry3D
+   - `linear_dim` → 现有 `LinearDimension3D`（已存在）
+   - `label` → TextSprite 或 CSS2DRenderer
+   - `leader_line` → THREE.Line（折线）
+   - `weld_mark` → 交叉线段符号
+   - `slope_mark` → 坡度指示线 + 文字
+   - `angle_dim` → 弧线网格 + 文字
+   - `aid_line` / `aid_arc` / `aid_circle` → THREE.Line / THREE.RingGeometry
 3. 不再做前端二次排版，所有坐标直接使用 primitive 中的世界坐标
+4. `mbdPipeApi.ts` 增加 V2 API 调用方法（`getMbdPipeV2`）
 
 ### 9.2 V1 API 降级与退役
 
@@ -265,7 +274,9 @@ BranchMember[] → extract_isolines → PolarSystem per isoline
 
 ### Phase 9
 ```
-修改  rs-plant3-d/src/...                       (前端 V2 渲染)
+修改  plant3d-web/src/composables/useMbdPipeAnnotationThree.ts  (V2 primitive 原生渲染)
+修改  plant3d-web/src/api/mbdPipeApi.ts                       (V2 API 切换)
+修改  plant3d-web/src/types/mbdV2.ts                          (类型同步，如有需要)
 删除  rs-core/src/mbd/v2/assembler.rs           (V1 退役后)
 修改  plant-model-gen/src/web_api/mbd_pipe_api.rs  (V1 API 删除)
 ```
