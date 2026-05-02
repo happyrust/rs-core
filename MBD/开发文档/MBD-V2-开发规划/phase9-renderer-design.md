@@ -18,15 +18,21 @@
 ```
 
 ### 已有前端基础
-- `plant3d-web/src/types/mbdV2.ts` — V2 类型定义完整
-- `plant3d-web/src/api/mbdPipeApi.ts` — HTTP API 调用
+- `plant3d-web/src/types/mbdV2.ts` — V2 类型定义完整（与后端镜像）
+- `plant3d-web/src/api/mbdPipeApi.ts` — HTTP API 调用，**已有 `getMbdPipeV2Annotations()`**
+- `plant3d-web/src/api/mbdPipeApi.ts` — **已有 `adaptMbdV2ResponseToPipeResponse()`** 适配层（~220行）
 - `plant3d-web/src/composables/useMbdPipeAnnotationThree.ts` — 现有标注渲染
+- `plant3d-web/src/composables/mbd/` — branchLayoutEngine、mbdDimensionMode、mbdRequestSync
 - `plant3d-web/src/utils/three/annotation/annotations/LinearDimension3D.ts` — 尺寸线 3D
 
-### 问题
-- 前端仍消费 V1 `MbdPipeResponse`，V2 数据需经过适配层翻译
-- 前端渲染需要自己计算偏移/方向（违背 V2 "后端已排版" 设计）
-- 新增 primitive 类型需要修改适配层
+### 当前状态
+**前端已在消费 V2 API**（`getMbdPipeV2Annotations()`），但通过 `adaptMbdV2ResponseToPipeResponse()` 将 V2 primitive 翻译回 V1 `MbdPipeResponse` 格式给现有渲染器。这意味着：
+- V2 primitive 的精确排版信息（extension_line、dim_line、arrows、text_anchor）被丢弃
+- 前端仍用 V1 逻辑重新计算偏移/方向
+- 适配层增加了维护成本（每加一种 primitive 需要同步修改适配层）
+
+### Phase 9 目标
+移除适配层，直接用 V2 primitive 的精确坐标渲染——**关键差异是不再做前端二次排版**
 
 ---
 
