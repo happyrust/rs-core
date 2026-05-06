@@ -47,8 +47,11 @@ impl ConnectionConfig {
 /// 连接状态
 #[derive(Debug)]
 enum ConnectionState {
-    /// 未连接
-    Disconnected,
+    /// 未连接（首启）；或被 [`SurrealConnectionManager::mark_disconnected`] 标记后保留
+    /// 最近一次成功的配置，供 [`SurrealConnectionManager::try_revive`] 在不丢上下文的情况下重连
+    Disconnected {
+        last_config: Option<ConnectionConfig>,
+    },
     /// 已连接
     Connected { config: ConnectionConfig },
 }
@@ -67,7 +70,7 @@ impl SurrealConnectionManager {
     /// 创建新的连接管理器
     pub fn new() -> Self {
         Self {
-            state: Mutex::new(ConnectionState::Disconnected),
+            state: Mutex::new(ConnectionState::Disconnected { last_config: None }),
         }
     }
 
@@ -89,7 +92,7 @@ impl SurrealConnectionManager {
         let mut state = self.state.lock().await;
 
         match &*state {
-            ConnectionState::Disconnected => {
+            ConnectionState::Disconnected { .. } => {
                 // 未连接，直接连接
                 println!("🔌 首次连接数据库: {}", new_config.host);
                 self.do_connect(db, &new_config).await?;
@@ -223,14 +226,71 @@ impl SurrealConnectionManager {
         let state = self.state.lock().await;
         match &*state {
             ConnectionState::Connected { config } => Some(config.host.clone()),
-            ConnectionState::Disconnected => None,
+            ConnectionState::Disconnected { .. } => None,
         }
     }
 
-    /// 标记为断开连接状态（不执行实际断开操作）
+    /// 是否处于 Disconnected 状态（包含首启与运行期被 [`mark_disconnected`] 推到的 idle dead）
+    pub async fn is_disconnected(&self) -> bool {
+        let state = self.state.lock().await;
+        matches!(&*state, ConnectionState::Disconnected { .. })
+    }
+
+    /// 标记为断开连接状态（不执行实际断开操作），但保留最近一次成功的配置以便 [`try_revive`] 用
     pub async fn mark_disconnected(&self) {
         let mut state = self.state.lock().await;
-        *state = ConnectionState::Disconnected;
+        let preserved = match &*state {
+            ConnectionState::Connected { config } => Some(config.clone()),
+            ConnectionState::Disconnected { last_config } => last_config.clone(),
+        };
+        *state = ConnectionState::Disconnected {
+            last_config: preserved,
+        };
+    }
+
+    /// 尝试用最近一次成功的配置在原 [`Surreal<Any>`] 上重新建立会话。
+    ///
+    /// 受限于 SurrealDB SDK：[`Lazy<Surreal<Any>>`] 不支持显式 close 物理连接，
+    /// 这里只能尝试 `signin` + `use_ns_db_compat`。若服务端 WS 已彻底断开，
+    /// 通常 SDK 内部会重新握手；若仍失败，调用方应当返 5xx 给客户端，
+    /// 由外层进程管理（systemd / supervisor）决定是否 graceful exit。
+    ///
+    /// 触发：[`super::query_ext::query_response_with_location`] 在 query timeout
+    /// 或 IO/连接级错误后会先 [`mark_disconnected`]，下一次 query 入口再尝试 revive。
+    pub async fn try_revive(&self, db: &Surreal<Any>) -> Result<(), surrealdb::Error> {
+        let mut state = self.state.lock().await;
+        let last_config = match &*state {
+            ConnectionState::Connected { .. } => {
+                // 已是 Connected 视为无需 revive
+                return Ok(());
+            }
+            ConnectionState::Disconnected { last_config } => match last_config {
+                Some(cfg) => cfg.clone(),
+                None => {
+                    // 首启未配置完成场景，调用方应走 connect_or_reconnect
+                    return Err(surrealdb::Error::thrown(
+                        "try_revive: no last_config recorded".to_string(),
+                    ));
+                }
+            },
+        };
+
+        match self.do_switch_ns_db(db, &last_config).await {
+            Ok(()) => {
+                println!(
+                    "✅ try_revive 成功：NS={} DB={} host={}",
+                    last_config.namespace, last_config.database, last_config.host
+                );
+                *state = ConnectionState::Connected {
+                    config: last_config,
+                };
+                Ok(())
+            }
+            Err(e) => {
+                eprintln!("❌ try_revive 失败：{e}（保留 Disconnected 状态）");
+                Err(e)
+            }
+        }
     }
 }
 

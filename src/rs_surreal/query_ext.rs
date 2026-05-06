@@ -1,4 +1,5 @@
 use anyhow::{Context, Result};
+use std::time::Duration;
 use surrealdb::Connection;
 use surrealdb::IndexedResults as Response;
 use surrealdb::Surreal;
@@ -8,6 +9,29 @@ use surrealdb::types::SurrealValue;
 
 use crate::error::init_query_error;
 use log::error;
+
+/// 默认 SurrealDB query 超时（毫秒）。
+///
+/// 单连接 `SUL_DB` 在 idle 一段时间后会被远端关闭，但 `Lazy<Surreal<Any>>` 不会自动重连，
+/// 后续 `query.await` 会**永久 hang**。这里用 `tokio::time::timeout` 兜底，
+/// 把 hang 转成可观察的 `query timeout` 错误，让 axum handler 返回 5xx 而非
+/// 死锁等待 `Empty reply from server`（curl 52）。
+///
+/// 触发事故：
+///   plant3d-web/docs/plans/2026-05-07-pms-simulator-6case-fail-triage-plan.md §11.2
+/// 修复方案：
+///   plant-model-gen/docs/plans/2026-05-07-rs-core-sul-db-idle-resilience-plan.md §6 Phase 1
+const QUERY_TIMEOUT_DEFAULT_MS: u64 = 30_000;
+
+/// 解析 query 超时（受环境变量 `SUL_DB_QUERY_TIMEOUT_MS` 覆盖）。
+fn resolve_query_timeout() -> Duration {
+    std::env::var("SUL_DB_QUERY_TIMEOUT_MS")
+        .ok()
+        .and_then(|raw| raw.trim().parse::<u64>().ok())
+        .filter(|ms| *ms > 0)
+        .map(Duration::from_millis)
+        .unwrap_or_else(|| Duration::from_millis(QUERY_TIMEOUT_DEFAULT_MS))
+}
 
 /// 为 `Surreal<Any>` 提供更友好的查询接口。
 pub trait SurrealQueryExt {
@@ -50,10 +74,25 @@ where
 {
     let sql_str = sql.as_ref();
     let location = location.to_string();
-    db.query(sql_str).await.map_err(|e| {
-        init_query_error(sql_str, &e, &location);
-        anyhow::anyhow!("执行查询失败：{e}")
-    })
+    let timeout = resolve_query_timeout();
+    match tokio::time::timeout(timeout, db.query(sql_str)).await {
+        Ok(Ok(resp)) => Ok(resp),
+        Ok(Err(e)) => {
+            init_query_error(sql_str, &e, &location);
+            Err(anyhow::anyhow!("执行查询失败：{e}"))
+        }
+        Err(_elapsed) => {
+            error!(
+                "[sul-db] query timeout after {:?} sql={:?} at {}",
+                timeout, sql_str, location
+            );
+            Err(anyhow::anyhow!(
+                "query timeout after {:?} at {}",
+                timeout,
+                location
+            ))
+        }
+    }
 }
 
 fn is_namespace_empty_error(error: &impl std::fmt::Display) -> bool {
