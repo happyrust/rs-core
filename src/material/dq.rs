@@ -13,6 +13,7 @@ use crate::{
     query_filter_deep_children,
 };
 use crate::{RefnoEnum, init_test_surreal};
+#[cfg(feature = "spec-loader")]
 use calamine::{RangeDeserializerBuilder, Reader, Xls, open_workbook};
 use serde_derive::{Deserialize, Serialize};
 use serde_json::Value;
@@ -195,6 +196,14 @@ pub async fn save_dq_material(refno: RefU64) -> Vec<JoinHandle<()>> {
 }
 
 /// 读取电气专业材料表
+///
+/// 仅在启用 `spec-loader` feature 时可用；否则返回空映射以便调用方降级。
+#[cfg(not(feature = "spec-loader"))]
+fn read_dq_material_excel() -> anyhow::Result<HashMap<String, Vec<DqMaterial>>> {
+    Ok(HashMap::new())
+}
+
+#[cfg(feature = "spec-loader")]
 fn read_dq_material_excel() -> anyhow::Result<HashMap<String, Vec<DqMaterial>>> {
     let mut map = HashMap::new();
     let mut workbook: Xls<_> = open_workbook("resource/电气专业大宗材料属性对应关系表.xls")?;

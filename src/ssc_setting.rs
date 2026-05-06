@@ -14,6 +14,7 @@ use crate::{
     query_ele_filter_deep_children, query_filter_deep_children, query_response, rs_surreal,
 };
 use anyhow::anyhow;
+#[cfg(feature = "spec-loader")]
 use calamine::{RangeDeserializerBuilder, Reader, Xlsx, open_workbook};
 use dashmap::DashMap;
 use itertools::Itertools;
@@ -285,6 +286,17 @@ pub struct PbsMajorCode {
 }
 
 /// 读取 专业分类 excel表 ，返回需要的值
+///
+/// 仅在启用 `spec-loader` feature 时可用；否则调用会返回错误，建议改用
+/// 已写入 SurrealDB 的 pbs_config 数据。
+#[cfg(not(feature = "spec-loader"))]
+pub async fn get_room_level_from_excel_refactor() -> anyhow::Result<SscMajorCodeConfig> {
+    Err(anyhow!(
+        "get_room_level_from_excel_refactor 需要启用 spec-loader feature"
+    ))
+}
+
+#[cfg(feature = "spec-loader")]
 pub async fn get_room_level_from_excel_refactor() -> anyhow::Result<SscMajorCodeConfig> {
     let mut level: Vec<(String, Vec<String>)> = Vec::new();
     let mut name_map = DashMap::new();
@@ -392,6 +404,17 @@ pub static PBS_ROOT_ID: Lazy<RecordId> = Lazy::new(|| ("pbs", "0").into_record_i
 pub const PBS_STR: &'static str = "PBS";
 
 /// 生成pbs固定节点
+///
+/// 仅在启用 `spec-loader` feature 时可用；否则函数返回错误并跳过 ssc_level.xlsx 读取。
+/// 校审等纯查询场景应直接走 SurrealDB 已存的 pbs 数据。
+#[cfg(not(feature = "spec-loader"))]
+pub async fn set_pbs_fixed_node(_handles: &mut Vec<JoinHandle<()>>) -> anyhow::Result<()> {
+    Err(anyhow!(
+        "set_pbs_fixed_node 需要启用 spec-loader feature"
+    ))
+}
+
+#[cfg(feature = "spec-loader")]
 pub async fn set_pbs_fixed_node(mut handles: &mut Vec<JoinHandle<()>>) -> anyhow::Result<()> {
     let mut eles = Vec::new();
     let mut edge_results = Vec::new();

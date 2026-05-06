@@ -41,6 +41,10 @@ render = [] # rs-plant3-d 渲染集成 feature（预留；pdms_shape.rs 的 gen_
 reflect = [] # Bevy Reflect 集成 feature（预留；后续可为类型实现 Reflect trait）
 profile = [] # 性能分析 feature（预留）
 
+# Excel spec/material 表加载（calamine）。关闭时 ssc_setting / material::dq 中的
+# Excel 读取函数降级为 stub，校审/纯 SurrealDB 流程不受影响。
+spec-loader = ["dep:calamine"]
+
 
 [dependencies]
 strum = { version = "0.27.2", features = ["derive"] }
@@ -81,7 +85,7 @@ dyn-clone = "1.0.9"
 rstar = { git = "https://github.com/happyrust/rstar", features = ["serde"] }
 uuid = "1.3.0"
 config = "0.14.1"
-calamine = { git = "https://github.com/happyrust/calamine" }
+calamine = { git = "https://github.com/happyrust/calamine", optional = true }
 
 thiserror = "1.0.60"
 log = "0.4.21"
