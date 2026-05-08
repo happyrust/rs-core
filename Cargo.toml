@@ -119,13 +119,13 @@ once_cell = "1.18.0"
 urlencoding = "2.1.3"
 chrono = "0.4"
 
-surrealdb = { git = "https://gitee.com/happydpc/surrealdb", branch = "dev-3.1", default-features = false, features = [
+surrealdb = { git = "https://github.com/happyrust/surrealdb", branch = "dev-3.1", default-features = false, features = [
     "protocol-ws",
     "kv-mem",
 ] }
 # surrealdb-types 必须作为独立依赖引入，因为 SurrealValue derive 宏生成的代码
 # 会引用 ::surrealdb_types 这个 crate 路径
-surrealdb-types = { git = "https://gitee.com/happydpc/surrealdb", branch = "dev-3.1" }
+surrealdb-types = { git = "https://github.com/happyrust/surrealdb", branch = "dev-3.1" }
 num-traits = "0.2.17"
 regex = "1.11.3"
 petgraph = { version = "0.8.2", features = ["serde-1"] }

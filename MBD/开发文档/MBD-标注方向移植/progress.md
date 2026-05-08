@@ -39,11 +39,31 @@
 - 新增 `mid_v3` 和 `dot_v3` 辅助函数
 - `cargo check` 编译通过
 
+### Phase 2-5 已完成
+
+- Phase 2: `used_dir.rs` — IsoUsedDir + UsedDirRegistry
+- Phase 3: `iso_ori.rs` — compute_iso_ori + get_handle_dim_dir
+- Phase 4: `member_positions.rs` — DimPositions + consider_tee
+- Phase 5: `assembler.rs` — 斜管标注分解（AidLine + AidText + 直角标）
+- 全部已提交: `1936ab2` + `71c8bf6`
+- 已推送到 origin/dev-3.1
+
+### 已提交汇总
+
+| Commit | 分支 | 说明 |
+|--------|------|------|
+| 7fec378 | dev-3.1 | 清理 .cursor 旧文件 (-7655行) |
+| 1936ab2 | dev-3.1 | PML 标注方向算法 Rust 移植 (+1872行) |
+| 71c8bf6 | dev-3.1 | MBD V2 改进 + 查询扩展 (+646行) |
+| 60952c0 | feat/workspace-split | 抽离 aios-mbd crate |
+| 1a1472b | feat/workspace-split | 下一步拆分计划 |
+| 7ef8bb1 | feat/workspace-split | 抽离 aios-pdms-core crate |
+
 ### 下一步
 
-- Phase 2：实现 `IsoUsedDir` 结构体和已用方向记录
-- 从 `MbdV2PipelineContext` 或上游 API 传入 `bran_bbox_center`
-- 解决 `aws_lc` 链接问题以便本地测试
+- Phase 6：集成验证，需要 plant-model-gen + plant3d-web 环境
+- Phase 4 剩余：PCOM/INST/ATTA 位置投影（需 PDMS 类型系统适配）
+- feat/workspace-split 创建 PR
 
 ### 涉及的关键文件
 

@@ -30,6 +30,7 @@ pub mod branch_calculator;
 pub mod data_source;
 pub mod dim_direction;
 pub mod iso_ori;
+pub mod layout_engine;
 pub mod leader_router;
 pub mod member_positions;
 pub mod pipeline;
@@ -65,6 +66,7 @@ pub use data_source::{
     BendData, BranchAttrs, BranchMember, BranchQueryResult, InMemoryDataSource, SlopeData, TagData,
     WeldData,
 };
+pub use layout_engine::{LayoutEngineContext, compute_v2_primitives};
 pub use primitive::{
     AidArcPrimitive, AidCirclePrimitive, AidLinePrimitive, AidLineStyle, AidPointPrimitive,
     AidTextPrimitive, AngleDimArrow, AngleDimPrimitive, IssueCategory, IssueSeverity,
