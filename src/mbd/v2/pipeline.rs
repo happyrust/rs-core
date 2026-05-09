@@ -193,17 +193,44 @@ pub fn build_mbd_v2_pipe_data(layout: &LayoutResult, ctx: &MbdV2PipelineContext)
     }
 }
 
-/// 从 V2 数据源直接构建 V2 响应主载荷（Phase 8 直算入口）。
+/// 从 V2 数据源直接构建 V2 响应主载荷（V2 直算入口）。
 ///
-/// 跳过 V1 `LayoutResult`，从 `BranchQueryResult` 直接产出 primitive。
-/// 当前实现是 scaffold，核心排版逻辑仍需在 Phase 8.2 补全。
+/// 跳过 V1 `LayoutResult`，从 `BranchQueryResult` 经 `layout_engine` 直接产出
+/// primitive。这是 V2 的目标路径，最终将替代 `build_mbd_v2_pipe_data`。
 pub fn build_mbd_v2_pipe_data_direct(
     query_result: &super::data_source::BranchQueryResult,
     ctx: &MbdV2PipelineContext,
 ) -> MbdV2PipeData {
-    let layout = layout_from_branch_query_result(query_result, ctx);
+    let engine_ctx = super::layout_engine::LayoutEngineContext {
+        cheight: ctx.assembler.default_cheight,
+        pipe_od: ctx.assembler.pipe_od,
+        bbox_center: query_result.bbox_center.or(ctx.assembler.bran_bbox_center),
+        default_orientation: ctx.assembler.default_orientation,
+        default_up: ctx.assembler.default_up,
+        arrow_len: ctx.assembler.default_arrow_len,
+        lane_step_multiplier: ctx.assembler.lane_step_multiplier,
+        enable_avoidance: ctx.enable_avoidance,
+        avoidance_config: ctx.avoidance_config.clone(),
+    };
 
-    build_mbd_v2_pipe_data(&layout, ctx)
+    let (primitives, mut issues) =
+        super::layout_engine::compute_v2_primitives(query_result, &engine_ctx);
+
+    let generated_at = ctx
+        .generated_at_override
+        .clone()
+        .unwrap_or_else(current_utc_rfc3339);
+
+    let meta = compute_meta_from_primitives(&primitives, &ctx.branch_attrs, generated_at);
+
+    MbdV2PipeData {
+        version: "v2".to_string(),
+        input_refno: ctx.input_refno.clone(),
+        branch_refno: ctx.branch_refno.clone(),
+        primitives,
+        meta,
+        issues,
+    }
 }
 
 /// 从 `BranchQueryResult` 构建 V1 兼容 `LayoutResult`。
@@ -364,6 +391,44 @@ fn layout_from_branch_query_result(
 
 fn current_utc_rfc3339() -> String {
     chrono::Utc::now().to_rfc3339()
+}
+
+fn compute_meta_from_primitives(
+    primitives: &[super::primitive::MbdPrimitive],
+    branch_attrs: &BTreeMap<String, String>,
+    generated_at: String,
+) -> MbdV2Meta {
+    use super::primitive::MbdPrimitive;
+
+    let mut dims_by_kind: BTreeMap<String, u32> = BTreeMap::new();
+    let mut segments_count = 0u32;
+    let mut welds_count = 0u32;
+
+    for prim in primitives {
+        match prim {
+            MbdPrimitive::LinearDim(d) => {
+                let kind = match d.sub_kind {
+                    super::primitive::LinearDimSubKind::Segment => "segment",
+                    super::primitive::LinearDimSubKind::Chain => "chain",
+                    super::primitive::LinearDimSubKind::Overall => "overall",
+                    super::primitive::LinearDimSubKind::Port => "port",
+                    super::primitive::LinearDimSubKind::CutTubi => "cut_tubi",
+                };
+                *dims_by_kind.entry(kind.to_string()).or_insert(0) += 1;
+                segments_count += 1;
+            }
+            MbdPrimitive::WeldMark(_) => welds_count += 1,
+            _ => {}
+        }
+    }
+
+    MbdV2Meta {
+        segments_count,
+        welds_count,
+        dims_by_kind,
+        branch_attrs: branch_attrs.clone(),
+        generated_at,
+    }
 }
 
 fn compute_meta(
