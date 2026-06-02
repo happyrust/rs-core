@@ -5,6 +5,19 @@ All notable changes to the rs-core library will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 2026-06-02
+
+### Removed
+
+- **移除 MBD V2 尺寸标注输出**
+  - `layout_engine` 不再生成 `LinearDim` 和 `AngleDim` 图元，弯头仅保留辅助线/辅助弧等非尺寸表达。
+  - `pipeline` 对历史或上游残留尺寸图元做统一过滤，`segments_count` 与 `dims_by_kind` 固定为空语义。
+  - 更新相关单元测试，锁定 MBD 尺寸标注已移除后的元数据和图元输出行为。
+- **移除 SurrealKV 后端依赖**
+  - 删除 `kv-surrealkv` Cargo feature 和锁文件中的 `surrealkv` 包。
+  - file 模式统一生成 `rocksdb://` 连接串，嵌入式模型 KV 仅依赖 `kv-rocksdb`。
+  - 删除 `connect_surrealkv` 专用入口，独立 KV 服务启动也切换到 RocksDB URL。
+
 ## 2026-05-02
 
 ### Added

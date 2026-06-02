@@ -80,6 +80,11 @@ pub use uda::*;
 pub use adapter::create_surreal_adapter;
 pub use connection_manager::{CONNECTION_MANAGER, ConnectionConfig, SurrealConnectionManager};
 
+pub mod any_resilient;
+pub mod heartbeat;
+pub use any_resilient::query_response_resilient;
+pub use heartbeat::{HEARTBEAT_INTERVAL_DEFAULT, HEARTBEAT_QUERY_TIMEOUT_DEFAULT, spawn_heartbeat};
+
 use crate::options::DbOption;
 use once_cell::sync::Lazy;
 use surrealdb::IndexedResults as SurrealResponse;
@@ -259,21 +264,6 @@ pub async fn connect_kvdb(
             username: username.to_owned(),
             password: password.to_owned(),
         })
-        .await?;
-    use_ns_db_compat(&SUL_DB, ns, db).await?;
-    Ok(())
-}
-
-/// 连接嵌入式 SurrealKV 后端（本地文件，无需认证）。
-///
-/// `db_path` 为 SurrealKV 数据目录，例如 `output/surrealkv_data`。
-/// 连接后 `SUL_DB` 的所有 SurrealQL 读写自动落盘到该目录。
-pub async fn connect_surrealkv(db_path: &str, ns: &str, db: &str) -> Result<(), surrealdb::Error> {
-    let conn_str = format!("surrealkv://{}", db_path);
-    let config = surrealdb::opt::Config::default().ast_payload();
-    SUL_DB
-        .connect((conn_str, config))
-        .with_capacity(1000)
         .await?;
     use_ns_db_compat(&SUL_DB, ns, db).await?;
     Ok(())

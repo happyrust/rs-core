@@ -389,14 +389,14 @@ pub async fn initialize_databases(db_option: &DbOption) -> Result<()> {
 
         match kv_cfg.mode {
             DbConnMode::File => {
-                #[cfg(not(any(feature = "kv-rocksdb", feature = "kv-surrealkv")))]
+                #[cfg(not(feature = "kv-rocksdb"))]
                 {
                     return Err(anyhow::anyhow!(
-                        "SurrealKV DbConnMode::File 需要启用 kv-rocksdb 或 kv-surrealkv 特性。\
+                        "模型 KV DbConnMode::File 需要启用 kv-rocksdb 特性。\
                         请使用 cargo build --features kv-rocksdb 重新构建。"
                     ));
                 }
-                #[cfg(any(feature = "kv-rocksdb", feature = "kv-surrealkv"))]
+                #[cfg(feature = "kv-rocksdb")]
                 {
                     let path = db_option.surrealkv_data_path();
                     println!("📂 KV 数据目录: {}", path);
@@ -639,17 +639,17 @@ pub fn is_surreal_server_running() -> bool {
 }
 
 // ============================================================================
-// SurrealKV 服务进程管理
+// 模型 KV 服务进程管理
 // ============================================================================
 
-/// 自动启动 SurrealKV 服务进程。
+/// 自动启动模型 KV 服务进程。
 ///
-/// 使用 `surrealkv://` 后端（本地嵌入式 KV），绑定到 surrealkv.port。
+/// 使用 `rocksdb://` 后端（本地嵌入式 KV），绑定到配置端口。
 pub fn start_surreal_kv_server(db_option: &DbOption) -> Result<()> {
     let port = db_option.surrealkv.port;
 
     let kv_data_path = db_option.surrealkv_data_path();
-    let kv_url = format!("surrealkv://{}", kv_data_path);
+    let kv_url = format!("rocksdb://{}", kv_data_path);
     let bind_addr = format!("0.0.0.0:{}", port);
 
     let user = db_option.get_model_kv_user();
@@ -683,7 +683,7 @@ pub fn start_surreal_kv_server(db_option: &DbOption) -> Result<()> {
             .output();
     }
 
-    println!("🚀 自动启动 SurrealKV 服务...");
+    println!("🚀 自动启动模型 KV 服务...");
     println!("   端口: {}", port);
     println!("   数据: {}", kv_data_path);
 
@@ -694,23 +694,20 @@ pub fn start_surreal_kv_server(db_option: &DbOption) -> Result<()> {
     cmd.stdout(std::process::Stdio::piped());
     cmd.stderr(std::process::Stdio::piped());
 
-    let child = cmd.spawn().map_err(|e| {
-        anyhow::anyhow!(
-            "启动 SurrealKV 进程失败（请确认 surreal 在 PATH 中）: {}",
-            e
-        )
-    })?;
+    let child = cmd
+        .spawn()
+        .map_err(|e| anyhow::anyhow!("启动模型 KV 进程失败（请确认 surreal 在 PATH 中）: {}", e))?;
 
     let pid = child.id();
     *SURREAL_KV_PROCESS.lock().unwrap() = Some(child);
 
     // 等待服务就绪
     std::thread::sleep(Duration::from_secs(3));
-    println!("✅ SurrealKV 服务已启动 (PID: {})", pid);
+    println!("✅ 模型 KV 服务已启动 (PID: {})", pid);
     Ok(())
 }
 
-/// 停止由 `start_surreal_kv_server` 启动的 SurrealKV 服务进程。
+/// 停止由 `start_surreal_kv_server` 启动的模型 KV 服务进程。
 pub fn stop_surreal_kv_server() {
     stop_surreal_kv_server_inner();
 }
@@ -719,10 +716,10 @@ fn stop_surreal_kv_server_inner() {
     if let Ok(mut guard) = SURREAL_KV_PROCESS.lock() {
         if let Some(ref mut child) = *guard {
             let pid = child.id();
-            println!("🛑 停止 SurrealKV 服务 (PID: {})...", pid);
+            println!("🛑 停止模型 KV 服务 (PID: {})...", pid);
             let _ = child.kill();
             let _ = child.wait();
-            println!("✅ SurrealKV 服务已停止");
+            println!("✅ 模型 KV 服务已停止");
         }
         *guard = None;
     }

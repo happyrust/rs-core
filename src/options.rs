@@ -207,7 +207,7 @@ impl SurrealKvConfig {
         match self.mode {
             DbConnMode::File => {
                 let path = self.path.as_deref().unwrap_or("db-data/default.kv");
-                format!("surrealkv://{}", path)
+                format!("rocksdb://{}", path)
             }
             DbConnMode::Ws => {
                 let ip = if self.ip == "localhost" {
@@ -767,9 +767,23 @@ impl DbOption {
     }
 
     /// 获取 SurrealDB 连接配置
+    ///
+    /// 已知问题（2026-04-28）：`config` crate 在反序列化 nested table 的 `u16`
+    /// 字段时，遇到裸整数（如 `port = 18320`）会静默回落到 `#[serde(default)]`，
+    /// 导致 `[surrealdb].port` 读到默认 8020，与服务实际监听端口不一致。
+    /// 在 rs-core/config 上游修复之前，这里做一个 fallback：当子表 port 仍是
+    /// 默认值，但顶层 `surreal_port` 已经被显式配置且不是默认值时，按顶层覆盖。
+    /// 详见 `plant-model-gen/docs/plans/2026-04-28-aveva-plant-sample-deployment-test-plan.md`。
     #[inline]
     pub fn effective_surrealdb(&self) -> SurrealDbConfig {
-        self.surrealdb.clone()
+        let mut cfg = self.surrealdb.clone();
+        if cfg.port == default_surrealdb_port()
+            && self.surreal_port != 0
+            && self.surreal_port != default_surrealdb_port()
+        {
+            cfg.port = self.surreal_port;
+        }
+        cfg
     }
 
     /// 获取 SurrealKV 连接配置
@@ -810,22 +824,12 @@ impl DbOption {
         }
     }
 
-    /// 获取 SurrealKV 嵌入式模式的完整连接字符串
+    /// 获取模型 KV 嵌入式模式的完整连接字符串
     ///
-    /// 当 mode=File 时使用 `surrealkv_data_path()` 生成 `rocksdb://` 连接串
-    /// （当 kv-surrealkv feature 未启用时回退到 rocksdb 后端）
+    /// 当 mode=File 时使用 `surrealkv_data_path()` 生成 `rocksdb://` 连接串。
     pub fn surrealkv_conn_str(&self) -> String {
         match self.surrealkv.mode {
-            DbConnMode::File => {
-                #[cfg(feature = "kv-surrealkv")]
-                {
-                    format!("surrealkv://{}", self.surrealkv_data_path())
-                }
-                #[cfg(not(feature = "kv-surrealkv"))]
-                {
-                    format!("rocksdb://{}", self.surrealkv_data_path())
-                }
-            }
+            DbConnMode::File => format!("rocksdb://{}", self.surrealkv_data_path()),
             DbConnMode::Ws => self.surrealkv.conn_str(),
         }
     }
@@ -1043,7 +1047,7 @@ mod tests {
             path: Some("D:/data/test.kv".to_string()),
             ..Default::default()
         };
-        assert_eq!(cfg.conn_str(), "surrealkv://D:/data/test.kv");
+        assert_eq!(cfg.conn_str(), "rocksdb://D:/data/test.kv");
     }
 
     #[test]
@@ -1081,6 +1085,30 @@ mod tests {
         };
         let eff = opt.effective_surrealkv();
         assert_eq!(eff.mode, DbConnMode::File);
-        assert_eq!(eff.conn_str(), "surrealkv://D:/data/test.kv");
+        assert_eq!(eff.conn_str(), "rocksdb://D:/data/test.kv");
+    }
+
+    #[test]
+    fn effective_surrealdb_falls_back_to_top_surreal_port() {
+        let mut opt = DbOption::default();
+        opt.surreal_port = 18320;
+        assert_eq!(opt.surrealdb.port, super::default_surrealdb_port());
+        let eff = opt.effective_surrealdb();
+        assert_eq!(
+            eff.port, 18320,
+            "[surrealdb].port 缺失/默认时应回落到顶层 surreal_port"
+        );
+    }
+
+    #[test]
+    fn effective_surrealdb_keeps_explicit_subtable_port() {
+        let mut opt = DbOption::default();
+        opt.surreal_port = 18320;
+        opt.surrealdb.port = 25000;
+        let eff = opt.effective_surrealdb();
+        assert_eq!(
+            eff.port, 25000,
+            "若 [surrealdb].port 已显式覆盖，必须以子表为准而非顶层"
+        );
     }
 }
