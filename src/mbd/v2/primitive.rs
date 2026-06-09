@@ -66,15 +66,53 @@ pub struct MbdV2PipeData {
 }
 
 /// 管道 MBD V2 的聚合元数据。
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct MbdV2Meta {
     pub segments_count: u32,
     pub welds_count: u32,
     /// `dims_by_kind["segment"]`、`dims_by_kind["chain"]` 等。
     pub dims_by_kind: std::collections::BTreeMap<String, u32>,
+    /// `dims_by_kind` 的计数口径。当前固定为 `emitted`，即所有输出的
+    /// `linear_dim` primitive 都会计入（包含 visible=false 的 suppressed dim）。
+    #[serde(default = "default_dims_count_basis")]
+    pub dims_count_basis: String,
+    /// 可见 `linear_dim` primitive 按 sub_kind 汇总。
+    #[serde(default)]
+    pub visible_dims_by_kind: std::collections::BTreeMap<String, u32>,
+    /// 被 suppress/隐藏的 `linear_dim` primitive 按 sub_kind 汇总。
+    #[serde(default)]
+    pub suppressed_dims_by_kind: std::collections::BTreeMap<String, u32>,
     pub branch_attrs: std::collections::BTreeMap<String, String>,
+    /// 尺寸文本的默认长度单位。若 `linear_dim.text.content` 未显式带单位，
+    /// 前端和验证器按此字段解释数值。
+    #[serde(default = "default_dimension_unit")]
+    pub dimension_unit: String,
     /// ISO 8601 时间戳，如 `"2026-04-21T08:12:34Z"`。
     pub generated_at: String,
+}
+
+fn default_dims_count_basis() -> String {
+    "emitted".to_string()
+}
+
+fn default_dimension_unit() -> String {
+    "mm".to_string()
+}
+
+impl Default for MbdV2Meta {
+    fn default() -> Self {
+        Self {
+            segments_count: 0,
+            welds_count: 0,
+            dims_by_kind: std::collections::BTreeMap::new(),
+            dims_count_basis: default_dims_count_basis(),
+            visible_dims_by_kind: std::collections::BTreeMap::new(),
+            suppressed_dims_by_kind: std::collections::BTreeMap::new(),
+            branch_attrs: std::collections::BTreeMap::new(),
+            dimension_unit: default_dimension_unit(),
+            generated_at: String::new(),
+        }
+    }
 }
 
 /// 结构化问题，对标 PDMS `wronglines`。
@@ -622,7 +660,16 @@ mod tests {
                     m.insert("chain".to_string(), 1);
                     m
                 },
+                dims_count_basis: "emitted".to_string(),
+                visible_dims_by_kind: {
+                    let mut m = std::collections::BTreeMap::new();
+                    m.insert("segment".to_string(), 3);
+                    m.insert("chain".to_string(), 1);
+                    m
+                },
+                suppressed_dims_by_kind: std::collections::BTreeMap::new(),
                 branch_attrs: std::collections::BTreeMap::new(),
+                dimension_unit: "mm".to_string(),
                 generated_at: "2026-04-21T00:00:00Z".to_string(),
             },
             issues: vec![MbdV2Issue {

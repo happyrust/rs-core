@@ -39,15 +39,16 @@ use std::collections::BTreeMap;
 use crate::mbd::LayoutResult;
 
 use super::assembler::{
-    AssemblerContext, ChainTolerance, SmallDimChainParams, assemble_v2_primitives,
-    assemble_v2_primitives_with_chain_stacking,
+    assemble_v2_primitives, assemble_v2_primitives_with_chain_stacking, AssemblerContext,
+    ChainTolerance, SmallDimChainParams,
 };
 use super::avoidance::{
-    AvoidanceConfig, detect_leader_line_label_conflicts, reroute_leader_lines_around_labels,
-    resolve_label_label_conflicts,
+    detect_leader_line_label_conflicts, reroute_leader_lines_around_labels,
+    resolve_label_label_conflicts, AvoidanceConfig,
 };
 use super::primitive::{
-    IssueCategory, IssueSeverity, MbdPrimitive, MbdV2Issue, MbdV2Meta, MbdV2PipeData,
+    IssueCategory, IssueSeverity, LinearDimSubKind, MbdPrimitive, MbdV2Issue, MbdV2Meta,
+    MbdV2PipeData,
 };
 
 /// V2 pipeline 的上下文；承载**非 LayoutResult 所能提供**的字段。
@@ -157,8 +158,6 @@ pub fn build_mbd_v2_pipe_data(layout: &LayoutResult, ctx: &MbdV2PipelineContext)
         assemble_v2_primitives(layout_ref, &assembler_ctx)
     };
 
-    remove_dimension_primitives(&mut primitives);
-
     if ctx.enable_avoidance {
         issues.extend(resolve_label_label_conflicts(
             &mut primitives,
@@ -181,7 +180,7 @@ pub fn build_mbd_v2_pipe_data(layout: &LayoutResult, ctx: &MbdV2PipelineContext)
         .clone()
         .unwrap_or_else(current_utc_rfc3339);
 
-    let meta = compute_meta(layout_ref, &ctx.branch_attrs, generated_at);
+    let meta = compute_meta_from_primitives(&primitives, &ctx.branch_attrs, generated_at);
 
     MbdV2PipeData {
         version: "v2".to_string(),
@@ -215,7 +214,6 @@ pub fn build_mbd_v2_pipe_data_direct(
 
     let (mut primitives, mut issues) =
         super::layout_engine::compute_v2_primitives(query_result, &engine_ctx);
-    remove_dimension_primitives(&mut primitives);
 
     let generated_at = ctx
         .generated_at_override
@@ -399,44 +397,48 @@ fn compute_meta_from_primitives(
     generated_at: String,
 ) -> MbdV2Meta {
     let mut welds_count = 0u32;
+    let mut dims_by_kind: BTreeMap<String, u32> = BTreeMap::new();
+    let mut visible_dims_by_kind: BTreeMap<String, u32> = BTreeMap::new();
+    let mut suppressed_dims_by_kind: BTreeMap<String, u32> = BTreeMap::new();
 
     for prim in primitives {
         match prim {
             MbdPrimitive::WeldMark(_) => welds_count += 1,
+            MbdPrimitive::LinearDim(dim) => {
+                let key = linear_dim_sub_kind_key(dim.sub_kind).to_string();
+                *dims_by_kind.entry(key.clone()).or_default() += 1;
+                if dim.common.visible {
+                    *visible_dims_by_kind.entry(key).or_default() += 1;
+                } else {
+                    *suppressed_dims_by_kind.entry(key).or_default() += 1;
+                }
+            }
             _ => {}
         }
     }
+    let segments_count = dims_by_kind.get("segment").copied().unwrap_or_default();
 
     MbdV2Meta {
-        segments_count: 0,
+        segments_count,
         welds_count,
-        dims_by_kind: BTreeMap::new(),
+        dims_by_kind,
+        dims_count_basis: "emitted".to_string(),
+        visible_dims_by_kind,
+        suppressed_dims_by_kind,
         branch_attrs: branch_attrs.clone(),
+        dimension_unit: "mm".to_string(),
         generated_at,
     }
 }
 
-fn compute_meta(
-    layout: &LayoutResult,
-    branch_attrs: &BTreeMap<String, String>,
-    generated_at: String,
-) -> MbdV2Meta {
-    MbdV2Meta {
-        segments_count: 0,
-        welds_count: layout.welds.len() as u32,
-        dims_by_kind: BTreeMap::new(),
-        branch_attrs: branch_attrs.clone(),
-        generated_at,
+fn linear_dim_sub_kind_key(sub_kind: LinearDimSubKind) -> &'static str {
+    match sub_kind {
+        LinearDimSubKind::Segment => "segment",
+        LinearDimSubKind::Chain => "chain",
+        LinearDimSubKind::Overall => "overall",
+        LinearDimSubKind::Port => "port",
+        LinearDimSubKind::CutTubi => "cut_tubi",
     }
-}
-
-fn remove_dimension_primitives(primitives: &mut Vec<MbdPrimitive>) {
-    primitives.retain(|primitive| {
-        !matches!(
-            primitive,
-            MbdPrimitive::LinearDim(_) | MbdPrimitive::AngleDim(_)
-        )
-    });
 }
 
 fn infer_bbox_center_from_layout(layout: &LayoutResult) -> Option<[f32; 3]> {
@@ -483,7 +485,7 @@ fn collect_suppression_issues(layout: &LayoutResult) -> Vec<MbdV2Issue> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::mbd::v2::primitive::MbdPrimitive;
+    use crate::mbd::v2::primitive::{LinearDimSubKind, MbdPrimitive};
     use crate::mbd::{
         LayoutResult, PlacedBend, PlacedLinearDim, PlacedSlope, PlacedTag, PlacedWeld,
         SuppressedItem,
@@ -502,6 +504,13 @@ mod tests {
             visible: true,
             ..Default::default()
         }
+    }
+
+    fn test_distance(a: [f32; 3], b: [f32; 3]) -> f32 {
+        let dx = a[0] - b[0];
+        let dy = a[1] - b[1];
+        let dz = a[2] - b[2];
+        (dx * dx + dy * dy + dz * dz).sqrt()
     }
 
     #[test]
@@ -587,7 +596,10 @@ mod tests {
             .iter()
             .filter(|p| matches!(p, MbdPrimitive::LinearDim(_)))
             .count();
-        assert_eq!(linear_count, 0, "MBD 尺寸标注已移除");
+        assert_eq!(
+            linear_count, 4,
+            "V2 pipeline must preserve linear_dim primitives"
+        );
 
         let weld_mark_count = data
             .primitives
@@ -604,9 +616,11 @@ mod tests {
         // 一条 weld 带 label + 一个 tag
         assert_eq!(label_count, 2);
 
-        assert_eq!(data.meta.segments_count, 0);
+        assert_eq!(data.meta.segments_count, 2);
         assert_eq!(data.meta.welds_count, 2);
-        assert!(data.meta.dims_by_kind.is_empty());
+        assert_eq!(data.meta.dims_by_kind.get("segment"), Some(&2));
+        assert_eq!(data.meta.dims_by_kind.get("chain"), Some(&1));
+        assert_eq!(data.meta.dims_by_kind.get("cut_tubi"), Some(&1));
     }
 
     #[test]
@@ -642,7 +656,7 @@ mod tests {
     }
 
     #[test]
-    fn dims_by_kind_stays_empty_after_dimension_removal() {
+    fn dims_by_kind_counts_emitted_linear_dimensions() {
         let layout = LayoutResult {
             version: 1,
             linear_dims: vec![linear_dim("ld-1", "segment", 100.0)],
@@ -661,8 +675,48 @@ mod tests {
 
         let data = build_mbd_v2_pipe_data(&layout, &MbdV2PipelineContext::default());
 
-        assert!(data.meta.dims_by_kind.is_empty());
-        assert_eq!(data.meta.segments_count, 0);
+        assert_eq!(data.meta.dims_by_kind.get("segment"), Some(&2));
+        assert_eq!(data.meta.dims_by_kind.get("port"), Some(&1));
+        assert_eq!(data.meta.segments_count, 2);
+    }
+
+    #[test]
+    fn dimension_metadata_reconciles_visible_and_suppressed_primitives() {
+        let mut hidden_chain = linear_dim("ld-hidden", "chain", 250.0);
+        hidden_chain.visible = false;
+        hidden_chain.suppressed_reason = Some("too_dense".to_string());
+
+        let layout = LayoutResult {
+            version: 1,
+            linear_dims: vec![linear_dim("ld-visible", "segment", 100.0), hidden_chain],
+            ..Default::default()
+        };
+
+        let data = build_mbd_v2_pipe_data(&layout, &MbdV2PipelineContext::default());
+
+        assert_eq!(data.meta.dims_count_basis, "emitted");
+        assert_eq!(data.meta.dimension_unit, "mm");
+        assert_eq!(data.meta.dims_by_kind.get("segment"), Some(&1));
+        assert_eq!(data.meta.dims_by_kind.get("chain"), Some(&1));
+        assert_eq!(data.meta.visible_dims_by_kind.get("segment"), Some(&1));
+        assert_eq!(data.meta.suppressed_dims_by_kind.get("chain"), Some(&1));
+
+        let hidden = data
+            .primitives
+            .iter()
+            .find_map(|p| match p {
+                MbdPrimitive::LinearDim(dim)
+                    if dim.sub_kind == LinearDimSubKind::Chain && !dim.common.visible =>
+                {
+                    Some(dim)
+                }
+                _ => None,
+            })
+            .expect("suppressed chain dimension should remain explicit");
+        assert_eq!(
+            hidden.common.suppressed_reason.as_deref(),
+            Some("too_dense")
+        );
     }
 
     #[test]
@@ -768,7 +822,12 @@ mod tests {
             ..MbdV2PipelineContext::default()
         };
         let data = build_mbd_v2_pipe_data(&layout, &ctx);
-        assert!(data.primitives.is_empty());
+        let linear_count = data
+            .primitives
+            .iter()
+            .filter(|p| matches!(p, MbdPrimitive::LinearDim(_)))
+            .count();
+        assert_eq!(linear_count, 2);
     }
 
     #[test]
@@ -795,7 +854,7 @@ mod tests {
             .iter()
             .filter(|p| matches!(p, MbdPrimitive::LinearDim(_)))
             .count();
-        assert_eq!(linear_count, 0, "MBD 尺寸标注已移除");
+        assert_eq!(linear_count, 3);
     }
 
     #[test]
@@ -939,11 +998,10 @@ mod tests {
         assert!(max_y > 1.0, "avoidance should bump, got {max_y}");
 
         // 无 leader → 不产生 Avoidance issue
-        assert!(
-            data.issues
-                .iter()
-                .all(|i| !matches!(i.category, IssueCategory::Avoidance))
-        );
+        assert!(data
+            .issues
+            .iter()
+            .all(|i| !matches!(i.category, IssueCategory::Avoidance)));
     }
 
     #[test]
@@ -956,11 +1014,10 @@ mod tests {
             ..MbdV2PipelineContext::default()
         };
         let data = build_mbd_v2_pipe_data(&layout, &ctx);
-        assert!(
-            data.issues
-                .iter()
-                .all(|i| !matches!(i.category, IssueCategory::Avoidance))
-        );
+        assert!(data
+            .issues
+            .iter()
+            .all(|i| !matches!(i.category, IssueCategory::Avoidance)));
     }
 
     #[test]
@@ -985,11 +1042,18 @@ mod tests {
             ..MbdV2PipelineContext::default()
         };
         let data = build_mbd_v2_pipe_data(&layout, &ctx);
+        let dims: Vec<_> = data
+            .primitives
+            .iter()
+            .filter_map(|p| match p {
+                MbdPrimitive::LinearDim(dim) => Some(dim),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(dims.len(), 3);
         assert!(
-            data.primitives
-                .iter()
-                .all(|p| !matches!(p, MbdPrimitive::LinearDim(_))),
-            "MBD 尺寸标注已移除"
+            dims.iter().any(|dim| dim.level > 0),
+            "short segments should keep their dimension primitive and bump level"
         );
     }
 
@@ -1131,7 +1195,13 @@ mod tests {
                 _ => None,
             })
             .collect();
-        assert!(dims.is_empty(), "MBD 尺寸标注已移除");
+        assert_eq!(dims.len(), 3);
+        for dim in dims {
+            assert!(
+                test_distance(dim.dim_line.start, dim.dim_line.end) > 1e-3,
+                "production dimensions must remain non-degenerate"
+            );
+        }
     }
 
     #[test]
@@ -1166,8 +1236,9 @@ mod tests {
         let data = build_mbd_v2_pipe_data(&layout, &ctx);
 
         assert_eq!(data.version, "v2");
-        assert_eq!(data.meta.segments_count, 0);
+        assert_eq!(data.meta.segments_count, 2);
         assert_eq!(data.meta.welds_count, 1);
+        assert_eq!(data.meta.dims_by_kind.get("segment"), Some(&2));
         assert!(
             !data.primitives.is_empty(),
             "production scale layout should produce primitives"
@@ -1251,7 +1322,14 @@ mod tests {
             .iter()
             .filter(|p| matches!(p, MbdPrimitive::LinearDim(_)))
             .count();
-        assert_eq!(linear_count, 0, "MBD 尺寸标注已移除");
+        assert!(
+            linear_count > 0,
+            "direct V2 pipeline must preserve linear_dim primitives"
+        );
+        assert!(
+            data.meta.dims_by_kind.values().any(|count| *count > 0),
+            "direct V2 metadata should count emitted dimensions"
+        );
 
         let weld_count = data
             .primitives
@@ -1304,8 +1382,8 @@ mod tests {
             .iter()
             .filter(|p| matches!(p, MbdPrimitive::LinearDim(_)))
             .count();
-        assert_eq!(port_count, 0);
-        assert_eq!(total_linear, 0);
+        assert_eq!(port_count, 1);
+        assert!(total_linear >= 2);
     }
 
     #[test]

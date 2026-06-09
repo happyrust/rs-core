@@ -13,7 +13,7 @@ use super::dim_direction::{calculate_dim_char_dirs, resolve_dim_direction, Prefe
 use super::iso_ori::compute_iso_ori;
 use super::leader_router::route_leader_line;
 use super::primitive::*;
-use super::small_dim::{DimRow, SmallDimInput, solve_small_dims};
+use super::small_dim::{solve_small_dims, DimRow, SmallDimInput};
 use super::text_measurement::mbd_text_width;
 use super::used_dir::{IsoUsedDir, UsedDirRegistry};
 
@@ -204,7 +204,7 @@ fn assemble_linear_dim_as(
                 dim.id.clone()
             },
             visible: dim.visible,
-            suppressed_reason: dim.suppressed_reason.clone(),
+            suppressed_reason: explicit_suppressed_reason(dim.visible, &dim.suppressed_reason),
             ..CommonFields::default()
         },
         sub_kind,
@@ -239,6 +239,18 @@ fn assemble_linear_dim_as(
         },
         level: 0,
     }))
+}
+
+fn explicit_suppressed_reason(visible: bool, reason: &Option<String>) -> Option<String> {
+    if visible {
+        reason.clone()
+    } else {
+        Some(
+            reason
+                .clone()
+                .unwrap_or_else(|| "suppressed_by_source".to_string()),
+        )
+    }
 }
 
 fn assemble_weld(
@@ -672,7 +684,11 @@ fn sub_v3(a: LayoutVec3, b: LayoutVec3) -> Vec3V2 {
 }
 
 fn mid_v3(a: LayoutVec3, b: LayoutVec3) -> Vec3V2 {
-    [(a[0] + b[0]) * 0.5, (a[1] + b[1]) * 0.5, (a[2] + b[2]) * 0.5]
+    [
+        (a[0] + b[0]) * 0.5,
+        (a[1] + b[1]) * 0.5,
+        (a[2] + b[2]) * 0.5,
+    ]
 }
 
 fn dot_v3(a: Vec3V2, b: Vec3V2) -> f32 {
@@ -1275,7 +1291,10 @@ fn build_primitive_for_row_segment(
         common: CommonFields {
             id,
             visible: source.visible,
-            suppressed_reason: source.suppressed_reason.clone(),
+            suppressed_reason: explicit_suppressed_reason(
+                source.visible,
+                &source.suppressed_reason,
+            ),
             ..CommonFields::default()
         },
         sub_kind,

@@ -17,10 +17,10 @@
 //! ```
 
 use super::avoidance::{
-    AvoidanceConfig, detect_leader_line_label_conflicts, reroute_leader_lines_around_labels,
-    resolve_label_label_conflicts,
+    detect_leader_line_label_conflicts, reroute_leader_lines_around_labels,
+    resolve_label_label_conflicts, AvoidanceConfig,
 };
-use super::data_source::{BendData, BranchQueryResult, SlopeData, TagData, WeldData};
+use super::data_source::{BendData, BranchMember, BranchQueryResult, SlopeData, TagData, WeldData};
 use super::dim_direction::resolve_dim_direction;
 use super::leader_router::route_leader_line;
 use super::primitive::*;
@@ -85,6 +85,10 @@ pub fn compute_v2_primitives(
         format!("{prefix}-{id_counter}")
     };
 
+    let mut used_dirs = UsedDirRegistry::new();
+    compute_segment_dims(qr, ctx, &mut next_id, &mut used_dirs, &mut primitives);
+    compute_chain_dims(qr, ctx, &mut next_id, &mut used_dirs, &mut primitives);
+    compute_port_dims(qr, ctx, &mut next_id, &mut used_dirs, &mut primitives);
     compute_weld_marks(&qr.welds, ctx, &mut next_id, &mut primitives);
     compute_slope_marks(&qr.slopes, ctx, &mut next_id, &mut primitives);
     compute_bend_marks(&qr.bends, ctx, &mut next_id, &mut primitives, &mut issues);
@@ -120,70 +124,57 @@ fn compute_segment_dims(
     let base_offset = ctx.base_offset();
 
     for m in &qr.members {
-        let start = m.start;
-        let end = m.end;
-        let pipe_vec = sub_v3(end, start);
-        let seg_len = length(pipe_vec);
-        if seg_len < 1e-3 {
-            continue;
+        if let Some(prim) = build_linear_dim_primitive(
+            next_id("seg"),
+            LinearDimSubKind::Segment,
+            m.start,
+            m.end,
+            Some(m.refno.clone()),
+            base_offset,
+            ctx,
+            0,
+        ) {
+            register_used_dir(&prim, used_dirs);
+            out.push(prim);
         }
+    }
+}
 
-        let pipe_dir = scale_v3(pipe_vec, 1.0 / seg_len);
-        let midpoint = mid_v3(start, end);
+// ── 链式路径标注 ──────────────────────────────────────────────────
 
-        let dim_result = resolve_dim_direction(pipe_dir, midpoint, ctx.bbox_center);
-        let offset_dir = dim_result.dim_dir;
+fn compute_chain_dims(
+    qr: &BranchQueryResult,
+    ctx: &LayoutEngineContext,
+    next_id: &mut dyn FnMut(&str) -> String,
+    used_dirs: &mut UsedDirRegistry,
+    out: &mut Vec<MbdPrimitive>,
+) {
+    let mut members: Vec<&BranchMember> = qr.members.iter().collect();
+    members.sort_by_key(|m| m.order);
 
-        let (text_ori, text_up) = compute_text_frame(start, end, offset_dir, ctx);
+    // Chain dims share measured endpoints with route members but use a separate
+    // lane so segment/chain kinds are simultaneously display-ready.
+    let chain_offset = ctx.base_offset() + ctx.cheight * ctx.lane_step_multiplier.max(1.0);
 
-        let ext1_end = add_scaled_v3(start, offset_dir, base_offset);
-        let ext2_end = add_scaled_v3(end, offset_dir, base_offset);
-        let dim_line_start = ext1_end;
-        let dim_line_end = ext2_end;
-        let text_anchor = add_scaled_v3(midpoint, offset_dir, base_offset);
-
-        let prim = MbdPrimitive::LinearDim(LinearDimPrimitive {
-            common: CommonFields {
-                id: next_id("seg"),
-                visible: true,
-                source_refno: Some(m.refno.clone()),
-                ..CommonFields::default()
-            },
-            sub_kind: LinearDimSubKind::Segment,
-            extension_1: LineSegmentEndpoints {
-                start,
-                end: ext1_end,
-            },
-            extension_2: LineSegmentEndpoints {
-                start: end,
-                end: ext2_end,
-            },
-            dim_line: LineSegmentEndpoints {
-                start: dim_line_start,
-                end: dim_line_end,
-            },
-            arrows: [
-                LinearDimArrow {
-                    position: dim_line_start,
-                    direction: pipe_dir,
-                },
-                LinearDimArrow {
-                    position: dim_line_end,
-                    direction: negate(pipe_dir),
-                },
-            ],
-            text: TextBlock {
-                anchor: text_anchor,
-                content: format!("{}", seg_len.round() as i64),
-                height_mm: ctx.cheight,
-                orientation: text_ori,
-                up: text_up,
-            },
-            level: 0,
-        });
-
-        register_used_dir(&prim, used_dirs);
-        out.push(prim);
+    for m in members {
+        let source_refno = if m.owner_refno.is_empty() {
+            m.refno.clone()
+        } else {
+            m.owner_refno.clone()
+        };
+        if let Some(prim) = build_linear_dim_primitive(
+            next_id("chain"),
+            LinearDimSubKind::Chain,
+            m.start,
+            m.end,
+            Some(source_refno),
+            chain_offset,
+            ctx,
+            1,
+        ) {
+            register_used_dir(&prim, used_dirs);
+            out.push(prim);
+        }
     }
 }
 
@@ -193,6 +184,7 @@ fn compute_port_dims(
     qr: &BranchQueryResult,
     ctx: &LayoutEngineContext,
     next_id: &mut dyn FnMut(&str) -> String,
+    used_dirs: &mut UsedDirRegistry,
     out: &mut Vec<MbdPrimitive>,
 ) {
     let base_offset = ctx.base_offset();
@@ -203,64 +195,89 @@ fn compute_port_dims(
             _ => continue,
         };
 
-        let dv = sub_v3(leave, arrive);
-        let port_len = length(dv);
-        if port_len < 1e-3 {
-            continue;
+        if let Some(prim) = build_linear_dim_primitive(
+            next_id("port"),
+            LinearDimSubKind::Port,
+            arrive,
+            leave,
+            Some(m.refno.clone()),
+            base_offset,
+            ctx,
+            0,
+        ) {
+            register_used_dir(&prim, used_dirs);
+            out.push(prim);
         }
-
-        let pipe_dir = scale_v3(dv, 1.0 / port_len);
-        let midpoint = mid_v3(arrive, leave);
-
-        let dim_result = resolve_dim_direction(pipe_dir, midpoint, ctx.bbox_center);
-        let offset_dir = dim_result.dim_dir;
-
-        let (text_ori, text_up) = compute_text_frame(arrive, leave, offset_dir, ctx);
-
-        let ext1_end = add_scaled_v3(arrive, offset_dir, base_offset);
-        let ext2_end = add_scaled_v3(leave, offset_dir, base_offset);
-        let text_anchor = add_scaled_v3(midpoint, offset_dir, base_offset);
-
-        out.push(MbdPrimitive::LinearDim(LinearDimPrimitive {
-            common: CommonFields {
-                id: next_id("port"),
-                visible: true,
-                source_refno: Some(m.refno.clone()),
-                ..CommonFields::default()
-            },
-            sub_kind: LinearDimSubKind::Port,
-            extension_1: LineSegmentEndpoints {
-                start: arrive,
-                end: ext1_end,
-            },
-            extension_2: LineSegmentEndpoints {
-                start: leave,
-                end: ext2_end,
-            },
-            dim_line: LineSegmentEndpoints {
-                start: ext1_end,
-                end: ext2_end,
-            },
-            arrows: [
-                LinearDimArrow {
-                    position: ext1_end,
-                    direction: pipe_dir,
-                },
-                LinearDimArrow {
-                    position: ext2_end,
-                    direction: negate(pipe_dir),
-                },
-            ],
-            text: TextBlock {
-                anchor: text_anchor,
-                content: format!("{}", port_len.round() as i64),
-                height_mm: ctx.cheight,
-                orientation: text_ori,
-                up: text_up,
-            },
-            level: 0,
-        }));
     }
+}
+
+fn build_linear_dim_primitive(
+    id: String,
+    sub_kind: LinearDimSubKind,
+    start: Vec3V2,
+    end: Vec3V2,
+    source_refno: Option<String>,
+    offset: f32,
+    ctx: &LayoutEngineContext,
+    level: u16,
+) -> Option<MbdPrimitive> {
+    let measured_vec = sub_v3(end, start);
+    let measured_len = length(measured_vec);
+    if measured_len < 1e-3 {
+        return None;
+    }
+
+    let measured_dir = scale_v3(measured_vec, 1.0 / measured_len);
+    let midpoint = mid_v3(start, end);
+
+    let dim_result = resolve_dim_direction(measured_dir, midpoint, ctx.bbox_center);
+    let offset_dir = dim_result.dim_dir;
+    let (text_ori, text_up) = compute_text_frame(start, end, offset_dir, ctx);
+
+    let ext1_end = add_scaled_v3(start, offset_dir, offset);
+    let ext2_end = add_scaled_v3(end, offset_dir, offset);
+    let text_anchor = add_scaled_v3(midpoint, offset_dir, offset);
+
+    Some(MbdPrimitive::LinearDim(LinearDimPrimitive {
+        common: CommonFields {
+            id,
+            visible: true,
+            source_refno,
+            function: Some("尺寸".to_string()),
+            ..CommonFields::default()
+        },
+        sub_kind,
+        extension_1: LineSegmentEndpoints {
+            start,
+            end: ext1_end,
+        },
+        extension_2: LineSegmentEndpoints {
+            start: end,
+            end: ext2_end,
+        },
+        dim_line: LineSegmentEndpoints {
+            start: ext1_end,
+            end: ext2_end,
+        },
+        arrows: [
+            LinearDimArrow {
+                position: ext1_end,
+                direction: measured_dir,
+            },
+            LinearDimArrow {
+                position: ext2_end,
+                direction: negate(measured_dir),
+            },
+        ],
+        text: TextBlock {
+            anchor: text_anchor,
+            content: format!("{}", measured_len.round() as i64),
+            height_mm: ctx.cheight,
+            orientation: text_ori,
+            up: text_up,
+        },
+        level,
+    }))
 }
 
 // ── 焊缝标注 ──────────────────────────────────────────────────────
@@ -804,7 +821,7 @@ mod tests {
     }
 
     #[test]
-    fn segment_dims_are_not_emitted() {
+    fn segment_dims_are_emitted_with_display_geometry() {
         let qr = simple_straight_branch();
         let ctx = LayoutEngineContext {
             pipe_od: 168.3,
@@ -815,13 +832,30 @@ mod tests {
         assert!(issues.is_empty());
         let dims: Vec<_> = prims
             .iter()
-            .filter(|p| matches!(p, MbdPrimitive::LinearDim(_)))
+            .filter(|p| {
+                matches!(p, MbdPrimitive::LinearDim(dim) if dim.sub_kind == LinearDimSubKind::Segment)
+            })
             .collect();
-        assert!(dims.is_empty());
+        assert_eq!(dims.len(), 2);
+        for prim in dims {
+            let MbdPrimitive::LinearDim(dim) = prim else {
+                unreachable!()
+            };
+            assert_eq!(dim.sub_kind, LinearDimSubKind::Segment);
+            assert!(dim.common.visible);
+            assert!(distance(dim.dim_line.start, dim.dim_line.end) > 1e-3);
+            assert!(distance(dim.extension_1.start, dim.extension_1.end) > 1e-3);
+            assert!(distance(dim.extension_2.start, dim.extension_2.end) > 1e-3);
+            assert!(length(dim.arrows[0].direction) > 1e-3);
+            assert!(length(dim.arrows[1].direction) > 1e-3);
+            assert!(!dim.text.content.trim().is_empty());
+            assert!(length(dim.text.orientation) > 1e-3);
+            assert!(length(dim.text.up) > 1e-3);
+        }
     }
 
     #[test]
-    fn port_dims_are_not_emitted() {
+    fn port_dims_are_emitted_when_axis_points_exist() {
         let qr = BranchQueryResult {
             members: vec![BranchMember {
                 refno: "seg-1".into(),
@@ -844,7 +878,13 @@ mod tests {
                 |p| matches!(p, MbdPrimitive::LinearDim(d) if d.sub_kind == LinearDimSubKind::Port),
             )
             .collect();
-        assert!(port_dims.is_empty());
+        assert_eq!(port_dims.len(), 1);
+        let MbdPrimitive::LinearDim(dim) = port_dims[0] else {
+            unreachable!()
+        };
+        assert_eq!(dim.extension_1.start, [50.0, 0.0, 0.0]);
+        assert_eq!(dim.extension_2.start, [950.0, 0.0, 0.0]);
+        assert_eq!(dim.text.content, "900");
     }
 
     #[test]
@@ -865,11 +905,9 @@ mod tests {
 
         assert!(prims.iter().any(|p| matches!(p, MbdPrimitive::WeldMark(_))));
         assert!(prims.iter().any(|p| matches!(p, MbdPrimitive::Label(_))));
-        assert!(
-            prims
-                .iter()
-                .any(|p| matches!(p, MbdPrimitive::LeaderLine(_)))
-        );
+        assert!(prims
+            .iter()
+            .any(|p| matches!(p, MbdPrimitive::LeaderLine(_))));
     }
 
     #[test]
@@ -887,11 +925,9 @@ mod tests {
         let ctx = LayoutEngineContext::default();
         let (prims, _) = compute_v2_primitives(&qr, &ctx);
 
-        assert!(
-            prims
-                .iter()
-                .any(|p| matches!(p, MbdPrimitive::SlopeMark(_)))
-        );
+        assert!(prims
+            .iter()
+            .any(|p| matches!(p, MbdPrimitive::SlopeMark(_))));
         let aid_lines: Vec<_> = prims
             .iter()
             .filter(|p| matches!(p, MbdPrimitive::AidLine(_)))
@@ -938,16 +974,12 @@ mod tests {
         let ctx = LayoutEngineContext::default();
         let (prims, _) = compute_v2_primitives(&qr, &ctx);
 
-        assert!(
-            prims
-                .iter()
-                .any(|p| matches!(p, MbdPrimitive::Label(l) if l.content == "VALVE-001"))
-        );
-        assert!(
-            prims
-                .iter()
-                .any(|p| matches!(p, MbdPrimitive::LeaderLine(_)))
-        );
+        assert!(prims
+            .iter()
+            .any(|p| matches!(p, MbdPrimitive::Label(l) if l.content == "VALVE-001")));
+        assert!(prims
+            .iter()
+            .any(|p| matches!(p, MbdPrimitive::LeaderLine(_))));
     }
 
     #[test]
@@ -1004,18 +1036,14 @@ mod tests {
         assert!(prims.len() >= 4, "expect weld + label + slope + tag");
         assert!(issues.is_empty());
 
-        assert!(
-            !prims
-                .iter()
-                .any(|p| matches!(p, MbdPrimitive::LinearDim(_)))
-        );
+        assert!(prims
+            .iter()
+            .any(|p| matches!(p, MbdPrimitive::LinearDim(_))));
         assert!(prims.iter().any(|p| matches!(p, MbdPrimitive::WeldMark(_))));
         assert!(prims.iter().any(|p| matches!(p, MbdPrimitive::Label(_))));
-        assert!(
-            prims
-                .iter()
-                .any(|p| matches!(p, MbdPrimitive::SlopeMark(_)))
-        );
+        assert!(prims
+            .iter()
+            .any(|p| matches!(p, MbdPrimitive::SlopeMark(_))));
     }
 
     #[test]
