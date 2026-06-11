@@ -171,8 +171,14 @@ pub fn try_convert_cate_geo_to_csg_shape(geom: &CateGeoParam) -> Option<CateCsgS
                 pbax_dir,
                 pdia: d.diameter as f32,
             };
+            // U 形回弯（平行轴）场景的环面取向消歧：取 ptset 的 ref_dir。
+            let u_bend_ref_dir = pa
+                .ref_dir
+                .as_ref()
+                .or(pb.ref_dir.as_ref())
+                .map(|r| r.0.normalize_or_zero());
             // dbg!(d);
-            if let Some((torus, transform)) = sc_torus.convert_to_ctorus() {
+            if let Some((torus, transform)) = sc_torus.convert_to_ctorus_with_ref(u_bend_ref_dir) {
                 let csg_shape: Box<dyn BrepShapeTrait> = Box::new(torus);
                 return Some(CateCsgShape {
                     refno: d.refno,

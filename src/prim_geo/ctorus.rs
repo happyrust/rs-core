@@ -46,12 +46,22 @@ pub struct SCTorus {
 
 impl SCTorus {
     pub fn convert_to_ctorus(&self) -> Option<(CTorus, Transform)> {
-        if let Some(torus_info) = RotateInfo::cal_rotate_info(
+        self.convert_to_ctorus_with_ref(None)
+    }
+
+    /// 同 [`convert_to_ctorus`]，可传 ptset 的 `ref_dir` 用于 180° U 形回弯
+    /// （平行轴）场景的环面取向消歧；常规圆环段行为不变。
+    pub fn convert_to_ctorus_with_ref(
+        &self,
+        u_bend_ref_dir: Option<Vec3>,
+    ) -> Option<(CTorus, Transform)> {
+        if let Some(torus_info) = RotateInfo::cal_rotate_info_with_ref(
             self.paax_dir,
             self.paax_pt,
             self.pbax_dir,
             self.pbax_pt,
             self.pdia / 2.0,
+            u_bend_ref_dir,
         ) {
             let mut ctorus = CTorus::default();
             ctorus.angle = torus_info.angle;

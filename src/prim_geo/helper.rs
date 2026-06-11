@@ -182,6 +182,20 @@ impl RotateInfo {
         b_pt: Vec3,
         default_r: f32,
     ) -> Option<RotateInfo> {
+        Self::cal_rotate_info_with_ref(a_dir, a_pt, b_dir, b_pt, default_r, None)
+    }
+
+    /// 同 [`cal_rotate_info`]，可选传入 ptset 的 `ref_dir`（PTCA 参考方向）：
+    /// 仅在 180° U 形回弯退化（两轴平行 + 连线共轴，环面取向欠定）时用作
+    /// 环面法向的数据驱动消歧；常规圆环段忽略该参数。
+    pub fn cal_rotate_info_with_ref(
+        a_dir: Vec3,
+        a_pt: Vec3,
+        b_dir: Vec3,
+        b_pt: Vec3,
+        default_r: f32,
+        u_bend_ref_dir: Option<Vec3>,
+    ) -> Option<RotateInfo> {
         let mut rotate_info = RotateInfo::default();
         //应该是从pb_dir 旋转到pb_dir
         let pa_dir = a_dir.normalize();
@@ -200,24 +214,45 @@ impl RotateInfo {
                 radius: default_r,
             });
         }
-        // 180° U 形回弯退化：两轴平行且两点连线与轴共线（如阀门操作机构的
-        // DN25 回弯管，PAAX/PBAX 同向、连线沿轴）。通用路径里 2D 射线相交与
+        // 180° U 形回弯退化：两轴平行且两点连线与轴共线（如阀门手轮环的两个
+        // 半圆 SCTO：PAAX/PBAX 同向、连线沿轴）。通用路径里 2D 射线相交与
         // 垂距都会退化为 0（radius=0 → 几何无效被丢弃），E3D 原生引擎则正常
         // 渲染该 U-bend。此处显式构造：圆心=两点中点、弯曲半径=半距、180°。
-        // 限制：U 弯所在平面绕轴向有一个自由度（输入不含 ref_dir），取与全局
-        // 轴正交性最好的确定性方向，保证尺寸/端口连通正确。
+        // 限制：U 弯所在平面绕轴向有一个自由度（输入不含 ref_dir）。环面法向
+        // （= rot_axis）取局部 +Z 在轴垂面上的投影 —— E3D 操作机构惯例为
+        // 阀杆沿 +Z、手轮环面 ⊥ 阀杆（实测 YJUSSA 手轮环与参考一致）；
+        // 轴本身 ∥ Z 时回退取 X。
         {
             let axes_parallel = pa_dir.cross(pb_dir).length() < 1e-4;
             let chord_on_axis = x_dir.cross(pa_dir).length() < 1e-4;
             if axes_parallel && chord_on_axis && dist > f32::EPSILON {
-                let candidate = pa_dir.cross(Vec3::Z);
-                let rot_axis = if candidate.length() > 1e-4 {
-                    candidate.normalize()
+                let center = (a_pt + b_pt) / 2.0;
+                // 环面取向消歧（按优先级）：
+                // 1) ptset ref_dir（PTCA 横向参考，位于环面内）：法向 = 轴向 × ref_dir。
+                //    用带符号轴向叉乘 —— 互补半环（PAAX=P12 与 PAAX=-P12）天然得到
+                //    相反绕向，两个 180° 半环拼成完整圆环（如阀门手轮环）。
+                // 2) 回退：局部 Z 投影 / X，配合轴向-径向内外朝向符号区分两半。
+                let ref_proj = u_bend_ref_dir
+                    .map(|r| r - pa_dir * r.dot(pa_dir))
+                    .filter(|v| v.length() > 1e-4);
+                let rot_axis = if let Some(r) = ref_proj {
+                    pa_dir.cross(r.normalize()).normalize()
                 } else {
-                    pa_dir.cross(Vec3::X).normalize()
+                    let z_proj = Vec3::Z - pa_dir * Vec3::Z.dot(pa_dir);
+                    let base_axis = if z_proj.length() > 1e-4 {
+                        z_proj.normalize()
+                    } else {
+                        Vec3::X
+                    };
+                    let radial = a_pt - center;
+                    if pa_dir.dot(radial) >= 0.0 {
+                        base_axis
+                    } else {
+                        -base_axis
+                    }
                 };
                 return Some(RotateInfo {
-                    center: (a_pt + b_pt) / 2.0,
+                    center,
                     angle: 180.0,
                     rot_axis,
                     radius: dist / 2.0,
