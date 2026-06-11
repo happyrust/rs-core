@@ -200,6 +200,30 @@ impl RotateInfo {
                 radius: default_r,
             });
         }
+        // 180° U 形回弯退化：两轴平行且两点连线与轴共线（如阀门操作机构的
+        // DN25 回弯管，PAAX/PBAX 同向、连线沿轴）。通用路径里 2D 射线相交与
+        // 垂距都会退化为 0（radius=0 → 几何无效被丢弃），E3D 原生引擎则正常
+        // 渲染该 U-bend。此处显式构造：圆心=两点中点、弯曲半径=半距、180°。
+        // 限制：U 弯所在平面绕轴向有一个自由度（输入不含 ref_dir），取与全局
+        // 轴正交性最好的确定性方向，保证尺寸/端口连通正确。
+        {
+            let axes_parallel = pa_dir.cross(pb_dir).length() < 1e-4;
+            let chord_on_axis = x_dir.cross(pa_dir).length() < 1e-4;
+            if axes_parallel && chord_on_axis && dist > f32::EPSILON {
+                let candidate = pa_dir.cross(Vec3::Z);
+                let rot_axis = if candidate.length() > 1e-4 {
+                    candidate.normalize()
+                } else {
+                    pa_dir.cross(Vec3::X).normalize()
+                };
+                return Some(RotateInfo {
+                    center: (a_pt + b_pt) / 2.0,
+                    angle: 180.0,
+                    rot_axis,
+                    radius: dist / 2.0,
+                });
+            }
+        }
         let quat = rotate_from_vec3_to_vec3(x_dir, pb_dir, pa_dir);
         let (axis_z, angle) = quat.to_axis_angle();
         rotate_info.rot_axis = axis_z;
