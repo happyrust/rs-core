@@ -31,6 +31,7 @@ pub mod point;
 pub mod function;
 
 pub mod version;
+pub mod version_query;
 
 pub mod e3d_db;
 pub mod topology;
@@ -76,6 +77,7 @@ pub use tag_name_mapping::*;
 pub use topology::*;
 pub use type_hierarchy::*;
 pub use uda::*;
+pub use version_query::*;
 
 pub use adapter::create_surreal_adapter;
 pub use connection_manager::{CONNECTION_MANAGER, ConnectionConfig, SurrealConnectionManager};
