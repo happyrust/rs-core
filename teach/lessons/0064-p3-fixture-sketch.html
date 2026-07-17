@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>第 64 课 · P3 fixture 草图</title>
+  <link rel="stylesheet" href="../assets/lesson.css" />
+  <style>
+    .viz {
+      margin: 1.1rem 0 1.3rem;
+      padding: 0.85rem 0.95rem 0.7rem;
+      background: #fff;
+      border: 1px solid var(--rule);
+    }
+    .viz h3 { margin: 0 0 0.5rem; font-size: 0.95rem; }
+    .viz svg { width: 100%; height: auto; display: block; }
+    .viz figcaption { margin-top: 0.5rem; font-size: 0.8rem; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Lesson 0064 · P3 测资</p>
+    <h1>Polar 邻段 fixture 长什么样</h1>
+    <p class="lede">
+      还不实现 Polar。先定 JSON 形状：输入已切好的段（可来自 P1 输出），
+      期望「谁的障碍列表里有谁的柱」。
+    </p>
+
+    <figure class="viz">
+      <h3>图 · 两案最小集</h3>
+      <svg viewBox="0 0 720 200" xmlns="http://www.w3.org/2000/svg" role="img">
+        <rect x="20" y="30" width="330" height="140" fill="#e5f3ec" stroke="#1f6b4a"/>
+        <text x="185" y="60" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="14" fill="#1f6b4a">ortho-neighbors</text>
+        <text x="185" y="95" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#0b1f33">两段正交（toy 切后）</text>
+        <text x="185" y="120" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#0b1f33">expect: 0↔1 互加柱</text>
+        <text x="185" y="145" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#4a5d6e">直径 = od</text>
+
+        <rect x="370" y="30" width="330" height="140" fill="#f8ebe6" stroke="#a33b16"/>
+        <text x="535" y="60" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="14" fill="#a33b16">u-turn-skip</text>
+        <text x="535" y="95" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#0b1f33">三段近折返</text>
+        <text x="535" y="120" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#0b1f33">expect: 0↔2 粗柱</text>
+        <text x="535" y="145" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#4a5d6e">od×1.5 · &gt;160°</text>
+      </svg>
+      <figcaption>建议路径：<code>teach/fixtures/p3-polar-neighbors.json</code>（待建）。</figcaption>
+    </figure>
+
+    <h2>JSON 草图</h2>
+    <pre>{
+  "cases": [{
+    "id": "ortho-neighbors",
+    "isolines": [
+      { "id": 0, "od": 100, "pipedir": [1,0,0], "p0": [0,0,0], "p1": [1000,0,0] },
+      { "id": 1, "od": 100, "pipedir": [0,0,1], "p0": [1000,0,0], "p1": [1000,0,800] }
+    ],
+    "expect_obstacles": {
+      "0": [{ "from": 1, "diameter_scale": 1.0 }],
+      "1": [{ "from": 0, "diameter_scale": 1.0 }]
+    }
+  }]
+}</pre>
+
+    <section class="quiz">
+      <h3>小测</h3>
+      <div class="q">
+        <p><strong>Q1.</strong> P3 fixture 输入是？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：已切段的几何，不是 raw branMems。"
+          data-bad="">已切好的 isoline 几何</button>
+        <button type="button" data-correct="0"
+          data-bad="那是 P1。" data-bad="">未切的 branMems 全表</button>
+        <button type="button" data-correct="0"
+          data-bad="不是。" data-bad="">仅 SITE 名</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q2.</strong> ortho 案期望？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：相邻互加。"
+          data-bad="">0↔1 互加柱</button>
+        <button type="button" data-correct="0"
+          data-bad="那是 U 形。" data-bad="">0↔2 粗柱</button>
+        <button type="button" data-correct="0"
+          data-bad="错。" data-bad="">合并成 1 段</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q3.</strong> 建 fixture 文件优先时机？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：P2 能出真段之后更有用；也可先建空壳。"
+          data-bad="">P2 可出段后（或先空壳）</button>
+        <button type="button" data-correct="0"
+          data-bad="过早绑死。" data-bad="">必须先删 P1</button>
+        <button type="button" data-correct="0"
+          data-bad="不是。" data-bad="">只对支架</button>
+        <p class="feedback"></p>
+      </div>
+    </section>
+
+    <div class="ask-teacher">
+      下一课：P3 JSON 空壳落地。
+    </div>
+
+    <nav class="footer-nav">
+      <p>
+        <a href="0063-wiring-sketch-landed.html">← 第 63 课</a>
+        · 下一课：<a href="0065-p3-json-landed.html">JSON 落地 →</a>
+        · <a href="0061-p3-polar-design.html">课 61</a>
+        · <a href="../INDEX.md">目录</a>
+      </p>
+    </nav>
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

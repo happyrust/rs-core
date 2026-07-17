@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>第 57 课 · P2 接线设计</title>
+  <link rel="stylesheet" href="../assets/lesson.css" />
+  <style>
+    .viz {
+      margin: 1.1rem 0 1.3rem;
+      padding: 0.85rem 0.95rem 0.7rem;
+      background: #fff;
+      border: 1px solid var(--rule);
+    }
+    .viz h3 { margin: 0 0 0.5rem; font-size: 0.95rem; }
+    .viz svg { width: 100%; height: auto; display: block; }
+    .viz figcaption { margin-top: 0.5rem; font-size: 0.8rem; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Lesson 0057 · 方案 β · P2</p>
+    <h1>P2 接线设计：纯函数如何进主链</h1>
+    <p class="lede">
+      P1 已绿。P2 不是再写切段，而是决定：谁调用 <code>split_isolines_pml</code>、
+      失败时如何回退、与现有 Layout / isoline 结构怎么映射。
+      <strong>本课只设计，不动主链代码。</strong>
+    </p>
+
+    <div class="callout">
+      现状：本仓库曾无完整 V2 <code>extract_isolines</code>；P1 在
+      <code>teach/p1_split</code> / <code>src/mbd</code>。
+      P2 要先假设「有一条 Layout→Isoline 主链」，再画接入点。
+    </div>
+
+    <figure class="viz">
+      <h3>图 1 · 推荐接入形状（旁路 + 开关）</h3>
+      <svg viewBox="0 0 720 220" xmlns="http://www.w3.org/2000/svg" role="img">
+        <rect x="20" y="70" width="140" height="70" fill="#fff" stroke="#9aafbc"/>
+        <text x="90" y="110" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#0b1f33">Layout members</text>
+        <path d="M160 105 L200 105" stroke="#0b1f33"/>
+        <rect x="200" y="40" width="160" height="50" fill="#e5f3ec" stroke="#1f6b4a"/>
+        <text x="280" y="70" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#1f6b4a">split_isolines_pml</text>
+        <rect x="200" y="120" width="160" height="50" fill="#f8ebe6" stroke="#a33b16"/>
+        <text x="280" y="150" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#a33b16">旧 extract / 角阈</text>
+        <path d="M360 65 L400 100" stroke="#1f6b4a"/>
+        <path d="M360 145 L400 110" stroke="#a33b16"/>
+        <rect x="400" y="70" width="120" height="70" fill="#d4eef1" stroke="#007a8a"/>
+        <text x="460" y="110" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#007a8a">flag 选择</text>
+        <path d="M520 105 L560 105" stroke="#0b1f33"/>
+        <rect x="560" y="70" width="140" height="70" fill="#fff" stroke="#9aafbc"/>
+        <text x="630" y="110" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#0b1f33">IsolineInfo[]</text>
+      </svg>
+      <figcaption>默认可先走旧路径；<code>use_pml_split=true</code> 时走 P1。出事可秒回退。</figcaption>
+    </figure>
+
+    <figure class="viz">
+      <h3>图 2 · 数据映射要钉的三件事</h3>
+      <svg viewBox="0 0 700 180" xmlns="http://www.w3.org/2000/svg" role="img">
+        <rect x="30" y="30" width="200" height="120" fill="#e5f3ec" stroke="#1f6b4a"/>
+        <text x="130" y="70" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="14" fill="#1f6b4a">① 字段</text>
+        <text x="130" y="100" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#0b1f33">kind/dirs/apos/lpos</text>
+        <text x="130" y="125" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#4a5d6e">→ SplitMember</text>
+        <rect x="250" y="30" width="200" height="120" fill="#d4eef1" stroke="#007a8a"/>
+        <text x="350" y="70" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="14" fill="#007a8a">② 袋子</text>
+        <text x="350" y="100" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#0b1f33">allarr refno</text>
+        <text x="350" y="125" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#4a5d6e">→ 段内 mem 切片</text>
+        <rect x="470" y="30" width="200" height="120" fill="#f8ebe6" stroke="#a33b16"/>
+        <text x="570" y="70" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="14" fill="#a33b16">③ 几何</text>
+        <text x="570" y="100" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#0b1f33">ldirs / 端点</text>
+        <text x="570" y="125" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#4a5d6e">→ Isoline 轴</text>
+      </svg>
+      <figcaption>缺字段时：降级旧路径 + issue，不要静默空段。</figcaption>
+    </figure>
+
+    <h2>P2 验收（设计级）</h2>
+    <ol>
+      <li>开关关掉 = 行为与接线前一致</li>
+      <li>开关打开 + 五枚等价输入 = allarr 与 P1 一致</li>
+      <li>GeomQuality 不足 → issues 可见，可回退</li>
+      <li>仍不实现 Polar（那是 P3）</li>
+    </ol>
+
+    <h2>建议接口草图</h2>
+    <pre>fn extract_isolines(..., cfg: &BranchCalcConfig) -> Vec&lt;IsolineInfo&gt; {
+  if cfg.use_pml_split {
+    let members = map_layout_to_split_members(layout)?;
+    let bags = split_isolines_pml(&members);
+    return bags_to_isolines(layout, bags);
+  }
+  extract_isolines_legacy(...)
+}</pre>
+
+    <section class="quiz">
+      <h3>小测</h3>
+      <div class="q">
+        <p><strong>Q1.</strong> P2 的核心不是？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：切段公式已在 P1；P2 是接线与回退。"
+          data-bad="">再改一套切段角阈值</button>
+        <button type="button" data-correct="0"
+          data-bad="那是 P2。" data-bad="">开关 + 映射 + 回退</button>
+        <button type="button" data-correct="0"
+          data-bad="那是验收。" data-bad="">五枚输入对齐</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q2.</strong> 推荐默认？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：先旁路开关，默认可走旧路径。"
+          data-bad="">flag 旁路，默认可旧路径</button>
+        <button type="button" data-correct="0"
+          data-bad="风险大。" data-bad="">直接删掉旧 extract</button>
+        <button type="button" data-correct="0"
+          data-bad="过早。" data-bad="">P2 里做完 Polar</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q3.</strong> 字段不够时？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：issue + 回退旧路径。"
+          data-bad="">记 issue 并回退</button>
+        <button type="button" data-correct="0"
+          data-bad="违反 AGENTS。" data-bad="">静默产出空 isoline</button>
+        <button type="button" data-correct="0"
+          data-bad="不是。" data-bad="">改 SITE 名</button>
+        <p class="feedback"></p>
+      </div>
+    </section>
+
+    <div class="ask-teacher">
+      下一课：P2 字段映射表。
+    </div>
+
+    <nav class="footer-nav">
+      <p>
+        <a href="0056-p1-landed.html">← 第 56 课</a>
+        · 下一课：<a href="0058-p2-field-mapping.html">字段映射 →</a>
+        · <a href="../reference/plan-beta-roadmap.html">方案 β</a>
+        · <a href="../INDEX.md">目录</a>
+      </p>
+    </nav>
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

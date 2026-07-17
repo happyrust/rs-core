@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>第 51 课 · lindim 小尺寸配图</title>
+  <link rel="stylesheet" href="../assets/lesson.css" />
+  <style>
+    .viz {
+      margin: 1.1rem 0 1.3rem;
+      padding: 0.85rem 0.95rem 0.7rem;
+      background: #fff;
+      border: 1px solid var(--rule);
+    }
+    .viz h3 { margin: 0 0 0.5rem; font-size: 0.95rem; }
+    .viz svg { width: 100%; height: auto; display: block; }
+    .viz figcaption { margin-top: 0.5rem; font-size: 0.8rem; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Lesson 0051 · 绘制层回炉</p>
+    <h1>小尺寸挤不下时怎么排</h1>
+    <p class="lede">
+      切段/归段/占位之后，<code>lindim</code> 才真正画出数字。
+      短尺寸塞不进投影跨度时：先缩字，再错层；命中调整焊则加号加长。
+    </p>
+
+    <div class="callout">
+      速查：<a href="../reference/lindim-smalldim-cheatsheet.html"><code>lindim-smalldim-cheatsheet.html</code></a>
+      · 常数：0.8 缩字 · 0.5 下限 bili · 1.2×level 错层（V2 <code>small_dim.rs</code> 已对齐这些数）
+    </div>
+
+    <figure class="viz">
+      <h3>图 1 · 正常 vs 塞不下</h3>
+      <svg viewBox="0 0 700 180" xmlns="http://www.w3.org/2000/svg" role="img">
+        <text x="160" y="28" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="13" fill="#1f6b4a">够长 · 一字一行</text>
+        <line x1="40" y1="80" x2="280" y2="80" stroke="#0b1f33" stroke-width="3"/>
+        <text x="120" y="70" font-family="IBM Plex Mono, monospace" font-size="14" fill="#a33b16">1200</text>
+
+        <text x="520" y="28" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="13" fill="#a33b16">len &gt; dis · 塞不下</text>
+        <line x1="400" y1="90" x2="480" y2="90" stroke="#0b1f33" stroke-width="3"/>
+        <text x="420" y="70" font-family="IBM Plex Mono, monospace" font-size="16" fill="#a33b16" opacity="0.35">1200</text>
+        <text x="500" y="100" font-family="IBM Plex Sans, sans-serif" font-size="12" fill="#4a5d6e">字比尺子长</text>
+      </svg>
+      <figcaption>触发 sepSmallDim 链：与 isoline 条数无关。</figcaption>
+    </figure>
+
+    <figure class="viz">
+      <h3>图 2 · 三步救命</h3>
+      <svg viewBox="0 0 720 200" xmlns="http://www.w3.org/2000/svg" role="img">
+        <rect x="20" y="40" width="200" height="120" fill="#e5f3ec" stroke="#1f6b4a"/>
+        <text x="120" y="85" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="14" fill="#1f6b4a">① 缩字高</text>
+        <text x="120" y="115" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#0b1f33">×0.8 · 下限×0.5</text>
+
+        <rect x="250" y="40" width="200" height="120" fill="#d4eef1" stroke="#007a8a"/>
+        <text x="350" y="85" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="14" fill="#007a8a">② 错层</text>
+        <text x="350" y="115" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#0b1f33">±1.2×cheight×level</text>
+
+        <rect x="480" y="40" width="220" height="120" fill="#f8ebe6" stroke="#a33b16"/>
+        <text x="590" y="85" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="14" fill="#a33b16">③ 仍不够</text>
+        <text x="590" y="115" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#0b1f33">原基线硬塞小字</text>
+      </svg>
+      <figcaption>先收口已累积正常行，再对「塞不下」那段动手。</figcaption>
+    </figure>
+
+    <figure class="viz">
+      <h3>图 3 · 加号焊</h3>
+      <svg viewBox="0 0 700 160" xmlns="http://www.w3.org/2000/svg" role="img">
+        <line x1="60" y1="80" x2="400" y2="80" stroke="#0b1f33" stroke-width="10"/>
+        <circle cx="220" cy="80" r="6" fill="#a33b16"/>
+        <text x="220" y="115" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#a33b16">adjustweld</text>
+        <line x1="80" y1="50" x2="380" y2="50" stroke="#a33b16" stroke-width="2"/>
+        <text x="160" y="40" font-family="IBM Plex Mono, monospace" font-size="13" fill="#a33b16">1000 +50</text>
+        <text x="450" y="70" font-family="IBM Plex Sans, sans-serif" font-size="12" fill="#4a5d6e">plus=true</text>
+        <text x="450" y="95" font-family="IBM Plex Sans, sans-serif" font-size="12" fill="#4a5d6e">字宽计入 len</text>
+      </svg>
+      <figcaption>加号让字符串更长 → 更容易触发小尺寸逻辑。</figcaption>
+    </figure>
+
+    <h2>在流水线中的位置</h2>
+    <p>①切段 → ②归段 → ③Polar → <strong>④ lindim 绘制</strong> → 材料/流向。P1 不包含本课；但读成品图时小尺寸错层别当成多了一段 isoline。</p>
+
+    <section class="quiz">
+      <h3>小测</h3>
+      <div class="q">
+        <p><strong>Q1.</strong> 尺寸字错上下两层，isoline？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：错层是 lindim level，不是新切段。"
+          data-bad="">通常仍是原段数</button>
+        <button type="button" data-correct="0"
+          data-bad="别和切段混淆。" data-bad="">一定 +1 条 isoline</button>
+        <button type="button" data-correct="0"
+          data-bad="不是。" data-bad="">变成 0</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q2.</strong> 塞不下时第一步？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：先缩字高。"
+          data-bad="">缩字高（约 ×0.8）</button>
+        <button type="button" data-correct="0"
+          data-bad="那是更后。" data-bad="">先强制切弯头</button>
+        <button type="button" data-correct="0"
+          data-bad="不是。" data-bad="">先改 SITE 名</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q3.</strong> 加号焊会？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：字符串变长，更易触发小尺寸。"
+          data-bad="">加长显示并增加字宽占用</button>
+        <button type="button" data-correct="0"
+          data-bad="不是。" data-bad="">自动新开 isoline</button>
+        <button type="button" data-correct="0"
+          data-bad="无关。" data-bad="">关闭 Polar</button>
+        <p class="feedback"></p>
+      </div>
+    </section>
+
+    <div class="ask-teacher">
+      下一课：错层 vs dimtimes 对照。
+    </div>
+
+    <nav class="footer-nav">
+      <p>
+        <a href="0050-curriculum-milestone.html">← 第 50 课</a>
+        · 下一课：<a href="0052-level-vs-dimtimes.html">错层对照 →</a>
+        · <a href="0006-lindim-smalldim-plus.html">课 6</a>
+        · <a href="../reference/lindim-smalldim-cheatsheet.html">速查</a>
+        · <a href="../INDEX.md">目录</a>
+      </p>
+    </nav>
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

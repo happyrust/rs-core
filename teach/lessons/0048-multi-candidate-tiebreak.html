@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>第 48 课 · 多候选决胜</title>
+  <link rel="stylesheet" href="../assets/lesson.css" />
+  <style>
+    .viz {
+      margin: 1.1rem 0 1.3rem;
+      padding: 0.85rem 0.95rem 0.7rem;
+      background: #fff;
+      border: 1px solid var(--rule);
+    }
+    .viz h3 { margin: 0 0 0.5rem; font-size: 0.95rem; }
+    .viz svg { width: 100%; height: auto; display: block; }
+    .viz figcaption { margin-top: 0.5rem; font-size: 0.8rem; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Lesson 0048 · 归段决胜细则</p>
+    <h1>两段都举手时，谁赢？</h1>
+    <p class="lede">
+      桥接弯头让 mems 名匹配常出<strong>双候选</strong>。
+      决胜不是「固定选前一段」，而是按对象类型：焊缝字看距离，其它看谁更水平。
+    </p>
+
+    <div class="callout">
+      <code>ISOWELDTEXT</code> → 距线段最近 · 其它 → <code>pipedir</code> 更接近水平（相对 U）·
+      坡度等 → <code>insert(1)</code> 优先占位
+    </div>
+
+    <figure class="viz">
+      <h3>图 1 · 双候选现场</h3>
+      <svg viewBox="0 0 700 200" xmlns="http://www.w3.org/2000/svg" role="img">
+        <line x1="40" y1="140" x2="250" y2="140" stroke="#0b1f33" stroke-width="12"/>
+        <path d="M250 140 Q 300 140 300 90" fill="none" stroke="#007a8a" stroke-width="12"/>
+        <line x1="300" y1="90" x2="300" y2="30" stroke="#0b1f33" stroke-width="12"/>
+        <circle cx="250" cy="140" r="6" fill="#1f6b4a"/>
+        <rect x="220" y="160" width="100" height="28" rx="2" fill="#f8ebe6" stroke="#a33b16"/>
+        <text x="235" y="179" font-family="IBM Plex Mono, monospace" font-size="11" fill="#a33b16">材料/标签</text>
+        <text x="400" y="80" font-family="IBM Plex Sans, sans-serif" font-size="13" fill="#0b1f33">段1 与 段2 都 find 到 EA</text>
+        <text x="400" y="110" font-family="IBM Plex Sans, sans-serif" font-size="12" fill="#4a5d6e">→ candidates = [1, 2]</text>
+        <text x="400" y="140" font-family="IBM Plex Sans, sans-serif" font-size="12" fill="#a33b16">→ 决胜选 goodx</text>
+      </svg>
+      <figcaption>双候选是桥接的正常后果；静默丢弃或固定选小下标都会偏。</figcaption>
+    </figure>
+
+    <figure class="viz">
+      <h3>图 2 · 两类决胜规则</h3>
+      <svg viewBox="0 0 720 200" xmlns="http://www.w3.org/2000/svg" role="img">
+        <rect x="20" y="30" width="330" height="140" fill="#f8ebe6" stroke="#a33b16"/>
+        <text x="185" y="65" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="14" fill="#a33b16">ISOWELDTEXT</text>
+        <text x="185" y="100" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#0b1f33">谁离焊缝点更近</text>
+        <text x="185" y="130" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="12" fill="#4a5d6e">几何距离决胜</text>
+
+        <rect x="370" y="30" width="330" height="140" fill="#e5f3ec" stroke="#1f6b4a"/>
+        <text x="535" y="65" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="14" fill="#1f6b4a">其它对象</text>
+        <text x="535" y="100" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#0b1f33">pipedir 更接近水平</text>
+        <text x="535" y="130" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="12" fill="#4a5d6e">相对 U · 不是「更近」</text>
+      </svg>
+      <figcaption>易混点：材料默认<strong>不是</strong>最近点；那是焊缝字的规则。</figcaption>
+    </figure>
+
+    <figure class="viz">
+      <h3>图 3 · 写入顺序也影响占位</h3>
+      <svg viewBox="0 0 700 160" xmlns="http://www.w3.org/2000/svg" role="img">
+        <rect x="40" y="40" width="280" height="80" fill="#d4eef1" stroke="#007a8a"/>
+        <text x="180" y="75" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#007a8a">ISOSLOPE 等</text>
+        <text x="180" y="100" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#0b1f33">insert(1) 插到最前</text>
+        <rect x="380" y="40" width="280" height="80" fill="#fff" stroke="#9aafbc"/>
+        <text x="520" y="75" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#0b1f33">普通对象</text>
+        <text x="520" y="100" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#0b1f33">append 队尾</text>
+      </svg>
+      <figcaption>坡度先占位，后面尺寸/流向才好让路。</figcaption>
+    </figure>
+
+    <h2>和病例 2 的连接</h2>
+    <p>
+      leg 走路径 A 的平行+投影；有名材料走路径 B 的「更水平」。
+      两种决胜都可能归错——diff 时先分清对象类型，再对规则。
+    </p>
+
+    <section class="quiz">
+      <h3>小测</h3>
+      <div class="q">
+        <p><strong>Q1.</strong> 有名材料双候选，默认决胜？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：pipedir 更接近水平。"
+          data-bad="">谁更接近水平</button>
+        <button type="button" data-correct="0"
+          data-bad="那是焊缝字。" data-bad="">谁离点更近</button>
+        <button type="button" data-correct="0"
+          data-bad="代码不这么做。" data-bad="">固定选前一段</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q2.</strong> ISOWELDTEXT 双候选？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：距线段最近。"
+          data-bad="">距线段最近</button>
+        <button type="button" data-correct="0"
+          data-bad="材料才看水平。" data-bad="">谁更水平</button>
+        <button type="button" data-correct="0"
+          data-bad="不是。" data-bad="">SITE 含 INST 的那段</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q3.</strong> ISOSLOPE 写入？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：insert(1)。"
+          data-bad="">insert(1) 到最前</button>
+        <button type="button" data-correct="0"
+          data-bad="坡度要优先。" data-bad="">一律 append</button>
+        <button type="button" data-correct="0"
+          data-bad="找到了会写入。" data-bad="">永远 skip</button>
+        <p class="feedback"></p>
+      </div>
+    </section>
+
+    <div class="ask-teacher">
+      下一课：切段→归段→占位总览。
+    </div>
+
+    <nav class="footer-nav">
+      <p>
+        <a href="0047-put-into-isoline-visual.html">← 第 47 课</a>
+        · 下一课：<a href="0049-pipeline-overview.html">流水线总览 →</a>
+        · <a href="0003-put-into-isoline.html">课 3</a>
+        · <a href="../reference/put-into-isoline-cheatsheet.html">速查</a>
+        · <a href="../INDEX.md">目录</a>
+      </p>
+    </nav>
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>第 32 课 · 支架 wronglines</title>
+  <link rel="stylesheet" href="../assets/lesson.css" />
+  <style>
+    .viz {
+      margin: 1.1rem 0 1.3rem;
+      padding: 0.85rem 0.95rem 0.7rem;
+      background: #fff;
+      border: 1px solid var(--rule);
+    }
+    .viz h3 { margin: 0 0 0.5rem; font-size: 0.95rem; }
+    .viz svg { width: 100%; height: auto; display: block; }
+    .viz figcaption { margin-top: 0.5rem; font-size: 0.8rem; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Lesson 0032 · 失败也要可读</p>
+    <h1>支架 wronglines 观感</h1>
+    <p class="lede">
+      标注成功看图；失败看 <strong>wronglines</strong>——一串「为什么没出材料/尺寸」的人话原因。
+      支架侧最常见：缺 itemcode、码表查不到、附件太远。管子侧则是 ATTA 顺序、布局抑制等（另一条链，同名字段）。
+    </p>
+
+    <div class="callout">
+      AGENTS 约定：布局失败应输出 suppress / 原因，而不是静默少画。
+      PML：<code>suiSupport.wronglines</code> ← <code>suppmaterial.errors</code> 等。
+    </div>
+
+    <figure class="viz">
+      <h3>图 1 · 成功 vs 失败（同支架）</h3>
+      <svg viewBox="0 0 720 220" xmlns="http://www.w3.org/2000/svg" role="img">
+        <!-- ok -->
+        <text x="170" y="28" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="13" fill="#1f6b4a">材料出表</text>
+        <rect x="40" y="50" width="16" height="90" fill="#0b1f33"/>
+        <rect x="20" y="140" width="56" height="12" fill="#4a5d6e"/>
+        <rect x="100" y="70" width="140" height="70" fill="#e5f3ec" stroke="#1f6b4a"/>
+        <text x="170" y="100" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#1f6b4a">Q235 · 12kg</text>
+        <text x="170" y="120" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#4a5d6e">wronglines 空</text>
+
+        <!-- bad -->
+        <text x="520" y="28" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="13" fill="#a33b16">材料空白 + 原因行</text>
+        <rect x="390" y="50" width="16" height="90" fill="#0b1f33"/>
+        <rect x="370" y="140" width="56" height="12" fill="#4a5d6e"/>
+        <rect x="450" y="55" width="240" height="100" fill="#f8ebe6" stroke="#a33b16"/>
+        <text x="570" y="85" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#a33b16">得不到材料</text>
+        <text x="570" y="108" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#a33b16">请检查 :itemcode</text>
+        <text x="570" y="131" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#a33b16">码表查询不到</text>
+        <text x="360" y="195" font-family="IBM Plex Sans, sans-serif" font-size="13" fill="#4a5d6e">型钢还在图上，BOM 行却空 —— 靠 wronglines 解释「为何空」</text>
+      </svg>
+      <figcaption>观感：几何能画 ≠ 材料能出。缺原因行时，现场只能猜是模型还是码表。</figcaption>
+    </figure>
+
+    <figure class="viz">
+      <h3>图 2 · 错误从哪冒出来</h3>
+      <svg viewBox="0 0 720 200" xmlns="http://www.w3.org/2000/svg" role="img">
+        <rect x="20" y="40" width="150" height="80" fill="#fff" stroke="#9aafbc"/>
+        <text x="95" y="75" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#0b1f33">suppmaterial</text>
+        <text x="95" y="98" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#a33b16">.errors</text>
+        <path d="M170 80 L220 80" stroke="#0b1f33" stroke-width="2"/>
+        <rect x="220" y="40" width="180" height="80" fill="#f8ebe6" stroke="#a33b16"/>
+        <text x="310" y="75" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#a33b16">suiSupport</text>
+        <text x="310" y="98" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#a33b16">.wronglines.append</text>
+        <path d="M400 80 L450 80" stroke="#0b1f33" stroke-width="2"/>
+        <rect x="450" y="40" width="250" height="80" fill="#d4eef1" stroke="#007a8a"/>
+        <text x="575" y="75" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="13" fill="#007a8a">报告 / UI / 日志</text>
+        <text x="575" y="98" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="12" fill="#4a5d6e">给人看的 suppress 原因</text>
+        <text x="40" y="160" font-family="IBM Plex Sans, sans-serif" font-size="13" fill="#4a5d6e">另例：附件离主件太远 → 直接 append「A 离 B 太远」类句子</text>
+      </svg>
+      <figcaption>迁码：Rust 侧应对齐「可聚合的原因数组」，不要只 bool 失败。</figcaption>
+    </figure>
+
+    <figure class="viz">
+      <h3>图 3 · 管子 wronglines ≠ 支架 wronglines</h3>
+      <svg viewBox="0 0 700 200" xmlns="http://www.w3.org/2000/svg" role="img">
+        <rect x="30" y="30" width="300" height="140" fill="#e5f3ec" stroke="#1f6b4a"/>
+        <text x="180" y="60" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="14" fill="#1f6b4a">管子 isobran / isoline</text>
+        <text x="180" y="95" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#0b1f33">ATTA 顺序可疑</text>
+        <text x="180" y="120" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#0b1f33">尺寸布局抑制</text>
+        <text x="180" y="145" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#0b1f33">isoDim 上抛原因</text>
+        <rect x="370" y="30" width="300" height="140" fill="#f8ebe6" stroke="#a33b16"/>
+        <text x="520" y="60" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="14" fill="#a33b16">支架 suiSupport</text>
+        <text x="520" y="95" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#0b1f33">itemcode / 码表</text>
+        <text x="520" y="120" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#0b1f33">板模型/面积失败</text>
+        <text x="520" y="145" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#0b1f33">附件距离过远</text>
+      </svg>
+      <figcaption>同名字段、不同业务。查日志先认清是管还是架。</figcaption>
+    </figure>
+
+    <h2>常见原因（支架）</h2>
+    <table style="width:100%;border-collapse:collapse;font-size:0.85rem;margin-bottom:1rem">
+      <tr style="background:#f8ebe6">
+        <th style="border:1px solid #9aafbc;padding:0.4rem;text-align:left">现象</th>
+        <th style="border:1px solid #9aafbc;padding:0.4rem;text-align:left">典型 wronglines</th>
+      </tr>
+      <tr>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">零件无材料行</td>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">得不到材料，请检查 :itemcode</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">有码但查空</td>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">itemcode … 在码表中查询不到</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">附件离谱</td>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">A 离 B 太远</td>
+      </tr>
+    </table>
+
+    <section class="quiz">
+      <h3>小测</h3>
+      <div class="q">
+        <p><strong>Q1.</strong> 支架图画得出、材料表空，优先查？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：wronglines / itemcode / 码表。"
+          data-bad="">wronglines（itemcode·码表）</button>
+        <button type="button" data-correct="0"
+          data-bad="切段不负责支架材料。" data-bad="">getisolines 角阈值</button>
+        <button type="button" data-correct="0"
+          data-bad="无关。" data-bad="">SITE 是否含 INST</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q2.</strong> wronglines 的产品价值是？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：失败可解释，对齐 AGENTS 的 suppress 原因输出。"
+          data-bad="">把失败原因说给人听</button>
+        <button type="button" data-correct="0"
+          data-bad="不是用来加段。" data-bad="">自动多切一条 isoline</button>
+        <button type="button" data-correct="0"
+          data-bad="不是。" data-bad="">替换 lindim 字体高度</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q3.</strong> 管子与支架的 wronglines？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：同名不同链，先认业务再查。"
+          data-bad="">同名不同业务链</button>
+        <button type="button" data-correct="0"
+          data-bad="会混诊断。" data-bad="">永远是同一数组同一含义</button>
+        <button type="button" data-correct="0"
+          data-bad="不是。" data-bad="">只有仪表管才有</button>
+        <p class="feedback"></p>
+      </div>
+    </section>
+
+    <div class="ask-teacher">
+      下一课：回到 BRAN 切段决策树。
+    </div>
+
+    <nav class="footer-nav">
+      <p>
+        <a href="0031-support-material-visual.html">← 第 31 课</a>
+        · 下一课：<a href="0033-bran-split-decision-tree.html">切段决策树 →</a>
+        · <a href="../INDEX.md">目录</a>
+      </p>
+    </nav>
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

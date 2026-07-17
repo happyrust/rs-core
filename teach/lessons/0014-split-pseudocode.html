@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>第 14 课 · split 伪代码</title>
+  <link rel="stylesheet" href="../assets/lesson.css" />
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Lesson 0014 · 动码前最后一课</p>
+    <h1><code>split_isolines_pml</code> 伪代码</h1>
+    <p class="lede">
+      对照课 1 决策树 + fixture 阈值，把 P1 弯头主路径写成可直接翻译成 Rust 的伪代码。
+      本课仍<strong>不修改</strong> <code>src/mbd</code>。
+    </p>
+
+    <div class="callout">
+      <strong>范围：</strong>Head/Tail/通过件 + 弯头三条岔路 + 桥接。
+      <strong>不做：</strong>PCOM / special / Polar 邻段（P3/P4）。
+    </div>
+
+    <h2>类型（与 P0 对齐）</h2>
+    <pre>MemberKind = Head|Tail|Tubi|Atta|Weld|Olet|Elbo|Bend|Pcom|Other
+PASS_THROUGH = {Tubi, Atta, Weld, Olet}
+
+IsolineBag = { mem_refnos: [string], leave_dir: Vec3 }
+
+fn angle_deg(a, b) -> degrees in [0, 180]
+fn dist(a, b) -> mm</pre>
+
+    <h2>主循环伪代码</h2>
+    <pre>fn split_isolines_pml(members: [BranchMemberGeom]) -> Result&lt;[IsolineBag], Issues&gt;:
+  allarr = []
+  onearr = []
+  poss = []          // turn points
+  ldirs = []         // leave dir per open/closed segment
+  issues = []
+  run_ldir = None    // running segment direction
+
+  for m in members sorted by order:
+    if m.kind == Head:
+      onearr = ["HEAD"]  // or m.refno
+      poss.append(m.arrive_pos or m.pos)
+      run_ldir = m.leave_dir
+      ldirs.append(run_ldir)
+      continue
+
+    if m.kind == Tail:
+      onearr.append(m.refno)
+      allarr.append(onearr)
+      onearr = []
+      continue
+
+    if m.kind in PASS_THROUGH:
+      onearr.append(m.refno)
+      continue
+
+    if m.kind == Pcom:
+      issues.push("P1: PCOM not implemented")
+      onearr.append(m.refno)   // or skip — pick one policy &amp; lock it
+      continue
+
+    // --- bend / direction-change path ---
+    if m.leave_dir is None:
+      issues.push("missing leave_dir: " + m.refno)
+      continue
+
+    dir = m.leave_dir
+    if run_ldir is None:
+      run_ldir = dir
+      onearr.append(m.refno)
+      continue
+
+    if angle_deg(dir, run_ldir) &lt;= 0.01:
+      onearr.append(m.refno)
+      continue
+
+    // entered dir-change (&gt; 0.01°)
+    adir = m.arrive_dir
+    apos = m.arrive_pos
+    lpos = m.leave_pos
+    memldir = dir
+    turn = m.pos or midpoint(apos, lpos)
+
+    // ① near-180 correction
+    if adir and apos and poss.last and
+       angle_deg(adir, memldir) &gt; 179.99 and
+       angle_deg(adir, run_ldir) &gt; 179 and
+       dist(apos, poss.last) &lt; 1:
+         run_ldir = opposite(adir)
+         ldirs[last] = run_ldir
+         continue
+
+    // ② main split
+    need = (apos and lpos and dist(apos, lpos) &gt; 1)
+            or angle_deg(dir, run_ldir) &gt; 10
+    if need:
+      if lpos and poss.last and dist(lpos, poss.last) &lt; 0.1:
+        ldirs[last] = dir
+        run_ldir = dir
+        onearr.append(m.refno)
+      else:
+        poss.append(turn)
+        onearr.append(m.refno)       // bridge: end of previous
+        allarr.append(onearr)
+        run_ldir = dir
+        onearr = [m.refno]           // bridge: start of next
+        ldirs.append(run_ldir)
+
+    // ③ force split if adir∠memldir &gt; 100
+    if adir and angle_deg(adir, memldir) &gt; 100:
+      // same bridge close/open as ②-else (may double-split; match PML)
+      poss.append(turn)
+      if onearr not empty and onearr.last != m.refno:
+        onearr.append(m.refno)
+      allarr.append(onearr)
+      run_ldir = dir
+      onearr = [m.refno]
+      ldirs.append(run_ldir)
+    else if not need:
+      onearr.append(m.refno)
+
+  if onearr not empty:
+    issues.push("unterminated bag without Tail")
+  return (allarr as IsolineBags, issues)</pre>
+
+    <h2>对 fixture 的自检</h2>
+    <ul>
+      <li><code>toy-bridge-and-stick</code>：② 在 EA 走 else 桥接；EB 走 stick 分支</li>
+      <li><code>colinear-no-split</code>：全程 ≤0.01，不进变向</li>
+      <li><code>variant-eb-no-stick</code>：EB 也走桥接 → 3 袋</li>
+    </ul>
+
+    <h2>技能：读伪代码</h2>
+    <section class="quiz" aria-label="小测">
+      <h3>小测（3 题）</h3>
+
+      <div class="q">
+        <p><strong>Q1.</strong> 桥接切开时，弯头 refno 在 onearr 上的操作是？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：先 append 再整袋进 allarr，再 new [mem]。"
+          data-bad="">先 append 到旧袋并收口，再以 [mem] 开新袋</button>
+        <button type="button" data-correct="0"
+          data-bad="那样会丢掉桥接双含。" data-bad="">只放进新袋，旧袋不包含该 mem</button>
+        <button type="button" data-correct="0"
+          data-bad="桥接必须双含。" data-bad="">旧袋收口后丢弃该 mem</button>
+        <p class="feedback"></p>
+      </div>
+
+      <div class="q">
+        <p><strong>Q2.</strong> P1 遇到 PCOM 时伪代码采取的 MVP 策略是？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：记 issue，策略锁死（挂袋或 skip），完整逻辑留 P4。"
+          data-bad="">记 issue，并采用锁定的降级策略</button>
+        <button type="button" data-correct="0"
+          data-bad="P4 才做完整 PCOM。" data-bad="">完整实现水平/垂直 PCOM 双切</button>
+        <button type="button" data-correct="0"
+          data-bad="PCOM 不在 PASS_THROUGH。" data-bad="">当成 Tubi 通过件静默挂袋且无 issue</button>
+        <p class="feedback"></p>
+      </div>
+
+      <div class="q">
+        <p><strong>Q3.</strong> 本伪代码下一步最合适的动作是？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：翻译进 src/mbd，用 fixture 断言。"
+          data-bad="">在 src/mbd 实现并对照 fixture</button>
+        <button type="button" data-correct="0"
+          data-bad="邻段是 P3，不是 P1 MVP。" data-bad="">先实现隔段 polarcyli 1.5×od</button>
+        <button type="button" data-correct="0"
+          data-bad="前端不负责切段。" data-bad="">先改前端 primitive 渲染</button>
+        <p class="feedback"></p>
+      </div>
+    </section>
+
+    <div class="ask-teacher">
+      伪代码有歧义就标行号问我。若要<strong>开始写 Rust</strong>，回复「实现 P1」。
+    </div>
+
+    <nav class="footer-nav">
+      <p>
+        <a href="0013-p1-test-fixtures.html">← 第 13 课</a>
+        · 下一课：<a href="0015-near-180-correction.html">近 180° 校正 →</a>
+      </p>
+    </nav>
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

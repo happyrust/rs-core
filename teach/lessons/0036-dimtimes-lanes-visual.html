@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>第 36 课 · dimtimes 车道再练</title>
+  <link rel="stylesheet" href="../assets/lesson.css" />
+  <style>
+    .viz {
+      margin: 1.1rem 0 1.3rem;
+      padding: 0.85rem 0.95rem 0.7rem;
+      background: #fff;
+      border: 1px solid var(--rule);
+    }
+    .viz h3 { margin: 0 0 0.5rem; font-size: 0.95rem; }
+    .viz svg { width: 100%; height: auto; display: block; }
+    .viz figcaption { margin-top: 0.5rem; font-size: 0.8rem; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Lesson 0036 · BRAN 薄弱点</p>
+    <h1>dimtimes：内外两车道（配图再练）</h1>
+    <p class="lede">
+      切段决定「几条尺子」；<strong>dimtimes</strong> 决定「同一条 isoline 上尺寸离管皮有多远」。
+      有 ATTA 子尺寸时：内侧留给子尺寸（1），主尺寸抬到外侧（2）。
+    </p>
+
+    <div class="callout">
+      速查：<a href="../reference/drawdim-dimtimes-cheatsheet.html"><code>drawdim-dimtimes-cheatsheet.html</code></a>
+      · 公式 <code>radius_lo = od + cheight×1.2×(dimtimes−1)</code>
+    </div>
+
+    <figure class="viz">
+      <h3>图 1 · 单层 vs 双层</h3>
+      <svg viewBox="0 0 720 240" xmlns="http://www.w3.org/2000/svg" role="img">
+        <!-- single -->
+        <text x="160" y="28" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="13" fill="#1f6b4a">仅主尺寸 → dimtimes=1</text>
+        <line x1="40" y1="120" x2="280" y2="120" stroke="#0b1f33" stroke-width="16" stroke-linecap="round"/>
+        <line x1="60" y1="85" x2="260" y2="85" stroke="#a33b16" stroke-width="2.5"/>
+        <text x="140" y="75" font-family="IBM Plex Mono, monospace" font-size="12" fill="#a33b16">贴管皮一层</text>
+        <text x="160" y="170" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="12" fill="#4a5d6e">twoormoredims = false</text>
+
+        <!-- double -->
+        <text x="520" y="28" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="13" fill="#007a8a">主+ATTA → 两车道</text>
+        <line x1="400" y1="130" x2="640" y2="130" stroke="#0b1f33" stroke-width="16" stroke-linecap="round"/>
+        <line x1="420" y1="100" x2="520" y2="100" stroke="#007a8a" stroke-width="2"/>
+        <text x="430" y="90" font-family="IBM Plex Mono, monospace" font-size="11" fill="#007a8a">子尺寸 ×1</text>
+        <line x1="430" y1="65" x2="620" y2="65" stroke="#a33b16" stroke-width="2.5"/>
+        <text x="480" y="55" font-family="IBM Plex Mono, monospace" font-size="11" fill="#a33b16">主尺寸 ×2（外抬）</text>
+        <text x="520" y="180" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="12" fill="#4a5d6e">mainDim→2 · ATTA→1</text>
+        <text x="520" y="205" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#4a5d6e">外抬 ≈ 1.2×cheight</text>
+      </svg>
+      <figcaption>薄弱点：别把 dimtimes 当成「isoline 条数」——条数是切段；车道是同一段上的径向层。</figcaption>
+    </figure>
+
+    <figure class="viz">
+      <h3>图 2 · 谁跳过什么</h3>
+      <svg viewBox="0 0 720 200" xmlns="http://www.w3.org/2000/svg" role="img">
+        <rect x="30" y="30" width="320" height="140" fill="#f8ebe6" stroke="#a33b16"/>
+        <text x="190" y="60" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="14" fill="#a33b16">twoormoredims && dimtimes==1</text>
+        <text x="190" y="95" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#0b1f33">跳过 slope 辅助</text>
+        <text x="190" y="120" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#0b1f33">跳过该层流向/TSPEC</text>
+        <text x="190" y="150" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="12" fill="#4a5d6e">（内侧留给子尺寸安静）</text>
+
+        <rect x="370" y="30" width="320" height="140" fill="#e5f3ec" stroke="#1f6b4a"/>
+        <text x="530" y="60" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="14" fill="#1f6b4a">外层 dimtimes==2 或单层</text>
+        <text x="530" y="95" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#0b1f33">可画 slope 辅助</text>
+        <text x="530" y="120" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#0b1f33">非仪表管可画流向</text>
+        <text x="530" y="150" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="12" fill="#4a5d6e">（装饰跟外层走）</text>
+      </svg>
+      <figcaption>读图：内侧只有短尺寸、外侧才有箭头 → 多半是双车道，不是少切了一段。</figcaption>
+    </figure>
+
+    <figure class="viz">
+      <h3>图 3 · 和切段的分工（一眼）</h3>
+      <svg viewBox="0 0 700 160" xmlns="http://www.w3.org/2000/svg" role="img">
+        <rect x="30" y="30" width="300" height="100" fill="#d4eef1" stroke="#007a8a"/>
+        <text x="180" y="70" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="14" fill="#007a8a">getisolines</text>
+        <text x="180" y="100" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#0b1f33">几条 isoline（换向）</text>
+        <rect x="370" y="30" width="300" height="100" fill="#e5f3ec" stroke="#1f6b4a"/>
+        <text x="520" y="70" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="14" fill="#1f6b4a">dimtimes</text>
+        <text x="520" y="100" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#0b1f33">每条上几层径向车道</text>
+      </svg>
+      <figcaption>反推段数（课 25–26）只数换向；看到双箭头尺寸别 +1 段。</figcaption>
+    </figure>
+
+    <h2>口诀</h2>
+    <ol>
+      <li>有 ATTA 子尺寸 → 主尺寸 dimtimes=<strong>2</strong></li>
+      <li>子尺寸 / 单层主尺寸 → <strong>1</strong></li>
+      <li>内层（1 且双尺寸）安静：不画流向、少 slope</li>
+    </ol>
+
+    <section class="quiz">
+      <h3>再练小测</h3>
+      <div class="q">
+        <p><strong>Q1.</strong> 同一 isoline 上主尺寸在外、ATTA 在内，isoline 几条？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：仍 1 条；只是两车道。"
+          data-bad="">仍 1 条</button>
+        <button type="button" data-correct="0"
+          data-bad="车道≠段数。" data-bad="">2 条</button>
+        <button type="button" data-correct="0"
+          data-bad="不是。" data-bad="">0 条</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q2.</strong> twoormoredims 且正在画 dimtimes=1 时？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：跳过 slope，也不在该层画流向。"
+          data-bad="">跳过 slope 与该层流向</button>
+        <button type="button" data-correct="0"
+          data-bad="外层才画。" data-bad="">强制画流向箭头</button>
+        <button type="button" data-correct="0"
+          data-bad="无关。" data-bad="">自动桥接弯头</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q3.</strong> dimtimes 从 1→2，径向大约？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：再外抬约 1.2×cheight。"
+          data-bad="">外抬约 1.2×cheight</button>
+        <button type="button" data-correct="0"
+          data-bad="不是切段阈值。" data-bad="">新开一条 isoline</button>
+        <button type="button" data-correct="0"
+          data-bad="公式是 1.2。" data-bad="">外抬 10° 转角</button>
+        <p class="feedback"></p>
+      </div>
+    </section>
+
+    <div class="ask-teacher">
+      下一课：反推 isoline 加难套题 II。
+    </div>
+
+    <nav class="footer-nav">
+      <p>
+        <a href="0035-support-branch-review.html">← 第 35 课</a>
+        · 下一课：<a href="0037-count-isolines-set2.html">反推套题 II →</a>
+        · <a href="0005-drawdim-dimtimes.html">课 5</a>
+        · <a href="../reference/drawdim-dimtimes-cheatsheet.html">速查</a>
+        · <a href="../INDEX.md">目录</a>
+      </p>
+    </nav>
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

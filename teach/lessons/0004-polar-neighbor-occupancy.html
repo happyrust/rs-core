@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>第 4 课 · 邻段 Polar 占位</title>
+  <link rel="stylesheet" href="../assets/lesson.css" />
+  <style>
+    .kv {
+      display: grid;
+      grid-template-columns: 7.5rem 1fr;
+      gap: 0.35rem 0.75rem;
+      font-size: 0.92rem;
+      margin: 0 0 1rem;
+    }
+    .kv dt { font-family: var(--mono); font-size: 0.78rem; color: var(--accent); }
+    .kv dd { margin: 0; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Lesson 0004 · 切段之后的空间影响</p>
+    <h1>邻段如何互加 <code>polarcyli</code>？</h1>
+    <p class="lede">
+      isoline 切好、对象归好之后，相邻直段还会把对方当成<strong>障碍柱</strong>塞进 PolarSystem。
+      本课钉住：何时加、加什么、隔一段近折返时为何再加粗。
+    </p>
+
+    <div class="callout">
+      <strong>本课只钉一件事：</strong><code>getisolines</code> 末尾（构造完每条 isoline 时）的邻段占位逻辑。
+      不讲 <code>getBestPosAndOri</code> 九步搜索细节。
+    </div>
+
+    <h2>为什么要管这个</h2>
+    <p>
+      弯头切开后，两段在空间上拐了弯，但标注仍会争同一侧空间。
+      PML 的做法：把<strong>上一段管柱</strong>加进当前段的 Polar，把<strong>当前段管柱</strong>加进上一段——互相挡路，避免尺寸画进邻管里。
+    </p>
+    <p class="cite">
+      源：
+      <a href="../../MBD/markpipe/object/isobran.pmlobj"><code>getisolines</code></a>
+      构造循环内 <code>x &gt; 1</code> 且 <code>usepolarsystem</code>（约 1726–1780 行）。
+      旧路径则互加 <code>isoUsedDir</code>（同段逻辑的非 Polar 版）。
+    </p>
+
+    <h2>知识：两层互加</h2>
+
+    <h3>① 相邻段（恒做）</h3>
+    <dl class="kv">
+      <dt>上一段 → 当前</dt>
+      <dd>用上一段 <code>obstline</code> 中点、<code>pipedir.opposite()</code>、<code>od</code>、高度=<code>obstline.length</code> 造 <code>polarcyli</code>，<code>current.polarsystem.add(..., true)</code></dd>
+      <dt>当前 → 上一段</dt>
+      <dd>对称互加；但若当前柱高 ≤ 1（注释：olet at cap）则<strong>不加回去</strong></dd>
+      <dt>坏柱</dt>
+      <dd>直径或高度近 0 → 画调试线、<code>$p pre isoline is bad</code>、<code>return false</code></dd>
+    </dl>
+
+    <h3>② 隔一段近折返（条件做）</h3>
+    <p>当 <code>x &gt; 2</code>（至少第三段）时，再看「当前」与「上上段」：</p>
+    <pre>angle = nextpipedir.angle(prepipedir)   // 当前方向 vs 上上段方向
+dis   = isolines[x-2].line.distance(current.line)
+
+if angle &gt; 160°:                       // 接近折返平行（反向）
+  if dis &lt; current.od * 15:
+      把上上段柱（od×1.5）加进当前 Polar
+  if dis &lt; 上上段.od * 15:
+      把当前柱（od×1.5）加进上上段 Polar（高度&gt;1 才加）</pre>
+    <p>
+      直觉：U 型近折返时，隔一段的两直段几乎平行且靠得很近，尺寸更容易互相穿模，所以用<strong>加粗 1.5×od</strong> 的柱互相警示。
+    </p>
+
+    <figure class="figure" aria-label="邻段与隔段占位">
+      <svg viewBox="0 0 520 160" xmlns="http://www.w3.org/2000/svg" role="img">
+        <title>邻段 polarcyli</title>
+        <line x1="40" y1="120" x2="200" y2="120" stroke="#0b1f33" stroke-width="4"/>
+        <path d="M200 120 Q230 120 230 90" fill="none" stroke="#007a8a" stroke-width="3"/>
+        <line x1="230" y1="90" x2="230" y2="30" stroke="#0b1f33" stroke-width="4"/>
+        <rect x="70" y="108" width="100" height="24" rx="10" fill="#d4eef1" stroke="#007a8a" opacity="0.9"/>
+        <rect x="218" y="40" width="24" height="55" rx="10" fill="#d4eef1" stroke="#007a8a" opacity="0.9"/>
+        <text x="40" y="150" font-family="IBM Plex Mono, monospace" font-size="11" fill="#4a5d6e">isoline i-1 + 来自 i 的柱</text>
+        <text x="250" y="55" font-family="IBM Plex Mono, monospace" font-size="11" fill="#4a5d6e">isoline i + 来自 i-1 的柱</text>
+      </svg>
+      <figcaption>相邻两段互把对方管身登记为 Polar 障碍；画尺寸时会绕开。</figcaption>
+    </figure>
+
+    <div class="callout">
+      <strong>和 mission 的钉子：</strong>
+      V2 若只切段、不做邻段/隔段障碍注入，弯头附近尺寸方向会对，但<strong>容易压到邻管</strong>。
+      对齐 PML 时，占位与切段是一套的。
+    </div>
+
+    <h2>技能：判要不要加</h2>
+    <section class="quiz" aria-label="小测">
+      <h3>小测（3 题）</h3>
+
+      <div class="q">
+        <p><strong>Q1.</strong> Polar 开启时，第 2 条 isoline 构造完，对第 1 条至少会做什么？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：相邻段对称互加 polarcyli（当前高&gt;1 才加回去）。"
+          data-bad="">把上一段管柱加进当前，并把当前柱加回上一段</button>
+        <button type="button" data-correct="0"
+          data-bad="隔一段逻辑要 x&gt;2，第二条还轮不到。">只做隔一段加粗，不做相邻互加</button>
+        <button type="button" data-correct="0"
+          data-bad="usepolarsystem 为真时走 polarcyli，不是跳过。">什么都不加，留给 draw 阶段再处理</button>
+        <p class="feedback"></p>
+      </div>
+
+      <div class="q">
+        <p><strong>Q2.</strong> 隔一段加粗占位的角度门槛是？</p>
+        <button type="button" data-correct="0"
+          data-bad="主切弯头用的是 10°；隔段折返是 160°。" data-bad="">两段方向夹角大于十度就加粗</button>
+        <button type="button" data-correct="1"
+          data-ok="对：angle &gt; 160° 视为近折返平行。"
+          data-bad="">两段方向夹角大于一百六十度才考虑</button>
+        <button type="button" data-correct="0"
+          data-bad="没有 90° 门槛这条。" data-bad="">两段方向夹角必须正好九十度才加</button>
+        <p class="feedback"></p>
+      </div>
+
+      <div class="q">
+        <p><strong>Q3.</strong> 隔一段互加时，圆柱外径相对本段 od 如何？</p>
+        <button type="button" data-correct="0"
+          data-bad="相邻互加用 1×od；隔段加粗才是 1.5×。" data-bad="">始终使用一倍 od 作为柱直径</button>
+        <button type="button" data-correct="1"
+          data-ok="对：隔段分支里显式 od * 1.5。"
+          data-bad="">使用一点五倍 od 作为加粗柱直径</button>
+        <button type="button" data-correct="0"
+          data-bad="不是两倍。" data-bad="">使用两倍 od 作为加粗柱直径值</button>
+        <p class="feedback"></p>
+      </div>
+    </section>
+
+    <h2>建议的一手材料</h2>
+    <p>
+      在源码里从 <code>!polarcyli = object polarcyli(...</code> 读到隔段 <code>angle gt 160</code> 结束。
+      对照第 2 课两段玩具 bran：应发生 ①；若再加一段近 U 型折返，才会触发 ②。
+    </p>
+
+    <div class="ask-teacher">
+      可以把「三段方向角 + 段间距 / od」发我，我帮你判会不会触发隔段加粗。
+    </div>
+
+    <nav class="footer-nav">
+      <p>
+        <a href="0003-put-into-isoline.html">← 第 3 课</a>
+        · <a href="../reference/polar-neighbor-cheatsheet.html">邻段占位速查</a>
+        · 下一课：<a href="0005-drawdim-dimtimes.html">drawdim 与 dimtimes →</a>
+      </p>
+    </nav>
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

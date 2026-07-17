@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>第 6 课 · lindim 小尺寸与加号焊</title>
+  <link rel="stylesheet" href="../assets/lesson.css" />
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Lesson 0006 · 尺寸实体最后一公里</p>
+    <h1><code>lindim</code>：小尺寸与加号焊</h1>
+    <p class="lede">
+      <code>drawdim</code> 只决定「尺寸线放哪、朝哪」。真正生成 PDMS <code>LINDIM</code>、处理「字塞不下」和「调整焊 +长度」，在
+      <code>lindim.create</code> → <code>sepSmallDim</code>。
+    </p>
+
+    <div class="callout">
+      <strong>本课只钉一件事：</strong>一段点列如何被拆成一行或多行 DIM，以及加号焊文字如何挤进宽度预算。
+    </div>
+
+    <h2>入口回顾</h2>
+    <pre>lindim(...) 构造
+  → create()
+       changeCheightAuto()     // 整链先可能整体缩字高
+       allRows = sepSmallDim() // 按段拆行 / 错层
+       对每一行: new lindim + dimpos…</pre>
+    <p class="cite">
+      源：
+      <a href="../../MBD/object/mbd/lindim.pmlobj"><code>MBD/object/mbd/lindim.pmlobj</code></a>
+      · 综述：BRAN 全景文档 §3.3（Rust <code>small_dim.rs</code> 同源语义）
+    </p>
+
+    <h2>知识：开关都关时</h2>
+    <p>
+      若 <code>sepSmallDim</code> 与 <code>changeCheightAuto</code> 都未启用：整条点列<strong>一行</strong>吐出，字高不变。
+      有任一开关为真，才进入分段决策树。
+    </p>
+
+    <h2>知识：逐段「字宽 vs 段长」</h2>
+    <p>对相邻点 <code>points[x] → points[x+1]</code>：</p>
+    <ol>
+      <li>投影段长 <code>dis</code>（沿 <code>ori.xdir</code>）</li>
+      <li>数字串宽度 <code>len = mbdtextlen(数字) * cheight</code></li>
+      <li>若该段上有 <code>adjustwelds</code> 落点：累加 <code>adjustlen</code>，拼 <code>" +N"</code>，并把加号字宽（可乘 <code>plusstringcheightbili</code>）并入 <code>len</code>；标记 <code>plus=true</code></li>
+      <li>若 <code>len ≤ dis</code>：累积到当前行</li>
+      <li>若 <code>len &gt; dis</code>（塞不下）：
+        <ul>
+          <li>先收口此前已累积的「正常行」</li>
+          <li>对这一小段：若允许自动缩字高，用 <code>getgoodcheight(..., 0.8)</code>，下限 <code>cheight × bili</code>（默认 0.5）</li>
+          <li>缩完仍不够，且允许 <code>sepSmallDim</code>：<code>currentLevel++</code>，沿 <code>ori.ydir</code>（或反向）偏移 <code>cheight × 1.2 × level</code> 错层</li>
+          <li>不允许错层：仍放在原基线，用缩小后的字高硬塞</li>
+        </ul>
+      </li>
+    </ol>
+
+    <div class="callout">
+      <strong>和 mission 的钉子：</strong>
+      Rust V2 把同一决策拆成 <code>small_dim.rs</code> + <code>expand_linear_dim_chain</code>。
+      对齐时看三件事：宽度公式、0.8/0.5 系数、错层步长 <code>1.2×cheight×level</code>。
+    </div>
+
+    <h2>技能：判会不会错层</h2>
+    <section class="quiz" aria-label="小测">
+      <h3>小测（3 题）</h3>
+
+      <div class="q">
+        <p><strong>Q1.</strong> <code>create()</code> 里先调用、再逐行建 DIM 的方法是？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：先可能整体缩字高，再 sepSmallDim 拆行。"
+          data-bad="">先 changeCheightAuto，再调用 sepSmallDim</button>
+        <button type="button" data-correct="0"
+          data-bad="顺序反了：先整体缩，再拆行。">先 sepSmallDim，再整体 changeCheightAuto</button>
+        <button type="button" data-correct="0"
+          data-bad="create 里明确调用了这两步。">两者都不调用，直接 new lindim</button>
+        <p class="feedback"></p>
+      </div>
+
+      <div class="q">
+        <p><strong>Q2.</strong> 某小段字宽 &gt; 段长，已缩到下限仍不够，且 <code>sepSmallDim=true</code>。结果是？</p>
+        <button type="button" data-correct="0"
+          data-bad="允许错层时会抬 level，不是删除。" data-bad="">删除该小段，不生成任何 DIM</button>
+        <button type="button" data-correct="1"
+          data-ok="对：level+1，沿 dimdir（ydir）偏移 1.2×cheight×level。"
+          data-bad="">错层偏移后再生成单独一行 DIM</button>
+        <button type="button" data-correct="0"
+          data-bad="那是 sepSmallDim 关闭时的行为。" data-bad="">留在原基线，强制用缩小字高硬塞</button>
+        <p class="feedback"></p>
+      </div>
+
+      <div class="q">
+        <p><strong>Q3.</strong> 调整焊落在某尺寸段内时，对宽度预算的影响是？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：拼上 +长度字串，并把加号字宽并入 len。"
+          data-bad="">增加加号文字，并把其宽度计入 len</button>
+        <button type="button" data-correct="0"
+          data-bad="会改宽度预算，不是只改描述字段。" data-bad="">只改 desc 字段，不影响宽度计算</button>
+        <button type="button" data-correct="0"
+          data-bad="加号焊是挤宽度，不是直接抬 dimtimes。" data-bad="">直接把 dimtimes 加一抬到外层</button>
+        <p class="feedback"></p>
+      </div>
+    </section>
+
+    <h2>建议的一手材料</h2>
+    <p>
+      打开 <code>sepSmallDim</code>，盯 <code>len gt dis</code> 分支与
+      <code>cheight * 1.2 * currentLevel</code>。
+      对照第 5 课：车道解决「离管多远」；本课解决「字在尺寸线上怎么排」。
+    </p>
+
+    <div class="ask-teacher">
+      可给「段长 / 数字 / 是否有 +调整焊 / 两个开关」让我帮你判：缩字、错层，还是硬塞。
+    </div>
+
+    <nav class="footer-nav">
+      <p>
+        <a href="0005-drawdim-dimtimes.html">← 第 5 课</a>
+        · <a href="../reference/lindim-smalldim-cheatsheet.html">lindim 速查</a>
+        · 下一课：<a href="0007-v2-alignment-checklist.html">V2 对照 checklist →</a>
+      </p>
+    </nav>
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

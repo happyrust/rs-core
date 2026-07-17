@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>第 41 课 · 手推近 180° 校正</title>
+  <link rel="stylesheet" href="../assets/lesson.css" />
+  <style>
+    .viz {
+      margin: 1.1rem 0 1.3rem;
+      padding: 0.85rem 0.95rem 0.7rem;
+      background: #fff;
+      border: 1px solid var(--rule);
+    }
+    .viz h3 { margin: 0 0 0.5rem; font-size: 0.95rem; }
+    .viz svg { width: 100%; height: auto; display: block; }
+    .viz figcaption { margin-top: 0.5rem; font-size: 0.8rem; color: var(--muted); }
+    .step {
+      border-left: 3px solid #007a8a;
+      padding: 0.4rem 0.75rem;
+      margin: 0.55rem 0;
+      background: #f7fafb;
+      font-size: 0.88rem;
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Lesson 0041 · Fixture 手推 III</p>
+    <h1>近 180°：进了弯头支，却不切开</h1>
+    <p class="lede">
+      fixture <code>near-180-correct-no-split</code>。
+      建模抖动让方向「看起来反了」——算法先<strong>校正 run_ldir</strong>，再继续，<strong>不新开段</strong>。
+    </p>
+
+    <div class="callout">
+      期望：<code>[["HEAD","T1","E_JITTER","T2","TAIL"]]</code>
+      · 阈值：adir∠memldir ≈ 179.99°、adir∠ldir ≈ 179°（见 fixture thresholds）
+    </div>
+
+    <figure class="viz">
+      <h3>图 · 抖动弯头夹在两根同向直管之间</h3>
+      <svg viewBox="0 0 720 200" xmlns="http://www.w3.org/2000/svg" role="img">
+        <line x1="40" y1="100" x2="300" y2="100" stroke="#0b1f33" stroke-width="12"/>
+        <text x="140" y="85" font-family="IBM Plex Mono, monospace" font-size="12" fill="#4a5d6e">T1 · +X</text>
+        <!-- jitter blob -->
+        <circle cx="320" cy="100" r="18" fill="none" stroke="#a33b16" stroke-width="3" stroke-dasharray="4 3"/>
+        <text x="320" y="105" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#a33b16">E_JITTER</text>
+        <text x="320" y="145" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#a33b16">adir≈−X</text>
+        <line x1="340" y1="100" x2="640" y2="100" stroke="#0b1f33" stroke-width="12"/>
+        <text x="460" y="85" font-family="IBM Plex Mono, monospace" font-size="12" fill="#4a5d6e">T2 · +X</text>
+        <line x1="50" y1="55" x2="630" y2="55" stroke="#1f6b4a" stroke-width="2.5"/>
+        <text x="280" y="45" font-family="IBM Plex Mono, monospace" font-size="12" fill="#1f6b4a">校正后仍 1 条 isoline</text>
+      </svg>
+      <figcaption>若误当成真拐弯切开，会多出碎段；近 180° 分支就是防这种假切。</figcaption>
+    </figure>
+
+    <h2>逐步手推</h2>
+    <div class="step"><strong>0.</strong> 段开：HEAD+T1，run_ldir = +X。</div>
+    <div class="step"><strong>1.</strong> 遇 E_JITTER：leave_dir 几乎 −X → 与 run 夹角 ≫ 0.01 → <strong>进入</strong>方向变化支。</div>
+    <div class="step"><strong>2. 分支 ① 近 180°</strong>：adir 与 memldir / 与 run 都接近 180°，且 apos 贴拐点 → <strong>校正</strong> run_ldir（翻回合理走向），把 E_JITTER <strong>append 进当前袋</strong>，不 bridge。</div>
+    <div class="step"><strong>3.</strong> T2 又是 +X，与校正后方向一致 → 继续同段 → TAIL。全程 1 行 allarr。</div>
+
+    <figure class="viz">
+      <h3>图 · 决策树里它停在哪</h3>
+      <svg viewBox="0 0 700 180" xmlns="http://www.w3.org/2000/svg" role="img">
+        <rect x="200" y="15" width="300" height="36" fill="#d4eef1" stroke="#007a8a"/>
+        <text x="350" y="38" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#007a8a">angle &gt; 0.01 → 进支</text>
+        <path d="M350 51 L350 70" stroke="#0b1f33"/>
+        <rect x="150" y="70" width="400" height="50" fill="#e5f3ec" stroke="#1f6b4a"/>
+        <text x="350" y="100" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="13" fill="#1f6b4a">① 近 180° → 改向 · 不切 ★</text>
+        <path d="M350 120 L350 140" stroke="#9aafbc" stroke-dasharray="4 3"/>
+        <text x="350" y="160" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="12" fill="#9aafbc">②③ 大切 / 强制切 —— 本案不到</text>
+      </svg>
+      <figcaption>和课 33 决策树对齐：近 180° 在「贴/桥接」之前拦截。</figcaption>
+    </figure>
+
+    <h2>和前面三案并排</h2>
+    <table style="width:100%;border-collapse:collapse;font-size:0.85rem;margin-bottom:1rem">
+      <tr style="background:#d4eef1">
+        <th style="border:1px solid #9aafbc;padding:0.4rem;text-align:left">id</th>
+        <th style="border:1px solid #9aafbc;padding:0.4rem;text-align:left">段数</th>
+        <th style="border:1px solid #9aafbc;padding:0.4rem;text-align:left">关键词</th>
+      </tr>
+      <tr>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">colinear-no-split</td>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">1</td>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">根本不进支</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">near-180-correct-no-split</td>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">1</td>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">进支但校正</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">toy / variant</td>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">2 / 3</td>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">真切 ± 贴</td>
+      </tr>
+    </table>
+
+    <section class="quiz">
+      <h3>小测</h3>
+      <div class="q">
+        <p><strong>Q1.</strong> 近 180° 案的 expect 段数？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：校正后仍 1 段。"
+          data-bad="">1</button>
+        <button type="button" data-correct="0"
+          data-bad="那是误切。" data-bad="">2</button>
+        <button type="button" data-correct="0"
+          data-bad="不是。" data-bad="">0</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q2.</strong> E_JITTER 会不会像 EA 那样双含？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：不 bridge，只出现一次。"
+          data-bad="">不会；只 append 一次</button>
+        <button type="button" data-correct="0"
+          data-bad="近 180° 不切。" data-bad="">会双含在两段边界</button>
+        <button type="button" data-correct="0"
+          data-bad="不是。" data-bad="">从 allarr 删除</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q3.</strong> colinear 与 near-180 同为 1 段，差别？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：前者不进支；后者进支后校正。"
+          data-bad="">是否进入方向变化支</button>
+        <button type="button" data-correct="0"
+          data-bad="段数一样。" data-bad="">段数不同</button>
+        <button type="button" data-correct="0"
+          data-bad="无关。" data-bad="">一个是支架一个是管</button>
+        <p class="feedback"></p>
+      </div>
+    </section>
+
+    <div class="ask-teacher">
+      下一课：强制切 &gt;100°。
+    </div>
+
+    <nav class="footer-nav">
+      <p>
+        <a href="0040-hand-push-colinear-variant.html">← 第 40 课</a>
+        · 下一课：<a href="0042-force-split-over-100.html">强制切 →</a>
+        · <a href="0015-near-180-correction.html">课 15</a>
+        · <a href="../fixtures/p1-split-isolines.json">fixture</a>
+        · <a href="../INDEX.md">目录</a>
+      </p>
+    </nav>
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>速查 · 邻段 Polar 占位</title>
+  <link rel="stylesheet" href="../assets/lesson.css" />
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Reference · polar neighbor</p>
+    <h1>邻段 / 隔段占位速查</h1>
+
+    <h2>开关</h2>
+    <p>仅 <code>usepolarsystem</code> 为真时走 <code>polarcyli</code>；否则互加 <code>isoUsedDir</code>。</p>
+
+    <h2>相邻（x &gt; 1）</h2>
+    <pre>pre → current : polarcyli(上一段 obstline, pre.pipedir.opposite, pre.od)
+current → pre : 对称；current 柱高 ≤ 1 则不加
+坏柱（径/高 ≈ 0）→ return false</pre>
+
+    <h2>隔一段（x &gt; 2）</h2>
+    <pre>angle(current.pipedir, isolines[x-2].pipedir) &gt; 160
+AND dis(line, line) &lt; od * 15
+→ 互加 polarcyli，直径 = od * 1.5</pre>
+
+    <p class="cite">源：<code>isobran.getisolines</code> 构造循环尾部</p>
+    <p class="footer-nav">
+      <a href="../lessons/0004-polar-neighbor-occupancy.html">← 第 4 课</a>
+    </p>
+  </main>
+</body>
+</html>

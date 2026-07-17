@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>第 22 课 · BRAN 尺寸标注总览</title>
+  <link rel="stylesheet" href="../assets/lesson.css" />
+  <style>
+    .viz {
+      margin: 1.1rem 0 1.35rem;
+      padding: 0.85rem 0.95rem 0.7rem;
+      background: #fff;
+      border: 1px solid var(--rule);
+    }
+    .viz h3 { margin: 0 0 0.5rem; font-size: 0.95rem; }
+    .viz svg { width: 100%; height: auto; display: block; }
+    .viz figcaption { margin-top: 0.5rem; font-size: 0.8rem; color: var(--muted); }
+    .legend {
+      display: flex; flex-wrap: wrap; gap: 0.5rem 1rem;
+      font-family: var(--mono); font-size: 0.72rem; color: var(--muted);
+      margin-bottom: 0.8rem;
+    }
+    .legend i {
+      display: inline-block; width: 0.75rem; height: 0.75rem;
+      margin-right: 0.3rem; vertical-align: -0.1rem;
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Lesson 0022 · BRAN 总览</p>
+    <h1>一支 BRAN 的尺寸标注长什么样？</h1>
+    <p class="lede">
+      把前面学的切段、公共端、车道，放回<strong>一整支管子</strong>上看。
+      先建立整图印象，再对照流程。
+    </p>
+
+    <div class="legend">
+      <span><i style="background:#0b1f33"></i>直管</span>
+      <span><i style="background:#007a8a"></i>弯头</span>
+      <span><i style="background:#a33b16"></i>直段尺寸</span>
+      <span><i style="background:#1f6b4a"></i>其它标注（示意）</span>
+      <span><i style="background:#c9a227"></i>公共端 E</span>
+    </div>
+
+    <figure class="viz">
+      <h3>图 1 · 典型 BRAN 标注鸟瞰（示意）</h3>
+      <svg viewBox="0 0 720 420" xmlns="http://www.w3.org/2000/svg" role="img">
+        <title>BRAN 标注总览</title>
+        <!-- pipe path: H then up then right -->
+        <line x1="80" y1="280" x2="320" y2="280" stroke="#0b1f33" stroke-width="14" stroke-linecap="round"/>
+        <path d="M320 280 Q 380 280 380 220" fill="none" stroke="#007a8a" stroke-width="14"/>
+        <line x1="380" y1="220" x2="380" y2="100" stroke="#0b1f33" stroke-width="14" stroke-linecap="round"/>
+        <path d="M380 100 Q 380 50 430 50" fill="none" stroke="#007a8a" stroke-width="14"/>
+        <line x1="430" y1="50" x2="620" y2="50" stroke="#0b1f33" stroke-width="14" stroke-linecap="round"/>
+
+        <!-- Es -->
+        <circle cx="350" cy="260" r="9" fill="#c9a227"/>
+        <text x="360" y="255" font-family="IBM Plex Mono, monospace" font-size="11" fill="#c9a227">E1</text>
+        <circle cx="390" cy="80" r="9" fill="#c9a227"/>
+        <text x="400" y="75" font-family="IBM Plex Mono, monospace" font-size="11" fill="#c9a227">E2</text>
+
+        <!-- DIM horizontal 1 -->
+        <line x1="100" y1="230" x2="300" y2="230" stroke="#a33b16" stroke-width="2.5"/>
+        <line x1="100" y1="224" x2="100" y2="236" stroke="#a33b16"/>
+        <line x1="300" y1="224" x2="300" y2="236" stroke="#a33b16"/>
+        <text x="160" y="220" font-family="IBM Plex Mono, monospace" font-size="13" fill="#a33b16">① 水平段长</text>
+
+        <!-- DIM vertical -->
+        <line x1="430" y1="210" x2="430" y2="110" stroke="#a33b16" stroke-width="2.5"/>
+        <line x1="424" y1="210" x2="436" y2="210" stroke="#a33b16"/>
+        <line x1="424" y1="110" x2="436" y2="110" stroke="#a33b16"/>
+        <text x="440" y="165" font-family="IBM Plex Mono, monospace" font-size="13" fill="#a33b16">② 竖直段长</text>
+
+        <!-- DIM horizontal 2 -->
+        <line x1="450" y1="20" x2="600" y2="20" stroke="#a33b16" stroke-width="2.5"/>
+        <line x1="450" y1="14" x2="450" y2="26" stroke="#a33b16"/>
+        <line x1="600" y1="14" x2="600" y2="26" stroke="#a33b16"/>
+        <text x="490" y="12" font-family="IBM Plex Mono, monospace" font-size="13" fill="#a33b16">③ 水平段长</text>
+
+        <!-- weld mark -->
+        <circle cx="200" cy="280" r="5" fill="#1f6b4a"/>
+        <line x1="200" y1="280" x2="200" y2="310" stroke="#1f6b4a" stroke-width="1.5"/>
+        <text x="175" y="328" font-family="IBM Plex Mono, monospace" font-size="11" fill="#1f6b4a">焊缝字</text>
+
+        <!-- tag near elbow -->
+        <rect x="280" y="320" width="70" height="24" rx="3" fill="#e5f3ec" stroke="#1f6b4a"/>
+        <text x="290" y="336" font-family="IBM Plex Mono, monospace" font-size="11" fill="#1f6b4a">弯头标签</text>
+
+        <!-- bran label -->
+        <text x="80" y="380" font-family="IBM Plex Sans, sans-serif" font-size="13" fill="#0b1f33">一支 BRAN ≈ 若干 isoline；每段主尺寸 + 可选焊缝/标签/坡度/材料…</text>
+        <text x="80" y="400" font-family="IBM Plex Sans, sans-serif" font-size="12" fill="#4a5d6e">①②③ 在 E1/E2 处对接 → 前面说的「公共端」</text>
+      </svg>
+      <figcaption>先认红色的直段尺寸；绿的是同流程里其它标注，本课仍聚焦尺寸。</figcaption>
+    </figure>
+
+    <figure class="viz">
+      <h3>图 2 · 从 BRAN 到尺寸线的流水线</h3>
+      <svg viewBox="0 0 720 160" xmlns="http://www.w3.org/2000/svg" role="img">
+        <rect x="10" y="40" width="100" height="70" rx="4" fill="#d4eef1" stroke="#007a8a"/>
+        <text x="35" y="70" font-family="IBM Plex Sans, sans-serif" font-size="13">BRAN</text>
+        <text x="25" y="92" font-family="IBM Plex Mono, monospace" font-size="10" fill="#4a5d6e">成员序列</text>
+        <text x="118" y="80" fill="#9aafbc" font-size="18">→</text>
+        <rect x="135" y="40" width="110" height="70" rx="4" fill="#d4eef1" stroke="#007a8a"/>
+        <text x="150" y="70" font-family="IBM Plex Sans, sans-serif" font-size="13">切 isoline</text>
+        <text x="145" y="92" font-family="IBM Plex Mono, monospace" font-size="10" fill="#4a5d6e">真切/贴/桥</text>
+        <text x="252" y="80" fill="#9aafbc" font-size="18">→</text>
+        <rect x="270" y="40" width="110" height="70" rx="4" fill="#d4eef1" stroke="#007a8a"/>
+        <text x="290" y="70" font-family="IBM Plex Sans, sans-serif" font-size="13">归 objects</text>
+        <text x="285" y="92" font-family="IBM Plex Mono, monospace" font-size="10" fill="#4a5d6e">含 leg</text>
+        <text x="388" y="80" fill="#9aafbc" font-size="18">→</text>
+        <rect x="405" y="40" width="110" height="70" rx="4" fill="#d4eef1" stroke="#007a8a"/>
+        <text x="425" y="70" font-family="IBM Plex Sans, sans-serif" font-size="13">选方向</text>
+        <text x="415" y="92" font-family="IBM Plex Mono, monospace" font-size="10" fill="#4a5d6e">dimdir 车道</text>
+        <text x="522" y="80" fill="#9aafbc" font-size="18">→</text>
+        <rect x="540" y="40" width="160" height="70" rx="4" fill="#e5f3ec" stroke="#1f6b4a"/>
+        <text x="575" y="70" font-family="IBM Plex Sans, sans-serif" font-size="13">lindim 上图</text>
+        <text x="560" y="92" font-family="IBM Plex Mono, monospace" font-size="10" fill="#4a5d6e">数字=端点距</text>
+      </svg>
+      <figcaption>你已学的前半段（切/桥/贴/腿）都在箭头左侧；尺寸「长什么样」在最右侧。</figcaption>
+    </figure>
+
+    <figure class="viz">
+      <h3>图 3 · 同一段上可能有多层尺寸（dimtimes）</h3>
+      <svg viewBox="0 0 720 200" xmlns="http://www.w3.org/2000/svg" role="img">
+        <line x1="80" y1="120" x2="600" y2="120" stroke="#0b1f33" stroke-width="14" stroke-linecap="round"/>
+        <!-- atta ticks -->
+        <line x1="220" y1="112" x2="220" y2="128" stroke="#007a8a" stroke-width="3"/>
+        <line x1="400" y1="112" x2="400" y2="128" stroke="#007a8a" stroke-width="3"/>
+        <text x="200" y="150" font-family="IBM Plex Mono, monospace" font-size="11" fill="#007a8a">ATTA</text>
+        <text x="380" y="150" font-family="IBM Plex Mono, monospace" font-size="11" fill="#007a8a">ATTA</text>
+        <!-- inner dims -->
+        <line x1="100" y1="85" x2="210" y2="85" stroke="#a33b16" stroke-width="2"/>
+        <line x1="230" y1="85" x2="390" y2="85" stroke="#a33b16" stroke-width="2"/>
+        <line x1="410" y1="85" x2="560" y2="85" stroke="#a33b16" stroke-width="2"/>
+        <text x="100" y="75" font-family="IBM Plex Mono, monospace" font-size="11" fill="#a33b16">子尺寸 dimtimes=1（靠管）</text>
+        <!-- outer overall -->
+        <line x1="100" y1="50" x2="560" y2="50" stroke="#a33b16" stroke-width="2.5"/>
+        <text x="250" y="40" font-family="IBM Plex Mono, monospace" font-size="12" fill="#a33b16">主尺寸 dimtimes=2（抬一层）</text>
+      </svg>
+      <figcaption>
+        有 ATTA 子尺寸时 <code>twoormoredims</code>：内侧分段量，外侧总长抬高——同一 isoline、同一套 dimdir，只是车道不同（课 5）。
+      </figcaption>
+    </figure>
+
+    <h2>这张总图里，你已会的关键词</h2>
+    <ul>
+      <li><strong>isoline</strong>：一段直管尺子的轨道（图 1 的①②③）</li>
+      <li><strong>E1/E2</strong>：弯头公共端，让相邻尺寸数字接得上</li>
+      <li><strong>mems</strong>：这段由哪些构件组成（弯头双含）</li>
+      <li><strong>dimtimes</strong>：同一轨道上第几层尺寸（图 3）</li>
+    </ul>
+
+    <section class="quiz">
+      <h3>看图小测</h3>
+      <div class="q">
+        <p><strong>Q1.</strong> 图 1 中①②③ 主要是什么？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：各 isoline 的直段长度尺寸。"
+          data-bad="">各直段的长度尺寸</button>
+        <button type="button" data-correct="0"
+          data-bad="弯头角度是标签类，不是这三条主尺寸。" data-bad="">弯头角度标注</button>
+        <button type="button" data-correct="0"
+          data-bad="不是。" data-bad="">仅材料汇总表</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q2.</strong> 图 3 抬高的那条主尺寸，和内侧子尺寸的关系是？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：同段同方向，不同车道（dimtimes）。"
+          data-bad="">同段同方向，只是车道更高</button>
+        <button type="button" data-correct="0"
+          data-bad="不是换到另一条 isoline。" data-bad="">属于完全不同的 isoline</button>
+        <button type="button" data-correct="0"
+          data-bad="不是删除。" data-bad="">表示删除所有子尺寸</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q3.</strong> 图 2 流水线里，「数字印多少」最终取决于？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：lindim 端点距离。"
+          data-bad="">lindim 两端点的距离</button>
+        <button type="button" data-correct="0"
+          data-bad="切段决定轨道，不直接等于毫米数。" data-bad="">只取决于切了几段</button>
+        <button type="button" data-correct="0"
+          data-bad="无关。" data-bad="">只取决于 BRAN 名字长短</button>
+        <p class="feedback"></p>
+      </div>
+    </section>
+
+    <div class="ask-teacher">
+      下一步可继续配图讲：坡度尺寸、焊缝标注、或「从一张成品图反推有几段」。你点方向即可。
+    </div>
+
+    <nav class="footer-nav">
+      <p>
+        <a href="0021-when-shared-e-breaks.html">← 第 21 课</a>
+        · 下一课：<a href="0023-slope-dim-visual.html">坡度与斜管尺寸 →</a>
+      </p>
+    </nav>
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

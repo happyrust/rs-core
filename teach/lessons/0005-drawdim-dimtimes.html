@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>第 5 课 · drawdim 与 dimtimes</title>
+  <link rel="stylesheet" href="../assets/lesson.css" />
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Lesson 0005 · 尺寸真正落地</p>
+    <h1><code>drawdim</code> 与 <code>dimtimes</code></h1>
+    <p class="lede">
+      切段、归段、邻段占位都就绪后，Polar 路径上尺寸由 <code>isoline.drawdim(isoDim, dimtimes)</code> 落下。
+      本课钉住：<strong>谁决定 dimtimes</strong>，以及它如何变成径向偏移并生成 <code>lindim</code>。
+    </p>
+
+    <div class="callout">
+      <strong>本课只钉一件事：</strong>默认 Polar 路径下，从 <code>drawOneObjectNew</code> 到 <code>lindim</code> 的尺寸参数链。
+      旧路径 <code>isoDim.drawDim</code> 仅作对照一句。
+    </div>
+
+    <h2>调用入口</h2>
+    <pre>isoline.draw()
+  → drawOneObject / drawOneObjectNew
+       ISODIM:
+         mainDim + twoormoredims → drawdim(obj, 2)
+         mainDim 且单层        → drawdim(obj, 1)
+         非 mainDim（ATTA 子尺寸）→ drawdim(obj, 1)</pre>
+    <p class="cite">
+      源：
+      <a href="../../MBD/markpipe/object/isoline.pmlobj"><code>drawOneObjectNew</code></a>
+      ·
+      <a href="../../MBD/markpipe/object/isoline.pmlobj"><code>drawdim</code></a>
+      （约 1836–1962、4174–4192 行）
+    </p>
+
+    <h2>知识：<code>twoormoredims</code> 从哪来</h2>
+    <p>
+      <code>getAttaDims</code>：若拆出非空的 ATTA 子尺寸数组，则 <code>twoormoredims = true</code>。
+      含义：这段上除了主尺寸，还有挂在 ATTA 上的分段尺寸 → 主尺寸要抬到<strong>第二层</strong>（dimtimes=2），把内侧留给子尺寸（dimtimes=1）。
+    </p>
+
+    <h2>知识：<code>drawdim</code> 五步</h2>
+    <ol>
+      <li><strong>轴向范围</strong>：把尺寸点列投影到管轴，得到 <code>disarr[1..2]</code>；跨度 &lt; 1 → <code>return</code>（抑制）。</li>
+      <li><strong>径向车道</strong>：
+        <pre>radius_lo = od + cheight * 1.2 * (dimtimes - 1)
+radius_hi = radius_lo + cheight</pre>
+        dimtimes=1 → 贴管皮一层；=2 → 再往外抬约 <code>1.2×cheight</code>。
+      </li>
+      <li><strong>斜管辅助</strong>：若非「多层且正画内层」（<code>not (twoormoredims and dimtimes==1)</code>），先 <code>dimOneMemSlope</code>。</li>
+      <li><strong>Polar 选位</strong>：<code>getBestPosAndOri(dis, angle, radius, needs…)</code> → <code>(dimpos, textori)</code>。邻段 <code>polarcyli</code>（第 4 课）在此生效。</li>
+      <li><strong>建 lindim</strong>：
+        <ul>
+          <li><code>maxslope</code> 已设 → 普通尺寸，把整段 <code>objects</code> 传入（可含调整焊加号）</li>
+          <li>否则 → 弯头 leg 尺寸；若有 <code>elboisolegadlongth</code>，造 fake <code>isoadjustweld</code> 再传入</li>
+        </ul>
+        随后 <code>polarsystem.add(lindim.createNames)</code>；非仪表管时，外层还可画流向 / TSPEC。
+      </li>
+    </ol>
+
+    <div class="callout">
+      <strong>和旧路径对照一句：</strong>
+      旧 <code>isoDim.drawDim</code> 用同一公式
+      <code>offset = od + cheight * 1.2 * (dimtimes - 1)</code>
+      直接偏移，不经 Polar。V2 默认公式不同（见 mission 资源里的 branch_calculator 注释）。
+    </div>
+
+    <h2>技能：判 dimtimes 与偏移</h2>
+    <section class="quiz" aria-label="小测">
+      <h3>小测（3 题）</h3>
+
+      <div class="q">
+        <p><strong>Q1.</strong> 某 isoline 有主尺寸且 <code>twoormoredims=true</code>。主尺寸调用时 dimtimes 是？</p>
+        <button type="button" data-correct="0"
+          data-bad="有 ATTA 子尺寸时主尺寸抬到第 2 层。">主尺寸使用 dimtimes 等于一</button>
+        <button type="button" data-correct="1"
+          data-ok="对：mainDim + twoormoredims → drawdim(..., 2)。"
+          data-bad="">主尺寸使用 dimtimes 等于二</button>
+        <button type="button" data-correct="0"
+          data-bad="不是用 firstdimtimes=0.5；入口写死 1 或 2。">主尺寸使用 dimtimes 等于零点五</button>
+        <p class="feedback"></p>
+      </div>
+
+      <div class="q">
+        <p><strong>Q2.</strong> dimtimes=2、od=200、cheight=100 时，径向车道内半径（公式）是？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：200 + 100×1.2×(2-1) = 320。"
+          data-bad="">内半径等于三百二十</button>
+        <button type="button" data-correct="0"
+          data-bad="漏了 1.2×cheight 的抬升。" data-bad="">内半径等于二百整</button>
+        <button type="button" data-correct="0"
+          data-bad="那是 V2 默认思路，不是本 PML 公式。" data-bad="">内半径等于 od/2 再加 cheight</button>
+        <p class="feedback"></p>
+      </div>
+
+      <div class="q">
+        <p><strong>Q3.</strong> 多层场景画内层尺寸（twoormoredims 且 dimtimes=1）时，会跳过什么？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：跳过 dimOneMemSlope，且非仪表管时也不在此层画流向。"
+          data-bad="">跳过斜管辅助线，也不在该层画流向</button>
+        <button type="button" data-correct="0"
+          data-bad="仍会走 getBestPosAndOri；跳过的是 slope/流向。" data-bad="">跳过 Polar 选位，直接写死 dimpos</button>
+        <button type="button" data-correct="0"
+          data-bad="lindim 仍会创建。" data-bad="">跳过 lindim 创建，只登记 usedDirs</button>
+        <p class="feedback"></p>
+      </div>
+    </section>
+
+    <h2>建议的一手材料</h2>
+    <p>
+      读 <code>drawdim</code> 里 <code>radiusarr</code> 与两处
+      <code>not(!this.twoormoredims and !dimtimes eq 1)</code>。
+      对照第 2 课只有主尺寸的玩具 bran：应为 dimtimes=1，内半径 = od。
+    </p>
+
+    <div class="ask-teacher">
+      可把「是否有 ATTA 子尺寸 + od/cheight」发我，我帮你算应走哪条车道。
+    </div>
+
+    <nav class="footer-nav">
+      <p>
+        <a href="0004-polar-neighbor-occupancy.html">← 第 4 课</a>
+        · <a href="../reference/drawdim-dimtimes-cheatsheet.html">drawdim 速查</a>
+        · 下一课：<a href="0006-lindim-smalldim-plus.html">lindim 小尺寸与加号焊 →</a>
+      </p>
+    </nav>
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

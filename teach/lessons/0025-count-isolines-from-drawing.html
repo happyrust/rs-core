@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>第 25 课 · 从成品图反推 isoline</title>
+  <link rel="stylesheet" href="../assets/lesson.css" />
+  <style>
+    .viz {
+      margin: 1.1rem 0 1.2rem;
+      padding: 0.85rem 0.95rem 0.7rem;
+      background: #fff;
+      border: 1px solid var(--rule);
+    }
+    .viz h3 { margin: 0 0 0.5rem; font-size: 0.95rem; }
+    .viz svg { width: 100%; height: auto; display: block; }
+    .viz figcaption { margin-top: 0.5rem; font-size: 0.8rem; color: var(--muted); }
+    .hint {
+      font-size: 0.88rem;
+      color: var(--muted);
+      margin: 0 0 0.75rem;
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Lesson 0025 · 练眼力</p>
+    <h1>从成品标注图反推：有几条 isoline？</h1>
+    <p class="lede">
+      给你「画好了」的尺寸图，倒推算法心里有几条直段轨道。
+      口诀：<strong>有几个主要方向的直段尺寸簇，往往就有几条 isoline</strong>（拐弯处分界）。
+    </p>
+
+    <div class="callout">
+      <strong>怎么数：</strong>
+      1）找直段长度尺寸（红）——不要把焊缝字、标签算进去；
+      2）同一方向、首尾在公共端对接的，算不同段；
+      3）弯头处尺寸方向一变，通常 +1 段。
+    </div>
+
+    <p class="hint">先自己数，再点选项。每题只有一个正确答案。</p>
+
+    <!-- CASE 1 -->
+    <figure class="viz">
+      <h3>题图 A</h3>
+      <svg viewBox="0 0 640 200" xmlns="http://www.w3.org/2000/svg" role="img">
+        <line x1="60" y1="120" x2="560" y2="120" stroke="#0b1f33" stroke-width="12" stroke-linecap="round"/>
+        <line x1="80" y1="80" x2="520" y2="80" stroke="#a33b16" stroke-width="2.5"/>
+        <text x="250" y="70" font-family="IBM Plex Mono, monospace" font-size="13" fill="#a33b16">一段水平尺寸</text>
+        <circle cx="200" cy="120" r="5" fill="#1f6b4a"/>
+        <line x1="200" y1="120" x2="200" y2="160" stroke="#1f6b4a"/>
+        <text x="175" y="178" font-family="IBM Plex Mono, monospace" font-size="11" fill="#1f6b4a">焊缝</text>
+      </svg>
+    </figure>
+
+    <section class="quiz">
+      <div class="q">
+        <p><strong>Q1.</strong> 题图 A 最可能有几条 isoline？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：一根直管 + 一条水平尺寸 → 1 段。焊缝不算新段。"
+          data-bad="">1 条</button>
+        <button type="button" data-correct="0"
+          data-bad="焊缝不新增 isoline。" data-bad="">2 条</button>
+        <button type="button" data-correct="0"
+          data-bad="太多了。" data-bad="">3 条</button>
+        <p class="feedback"></p>
+      </div>
+    </section>
+
+    <!-- CASE 2 -->
+    <figure class="viz">
+      <h3>题图 B</h3>
+      <svg viewBox="0 0 640 240" xmlns="http://www.w3.org/2000/svg" role="img">
+        <line x1="60" y1="180" x2="300" y2="180" stroke="#0b1f33" stroke-width="12"/>
+        <path d="M300 180 Q 360 180 360 120" fill="none" stroke="#007a8a" stroke-width="12"/>
+        <line x1="360" y1="120" x2="360" y2="40" stroke="#0b1f33" stroke-width="12"/>
+        <circle cx="330" cy="160" r="8" fill="#c9a227"/>
+        <line x1="80" y1="140" x2="280" y2="140" stroke="#a33b16" stroke-width="2.5"/>
+        <text x="140" y="130" font-family="IBM Plex Mono, monospace" font-size="12" fill="#a33b16">水平尺寸</text>
+        <line x1="410" y1="110" x2="410" y2="50" stroke="#a33b16" stroke-width="2.5"/>
+        <text x="420" y="85" font-family="IBM Plex Mono, monospace" font-size="12" fill="#a33b16">竖直尺寸</text>
+      </svg>
+    </figure>
+
+    <section class="quiz">
+      <div class="q">
+        <p><strong>Q2.</strong> 题图 B 最可能有几条 isoline？</p>
+        <button type="button" data-correct="0"
+          data-bad="方向在弯头处变了，应是两段。" data-bad="">1 条</button>
+        <button type="button" data-correct="1"
+          data-ok="对：水平一段 + 竖直一段，在 E 对接 → 2 条。"
+          data-bad="">2 条</button>
+        <button type="button" data-correct="0"
+          data-bad="只有一个弯，通常两段不是三。" data-bad="">3 条</button>
+        <p class="feedback"></p>
+      </div>
+    </section>
+
+    <!-- CASE 3 -->
+    <figure class="viz">
+      <h3>题图 C（含 ATTA 子尺寸）</h3>
+      <svg viewBox="0 0 640 220" xmlns="http://www.w3.org/2000/svg" role="img">
+        <line x1="60" y1="140" x2="560" y2="140" stroke="#0b1f33" stroke-width="12"/>
+        <line x1="200" y1="132" x2="200" y2="148" stroke="#007a8a" stroke-width="3"/>
+        <line x1="380" y1="132" x2="380" y2="148" stroke="#007a8a" stroke-width="3"/>
+        <line x1="80" y1="100" x2="190" y2="100" stroke="#a33b16" stroke-width="2"/>
+        <line x1="210" y1="100" x2="370" y2="100" stroke="#a33b16" stroke-width="2"/>
+        <line x1="390" y1="100" x2="520" y2="100" stroke="#a33b16" stroke-width="2"/>
+        <line x1="80" y1="65" x2="520" y2="65" stroke="#a33b16" stroke-width="2.5"/>
+        <text x="250" y="55" font-family="IBM Plex Mono, monospace" font-size="12" fill="#a33b16">主尺寸抬高</text>
+        <text x="80" y="190" font-family="IBM Plex Sans, sans-serif" font-size="12" fill="#4a5d6e">内侧多条 + 外侧一条，仍是同一方向</text>
+      </svg>
+    </figure>
+
+    <section class="quiz">
+      <div class="q">
+        <p><strong>Q3.</strong> 题图 C 最可能有几条 isoline？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：同一方向多层尺寸 = 仍 1 条 isoline（dimtimes/子尺寸）。"
+          data-bad="">1 条</button>
+        <button type="button" data-correct="0"
+          data-bad="内侧三条不是三段 isoline。" data-bad="">3 条</button>
+        <button type="button" data-correct="0"
+          data-bad="主+子也不是 4 段。" data-bad="">4 条</button>
+        <p class="feedback"></p>
+      </div>
+    </section>
+
+    <!-- CASE 4 -->
+    <figure class="viz">
+      <h3>题图 D（两弯）</h3>
+      <svg viewBox="0 0 640 260" xmlns="http://www.w3.org/2000/svg" role="img">
+        <line x1="40" y1="200" x2="200" y2="200" stroke="#0b1f33" stroke-width="10"/>
+        <path d="M200 200 Q 250 200 250 150" fill="none" stroke="#007a8a" stroke-width="10"/>
+        <line x1="250" y1="150" x2="250" y2="80" stroke="#0b1f33" stroke-width="10"/>
+        <path d="M250 80 Q 250 40 300 40" fill="none" stroke="#007a8a" stroke-width="10"/>
+        <line x1="300" y1="40" x2="500" y2="40" stroke="#0b1f33" stroke-width="10"/>
+        <circle cx="225" cy="185" r="6" fill="#c9a227"/>
+        <circle cx="265" cy="65" r="6" fill="#c9a227"/>
+        <line x1="50" y1="170" x2="190" y2="170" stroke="#a33b16" stroke-width="2"/>
+        <line x1="290" y1="140" x2="290" y2="90" stroke="#a33b16" stroke-width="2"/>
+        <line x1="310" y1="20" x2="480" y2="20" stroke="#a33b16" stroke-width="2"/>
+      </svg>
+    </figure>
+
+    <section class="quiz">
+      <div class="q">
+        <p><strong>Q4.</strong> 题图 D 最可能有几条 isoline？</p>
+        <button type="button" data-correct="0"
+          data-bad="两弯三直段。" data-bad="">2 条</button>
+        <button type="button" data-correct="1"
+          data-ok="对：水平→竖直→水平，三截直段尺寸 → 3 条。"
+          data-bad="">3 条</button>
+        <button type="button" data-correct="0"
+          data-bad="弯头本身一般不单独成 isoline。" data-bad="">5 条（含两个弯头各一段）</button>
+        <p class="feedback"></p>
+      </div>
+    </section>
+
+    <div class="ask-teacher">
+      数错了没关系：说出你数到的段，以及哪里当成了分界，我帮你纠。
+    </div>
+
+    <nav class="footer-nav">
+      <p>
+        <a href="0024-weld-mark-visual.html">← 第 24 课</a>
+        · 下一课：<a href="0026-count-isolines-harder.html">反推加难题 →</a>
+      </p>
+    </nav>
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

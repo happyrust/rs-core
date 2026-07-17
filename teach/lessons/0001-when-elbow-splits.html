@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>第 1 课 · 弯头何时切开</title>
+  <link rel="stylesheet" href="../assets/lesson.css" />
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Lesson 0001 · Mission: 对齐 V2 isoline 切段</p>
+    <h1>弯头何时切开？</h1>
+    <p class="lede">
+      学完本课，你应能回答：面对一个方向变了的构件，PML 是「改方向」「切开」还是「跳过」——而不需要先看 <code>type</code> 是不是 ELBO。
+    </p>
+
+    <div class="callout">
+      <strong>本课只钉一件事：</strong>进入 <code>dir.angle(ldir) &gt; 0.01</code> 之后的三条岔路。
+      不讲 PCOM、不讲 Polar、不讲 <code>lindim</code>。
+    </div>
+
+    <h2>你先要有的画面</h2>
+    <p>
+      <code>getisolines</code> 边扫 <code>branMems</code>，边往当前袋 <code>onearr</code> 塞成员。
+      「切开」= 把当前袋推进 <code>allarr</code>，再开一个新袋，<strong>且弯头同时出现在两个袋里</strong>（桥接）。
+    </p>
+
+    <figure class="figure" aria-label="弯头桥接示意">
+      <svg viewBox="0 0 520 140" xmlns="http://www.w3.org/2000/svg" role="img">
+        <title>ELBO 跨两段</title>
+        <defs>
+          <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 Z" fill="#007a8a"/>
+          </marker>
+        </defs>
+        <line x1="40" y1="90" x2="200" y2="90" stroke="#0b1f33" stroke-width="3"/>
+        <path d="M200 90 Q 240 90 240 50" fill="none" stroke="#007a8a" stroke-width="3"/>
+        <line x1="240" y1="50" x2="240" y2="20" stroke="#0b1f33" stroke-width="3" marker-end="url(#arr)"/>
+        <circle cx="220" cy="78" r="7" fill="#007a8a"/>
+        <text x="40" y="118" font-family="IBM Plex Mono, monospace" font-size="12" fill="#4a5d6e">isoline A … + ELBO</text>
+        <text x="250" y="35" font-family="IBM Plex Mono, monospace" font-size="12" fill="#4a5d6e">ELBO + … isoline B</text>
+        <text x="200" y="68" font-family="IBM Plex Mono, monospace" font-size="11" fill="#007a8a">pos</text>
+      </svg>
+      <figcaption>注释原意：弯头是上一段的最后一个成员，也是下一段的第一个成员。</figcaption>
+    </figure>
+
+    <h2>知识：三条岔路</h2>
+    <p class="cite">
+      主源：
+      <a href="../../MBD/markpipe/object/isobran.pmlobj"><code>isobran.pmlobj</code> · <code>getisolines</code></a>
+      （约 1573–1630 行）。综述：
+      <a href="../../MBD/开发文档/BRAN尺寸标注算法全景文档.md">BRAN 全景 §2.2</a>。
+    </p>
+
+    <h3>① 近 180° 校正 → 不切</h3>
+    <p>
+      若 <code>adir</code> 与 <code>memldir</code> 几乎反向，且与上一段 <code>ldir</code> 也几乎反向，
+      同时 <code>apos</code> 贴着上一拐点：只把上一段离开方向改成 <code>adir.opposite()</code>，然后 <code>skip</code>。
+      <em>这是建模抖动修正，不是弯。</em>
+    </p>
+
+    <h3>② 主切条件 → 可能切</h3>
+    <pre>apos.distance(lpos) &gt; 1  OR  dir.angle(ldir) &gt; 10</pre>
+    <ul>
+      <li><code>lpos</code> 与上一拐点距离 &lt; 0.1：<strong>只更新</strong> <code>ldirs[last]</code>，不开新段（弯头几乎没有前伸）。</li>
+      <li>否则：在 <code>pos of mem</code> 切开；旧袋收口（含本弯头），新袋以本弯头开头。</li>
+    </ul>
+
+    <h3>③ 2024-12 兜底 → 强制再切</h3>
+    <p>
+      若 <code>adir.angle(memldir) &gt; 100</code>，再执行一次与「主切·否则」相同的收口/新开。
+      用来修「弯管处没有拆成 isoline」；可能与 ② 叠切——读日志时要心里有数。
+    </p>
+
+    <div class="callout">
+      <strong>和 V2 的钉子：</strong>
+      V2 <code>extract_isolines</code> 用方向角阈值切段；PML 还要看 <code>apos/lpos</code> 与桥接语义。
+      大转角弯头在 V2 里更容易被并成一段——这正是你 mission 要对齐的点。
+    </div>
+
+    <h2>技能：判一判</h2>
+    <p>先不翻源码，凭决策树选答案。点选后立刻给反馈。</p>
+
+    <section class="quiz" aria-label="小测">
+      <h3>小测（3 题）</h3>
+
+      <div class="q">
+        <p><strong>Q1.</strong> 构件 <code>dir∠ldir = 25°</code>，且 <code>apos</code> 与 <code>lpos</code> 相距 80mm，<code>lpos</code> 离上一拐点 50mm。会怎样？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：满足主切，且 lpos 不贴拐点 → 桥接切开。"
+          data-bad="">在构件 pos 收口上一段，再以该件开新段</button>
+        <button type="button" data-correct="0"
+          data-bad="主切条件已满足，且 lpos 不贴拐点，不会只改方向。">只改上一段 ldirs，并不新开任何 isoline</button>
+        <button type="button" data-correct="0"
+          data-bad="近 180° 校正要 adir/memldir 几乎反向；本题是普通转角。">按近一百八十度校正，skip 且完全不切</button>
+        <p class="feedback"></p>
+      </div>
+
+      <div class="q">
+        <p><strong>Q2.</strong> PML 判定要不要按弯头切开时，最可靠的第一依据是？</p>
+        <button type="button" data-correct="0"
+          data-bad="活跃代码几乎不写 type eq ELBO；旧 BEND 分支已注释。">先看 type 是不是写成 ELBO 或 BEND</button>
+        <button type="button" data-correct="1"
+          data-ok="对：先 dir.angle(ldir)&gt;0.01 进门，再看 apos/lpos 与角度。"
+          data-bad="">先看离开方向是否变化，再看 apos 几何</button>
+        <button type="button" data-correct="0"
+          data-bad="special element 只覆盖特定 PCOM，不是弯头主路径。">先调用 ispipespecialelement 再决定</button>
+        <p class="feedback"></p>
+      </div>
+
+      <div class="q">
+        <p><strong>Q3.</strong> 弯头切开后，该 ELBO 在成员数组里的位置是？</p>
+        <button type="button" data-correct="0"
+          data-bad="注释写明它同时是上一段末与下一段首。">仅作为上一段的最后一个成员出现</button>
+        <button type="button" data-correct="0"
+          data-bad="注释写明它同时是上一段末与下一段首。">仅作为下一段的第一个成员出现</button>
+        <button type="button" data-correct="1"
+          data-ok="对：桥接——上一段 last，下一段 first。"
+          data-bad="">同时作为上一段末成员与下一段首成员</button>
+        <p class="feedback"></p>
+      </div>
+    </section>
+
+    <h2>建议的一手材料</h2>
+    <p>
+      打开源码，从 <code>elseif !dir.angle(!ldir) gt 0.01 then</code> 读到
+      <code>adir.angle(!memldir) gt 100</code> 那一块（约 40 行），对着本课三条岔路标注释。
+      这是本课的一手材料；文档只作索引。
+    </p>
+
+    <div class="ask-teacher">
+      有不清楚的，直接在 PChat 里问我（你的老师）。可以说「Q2 我想不通」或贴一段 branMems 让我陪你手推。
+    </div>
+
+    <nav class="footer-nav">
+      <p>
+        速查：<a href="../reference/getisolines-bend-cheatsheet.html">弯头切段速查表</a>
+        · 下一课：<a href="0002-hand-push-allarr.html">手推 allarr →</a>
+      </p>
+    </nav>
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

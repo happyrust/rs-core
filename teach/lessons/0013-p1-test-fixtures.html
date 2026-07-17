@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>第 13 课 · P1 单测 fixture</title>
+  <link rel="stylesheet" href="../assets/lesson.css" />
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Lesson 0013 · P1 测试输入</p>
+    <h1>P1 单测矩阵与 fixture JSON</h1>
+    <p class="lede">
+      填表之后，把期望切段写成<strong>可机读用例</strong>。
+      本课交付一份草稿 fixture（仍不接入 <code>cargo test</code>），供日后 P1 实现直接引用。
+    </p>
+
+    <div class="callout">
+      <strong>文件：</strong>
+      <a href="../fixtures/p1-split-isolines.json"><code>teach/fixtures/p1-split-isolines.json</code></a>
+      · 阈值表与 PML 课 1 对齐（0.01° / 10° / 1mm / 0.1mm / 100°）。
+    </div>
+
+    <h2>最小矩阵（MVP 必须绿）</h2>
+    <ol>
+      <li><code>toy-bridge-and-stick</code> — EA 桥接 2 段；EB 贴拐点不切</li>
+      <li><code>colinear-no-split</code> — 同向不切</li>
+      <li><code>variant-eb-no-stick</code> — EB 不贴拐点 → 3 段（课 2 作业变体）</li>
+    </ol>
+    <p>可选后补：近 180° 校正 skip；缺 leave_dir → issue；通过件 ATTA 挂袋。</p>
+
+    <h2>断言长什么样</h2>
+    <pre>let got = split_isolines_pml(&case.members);
+assert_eq!(refnos(&got), case.expect_allarr);
+// 桥接：got[0].last() == got[1].first() == "EA"</pre>
+
+    <h2>和 AGENTS 的约定</h2>
+    <ul>
+      <li>实现阶段：优先 <code>cargo check</code>；本仓库默认不跑 test，除非你明确要求</li>
+      <li>教学 fixture 放 <code>teach/fixtures/</code>，正式单测可再迁到 <code>src/mbd/...</code></li>
+      <li>失败路径要能产出 issue/suppress 文案，不静默</li>
+    </ul>
+
+    <h2>技能：读 fixture</h2>
+    <section class="quiz" aria-label="小测">
+      <h3>小测（3 题）</h3>
+
+      <div class="q">
+        <p><strong>Q1.</strong> <code>toy-bridge-and-stick</code> 期望几段？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：与课 2 终局一致，两段。"
+          data-bad="">两段</button>
+        <button type="button" data-correct="0"
+          data-bad="EB 贴拐点不切，不是三段。" data-bad="">三段</button>
+        <button type="button" data-correct="0"
+          data-bad="EA 会切开。" data-bad="">一段</button>
+        <p class="feedback"></p>
+      </div>
+
+      <div class="q">
+        <p><strong>Q2.</strong> fixture 里 PML 主切角阈值写的是？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：main_split_angle_deg = 10。"
+          data-bad="">十度</button>
+        <button type="button" data-correct="0"
+          data-bad="那是 V2 extract 同向阈值，不是本 fixture 的 PML 主切。" data-bad="">五度</button>
+        <button type="button" data-correct="0"
+          data-bad="0.01 是方向变化入口，不是主切 10°。" data-bad="">零点零一度</button>
+        <p class="feedback"></p>
+      </div>
+
+      <div class="q">
+        <p><strong>Q3.</strong> 实现 P1 时，本 JSON 当前角色是？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：教学草稿，尚未绑 cargo test。"
+          data-bad="">教学草稿，供日后接入单测</button>
+        <button type="button" data-correct="0"
+          data-bad="还未接线到正式测试目标。" data-bad="">已经是 CI 强制门禁用例</button>
+        <button type="button" data-correct="0"
+          data-bad="它描述切段，不是前端契约。" data-bad="">前端 MbdV2PipeData 的线上 schema</button>
+        <p class="feedback"></p>
+      </div>
+    </section>
+
+    <div class="ask-teacher">
+      可说「把 variant-eb-no-stick 补全 members」或「开始把 split_isolines_pml 写进 src/mbd」。
+    </div>
+
+    <nav class="footer-nav">
+      <p>
+        <a href="0012-fill-exact-table.html">← 第 12 课</a>
+        · 下一课：<a href="0014-split-pseudocode.html">split 伪代码 →</a>
+      </p>
+    </nav>
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

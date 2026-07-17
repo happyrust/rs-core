@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>第 15 课 · 近 180° 校正</title>
+  <link rel="stylesheet" href="../assets/lesson.css" />
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Lesson 0015 · 弯头岔路 ①</p>
+    <h1>近 180° 校正：改方向，不切开</h1>
+    <p class="lede">
+      课 1 的岔路①常被忽略。本课单独钉它：建模抖动导致「看起来像变向」，
+      实际应用 <code>adir.opposite()</code> 修正上一段离开方向，然后 <code>continue</code>（不切）。
+    </p>
+
+    <div class="callout">
+      <strong>触发条件（须同时）：</strong><br />
+      <code>adir∠memldir &gt; 179.99°</code> 且
+      <code>adir∠run_ldir &gt; 179°</code> 且
+      <code>dist(apos, poss.last) &lt; 1</code>
+    </div>
+
+    <h2>为何需要</h2>
+    <p>
+      头部或弯头附近，到达/离开轴可能被建成几乎反向，但几何上仍是同一直段延伸。
+      若只看 <code>dir∠run_ldir &gt; 0.01</code> 会误进变向；① 把运行方向扳正后退出，避免假切段。
+    </p>
+
+    <h2>玩具用例（已写入 fixture）</h2>
+    <pre>id: near-180-correct-no-split
+成员: HEAD → T1 → E_JITTER → T2 → TAIL
+E_JITTER:
+  run_ldir 进入前 = +X
+  leave_dir (memldir) ≈ -X    // 与 adir 近 180
+  arrive_dir ≈ -X
+  apos 贴上一拐点
+期望: 全程 1 段（校正后继续挂袋，不桥接）</pre>
+    <p class="cite">
+      见
+      <a href="../fixtures/p1-split-isolines.json"><code>p1-split-isolines.json</code></a>
+      新增 case；
+      <code>variant-eb-no-stick</code> 的 members 亦已补全。
+    </p>
+
+    <h2>和主切 ② 的界限</h2>
+    <ul>
+      <li>① 先于 ②：满足近 180° 则 <strong>continue</strong>，不看 apos↔lpos</li>
+      <li>真弯头通常 adir 与 memldir 不是近 180° 同向抖动，而会走 ② 桥接</li>
+    </ul>
+
+    <h2>技能</h2>
+    <section class="quiz" aria-label="小测">
+      <h3>小测（3 题）</h3>
+
+      <div class="q">
+        <p><strong>Q1.</strong> 近 180° 校正成功后，伪代码下一步是？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：修正 ldirs 后 continue，不切开。"
+          data-bad="">continue，不执行桥接切开</button>
+        <button type="button" data-correct="0"
+          data-bad="校正的目的就是避免假切。" data-bad="">立刻 bridge split 成两段</button>
+        <button type="button" data-correct="0"
+          data-bad="不是 suppress 整支。" data-bad="">整支 return false</button>
+        <p class="feedback"></p>
+      </div>
+
+      <div class="q">
+        <p><strong>Q2.</strong> apos 离上一拐点 50mm 时，还能走 ① 吗？</p>
+        <button type="button" data-correct="0"
+          data-bad="要求 dist&lt;1mm。" data-bad="">能，五十毫米仍算贴近</button>
+        <button type="button" data-correct="1"
+          data-ok="对：必须 &lt;1mm，否则不能走校正分支。"
+          data-bad="">不能，贴拐点阈值是一毫米内</button>
+        <button type="button" data-correct="0"
+          data-bad="① 不看 10° 主切角。" data-bad="">取决于转角是否大于十度</button>
+        <p class="feedback"></p>
+      </div>
+
+      <div class="q">
+        <p><strong>Q3.</strong> 本课对应 fixture 的 id 是？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：near-180-correct-no-split。"
+          data-bad="">near-180-correct-no-split</button>
+        <button type="button" data-correct="0"
+          data-bad="那是课 2 主玩具。" data-bad="">toy-bridge-and-stick</button>
+        <button type="button" data-correct="0"
+          data-bad="那是同向不切。" data-bad="">colinear-no-split</button>
+        <p class="feedback"></p>
+      </div>
+    </section>
+
+    <div class="ask-teacher">
+      可继续要「P2 接线设计课」或「强制切 ③ 专课」；仍保持不写业务码。
+    </div>
+
+    <nav class="footer-nav">
+      <p>
+        <a href="0014-split-pseudocode.html">← 第 14 课</a>
+        · 下一课：<a href="0016-elbow-dim-visual.html">弯头尺寸示意图 →</a>
+      </p>
+    </nav>
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

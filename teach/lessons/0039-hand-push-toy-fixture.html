@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>第 39 课 · 手推 toy fixture</title>
+  <link rel="stylesheet" href="../assets/lesson.css" />
+  <style>
+    .viz {
+      margin: 1.1rem 0 1.3rem;
+      padding: 0.85rem 0.95rem 0.7rem;
+      background: #fff;
+      border: 1px solid var(--rule);
+    }
+    .viz h3 { margin: 0 0 0.5rem; font-size: 0.95rem; }
+    .viz svg { width: 100%; height: auto; display: block; }
+    .viz figcaption { margin-top: 0.5rem; font-size: 0.8rem; color: var(--muted); }
+    .step {
+      border-left: 3px solid #007a8a;
+      padding: 0.4rem 0.75rem;
+      margin: 0.6rem 0;
+      background: #f7fafb;
+      font-size: 0.88rem;
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Lesson 0039 · Fixture 手推</p>
+    <h1>玩具案：EA 桥接 · EB 贴拐点</h1>
+    <p class="lede">
+      对照 <code>p1-split-isolines.json</code> 的 <code>toy-bridge-and-stick</code>，一步步推出
+      <code>expect_allarr</code>。开 P1 时这就是第一枚断言。
+    </p>
+
+    <div class="callout">
+      期望：
+      <pre>[["HEAD","T1","W1","EA"], ["EA","T2","EB","T3","TAIL"]]</pre>
+    </div>
+
+    <figure class="viz">
+      <h3>图 · 空间草图（示意，非比例）</h3>
+      <svg viewBox="0 0 720 260" xmlns="http://www.w3.org/2000/svg" role="img">
+        <!-- horizontal run -->
+        <line x1="40" y1="200" x2="320" y2="200" stroke="#0b1f33" stroke-width="10"/>
+        <text x="60" y="190" font-family="IBM Plex Mono, monospace" font-size="11" fill="#4a5d6e">HEAD T1 W1</text>
+        <!-- EA elbow -->
+        <path d="M320 200 Q 360 200 360 160" fill="none" stroke="#007a8a" stroke-width="10"/>
+        <circle cx="320" cy="200" r="6" fill="#1f6b4a"/>
+        <text x="300" y="230" font-family="IBM Plex Mono, monospace" font-size="12" fill="#1f6b4a">EA / E</text>
+        <!-- vertical T2 -->
+        <line x1="360" y1="160" x2="360" y2="80" stroke="#0b1f33" stroke-width="10"/>
+        <text x="375" y="120" font-family="IBM Plex Mono, monospace" font-size="11" fill="#4a5d6e">T2</text>
+        <!-- EB stick -->
+        <path d="M360 80 Q 375 70 390 55" fill="none" stroke="#a33b16" stroke-width="8"/>
+        <text x="400" y="50" font-family="IBM Plex Mono, monospace" font-size="12" fill="#a33b16">EB 贴</text>
+        <!-- T3 -->
+        <line x1="390" y1="55" x2="480" y2="20" stroke="#0b1f33" stroke-width="8"/>
+        <text x="500" y="30" font-family="IBM Plex Mono, monospace" font-size="11" fill="#4a5d6e">T3 TAIL</text>
+        <!-- dim hints -->
+        <line x1="50" y1="165" x2="310" y2="165" stroke="#a33b16" stroke-width="2"/>
+        <text x="140" y="155" font-family="IBM Plex Mono, monospace" font-size="11" fill="#a33b16">段1</text>
+        <line x1="400" y1="150" x2="400" y2="70" stroke="#a33b16" stroke-width="2"/>
+        <text x="415" y="110" font-family="IBM Plex Mono, monospace" font-size="11" fill="#a33b16">段2</text>
+      </svg>
+      <figcaption>EA：apos↔lpos 大且约 90° → 真切桥接。EB：转角虽 &gt;10°，但 lpos 贴上一拐点 → 只改向。</figcaption>
+    </figure>
+
+    <h2>逐步手推</h2>
+    <div class="step"><strong>0.</strong> 开工一段：<code>[HEAD, T1, W1…]</code>，当前方向 +X。</div>
+    <div class="step"><strong>1. 遇到 EA</strong>：arrive +X，leave +Z；apos↔lpos 大、角≈90°；lpos <strong>不</strong>贴上一拐点 → <strong>真切开</strong>。段1 以 EA 结尾；段2 以 EA 开头（桥接双含）。方向改为 +Z。</div>
+    <div class="step"><strong>2. 灌入 T2</strong>：同向，进段2 → <code>[EA, T2…]</code>。</div>
+    <div class="step"><strong>3. 遇到 EB</strong>：角约 12°（&gt;10°），但 leave_pos 距上一拐点 &lt;0.1 量级 → <strong>贴拐点</strong>：只更新方向，<strong>不</strong>新开段。EB 留在段2。</div>
+    <div class="step"><strong>4. 灌入 T3、TAIL</strong>：同段 → 最终段2 <code>[EA, T2, EB, T3, TAIL]</code>。</div>
+
+    <figure class="viz">
+      <h3>图 · allarr 两行</h3>
+      <svg viewBox="0 0 700 160" xmlns="http://www.w3.org/2000/svg" role="img">
+        <rect x="30" y="25" width="640" height="50" fill="#e5f3ec" stroke="#1f6b4a"/>
+        <text x="350" y="55" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="14" fill="#1f6b4a">段1: HEAD · T1 · W1 · EA</text>
+        <rect x="30" y="90" width="640" height="50" fill="#d4eef1" stroke="#007a8a"/>
+        <text x="350" y="120" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="14" fill="#007a8a">段2: EA · T2 · EB · T3 · TAIL</text>
+      </svg>
+      <figcaption>断言要点：EA 出现两次；EB 只出现一次且在段2。</figcaption>
+    </figure>
+
+    <section class="quiz">
+      <h3>手推小测</h3>
+      <div class="q">
+        <p><strong>Q1.</strong> EA 在 expect_allarr 里出现几次？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：桥接双含，两段边界各一次。"
+          data-bad="">2 次</button>
+        <button type="button" data-correct="0"
+          data-bad="那就不是桥接。" data-bad="">1 次</button>
+        <button type="button" data-correct="0"
+          data-bad="不是。" data-bad="">0 次</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q2.</strong> EB 为何不新开段？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：lpos 贴上一拐点 → 贴拐点只改向。"
+          data-bad="">leave_pos 贴上一拐点</button>
+        <button type="button" data-correct="0"
+          data-bad="角约 12°，已过 10° 门槛；关键是贴。" data-bad="">转角小于 0.01°</button>
+        <button type="button" data-correct="0"
+          data-bad="无关。" data-bad="">它是 Weld 不是 Elbo</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q3.</strong> 若实现把 EB 也桥接切开，fixture 会？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：allarr 多一段，断言失败。"
+          data-bad="">expect_allarr 对不上（多一段）</button>
+        <button type="button" data-correct="0"
+          data-bad="语义已变。" data-bad="">仍然全绿</button>
+        <button type="button" data-correct="0"
+          data-bad="不是。" data-bad="">自动改 SITE 名</button>
+        <p class="feedback"></p>
+      </div>
+    </section>
+
+    <div class="ask-teacher">
+      下一课：同向不切与 EB 变体。
+    </div>
+
+    <nav class="footer-nav">
+      <p>
+        <a href="0038-p1-preflight-checklist.html">← 第 38 课</a>
+        · 下一课：<a href="0040-hand-push-colinear-variant.html">同向/变体 →</a>
+        · <a href="../fixtures/p1-split-isolines.json">fixture JSON</a>
+        · <a href="0002-hand-push-allarr.html">课 2</a>
+        · <a href="../INDEX.md">目录</a>
+      </p>
+    </nav>
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

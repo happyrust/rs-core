@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>第 61 课 · P3 Polar 设计</title>
+  <link rel="stylesheet" href="../assets/lesson.css" />
+  <style>
+    .viz {
+      margin: 1.1rem 0 1.3rem;
+      padding: 0.85rem 0.95rem 0.7rem;
+      background: #fff;
+      border: 1px solid var(--rule);
+    }
+    .viz h3 { margin: 0 0 0.5rem; font-size: 0.95rem; }
+    .viz svg { width: 100%; height: auto; display: block; }
+    .viz figcaption { margin-top: 0.5rem; font-size: 0.8rem; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Lesson 0061 · 方案 β · P3</p>
+    <h1>P3 Polar 邻段：设计边界</h1>
+    <p class="lede">
+      P1 切段 + ldirs 已齐；P2 是接线。P3 才做课 46 的邻段占位：
+      互加 <code>polarcyli</code>，让尺寸别扎进邻管。
+      <strong>本课只划边界，不实现搜索九步。</strong>
+    </p>
+
+    <figure class="viz">
+      <h3>图 · β 进度条</h3>
+      <svg viewBox="0 0 720 120" xmlns="http://www.w3.org/2000/svg" role="img">
+        <rect x="20" y="40" width="150" height="50" fill="#e5f3ec" stroke="#1f6b4a"/>
+        <text x="95" y="70" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#1f6b4a">P1 切段 ✓</text>
+        <rect x="190" y="40" width="150" height="50" fill="#d4eef1" stroke="#007a8a"/>
+        <text x="265" y="70" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#007a8a">P2 接线 …</text>
+        <rect x="360" y="40" width="150" height="50" fill="#f8ebe6" stroke="#a33b16"/>
+        <text x="435" y="70" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#a33b16">P3 Polar</text>
+        <rect x="530" y="40" width="170" height="50" fill="#fff" stroke="#9aafbc"/>
+        <text x="615" y="70" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#4a5d6e">P4 PCOM…</text>
+      </svg>
+      <figcaption>建议顺序：P2 开关能切到真 Layout 后，再上 P3；否则 Polar 测的是空壳。</figcaption>
+    </figure>
+
+    <h2>P3 最小范围</h2>
+    <ul>
+      <li>输入：已切好的 isolines（含轴、od、端点）</li>
+      <li>相邻 <code>x&gt;1</code>：互加柱（课 46）</li>
+      <li>隔一段近折返：&gt;160° 且 &lt;od×15 → 粗柱 od×1.5</li>
+      <li>开关：仅 <code>usepolarsystem</code></li>
+      <li>不做：<code>getBestPosAndOri</code> 九步细节（可后续）</li>
+    </ul>
+
+    <h2>验收草图</h2>
+    <pre>给定两段正交 isoline（toy 切后）
+→ 各 polar 障碍列表含对方管柱
+给定 U 形近折返三段
+→ 段0 与 段2 互加粗柱</pre>
+
+    <section class="quiz">
+      <h3>小测</h3>
+      <div class="q">
+        <p><strong>Q1.</strong> P3 依赖？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：先有切好的段。"
+          data-bad="">已切好的 isolines</button>
+        <button type="button" data-correct="0"
+          data-bad="顺序反了。" data-bad="">先 Polar 再切段</button>
+        <button type="button" data-correct="0"
+          data-bad="另线。" data-bad="">支架 itemcode</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q2.</strong> P3 改 isoline 条数吗？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：只加障碍。"
+          data-bad="">不改</button>
+        <button type="button" data-correct="0"
+          data-bad="错。" data-bad="">每柱 +1 段</button>
+        <button type="button" data-correct="0"
+          data-bad="错。" data-bad="">强制合并</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q3.</strong> 相对 P2 的建议顺序？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：先接线能跑真数据，再占位。"
+          data-bad="">先 P2 再 P3</button>
+        <button type="button" data-correct="0"
+          data-bad="测空壳。" data-bad="">跳过 P2 直接 P3</button>
+        <button type="button" data-correct="0"
+          data-bad="无关。" data-bad="">必须先 P4</button>
+        <p class="feedback"></p>
+      </div>
+    </section>
+
+    <div class="ask-teacher">
+      下一课：use_pml_split 旁路草图。
+    </div>
+
+    <nav class="footer-nav">
+      <p>
+        <a href="0060-ldirs-landed.html">← 第 60 课</a>
+        · 下一课：<a href="0062-use-pml-split-sketch.html">旁路草图 →</a>
+        · <a href="0046-polar-neighbor-visual.html">课 46</a>
+        · <a href="../reference/polar-neighbor-cheatsheet.html">速查</a>
+        · <a href="../INDEX.md">目录</a>
+      </p>
+    </nav>
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

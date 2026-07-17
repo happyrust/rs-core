@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>第 56 课 · P1 已落地</title>
+  <link rel="stylesheet" href="../assets/lesson.css" />
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Lesson 0056 · 开码首胜</p>
+    <h1>P1 五枚 fixture 全绿</h1>
+    <p class="lede">
+      教学 crate <code>teach/p1_split</code> 已实现 <code>split_isolines_pml</code>，
+      并对齐 <code>p1-split-isolines.json</code> 五案。同逻辑在 <code>src/mbd/</code>。
+    </p>
+
+    <div class="callout">
+      跑测（快）：
+      <pre>cargo test --manifest-path teach/p1_split/Cargo.toml</pre>
+      勿对整库默认 <code>cargo test</code>（AGENTS）。
+    </div>
+
+    <h2>落地要点</h2>
+    <ul>
+      <li>先 append 再判切（对齐 PML）</li>
+      <li>直管 leave_pos 记入 poss 尖端（stick / 近180 才能看见「上一拐点」）</li>
+      <li>强制切可叠刀，不去重</li>
+      <li>近180 fixture：leave 微倾以进支，adir 近似反向</li>
+    </ul>
+
+    <h2>下一步</h2>
+    <p>P2 接线设计见下一课；或动手写 flag 旁路。</p>
+
+    <nav class="footer-nav">
+      <p>
+        <a href="0055-coding-day-checklist.html">← 第 55 课</a>
+        · 下一课：<a href="0057-p2-wiring-design.html">P2 设计 →</a>
+        · <a href="../p1_split/Cargo.toml">p1_split crate</a>
+        · <a href="../INDEX.md">目录</a>
+      </p>
+    </nav>
+  </main>
+</body>
+</html>

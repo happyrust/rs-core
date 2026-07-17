@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>第 40 课 · 同向不切与 EB 变体</title>
+  <link rel="stylesheet" href="../assets/lesson.css" />
+  <style>
+    .viz {
+      margin: 1.1rem 0 1.3rem;
+      padding: 0.85rem 0.95rem 0.7rem;
+      background: #fff;
+      border: 1px solid var(--rule);
+    }
+    .viz h3 { margin: 0 0 0.5rem; font-size: 0.95rem; }
+    .viz svg { width: 100%; height: auto; display: block; }
+    .viz figcaption { margin-top: 0.5rem; font-size: 0.8rem; color: var(--muted); }
+    .step {
+      border-left: 3px solid #1f6b4a;
+      padding: 0.4rem 0.75rem;
+      margin: 0.55rem 0;
+      background: #f7fafb;
+      font-size: 0.88rem;
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Lesson 0040 · Fixture 手推 II</p>
+    <h1>同向不切 · EB 不贴变 3 段</h1>
+    <p class="lede">
+      两枚 fixture：<code>colinear-no-split</code>（负例：不该切）与
+      <code>variant-eb-no-stick</code>（对照课 39：EB 一旦不贴就真切）。
+    </p>
+
+    <figure class="viz">
+      <h3>案 A · colinear-no-split</h3>
+      <svg viewBox="0 0 700 160" xmlns="http://www.w3.org/2000/svg" role="img">
+        <line x1="40" y1="80" x2="640" y2="80" stroke="#0b1f33" stroke-width="12" stroke-linecap="round"/>
+        <circle cx="40" cy="80" r="5" fill="#1f6b4a"/>
+        <circle cx="250" cy="80" r="4" fill="#4a5d6e"/>
+        <circle cx="450" cy="80" r="4" fill="#4a5d6e"/>
+        <circle cx="640" cy="80" r="5" fill="#1f6b4a"/>
+        <text x="40" y="110" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#1f6b4a">HEAD</text>
+        <text x="250" y="110" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#4a5d6e">T1</text>
+        <text x="450" y="110" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#4a5d6e">T2</text>
+        <text x="640" y="110" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#1f6b4a">TAIL</text>
+        <line x1="50" y1="50" x2="630" y2="50" stroke="#a33b16" stroke-width="2"/>
+        <text x="300" y="40" font-family="IBM Plex Mono, monospace" font-size="12" fill="#a33b16">全程 +X · 1 条 isoline</text>
+      </svg>
+      <figcaption>期望：<code>[["HEAD","T1","T2","TAIL"]]</code> — 焊缝/多节直管<strong>不</strong>因「件数多」而切。</figcaption>
+    </figure>
+
+    <div class="step"><strong>手推 A：</strong>方向始终 +X，<code>angle(dir,ldir)</code> 从不 &gt;0.01 → <strong>不进弯头支</strong> → 整段一条。</div>
+
+    <figure class="viz">
+      <h3>案 B · variant-eb-no-stick（对照课 39）</h3>
+      <svg viewBox="0 0 720 240" xmlns="http://www.w3.org/2000/svg" role="img">
+        <line x1="30" y1="190" x2="220" y2="190" stroke="#0b1f33" stroke-width="9"/>
+        <path d="M220 190 Q 250 190 250 160" fill="none" stroke="#007a8a" stroke-width="9"/>
+        <line x1="250" y1="160" x2="250" y2="100" stroke="#0b1f33" stroke-width="9"/>
+        <path d="M250 100 Q 280 100 300 70" fill="none" stroke="#a33b16" stroke-width="9"/>
+        <line x1="300" y1="70" x2="420" y2="30" stroke="#0b1f33" stroke-width="9"/>
+        <circle cx="220" cy="190" r="5" fill="#1f6b4a"/>
+        <circle cx="250" cy="100" r="5" fill="#a33b16"/>
+        <text x="210" y="215" font-family="IBM Plex Mono, monospace" font-size="11" fill="#1f6b4a">EA 切</text>
+        <text x="255" y="95" font-family="IBM Plex Mono, monospace" font-size="11" fill="#a33b16">EB 也切</text>
+        <text x="480" y="80" font-family="IBM Plex Sans, sans-serif" font-size="13" fill="#a33b16">leave_pos 远离拐点</text>
+        <text x="480" y="105" font-family="IBM Plex Sans, sans-serif" font-size="12" fill="#4a5d6e">→ 不再「贴」→ 真桥接</text>
+        <text x="480" y="140" font-family="IBM Plex Mono, monospace" font-size="12" fill="#0b1f33">3 段 · EB 双含</text>
+      </svg>
+      <figcaption>期望：
+        <code>[[HEAD,T1,W1,EA],[EA,T2,EB],[EB,T3,TAIL]]</code>
+      </figcaption>
+    </figure>
+
+    <div class="step"><strong>手推 B：</strong>EA 同课 39 桥接 → 2 段起步。EB：角&gt;10° 且 <strong>lpos 不贴</strong> → 再切一刀，EB 双含，变成 3 段。</div>
+
+    <h2>对照表</h2>
+    <table style="width:100%;border-collapse:collapse;font-size:0.85rem;margin-bottom:1rem">
+      <tr style="background:#d4eef1">
+        <th style="border:1px solid #9aafbc;padding:0.4rem;text-align:left">fixture</th>
+        <th style="border:1px solid #9aafbc;padding:0.4rem;text-align:left">段数</th>
+        <th style="border:1px solid #9aafbc;padding:0.4rem;text-align:left">钉住什么</th>
+      </tr>
+      <tr>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">colinear-no-split</td>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">1</td>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">同向绝不误切</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">toy-bridge-and-stick</td>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">2</td>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">EA 切 + EB 贴</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">variant-eb-no-stick</td>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">3</td>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">EB 不贴则再切</td>
+      </tr>
+    </table>
+
+    <section class="quiz">
+      <h3>小测</h3>
+      <div class="q">
+        <p><strong>Q1.</strong> 同向两根管子 T1+T2，isoline？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：不进弯头支，1 段。"
+          data-bad="">1 条</button>
+        <button type="button" data-correct="0"
+          data-bad="件数≠段数。" data-bad="">2 条</button>
+        <button type="button" data-correct="0"
+          data-bad="不是。" data-bad="">按焊缝数切</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q2.</strong> variant 相对 toy，唯一关键差？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：EB 的 leave_pos 是否贴上一拐点。"
+          data-bad="">EB 是否贴拐点</button>
+        <button type="button" data-correct="0"
+          data-bad="两边都有 EA 切。" data-bad="">有没有 EA</button>
+        <button type="button" data-correct="0"
+          data-bad="无关。" data-bad="">SITE 是否含 INST</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q3.</strong> variant 里 EB 出现几次？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：真切桥接 → 双含 2 次。"
+          data-bad="">2 次</button>
+        <button type="button" data-correct="0"
+          data-bad="那是贴拐点的 toy。" data-bad="">1 次</button>
+        <button type="button" data-correct="0"
+          data-bad="不是。" data-bad="">3 次</button>
+        <p class="feedback"></p>
+      </div>
+    </section>
+
+    <div class="ask-teacher">
+      下一课：手推近 180° 校正。
+    </div>
+
+    <nav class="footer-nav">
+      <p>
+        <a href="0039-hand-push-toy-fixture.html">← 第 39 课</a>
+        · 下一课：<a href="0041-hand-push-near-180.html">近 180° →</a>
+        · <a href="../fixtures/p1-split-isolines.json">fixture</a>
+        · <a href="../INDEX.md">目录</a>
+      </p>
+    </nav>
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

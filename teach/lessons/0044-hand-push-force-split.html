@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>第 44 课 · 手推 force fixture</title>
+  <link rel="stylesheet" href="../assets/lesson.css" />
+  <style>
+    .viz {
+      margin: 1.1rem 0 1.3rem;
+      padding: 0.85rem 0.95rem 0.7rem;
+      background: #fff;
+      border: 1px solid var(--rule);
+    }
+    .viz h3 { margin: 0 0 0.5rem; font-size: 0.95rem; }
+    .viz svg { width: 100%; height: auto; display: block; }
+    .viz figcaption { margin-top: 0.5rem; font-size: 0.8rem; color: var(--muted); }
+    .step {
+      border-left: 3px solid #a33b16;
+      padding: 0.4rem 0.75rem;
+      margin: 0.55rem 0;
+      background: #f7fafb;
+      font-size: 0.88rem;
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Lesson 0044 · Fixture 手推 IV</p>
+    <h1>force-split-over-100：贴住仍被强制切</h1>
+    <p class="lede">
+      对照 JSON 新案：EF 在 ② 走「贴拐点」，随后 ③ 因
+      <code>adir∠memldir≈120°&gt;100</code> 仍桥接切开。
+    </p>
+
+    <div class="callout">
+      期望：<code>[["HEAD","T1","EF"],["EF","T2","TAIL"]]</code>
+      · 若漏 ③ → 错成 1 段（最常见回归）
+    </div>
+
+    <figure class="viz">
+      <h3>图 · 几何草图</h3>
+      <svg viewBox="0 0 700 200" xmlns="http://www.w3.org/2000/svg" role="img">
+        <line x1="40" y1="140" x2="300" y2="140" stroke="#0b1f33" stroke-width="11"/>
+        <text x="140" y="125" font-family="IBM Plex Mono, monospace" font-size="12" fill="#4a5d6e">HEAD T1 · +X</text>
+        <circle cx="300" cy="140" r="9" fill="#a33b16"/>
+        <text x="300" y="175" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#a33b16">EF</text>
+        <line x1="310" y1="130" x2="520" y2="40" stroke="#0b1f33" stroke-width="11"/>
+        <text x="430" y="75" font-family="IBM Plex Mono, monospace" font-size="12" fill="#4a5d6e">T2 · 120°</text>
+        <text x="540" y="100" font-family="IBM Plex Sans, sans-serif" font-size="12" fill="#a33b16">lpos≈apos（贴）</text>
+        <text x="540" y="125" font-family="IBM Plex Sans, sans-serif" font-size="12" fill="#a33b16">adir∠leave≈120°</text>
+      </svg>
+      <figcaption>leave_dir ≈ (−0.5, 0, 0.866)；leave_pos 贴在 1000 拐点附近。</figcaption>
+    </figure>
+
+    <h2>逐步手推</h2>
+    <div class="step"><strong>0.</strong> HEAD+T1，run=+X，poss 记下拐点（约 1000 将成为上一拐点）。</div>
+    <div class="step"><strong>1. 遇 EF</strong>：leave 与 run 夹角 ≫0.01 → 进支。非近180°。</div>
+    <div class="step"><strong>2. 岔路②</strong>：角&gt;10° → need。但 <code>lpos</code> 距 <code>poss.last</code> &lt;0.1 → <strong>贴拐点</strong>：只改 run_ldir，EF append 进当前袋。此时仍 1 袋：<code>[HEAD,T1,EF]</code>。</div>
+    <div class="step"><strong>3. 岔路③</strong>：adir∠memldir≈120&gt;100 → <strong>强制桥接</strong>：收袋（末含 EF），新袋以 EF 开头。→ 2 段。</div>
+    <div class="step"><strong>4.</strong> T2、TAIL 进段2 → <code>[EF,T2,TAIL]</code>。</div>
+
+    <figure class="viz">
+      <h3>图 · ② 与 ③ 时间线</h3>
+      <svg viewBox="0 0 700 160" xmlns="http://www.w3.org/2000/svg" role="img">
+        <rect x="30" y="30" width="280" height="100" fill="#d4eef1" stroke="#007a8a"/>
+        <text x="170" y="70" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="14" fill="#007a8a">② 之后</text>
+        <text x="170" y="100" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#0b1f33">1 袋 · 已含 EF</text>
+        <path d="M310 80 L360 80" stroke="#0b1f33" stroke-width="2"/>
+        <rect x="360" y="30" width="310" height="100" fill="#f8ebe6" stroke="#a33b16"/>
+        <text x="515" y="70" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="14" fill="#a33b16">③ 之后</text>
+        <text x="515" y="100" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#0b1f33">2 袋 · EF 双含</text>
+      </svg>
+      <figcaption>单测调试：在 ② 后断点看仍是 1 段是正常的；③ 才切开。</figcaption>
+    </figure>
+
+    <section class="quiz">
+      <h3>小测</h3>
+      <div class="q">
+        <p><strong>Q1.</strong> 仅执行到 ② 结束时，段数？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：贴拐点还不切，仍 1 袋。"
+          data-bad="">1</button>
+        <button type="button" data-correct="0"
+          data-bad="③ 才切。" data-bad="">2</button>
+        <button type="button" data-correct="0"
+          data-bad="不是。" data-bad="">0</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q2.</strong> 最终 EF 出现几次？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：强制桥接双含。"
+          data-bad="">2 次</button>
+        <button type="button" data-correct="0"
+          data-bad="那是漏③或纯贴。" data-bad="">1 次</button>
+        <button type="button" data-correct="0"
+          data-bad="不是。" data-bad="">0 次</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q3.</strong> 与 toy 里 EB 贴拐点的差别？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：EB 的 adir∠memldir 不够大，不触发③；EF≈120° 会触发。"
+          data-bad="">EF 夹角&gt;100 触发③；EB 通常不触发</button>
+        <button type="button" data-correct="0"
+          data-bad="都是 Elbo。" data-bad="">一个是 Weld 一个是 Elbo</button>
+        <button type="button" data-correct="0"
+          data-bad="无关。" data-bad="">SITE 名不同</button>
+        <p class="feedback"></p>
+      </div>
+    </section>
+
+    <div class="ask-teacher">
+      下一课：伪代码 ↔ fixture 对照地图。
+    </div>
+
+    <nav class="footer-nav">
+      <p>
+        <a href="0043-elbow-fork-review.html">← 第 43 课</a>
+        · 下一课：<a href="0045-pseudocode-fixture-map.html">对照地图 →</a>
+        · <a href="0042-force-split-over-100.html">课 42</a>
+        · <a href="../fixtures/p1-split-isolines.json">fixture</a>
+        · <a href="../INDEX.md">目录</a>
+      </p>
+    </nav>
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>第 19 课 · 桥接与 leg 图解</title>
+  <link rel="stylesheet" href="../assets/lesson.css" />
+  <style>
+    .viz {
+      margin: 1.15rem 0 1.4rem;
+      padding: 0.85rem 0.95rem 0.7rem;
+      background: #fff;
+      border: 1px solid var(--rule);
+    }
+    .viz h3 { margin: 0 0 0.5rem; font-size: 0.98rem; }
+    .viz svg { width: 100%; height: auto; display: block; }
+    .viz figcaption { margin-top: 0.55rem; font-size: 0.82rem; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Lesson 0019 · 两张关键图</p>
+    <h1>桥接双含 · leg 归段（示意图）</h1>
+    <p class="lede">
+      专讲你标出的两句：公共端如何把两段长度接上；支腿为何必须跟对的管轴。
+    </p>
+
+    <!-- BRIDGE -->
+    <figure class="viz" id="bridge">
+      <h3>图 1 · 桥接双含 → 两段尺寸的公共端</h3>
+      <svg viewBox="0 0 680 340" xmlns="http://www.w3.org/2000/svg" role="img">
+        <title>桥接与尺寸端点</title>
+        <!-- pipes -->
+        <line x1="50" y1="200" x2="300" y2="200" stroke="#0b1f33" stroke-width="12" stroke-linecap="round"/>
+        <path d="M300 200 Q 360 200 360 140" fill="none" stroke="#007a8a" stroke-width="12"/>
+        <line x1="360" y1="140" x2="360" y2="50" stroke="#0b1f33" stroke-width="12" stroke-linecap="round"/>
+
+        <!-- common endpoint E -->
+        <circle cx="330" cy="175" r="14" fill="#c9a227" stroke="#0b1f33" stroke-width="2"/>
+        <text x="330" y="180" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#0b1f33" font-weight="600">E</text>
+        <text x="350" y="195" font-family="IBM Plex Sans, sans-serif" font-size="13" fill="#c9a227">弯头端点（公共端）</text>
+
+        <!-- dim A: from S to E -->
+        <line x1="70" y1="155" x2="310" y2="155" stroke="#a33b16" stroke-width="2.5"/>
+        <line x1="70" y1="148" x2="70" y2="162" stroke="#a33b16" stroke-width="2"/>
+        <line x1="310" y1="148" x2="310" y2="162" stroke="#a33b16" stroke-width="2"/>
+        <text x="150" y="145" font-family="IBM Plex Mono, monospace" font-size="13" fill="#a33b16">DIM-A：S → E</text>
+        <circle cx="70" cy="200" r="5" fill="#0b1f33"/>
+        <text x="55" y="225" font-family="IBM Plex Mono, monospace" font-size="11" fill="#4a5d6e">S</text>
+
+        <!-- dim B: from E to T -->
+        <line x1="410" y1="130" x2="410" y2="60" stroke="#a33b16" stroke-width="2.5"/>
+        <line x1="403" y1="130" x2="417" y2="130" stroke="#a33b16" stroke-width="2"/>
+        <line x1="403" y1="60" x2="417" y2="60" stroke="#a33b16" stroke-width="2"/>
+        <text x="420" y="100" font-family="IBM Plex Mono, monospace" font-size="13" fill="#a33b16">DIM-B：E → T</text>
+        <circle cx="360" cy="50" r="5" fill="#0b1f33"/>
+        <text x="370" y="45" font-family="IBM Plex Mono, monospace" font-size="11" fill="#4a5d6e">T</text>
+
+        <!-- leader to E from both dims -->
+        <path d="M310 155 L 325 170" stroke="#c9a227" stroke-width="1.5" stroke-dasharray="3 2"/>
+        <path d="M410 130 L 345 170" stroke="#c9a227" stroke-width="1.5" stroke-dasharray="3 2"/>
+
+        <!-- bags -->
+        <rect x="50" y="255" width="250" height="55" rx="4" fill="#eef1f4" stroke="#9aafbc"/>
+        <text x="60" y="278" font-family="IBM Plex Mono, monospace" font-size="12" fill="#0b1f33">isoline A mems: … + ELBO</text>
+        <text x="60" y="298" font-family="IBM Plex Mono, monospace" font-size="11" fill="#4a5d6e">尺寸右端点取到 E</text>
+        <rect x="360" y="255" width="250" height="55" rx="4" fill="#eef1f4" stroke="#9aafbc"/>
+        <text x="370" y="278" font-family="IBM Plex Mono, monospace" font-size="12" fill="#0b1f33">isoline B mems: ELBO + …</text>
+        <text x="370" y="298" font-family="IBM Plex Mono, monospace" font-size="11" fill="#4a5d6e">尺寸下端点也取到 E</text>
+      </svg>
+      <figcaption>
+        <strong>「长度接得上」</strong>：现场量水平段到弯头中心/端点是 L1，再量竖直段从同一点起是 L2；
+        图上 DIM-A、DIM-B 都停在同一个 E，对得上料单。若弯头只进一段、另一段端点漂走，两段长度会对不齐。
+      </figcaption>
+    </figure>
+
+    <div class="callout">
+      桥接双含 ≠ 画两条重叠的弯头符号。它只保证：<strong>成员列表里弯头在两段都在</strong>，从而两端尺寸能共享端点几何。
+    </div>
+
+    <figure class="viz" id="why-e">
+      <h3>图 1b · 为什么会出现「都钉在同一个 E」？</h3>
+      <svg viewBox="0 0 680 300" xmlns="http://www.w3.org/2000/svg" role="img">
+        <title>为何公共端</title>
+        <!-- physical pipe path -->
+        <text x="40" y="30" font-family="IBM Plex Sans, sans-serif" font-size="14" fill="#0b1f33">管子在空间里是连续的一条路</text>
+        <line x1="40" y1="80" x2="260" y2="80" stroke="#0b1f33" stroke-width="10" stroke-linecap="round"/>
+        <path d="M260 80 Q 310 80 310 40" fill="none" stroke="#007a8a" stroke-width="10"/>
+        <line x1="310" y1="40" x2="310" y2="10" stroke="#0b1f33" stroke-width="10"/>
+        <circle cx="285" cy="70" r="9" fill="#c9a227"/>
+        <text x="300" y="90" font-family="IBM Plex Mono, monospace" font-size="12" fill="#c9a227">E 真实就在这里</text>
+
+        <!-- arrow down -->
+        <text x="40" y="130" font-family="IBM Plex Sans, sans-serif" font-size="13" fill="#4a5d6e">标注却要拆成两把「直尺」（不能斜跨拐角）</text>
+        <text x="40" y="150" font-family="IBM Plex Sans, sans-serif" font-size="13" fill="#4a5d6e">直尺 1 量到拐角停 · 直尺 2 从拐角再量 → 停与起必须是同一个点</text>
+
+        <!-- additive -->
+        <rect x="40" y="175" width="600" height="100" rx="5" fill="#eef1f4" stroke="#9aafbc"/>
+        <text x="55" y="205" font-family="IBM Plex Mono, monospace" font-size="14" fill="#0b1f33">路径长度：L ≈ DIM-A + DIM-B</text>
+        <text x="55" y="230" font-family="IBM Plex Sans, sans-serif" font-size="13" fill="#4a5d6e">只有两段都钉在同一个 E，相加才等于「从 S 沿管走到 T」</text>
+        <text x="55" y="255" font-family="IBM Plex Sans, sans-serif" font-size="13" fill="#a33b16">若 A 的终点和 B 的起点不是同一个点 → 中间出现缝或重叠 → 料长对不上</text>
+      </svg>
+      <figcaption>
+        <strong>因果链：</strong>管子连续 → 尺寸必须分段画 → 分段处必须共用真实拐角点 E →
+        算法用「弯头双含」保证两段都能取到这个 E。
+        所以不是「故意钉两次」，而是<strong>物理上本来就是同一个点</strong>。
+      </figcaption>
+    </figure>
+
+    <!-- LEG -->
+    <figure class="viz" id="leg">
+      <h3>图 2 · leg 归段 → 支腿尺寸跟对的管轴</h3>
+      <svg viewBox="0 0 680 360" xmlns="http://www.w3.org/2000/svg" role="img">
+        <title>leg 对错对比</title>
+        <!-- LEFT: wrong -->
+        <text x="160" y="28" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="14" fill="#a33b16">错误：leg 跟了水平段</text>
+        <line x1="40" y1="140" x2="160" y2="140" stroke="#0b1f33" stroke-width="8"/>
+        <path d="M160 140 Q 200 140 200 100" fill="none" stroke="#007a8a" stroke-width="8"/>
+        <line x1="200" y1="100" x2="200" y2="50" stroke="#0b1f33" stroke-width="8"/>
+        <!-- leg pointing right from vertical -->
+        <line x1="200" y1="80" x2="270" y2="80" stroke="#007a8a" stroke-width="5"/>
+        <!-- wrong dim along horizontal lane -->
+        <line x1="50" y1="100" x2="150" y2="100" stroke="#a33b16" stroke-width="2"/>
+        <line x1="200" y1="80" x2="260" y2="40" stroke="#a33b16" stroke-width="2" stroke-dasharray="4 3"/>
+        <text x="40" y="175" font-family="IBM Plex Mono, monospace" font-size="11" fill="#a33b16">尺寸方向跟 A（水平）</text>
+        <text x="40" y="193" font-family="IBM Plex Mono, monospace" font-size="11" fill="#a33b16">但腿实际沿水平伸出、归属应近 B？</text>
+        <text x="40" y="211" font-family="IBM Plex Sans, sans-serif" font-size="12" fill="#a33b16">→ 偏移/投影错段，图面拧巴</text>
+
+        <!-- divider -->
+        <line x1="340" y1="40" x2="340" y2="220" stroke="#9aafbc" stroke-width="1" stroke-dasharray="4 4"/>
+
+        <!-- RIGHT: correct -->
+        <text x="510" y="28" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="14" fill="#1f6b4a">正确：leg 跟竖直段 B</text>
+        <line x1="380" y1="140" x2="500" y2="140" stroke="#0b1f33" stroke-width="8"/>
+        <path d="M500 140 Q 540 140 540 100" fill="none" stroke="#007a8a" stroke-width="8"/>
+        <line x1="540" y1="100" x2="540" y2="50" stroke="#0b1f33" stroke-width="8"/>
+        <line x1="540" y1="80" x2="620" y2="80" stroke="#007a8a" stroke-width="5"/>
+        <text x="555" y="70" font-family="IBM Plex Mono, monospace" font-size="11" fill="#007a8a">ISOLEG</text>
+        <!-- dim along leg, sharing B's system: offset in B's dimdir -->
+        <line x1="560" y1="80" x2="610" y2="80" stroke="#1f6b4a" stroke-width="2.5"/>
+        <line x1="560" y1="74" x2="560" y2="86" stroke="#1f6b4a" stroke-width="2"/>
+        <line x1="610" y1="74" x2="610" y2="86" stroke="#1f6b4a" stroke-width="2"/>
+        <text x="555" y="105" font-family="IBM Plex Mono, monospace" font-size="11" fill="#1f6b4a">腿长尺寸</text>
+        <!-- B axis highlight -->
+        <rect x="528" y="48" width="24" height="60" rx="6" fill="none" stroke="#1f6b4a" stroke-width="2" stroke-dasharray="4 3"/>
+        <text x="380" y="175" font-family="IBM Plex Mono, monospace" font-size="11" fill="#1f6b4a">归入 B：∠(B.pipedir, leg.zdir)≈0°</text>
+        <text x="380" y="193" font-family="IBM Plex Mono, monospace" font-size="11" fill="#1f6b4a">共用 B 的方向/车道画腿尺寸</text>
+        <text x="380" y="211" font-family="IBM Plex Sans, sans-serif" font-size="12" fill="#1f6b4a">→ 和主管竖直段同一套标注系统</text>
+
+        <!-- rule bar -->
+        <rect x="40" y="240" width="600" height="95" rx="5" fill="#eef1f4" stroke="#9aafbc"/>
+        <text x="55" y="268" font-family="IBM Plex Sans, sans-serif" font-size="14" fill="#0b1f33">判定（课 3 路径 A）</text>
+        <text x="55" y="292" font-family="IBM Plex Mono, monospace" font-size="12" fill="#4a5d6e">1) 折叠后夹角 ∠(isoline.pipedir , leg.ori.zdir) &lt; 1°</text>
+        <text x="55" y="312" font-family="IBM Plex Mono, monospace" font-size="12" fill="#4a5d6e">2) attapos 能投影到该 isoline 轴线上</text>
+        <text x="55" y="322" font-family="IBM Plex Sans, sans-serif" font-size="12" fill="#4a5d6e"></text>
+      </svg>
+      <figcaption>
+        「不画到垂直段上」= 不要因为弯头也在 A 的 mems 里，就把腿尺寸强行塞进 A。
+        腿的朝向跟谁平行，尺寸就跟谁的管轴/车道。
+      </figcaption>
+    </figure>
+
+    <h2>两句对照</h2>
+    <table style="width:100%;border-collapse:collapse;font-size:0.9rem;margin-bottom:1rem">
+      <tr style="background:#d4eef1">
+        <th style="border:1px solid #9aafbc;padding:0.45rem;text-align:left">说法</th>
+        <th style="border:1px solid #9aafbc;padding:0.45rem;text-align:left">图上你看到什么</th>
+      </tr>
+      <tr>
+        <td style="border:1px solid #9aafbc;padding:0.45rem">桥接双含 · 公共端</td>
+        <td style="border:1px solid #9aafbc;padding:0.45rem">DIM-A 与 DIM-B 都钉在同一个 E</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #9aafbc;padding:0.45rem">leg 归段 · 跟对管轴</td>
+        <td style="border:1px solid #9aafbc;padding:0.45rem">腿长尺寸与所属 isoline 同向系统，不跟错段</td>
+      </tr>
+    </table>
+
+    <section class="quiz">
+      <h3>看图小测</h3>
+      <div class="q">
+        <p><strong>Q1.</strong> 图 1 里点 E 的作用是？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：两段尺寸的公共端，长度在弯头处接上。"
+          data-bad="">作为两段尺寸共用的端点</button>
+        <button type="button" data-correct="0"
+          data-bad="E 是端点，不是把两段合成一条斜尺寸。" data-bad="">把 DIM-A 和 DIM-B 合成一条斜线</button>
+        <button type="button" data-correct="0"
+          data-bad="不是装饰。" data-bad="">只是弯头颜色标记，与尺寸无关</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q2.</strong> 图 2 正确做法里，腿尺寸跟的是？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：跟竖直 isoline B 的方向系统。"
+          data-bad="">竖直 isoline B 的管轴/车道</button>
+        <button type="button" data-correct="0"
+          data-bad="那是错误示范。" data-bad="">水平 isoline A 的管轴/车道</button>
+        <button type="button" data-correct="0"
+          data-bad="必须归段后再画。" data-bad="">不跟任何 isoline，单独任意方向</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q3.</strong> leg 为什么不能「因为 ELBO 在 A 里就进 A」？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：leg 看自身朝向与哪段 pipedir 平行，不是只看弯头挂在谁 mems。"
+          data-bad="">要看腿朝向与哪段管轴近平行</button>
+        <button type="button" data-correct="0"
+          data-bad="有专门的近平行规则。" data-bad="">因为路径 B 规定必须跟名字走</button>
+        <button type="button" data-correct="0"
+          data-bad="leg 通常要标尺寸。" data-bad="">因为支腿从来不标注尺寸</button>
+        <p class="feedback"></p>
+      </div>
+    </section>
+
+    <div class="ask-teacher">
+      若要点名「E 到底取弯头中心还是端口」也可以继续追问——实现里常用 pos / attapos，图上统一叫公共端即可。
+    </div>
+
+    <nav class="footer-nav">
+      <p>
+        <a href="0018-why-split-for-dims.html">← 第 18 课</a>
+        · <a href="0016-elbow-dim-visual.html">形象化总图</a>
+        · <a href="../INDEX.md">目录</a>
+      </p>
+    </nav>
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

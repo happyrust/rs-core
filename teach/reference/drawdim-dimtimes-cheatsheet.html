@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>速查 · drawdim / dimtimes</title>
+  <link rel="stylesheet" href="../assets/lesson.css" />
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Reference · drawdim</p>
+    <h1>dimtimes 与径向车道</h1>
+
+    <h2>谁传入 dimtimes</h2>
+    <pre>mainDim && twoormoredims → 2
+mainDim && !twoormoredims → 1
+!mainDim (ATTA 子尺寸)   → 1
+
+twoormoredims ← getAttaDims 产生了 ATTA 子尺寸</pre>
+
+    <h2>径向公式（PML）</h2>
+    <pre>radius_lo = od + cheight * 1.2 * (dimtimes - 1)
+radius_hi = radius_lo + cheight</pre>
+
+    <h2>抑制与跳过</h2>
+    <ul>
+      <li>轴向投影跨度 &lt; 1 → return</li>
+      <li><code>twoormoredims && dimtimes==1</code> → 跳过 slope 辅助；非仪表管也跳过该层流向</li>
+    </ul>
+
+    <h2>lindim 分支</h2>
+    <p><code>maxslope</code> 已设 = 普通尺寸；否则 = 弯头 leg（可带 fake 调整焊长度）。</p>
+
+    <p class="cite">源：<code>isoline.drawdim</code> / <code>drawOneObjectNew</code></p>
+    <p class="footer-nav"><a href="../lessons/0005-drawdim-dimtimes.html">← 第 5 课</a></p>
+  </main>
+</body>
+</html>

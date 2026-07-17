@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>第 58 课 · P2 字段映射表</title>
+  <link rel="stylesheet" href="../assets/lesson.css" />
+  <style>
+    .viz {
+      margin: 1.1rem 0 1.3rem;
+      padding: 0.85rem 0.95rem 0.7rem;
+      background: #fff;
+      border: 1px solid var(--rule);
+    }
+    .viz h3 { margin: 0 0 0.5rem; font-size: 0.95rem; }
+    table.map {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+      margin: 0 0 1rem;
+    }
+    table.map th, table.map td {
+      border: 1px solid var(--rule);
+      padding: 0.4rem 0.5rem;
+      text-align: left;
+      vertical-align: top;
+    }
+    table.map th { background: #d4eef1; }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Lesson 0058 · P2 映射</p>
+    <h1>Layout / P0 → SplitMember → 袋子</h1>
+    <p class="lede">
+      把课 57 的「三件事」落成表。对照
+      <a href="../reference/p0-branch-member-geom.html">P0 字段词典</a>
+      与已实现的 <code>SplitMember</code>。
+    </p>
+
+    <h2>① 入：几何 → SplitMember</h2>
+    <table class="map">
+      <tr>
+        <th>SplitMember</th>
+        <th>PML / P0</th>
+        <th>缺了怎么办</th>
+      </tr>
+      <tr>
+        <td><code>refno</code></td>
+        <td>mem 名</td>
+        <td>无法桥接双含 → issue + 回退</td>
+      </tr>
+      <tr>
+        <td><code>kind</code></td>
+        <td>Head/Tail/Tubi/Elbo/…</td>
+        <td>未知 → Other；无 leave 则跳过切支</td>
+      </tr>
+      <tr>
+        <td><code>leave_dir</code></td>
+        <td>ldir</td>
+        <td>非 Head/Tail 必填；否则 issue</td>
+      </tr>
+      <tr>
+        <td><code>arrive_dir</code></td>
+        <td>adir</td>
+        <td>近180/强制切不可用；仅能走②角阈</td>
+      </tr>
+      <tr>
+        <td><code>arrive_pos</code> / <code>leave_pos</code></td>
+        <td>apos / lpos</td>
+        <td>stick/近180 变钝；优先回退或 Approximate</td>
+      </tr>
+      <tr>
+        <td><code>pos</code></td>
+        <td>pos of mem</td>
+        <td>桥接 turn 用 apos/lpos 中点顶上</td>
+      </tr>
+      <tr>
+        <td><code>geom_quality</code></td>
+        <td>Exact / Approximate…</td>
+        <td>Missing → 不走 P1</td>
+      </tr>
+    </table>
+
+    <h2>② 出：allarr → 段</h2>
+    <table class="map">
+      <tr>
+        <th>P1 输出</th>
+        <th>主链需要</th>
+      </tr>
+      <tr>
+        <td><code>Vec&lt;Vec&lt;refno&gt;&gt;</code></td>
+        <td>每段有序成员列表（弯头可双含）</td>
+      </tr>
+      <tr>
+        <td>（隐式）段序</td>
+        <td>IsolineInfo 下标 / pipedir 取该段主导 leave</td>
+      </tr>
+      <tr>
+        <td><code>issues[]</code></td>
+        <td>wronglines / 日志；非空可触发回退策略</td>
+      </tr>
+    </table>
+
+    <h2>③ 轴方向</h2>
+    <p>
+      P1 当前返回袋子，不单独返回 <code>ldirs</code>。
+      P2 映射时：每段取<strong>第一个非桥接重复之后的稳定 leave_dir</strong>，
+      或在 P1 扩展返回 <code>ldirs: Vec&lt;Vec3&gt;</code>（推荐下一小步）。
+    </p>
+
+    <div class="callout">
+      已实现类型：<code>aios_core::mbd::SplitMember</code> /
+      <code>p1_split::SplitMember</code>（字段同构）。
+    </div>
+
+    <section class="quiz">
+      <h3>小测</h3>
+      <div class="q">
+        <p><strong>Q1.</strong> 缺 leave_dir 的 Elbo？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：记 issue，不能可靠进切支。"
+          data-bad="">issue；勿假装切对</button>
+        <button type="button" data-correct="0"
+          data-bad="会瞎切。" data-bad="">当 Tubi 通过件</button>
+        <button type="button" data-correct="0"
+          data-bad="不是。" data-bad="">自动 SITE=INST</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q2.</strong> GeomQuality::Missing？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：不走 P1，回退旧路径。"
+          data-bad="">不走 P1 / 回退</button>
+        <button type="button" data-correct="0"
+          data-bad="危险。" data-bad="">强行五枚公式</button>
+        <button type="button" data-correct="0"
+          data-bad="不是。" data-bad="">删掉该 BRAN</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q3.</strong> P2 建议补的 P1 小扩展？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：一并返回每段 ldirs。"
+          data-bad="">输出 ldirs 与 allarr</button>
+        <button type="button" data-correct="0"
+          data-bad="P3。" data-bad="">内置 Polar 占位</button>
+        <button type="button" data-correct="0"
+          data-bad="另线。" data-bad="">支架材料</button>
+        <p class="feedback"></p>
+      </div>
+    </section>
+
+    <div class="ask-teacher">
+      下一课：SplitResult 加 ldirs。
+    </div>
+
+    <nav class="footer-nav">
+      <p>
+        <a href="0057-p2-wiring-design.html">← 第 57 课</a>
+        · 下一课：<a href="0059-split-result-ldirs.html">ldirs →</a>
+        · <a href="../reference/p0-branch-member-geom.html">P0 词典</a>
+        · <a href="../INDEX.md">目录</a>
+      </p>
+    </nav>
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

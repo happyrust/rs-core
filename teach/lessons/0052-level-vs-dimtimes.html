@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>第 52 课 · 错层 vs dimtimes</title>
+  <link rel="stylesheet" href="../assets/lesson.css" />
+  <style>
+    .viz {
+      margin: 1.1rem 0 1.3rem;
+      padding: 0.85rem 0.95rem 0.7rem;
+      background: #fff;
+      border: 1px solid var(--rule);
+    }
+    .viz h3 { margin: 0 0 0.5rem; font-size: 0.95rem; }
+    .viz svg { width: 100%; height: auto; display: block; }
+    .viz figcaption { margin-top: 0.5rem; font-size: 0.8rem; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Lesson 0052 · 别混两种「两层」</p>
+    <h1>小尺寸错层 ≠ dimtimes 车道</h1>
+    <p class="lede">
+      成品图上都可能看到「上下两排尺寸」。
+      一种是 <strong>dimtimes</strong>（主尺寸抬外、ATTA 留内）；一种是 <strong>lindim level</strong>（短字塞不下才错开）。
+      反推 isoline 时，两种都<strong>不加段</strong>。
+    </p>
+
+    <figure class="viz">
+      <h3>图 1 · 并排对照</h3>
+      <svg viewBox="0 0 720 240" xmlns="http://www.w3.org/2000/svg" role="img">
+        <rect x="20" y="25" width="330" height="190" fill="#d4eef1" stroke="#007a8a"/>
+        <text x="185" y="55" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="14" fill="#007a8a">dimtimes 车道</text>
+        <line x1="50" y1="140" x2="300" y2="140" stroke="#0b1f33" stroke-width="12"/>
+        <line x1="70" y1="110" x2="180" y2="110" stroke="#007a8a" stroke-width="2"/>
+        <text x="90" y="100" font-family="IBM Plex Mono, monospace" font-size="11" fill="#007a8a">ATTA ×1</text>
+        <line x1="60" y1="75" x2="280" y2="75" stroke="#a33b16" stroke-width="2.5"/>
+        <text x="120" y="65" font-family="IBM Plex Mono, monospace" font-size="11" fill="#a33b16">主尺寸 ×2</text>
+        <text x="185" y="185" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="12" fill="#4a5d6e">事先分层 · 有子尺寸</text>
+        <text x="185" y="205" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#4a5d6e">偏移 ≈1.2×cheight</text>
+
+        <rect x="370" y="25" width="330" height="190" fill="#f8ebe6" stroke="#a33b16"/>
+        <text x="535" y="55" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="14" fill="#a33b16">lindim 错层</text>
+        <line x1="400" y1="140" x2="650" y2="140" stroke="#0b1f33" stroke-width="12"/>
+        <line x1="420" y1="100" x2="500" y2="100" stroke="#0b1f33" stroke-width="2"/>
+        <text x="430" y="90" font-family="IBM Plex Mono, monospace" font-size="12" fill="#a33b16">80</text>
+        <line x1="520" y1="70" x2="620" y2="70" stroke="#0b1f33" stroke-width="2"/>
+        <text x="540" y="60" font-family="IBM Plex Mono, monospace" font-size="12" fill="#a33b16">60</text>
+        <text x="535" y="185" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="12" fill="#4a5d6e">事后救急 · 字太长</text>
+        <text x="535" y="205" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#4a5d6e">±1.2×cheight×level</text>
+      </svg>
+      <figcaption>左边：两种尺寸角色（主/子）。右边：同一类短尺寸挤兑开。</figcaption>
+    </figure>
+
+    <figure class="viz">
+      <h3>图 2 · 判别口</h3>
+      <svg viewBox="0 0 700 180" xmlns="http://www.w3.org/2000/svg" role="img">
+        <text x="50" y="45" font-family="IBM Plex Sans, sans-serif" font-size="13" fill="#0b1f33">外层长尺寸 + 内层短 ATTA？</text>
+        <text x="480" y="45" font-family="IBM Plex Mono, monospace" font-size="12" fill="#007a8a">→ dimtimes</text>
+        <text x="50" y="90" font-family="IBM Plex Sans, sans-serif" font-size="13" fill="#0b1f33">一串短数字上下错开、无主/子之分？</text>
+        <text x="480" y="90" font-family="IBM Plex Mono, monospace" font-size="12" fill="#a33b16">→ lindim level</text>
+        <text x="50" y="140" font-family="IBM Plex Sans, sans-serif" font-size="13" fill="#0b1f33">管轴换向 + 公共端 E？</text>
+        <text x="480" y="140" font-family="IBM Plex Mono, monospace" font-size="12" fill="#1f6b4a">→ 真切段</text>
+      </svg>
+      <figcaption>只有第三行才增加 isoline 条数。</figcaption>
+    </figure>
+
+    <h2>公式长得像，语义不同</h2>
+    <table style="width:100%;border-collapse:collapse;font-size:0.85rem;margin-bottom:1rem">
+      <tr style="background:#d4eef1">
+        <th style="border:1px solid #9aafbc;padding:0.4rem;text-align:left"></th>
+        <th style="border:1px solid #9aafbc;padding:0.4rem;text-align:left">dimtimes</th>
+        <th style="border:1px solid #9aafbc;padding:0.4rem;text-align:left">小尺寸 level</th>
+      </tr>
+      <tr>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">何时</td>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">画之前就知道有子尺寸</td>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">排字时发现塞不下</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">偏移</td>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">径向 od+1.2×ch×(t−1)</td>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">沿 ydir ±1.2×ch×level</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">加段？</td>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">否</td>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">否</td>
+      </tr>
+    </table>
+
+    <section class="quiz">
+      <h3>小测</h3>
+      <div class="q">
+        <p><strong>Q1.</strong> 内短外长、外层还带流向，更像？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：dimtimes 双车道。"
+          data-bad="">dimtimes</button>
+        <button type="button" data-correct="0"
+          data-bad="流向跟外层，是车道语义。" data-bad="">仅 lindim 错层</button>
+        <button type="button" data-correct="0"
+          data-bad="通常仍 1 段。" data-bad="">2 条 isoline</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q2.</strong> 两排都很短、像挤兑开？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：小尺寸 level。"
+          data-bad="">lindim 错层</button>
+        <button type="button" data-correct="0"
+          data-bad="缺主/子角色。" data-bad="">dimtimes=2</button>
+        <button type="button" data-correct="0"
+          data-bad="不是。" data-bad="">强制切 &gt;100°</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q3.</strong> 两者对 isoline 条数？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：都不加段。"
+          data-bad="">都不增加</button>
+        <button type="button" data-correct="0"
+          data-bad="错。" data-bad="">各 +1</button>
+        <button type="button" data-correct="0"
+          data-bad="错。" data-bad="">只有 dimtimes +1</button>
+        <p class="feedback"></p>
+      </div>
+    </section>
+
+    <div class="ask-teacher">
+      下一课：反推套题 III。
+    </div>
+
+    <nav class="footer-nav">
+      <p>
+        <a href="0051-lindim-smalldim-visual.html">← 第 51 课</a>
+        · 下一课：<a href="0053-count-isolines-set3.html">套题 III →</a>
+        · <a href="0036-dimtimes-lanes-visual.html">课 36</a>
+        · <a href="../INDEX.md">目录</a>
+      </p>
+    </nav>
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

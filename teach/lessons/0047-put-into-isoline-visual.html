@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>第 47 课 · putIntoIsoLine 归段配图</title>
+  <link rel="stylesheet" href="../assets/lesson.css" />
+  <style>
+    .viz {
+      margin: 1.1rem 0 1.3rem;
+      padding: 0.85rem 0.95rem 0.7rem;
+      background: #fff;
+      border: 1px solid var(--rule);
+    }
+    .viz h3 { margin: 0 0 0.5rem; font-size: 0.95rem; }
+    .viz svg { width: 100%; height: auto; display: block; }
+    .viz figcaption { margin-top: 0.5rem; font-size: 0.8rem; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Lesson 0047 · 切段之后归对象</p>
+    <h1>putIntoIsoLine：对象掉进哪一段</h1>
+    <p class="lede">
+      P1 切出袋子；本课把尺寸 / 焊缝字 / 弯头 leg <strong>划进某一袋</strong>。
+      桥接弯头两段都认领时，靠投影距离与方向决胜——这就是 leg 归错（病例 2）的根源层。
+    </p>
+
+    <div class="callout">
+      速查：<a href="../reference/put-into-isoline-cheatsheet.html"><code>put-into-isoline-cheatsheet.html</code></a>
+      · 课 3 原文 · 与课 19 leg 归段、课 34 病例 2 互通
+    </div>
+
+    <figure class="viz">
+      <h3>图 1 · 切段 vs 归段</h3>
+      <svg viewBox="0 0 700 160" xmlns="http://www.w3.org/2000/svg" role="img">
+        <rect x="30" y="30" width="300" height="100" fill="#e5f3ec" stroke="#1f6b4a"/>
+        <text x="180" y="70" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="14" fill="#1f6b4a">P1 getisolines</text>
+        <text x="180" y="100" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#0b1f33">几条袋子 allarr</text>
+        <rect x="370" y="30" width="300" height="100" fill="#d4eef1" stroke="#007a8a"/>
+        <text x="520" y="70" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="14" fill="#007a8a">putIntoIsoLine</text>
+        <text x="520" y="100" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#0b1f33">每个对象 → goodx</text>
+      </svg>
+      <figcaption>袋子空着没用；归错段 = 数字/材料挂错管子。</figcaption>
+    </figure>
+
+    <figure class="viz">
+      <h3>图 2 · 两条路径</h3>
+      <svg viewBox="0 0 720 200" xmlns="http://www.w3.org/2000/svg" role="img">
+        <rect x="20" y="30" width="320" height="140" fill="#fff" stroke="#9aafbc"/>
+        <text x="180" y="60" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="14" fill="#0b1f33">路径 A · 投影</text>
+        <text x="180" y="95" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#4a5d6e">name 空 / ISOLEG</text>
+        <text x="180" y="120" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#4a5d6e">line.onprojected(pos)</text>
+        <text x="180" y="145" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#1f6b4a">弯头 leg：∥ pipedir</text>
+
+        <rect x="380" y="30" width="320" height="140" fill="#fff" stroke="#9aafbc"/>
+        <text x="540" y="60" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="14" fill="#0b1f33">路径 B · 名匹配</text>
+        <text x="540" y="95" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#4a5d6e">mems.findfirst(name)</text>
+        <text x="540" y="120" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#4a5d6e">桥接可命中多段</text>
+        <text x="540" y="145" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#a33b16">→ 再决胜</text>
+      </svg>
+      <figcaption>焊缝字挂 ATTA 时，收集候选仍可能走投影。</figcaption>
+    </figure>
+
+    <figure class="viz">
+      <h3>图 3 · 桥接弯头：两段都举手</h3>
+      <svg viewBox="0 0 700 220" xmlns="http://www.w3.org/2000/svg" role="img">
+        <line x1="40" y1="150" x2="260" y2="150" stroke="#0b1f33" stroke-width="12"/>
+        <path d="M260 150 Q 310 150 310 100" fill="none" stroke="#007a8a" stroke-width="12"/>
+        <line x1="310" y1="100" x2="310" y2="40" stroke="#0b1f33" stroke-width="12"/>
+        <circle cx="260" cy="150" r="7" fill="#1f6b4a"/>
+        <text x="260" y="180" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#1f6b4a">EA 双含</text>
+        <text x="120" y="120" font-family="IBM Plex Mono, monospace" font-size="12" fill="#1f6b4a">段1 举手</text>
+        <text x="340" y="70" font-family="IBM Plex Mono, monospace" font-size="12" fill="#007a8a">段2 举手</text>
+        <text x="450" y="100" font-family="IBM Plex Sans, sans-serif" font-size="13" fill="#a33b16">leg 对象</text>
+        <text x="450" y="125" font-family="IBM Plex Sans, sans-serif" font-size="12" fill="#4a5d6e">pipedir∠ori.zdir &lt;1°</text>
+        <text x="450" y="150" font-family="IBM Plex Sans, sans-serif" font-size="12" fill="#4a5d6e">+ 到 attapos 更近 → 胜</text>
+      </svg>
+      <figcaption>归错 → 病例 2（E 对但一腿肥一腿瘦）。切段对了也会画歪。</figcaption>
+    </figure>
+
+    <h2>口诀</h2>
+    <ol>
+      <li>先有袋子（P1），再往里扔对象</li>
+      <li>桥接件：多名命中是常态，不是 bug</li>
+      <li>leg：近平行 + 更近的投影点</li>
+      <li>全无候选：skip（并打原因）</li>
+    </ol>
+
+    <section class="quiz">
+      <h3>小测</h3>
+      <div class="q">
+        <p><strong>Q1.</strong> putIntoIsoLine 会新开 isoline 吗？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：只选 goodx，不切段。"
+          data-bad="">不会；只归入已有段</button>
+        <button type="button" data-correct="0"
+          data-bad="切段是 getisolines。" data-bad="">会，每个对象 +1 段</button>
+        <button type="button" data-correct="0"
+          data-bad="不是。" data-bad="">仅仪表管会</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q2.</strong> 桥接 EA 被两段 mems 都找到时？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：多候选再决胜。"
+          data-bad="">正常；进入多候选决胜</button>
+        <button type="button" data-correct="0"
+          data-bad="双含就是这样。" data-bad="">一定是切段 bug</button>
+        <button type="button" data-correct="0"
+          data-bad="不是。" data-bad="">自动删掉一段</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q3.</strong> leg 归错段，优先查？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：方向近平行与投影决胜。"
+          data-bad="">putIntoIsoLine 决胜（∥ 与距离）</button>
+        <button type="button" data-correct="0"
+          data-bad="次要。" data-bad="">SITE 是否含 INST</button>
+        <button type="button" data-correct="0"
+          data-bad="那是材料。" data-bad="">itemcode 码表</button>
+        <p class="feedback"></p>
+      </div>
+    </section>
+
+    <div class="ask-teacher">
+      下一课：多候选决胜细则。
+    </div>
+
+    <nav class="footer-nav">
+      <p>
+        <a href="0046-polar-neighbor-visual.html">← 第 46 课</a>
+        · 下一课：<a href="0048-multi-candidate-tiebreak.html">决胜 →</a>
+        · <a href="0003-put-into-isoline.html">课 3</a>
+        · <a href="../reference/put-into-isoline-cheatsheet.html">速查</a>
+        · <a href="../INDEX.md">目录</a>
+      </p>
+    </nav>
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

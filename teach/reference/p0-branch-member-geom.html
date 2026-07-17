@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>P0 · BranchMemberGeom 字段词典</title>
+  <link rel="stylesheet" href="../assets/lesson.css" />
+  <style>
+    table.dict {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+      margin: 0 0 1.2rem;
+    }
+    table.dict th, table.dict td {
+      border: 1px solid var(--rule);
+      padding: 0.45rem 0.5rem;
+      text-align: left;
+      vertical-align: top;
+    }
+    table.dict th { background: var(--accent-soft); font-family: var(--mono); font-size: 0.72rem; }
+    table.dict code { font-size: 0.9em; }
+    .gap { color: var(--warn); font-weight: 600; }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Reference · P0 data contract</p>
+    <h1>BranchMemberGeom 字段词典</h1>
+    <p class="lede">
+      方案 β 的 P0：切段纯函数需要的成员几何契约。
+      对照 PML <code>getisolines</code> 与现有 <code>v2::data_source::BranchMember</code>。
+    </p>
+
+    <div class="callout">
+      <strong>目标类型名（提案）：</strong><code>BranchMemberGeom</code>（可扩现有 BranchMember，不必另起炉灶）。
+      切段函数只依赖本表字段；缺关键字段时按「缺省策略」列处理。
+    </div>
+
+    <h2>1. 身份与类型</h2>
+    <table class="dict">
+      <thead>
+        <tr><th>字段</th><th>PML 来源</th><th>现有 V2</th><th>用途</th><th>缺省策略</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>refno</code> / name</td>
+          <td>mem 名 / dbref</td>
+          <td><code>BranchMember.refno</code></td>
+          <td>桥接双含、归段 mems 匹配</td>
+          <td>必填；缺失 → 整成员 skip + issue</td>
+        </tr>
+        <tr>
+          <td><code>member_kind</code></td>
+          <td><code>type of mem</code>；Head/Tail 伪成员</td>
+          <td>部分：<code>arrive_noun</code>；无统一枚举</td>
+          <td>通过件判定、P4 PCOM、<span class="gap">弯头类型兜底</span></td>
+          <td>未知 → 当「普通变向件」走角度几何，不当通过件</td>
+        </tr>
+        <tr>
+          <td><code>order</code></td>
+          <td>branMems 顺序</td>
+          <td><code>order</code></td>
+          <td>稳定遍历</td>
+          <td>按数组下标</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>2. 方向（切段入口）</h2>
+    <table class="dict">
+      <thead>
+        <tr><th>字段</th><th>PML</th><th>现有 V2</th><th>用途</th><th>缺省策略</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>leave_dir</code></td>
+          <td><code>ldir of mem</code></td>
+          <td><code>leave_axis</code></td>
+          <td><code>dir.angle(ldir)</code> 入口；新段 pipedir</td>
+          <td>缺失 → 用 <code>normalize(end-start)</code>；仍无 → skip + issue</td>
+        </tr>
+        <tr>
+          <td><code>arrive_dir</code></td>
+          <td><code>adir of mem</code></td>
+          <td><code>arrive_axis</code></td>
+          <td>近 180° 校正；&gt;100° 强制切</td>
+          <td>缺失 → 跳过①③，只靠 leave 与运行 ldir</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>3. 点位（主切 / 贴拐点）</h2>
+    <table class="dict">
+      <thead>
+        <tr><th>字段</th><th>PML</th><th>现有 V2</th><th>用途</th><th>缺省策略</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>arrive_pos</code></td>
+          <td><code>apos</code></td>
+          <td>近于 <code>start</code>（需确认语义）</td>
+          <td>apos↔lpos；近 180° 时贴拐点判定</td>
+          <td class="gap">若仅有 start/end：约定 start=arrive、end=leave，并在 meta 标记 approximate</td>
+        </tr>
+        <tr>
+          <td><code>leave_pos</code></td>
+          <td><code>lpos</code></td>
+          <td>近于 <code>end</code></td>
+          <td>主切；贴上一拐点 (&lt;0.1)</td>
+          <td>同上</td>
+        </tr>
+        <tr>
+          <td><code>pos</code></td>
+          <td><code>pos of mem</code></td>
+          <td>无专用；BendData.vertex 部分覆盖</td>
+          <td>切开时写入 poss 的拐点</td>
+          <td>缺省 = arrive/leave 中点；弯头优先用 BendData.vertex</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>4. 通过件与伪成员</h2>
+    <table class="dict">
+      <thead>
+        <tr><th>kind</th><th>行为</th><th>备注</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Head</td><td>开袋；poss←hpos；ldirs←hdir</td><td>bran 级属性，非 DB 成员</td></tr>
+        <tr><td>Tail</td><td>收口当前袋</td><td></td></tr>
+        <tr><td>ATTA / TUBI / OLET / WELD</td><td>只 append，不切</td><td>P1 硬编码集合</td></tr>
+        <tr><td>ELBO / BEND</td><td>不靠 type 字符串进门；靠方向几何</td><td>type 仅用于日志/兜底</td></tr>
+        <tr><td>PCOM</td><td>P4；P1 可 issue「未实现」或降级几何</td><td>见 isrjpcom / special</td></tr>
+      </tbody>
+    </table>
+
+    <h2>5. 与现有类型的缺口（P0 必须写进提案）</h2>
+    <ul>
+      <li><span class="gap">缺口 A：</span><code>apos/lpos/pos</code> 三分量 vs 仅 <code>start/end</code> — 需数据源补齐或明确 approximate 映射。</li>
+      <li><span class="gap">缺口 B：</span>无稳定 <code>member_kind</code> 枚举 — 建议 <code>enum MemberKind { Head, Tail, Tubi, Atta, Weld, Olet, Elbo, Bend, Pcom, Other }</code>。</li>
+      <li><span class="gap">缺口 C：</span><code>BendData</code> 与 members 并行 — P1 切段应以 members 序列为准，BendData 作 pos/角度校验。</li>
+    </ul>
+
+    <h2>6. 建议的 Rust 草图（非正式 API）</h2>
+    <pre>pub struct BranchMemberGeom {
+    pub refno: String,
+    pub kind: MemberKind,
+    pub order: u32,
+    pub leave_dir: Option&lt;Vec3V2&gt;,   // ldir
+    pub arrive_dir: Option&lt;Vec3V2&gt;,  // adir
+    pub arrive_pos: Option&lt;Vec3V2&gt;,  // apos
+    pub leave_pos: Option&lt;Vec3V2&gt;,   // lpos
+    pub pos: Option&lt;Vec3V2&gt;,
+    pub outside_diameter: Option&lt;f32&gt;,
+    pub geom_quality: GeomQuality,   // Exact | ApproximateStartEnd
+}
+
+pub enum GeomQuality { Exact, ApproximateStartEnd }</pre>
+
+    <h2>7. 验收（P0 完成定义）</h2>
+    <ul>
+      <li>字段表评审通过（本文）</li>
+      <li>从至少一条样例 bran 能填满 Exact 或显式 Approximate</li>
+      <li>缺 leave_dir 时产生可机读 issue，不静默硬切</li>
+    </ul>
+
+    <p class="cite">
+      PML：<code>isobran.getisolines</code> ·
+      V2 现状：<code>src/mbd/v2/data_source.rs</code> · <code>BranchMember</code> ·
+      路线：<a href="plan-beta-roadmap.html">β 路线速查</a>
+    </p>
+    <p class="footer-nav">
+      <a href="../lessons/0011-p0-field-dictionary.html">← 第 11 课（导读）</a>
+      · <a href="../INDEX.md">目录</a>
+    </p>
+  </main>
+</body>
+</html>

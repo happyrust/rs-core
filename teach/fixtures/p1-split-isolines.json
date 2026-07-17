@@ -1,0 +1,378 @@
+{
+  "$schema_comment": "P1 fixture draft for split_isolines_pml — teaching only, not wired to cargo test yet",
+  "version": 1,
+  "geom_quality_default": "ApproximateStartEnd",
+  "cases": [
+    {
+      "id": "toy-bridge-and-stick",
+      "title": "课2玩具：EA桥接切开，EB贴拐点不切",
+      "expect_allarr": [
+        ["HEAD", "T1", "W1", "EA"],
+        ["EA", "T2", "EB", "T3", "TAIL"]
+      ],
+      "members": [
+        {
+          "order": 0,
+          "refno": "HEAD",
+          "kind": "Head",
+          "leave_dir": [1, 0, 0],
+          "arrive_dir": null,
+          "arrive_pos": [0, 0, 0],
+          "leave_pos": null,
+          "pos": [0, 0, 0],
+          "geom_quality": "Exact"
+        },
+        {
+          "order": 1,
+          "refno": "T1",
+          "kind": "Tubi",
+          "leave_dir": [1, 0, 0],
+          "arrive_dir": [1, 0, 0],
+          "arrive_pos": [0, 0, 0],
+          "leave_pos": [1000, 0, 0],
+          "pos": [500, 0, 0],
+          "geom_quality": "ApproximateStartEnd"
+        },
+        {
+          "order": 2,
+          "refno": "W1",
+          "kind": "Weld",
+          "leave_dir": [1, 0, 0],
+          "arrive_dir": [1, 0, 0],
+          "arrive_pos": [1000, 0, 0],
+          "leave_pos": [1000, 0, 0],
+          "pos": [1000, 0, 0],
+          "geom_quality": "ApproximateStartEnd"
+        },
+        {
+          "order": 3,
+          "refno": "EA",
+          "kind": "Elbo",
+          "leave_dir": [0, 0, 1],
+          "arrive_dir": [1, 0, 0],
+          "arrive_pos": [1000, 0, 0],
+          "leave_pos": [1100, 0, 100],
+          "pos": [1050, 0, 50],
+          "geom_quality": "ApproximateStartEnd",
+          "notes": "apos↔lpos large, angle 90° → bridge split"
+        },
+        {
+          "order": 4,
+          "refno": "T2",
+          "kind": "Tubi",
+          "leave_dir": [0, 0, 1],
+          "arrive_dir": [0, 0, 1],
+          "arrive_pos": [1100, 0, 100],
+          "leave_pos": [1100, 0, 800],
+          "pos": [1100, 0, 450],
+          "geom_quality": "ApproximateStartEnd"
+        },
+        {
+          "order": 5,
+          "refno": "EB",
+          "kind": "Elbo",
+          "leave_dir": [0.2079, 0, 0.9781],
+          "arrive_dir": [0, 0, 1],
+          "arrive_pos": [1100, 0, 800],
+          "leave_pos": [1100, 0, 800.05],
+          "pos": [1100, 0, 800.02],
+          "geom_quality": "ApproximateStartEnd",
+          "notes": "angle~12°, leave_pos sticks to apos (degenerate) → update dir only"
+        },
+        {
+          "order": 6,
+          "refno": "T3",
+          "kind": "Tubi",
+          "leave_dir": [0.2079, 0, 0.9781],
+          "arrive_dir": [0.2079, 0, 0.9781],
+          "arrive_pos": [1100, 0, 810],
+          "leave_pos": [1100, 0, 1500],
+          "pos": [1100, 0, 1155],
+          "geom_quality": "ApproximateStartEnd"
+        },
+        {
+          "order": 7,
+          "refno": "TAIL",
+          "kind": "Tail",
+          "leave_dir": null,
+          "arrive_dir": null,
+          "arrive_pos": null,
+          "leave_pos": [1100, 0, 1500],
+          "pos": [1100, 0, 1500],
+          "geom_quality": "Exact"
+        }
+      ]
+    },
+    {
+      "id": "colinear-no-split",
+      "title": "同向多件不切",
+      "expect_allarr": [["HEAD", "T1", "T2", "TAIL"]],
+      "members": [
+        {
+          "order": 0,
+          "refno": "HEAD",
+          "kind": "Head",
+          "leave_dir": [1, 0, 0],
+          "arrive_pos": [0, 0, 0],
+          "geom_quality": "Exact"
+        },
+        {
+          "order": 1,
+          "refno": "T1",
+          "kind": "Tubi",
+          "leave_dir": [1, 0, 0],
+          "arrive_dir": [1, 0, 0],
+          "arrive_pos": [0, 0, 0],
+          "leave_pos": [500, 0, 0],
+          "pos": [250, 0, 0],
+          "geom_quality": "ApproximateStartEnd"
+        },
+        {
+          "order": 2,
+          "refno": "T2",
+          "kind": "Tubi",
+          "leave_dir": [1, 0, 0],
+          "arrive_dir": [1, 0, 0],
+          "arrive_pos": [500, 0, 0],
+          "leave_pos": [1200, 0, 0],
+          "pos": [850, 0, 0],
+          "geom_quality": "ApproximateStartEnd"
+        },
+        {
+          "order": 3,
+          "refno": "TAIL",
+          "kind": "Tail",
+          "leave_pos": [1200, 0, 0],
+          "geom_quality": "Exact"
+        }
+      ]
+    },
+    {
+      "id": "variant-eb-no-stick",
+      "title": "课2变体：EB不贴拐点→3段",
+      "expect_allarr": [
+        ["HEAD", "T1", "W1", "EA"],
+        ["EA", "T2", "EB"],
+        ["EB", "T3", "TAIL"]
+      ],
+      "notes": "EB leave_pos far from prev turn (800→900); apos↔lpos large; angle~12°",
+      "members": [
+        {
+          "order": 0,
+          "refno": "HEAD",
+          "kind": "Head",
+          "leave_dir": [1, 0, 0],
+          "arrive_pos": [0, 0, 0],
+          "pos": [0, 0, 0],
+          "geom_quality": "Exact"
+        },
+        {
+          "order": 1,
+          "refno": "T1",
+          "kind": "Tubi",
+          "leave_dir": [1, 0, 0],
+          "arrive_dir": [1, 0, 0],
+          "arrive_pos": [0, 0, 0],
+          "leave_pos": [1000, 0, 0],
+          "pos": [500, 0, 0],
+          "geom_quality": "ApproximateStartEnd"
+        },
+        {
+          "order": 2,
+          "refno": "W1",
+          "kind": "Weld",
+          "leave_dir": [1, 0, 0],
+          "arrive_dir": [1, 0, 0],
+          "arrive_pos": [1000, 0, 0],
+          "leave_pos": [1000, 0, 0],
+          "pos": [1000, 0, 0],
+          "geom_quality": "ApproximateStartEnd"
+        },
+        {
+          "order": 3,
+          "refno": "EA",
+          "kind": "Elbo",
+          "leave_dir": [0, 0, 1],
+          "arrive_dir": [1, 0, 0],
+          "arrive_pos": [1000, 0, 0],
+          "leave_pos": [1100, 0, 100],
+          "pos": [1050, 0, 50],
+          "geom_quality": "ApproximateStartEnd"
+        },
+        {
+          "order": 4,
+          "refno": "T2",
+          "kind": "Tubi",
+          "leave_dir": [0, 0, 1],
+          "arrive_dir": [0, 0, 1],
+          "arrive_pos": [1100, 0, 100],
+          "leave_pos": [1100, 0, 800],
+          "pos": [1100, 0, 450],
+          "geom_quality": "ApproximateStartEnd"
+        },
+        {
+          "order": 5,
+          "refno": "EB",
+          "kind": "Elbo",
+          "leave_dir": [0.2079, 0, 0.9781],
+          "arrive_dir": [0, 0, 1],
+          "arrive_pos": [1100, 0, 800],
+          "leave_pos": [1100, 0, 900],
+          "pos": [1100, 0, 850],
+          "geom_quality": "ApproximateStartEnd",
+          "notes": "not stick: leave_pos 100mm from prev turn at z=800"
+        },
+        {
+          "order": 6,
+          "refno": "T3",
+          "kind": "Tubi",
+          "leave_dir": [0.2079, 0, 0.9781],
+          "arrive_dir": [0.2079, 0, 0.9781],
+          "arrive_pos": [1100, 0, 900],
+          "leave_pos": [1100, 0, 1500],
+          "pos": [1100, 0, 1200],
+          "geom_quality": "ApproximateStartEnd"
+        },
+        {
+          "order": 7,
+          "refno": "TAIL",
+          "kind": "Tail",
+          "leave_pos": [1100, 0, 1500],
+          "pos": [1100, 0, 1500],
+          "geom_quality": "Exact"
+        }
+      ]
+    },
+    {
+      "id": "near-180-correct-no-split",
+      "title": "课15：近180°校正，不切开",
+      "expect_allarr": [["HEAD", "T1", "E_JITTER", "T2", "TAIL"]],
+      "notes": "E_JITTER enters dir-change gate but branch ① corrects run_ldir and continues",
+      "members": [
+        {
+          "order": 0,
+          "refno": "HEAD",
+          "kind": "Head",
+          "leave_dir": [1, 0, 0],
+          "arrive_pos": [0, 0, 0],
+          "pos": [0, 0, 0],
+          "geom_quality": "Exact"
+        },
+        {
+          "order": 1,
+          "refno": "T1",
+          "kind": "Tubi",
+          "leave_dir": [1, 0, 0],
+          "arrive_dir": [1, 0, 0],
+          "arrive_pos": [0, 0, 0],
+          "leave_pos": [1000, 0, 0],
+          "pos": [500, 0, 0],
+          "geom_quality": "ApproximateStartEnd"
+        },
+        {
+          "order": 2,
+          "refno": "E_JITTER",
+          "kind": "Elbo",
+          "leave_dir": [1, 0, 0.0002],
+          "arrive_dir": [-0.99999998, 0, -0.0002],
+          "arrive_pos": [1000, 0, 0],
+          "leave_pos": [1000.05, 0, 0],
+          "pos": [1000, 0, 0],
+          "geom_quality": "ApproximateStartEnd",
+          "notes": "leave tilt>~0.01° from +X to enter; adir≈opposite(leave)&opposite(run) → ①; apos sticks to T1 tip"
+        },
+        {
+          "order": 3,
+          "refno": "T2",
+          "kind": "Tubi",
+          "leave_dir": [1, 0, 0],
+          "arrive_dir": [1, 0, 0],
+          "arrive_pos": [1000, 0, 0],
+          "leave_pos": [1800, 0, 0],
+          "pos": [1400, 0, 0],
+          "geom_quality": "ApproximateStartEnd",
+          "notes": "after correction run_ldir becomes +X again (opposite of adir -X)"
+        },
+        {
+          "order": 4,
+          "refno": "TAIL",
+          "kind": "Tail",
+          "leave_pos": [1800, 0, 0],
+          "pos": [1800, 0, 0],
+          "geom_quality": "Exact"
+        }
+      ]
+    },
+    {
+      "id": "force-split-over-100",
+      "title": "课42：②贴拐点后③强制切（adir∠memldir>100）",
+      "expect_allarr": [
+        ["HEAD", "T1", "EF"],
+        ["EF", "T2", "TAIL"]
+      ],
+      "notes": "②: angle>10 but lpos sticks → update dir only; ③: adir∠memldir≈120>100 → force bridge once",
+      "members": [
+        {
+          "order": 0,
+          "refno": "HEAD",
+          "kind": "Head",
+          "leave_dir": [1, 0, 0],
+          "arrive_pos": [0, 0, 0],
+          "pos": [0, 0, 0],
+          "geom_quality": "Exact"
+        },
+        {
+          "order": 1,
+          "refno": "T1",
+          "kind": "Tubi",
+          "leave_dir": [1, 0, 0],
+          "arrive_dir": [1, 0, 0],
+          "arrive_pos": [0, 0, 0],
+          "leave_pos": [1000, 0, 0],
+          "pos": [500, 0, 0],
+          "geom_quality": "ApproximateStartEnd"
+        },
+        {
+          "order": 2,
+          "refno": "EF",
+          "kind": "Elbo",
+          "leave_dir": [-0.5, 0, 0.8660254],
+          "arrive_dir": [1, 0, 0],
+          "arrive_pos": [1000, 0, 0],
+          "leave_pos": [1000.05, 0, 0.02],
+          "pos": [1000, 0, 0],
+          "geom_quality": "ApproximateStartEnd",
+          "notes": "adir∠memldir≈120°; lpos sticks to turn at 1000; force split after stick"
+        },
+        {
+          "order": 3,
+          "refno": "T2",
+          "kind": "Tubi",
+          "leave_dir": [-0.5, 0, 0.8660254],
+          "arrive_dir": [-0.5, 0, 0.8660254],
+          "arrive_pos": [1000.05, 0, 0.02],
+          "leave_pos": [750, 0, 433.0127],
+          "pos": [875, 0, 216.5],
+          "geom_quality": "ApproximateStartEnd"
+        },
+        {
+          "order": 4,
+          "refno": "TAIL",
+          "kind": "Tail",
+          "leave_pos": [750, 0, 433.0127],
+          "pos": [750, 0, 433.0127],
+          "geom_quality": "Exact"
+        }
+      ]
+    }
+  ],
+  "thresholds_pml": {
+    "dir_change_eps_deg": 0.01,
+    "main_split_angle_deg": 10,
+    "apos_lpos_sep_mm": 1,
+    "stick_prev_turn_mm": 0.1,
+    "force_split_adir_memldir_deg": 100,
+    "near_180_adir_memldir_deg": 179.99,
+    "near_180_adir_ldir_deg": 179
+  }
+}

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>第 12 课 · 填写 Exact 表</title>
+  <link rel="stylesheet" href="../assets/lesson.css" />
+  <style>
+    table.fill {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.75rem;
+      font-family: var(--mono);
+      margin: 0 0 1rem;
+    }
+    table.fill th, table.fill td {
+      border: 1px solid var(--rule);
+      padding: 0.35rem 0.4rem;
+      text-align: left;
+    }
+    table.fill th { background: var(--accent-soft); }
+    .approx { background: #fff8e8; }
+    .exact { background: #e5f3ec; }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Lesson 0012 · P0 → P1 之间</p>
+    <h1>给玩具 bran 填 <code>BranchMemberGeom</code> 表</h1>
+    <p class="lede">
+      词典有了。本课练<strong>填表</strong>：把成员序列落成 P0 字段行，并标
+      <code>Exact</code> / <code>ApproximateStartEnd</code>——这是 P1 单测输入的来源。
+    </p>
+
+    <div class="callout">
+      <strong>本课只钉一件事：</strong>能独立填完一张成员几何表，并说清每行质量标记为何。
+      对照：<a href="../reference/p0-branch-member-geom.html">P0 词典</a> ·
+      <a href="0002-hand-push-allarr.html">课 2 玩具 bran</a>
+    </div>
+
+    <h2>玩具 bran（与课 2 同构）</h2>
+    <p>假设数据源<strong>只有</strong> start/end + leave/arrive 轴（常见 V2 现状）：</p>
+    <table class="fill">
+      <thead>
+        <tr>
+          <th>order</th><th>refno</th><th>kind</th>
+          <th>start≈apos</th><th>end≈lpos</th>
+          <th>leave_dir</th><th>arrive_dir</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>0</td><td>HEAD</td><td>Head</td><td>(0,0,0)</td><td>—</td><td>+X</td><td>—</td></tr>
+        <tr><td>1</td><td>T1</td><td>Tubi</td><td>(0,0,0)</td><td>(1000,0,0)</td><td>+X</td><td>+X</td></tr>
+        <tr><td>2</td><td>W1</td><td>Weld</td><td>(1000,0,0)</td><td>(1000,0,0)</td><td>+X</td><td>+X</td></tr>
+        <tr><td>3</td><td>EA</td><td>Elbo</td><td>(1000,0,0)</td><td>(1100,0,100)</td><td>+Z</td><td>+X</td></tr>
+        <tr><td>4</td><td>T2</td><td>Tubi</td><td>(1100,0,100)</td><td>(1100,0,800)</td><td>+Z</td><td>+Z</td></tr>
+        <tr><td>5</td><td>EB</td><td>Elbo</td><td>(1100,0,800)</td><td>(1100,0,810)</td><td>+Z′(~12°)</td><td>+Z</td></tr>
+        <tr><td>6</td><td>T3</td><td>Tubi</td><td>(1100,0,810)</td><td>(1100,0,1500)</td><td>+Z′</td><td>+Z′</td></tr>
+        <tr><td>7</td><td>TAIL</td><td>Tail</td><td>—</td><td>(1100,0,1500)</td><td>—</td><td>—</td></tr>
+      </tbody>
+    </table>
+
+    <h2>示范填表（质量列）</h2>
+    <table class="fill">
+      <thead>
+        <tr><th>refno</th><th>arrive_pos</th><th>leave_pos</th><th>pos</th><th>GeomQuality</th><th>备注</th></tr>
+      </thead>
+      <tbody>
+        <tr class="approx">
+          <td>T1</td><td>start</td><td>end</td><td>中点</td><td>Approximate</td><td>直管通常可接受</td>
+        </tr>
+        <tr class="approx">
+          <td>EA</td><td>start</td><td>end</td><td>中点或 Bend.vertex</td><td>Approximate*</td>
+          <td>若有 BendData.vertex → 升 Exact 候选</td>
+        </tr>
+        <tr class="approx">
+          <td>EB</td><td>start</td><td>end</td><td>中点</td><td>Approximate</td>
+          <td>end≈start+短向量 → 贴拐点易判真</td>
+        </tr>
+      </tbody>
+    </table>
+    <p>
+      *若 Surreal/PDMS 导出补齐真 apos/lpos/pos，整行改为 <strong>Exact</strong>，P1 才与 PML 主切完全同构。
+    </p>
+
+    <h2>填完后应能推出的切段（对照课 2）</h2>
+    <pre>allarr[1] = [HEAD, T1, W1, EA]     // EA 桥接切开
+allarr[2] = [EA, T2, EB, T3, TAIL] // EB 贴拐点 → 不新开</pre>
+    <p>
+      用 Approximate 表手推时：EA 的 start/end 分离大 → 主切成立；
+      EB 的 leave_pos 贴近上一拐点（800 vs 810）→ 只改方向。
+      <em>若 Approximate 映射把 EB 的 lpos 算错，会误切成 3 段——这正是要标质量的原因。</em>
+    </p>
+
+    <h2>技能：质量标记</h2>
+    <section class="quiz" aria-label="小测">
+      <h3>小测（3 题）</h3>
+
+      <div class="q">
+        <p><strong>Q1.</strong> 仅有 start/end 填入 apos/lpos 时，质量应标？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：必须标 Approximate，避免假装 Exact。"
+          data-bad="">ApproximateStartEnd</button>
+        <button type="button" data-correct="0"
+          data-bad="没有真三分量就不能标 Exact。" data-bad="">Exact（与 PDMS 完全一致）</button>
+        <button type="button" data-correct="0"
+          data-bad="仍应填表并标记，而不是空行。" data-bad="">留空不填质量列</button>
+        <p class="feedback"></p>
+      </div>
+
+      <div class="q">
+        <p><strong>Q2.</strong> 何时可把弯头行升为 Exact？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：有真 apos/lpos/pos（或可靠 Bend.vertex+端口）。"
+          data-bad="">数据源提供真 apos/lpos/pos（或等价）</button>
+        <button type="button" data-correct="0"
+          data-bad="kind=Elbo 不等于几何 Exact。" data-bad="">只要 kind 写成 Elbo 即可升格</button>
+        <button type="button" data-correct="0"
+          data-bad="od 与点位质量无关。" data-bad="">outside_diameter 有值即可升格</button>
+        <p class="feedback"></p>
+      </div>
+
+      <div class="q">
+        <p><strong>Q3.</strong> Approximate 下 EB 被误切成新段，差异单应先怀疑？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：贴拐点依赖 lpos 精度；映射误差会导致误切。"
+          data-bad="">leave_pos 映射导致贴拐点判定失真</button>
+        <button type="button" data-correct="0"
+          data-bad="小尺寸不决定段数。" data-bad="">sepSmallDim 的 1.2 错层系数</button>
+        <button type="button" data-correct="0"
+          data-bad="前端不负责切段。" data-bad="">前端丢了第三条 primitive</button>
+        <p class="feedback"></p>
+      </div>
+    </section>
+
+    <h2>作业</h2>
+    <p>
+      复制课 2 玩具，自己做一版「质量列」表（可 Markdown），贴过来我帮你核对。
+      有真实 bran 更好：标清哪些字段 Exact、哪些 Approximate。
+    </p>
+
+    <div class="ask-teacher">
+      贴表或说「按此玩具生成 P1 单测 JSON 草稿（仍不动业务码）」。
+    </div>
+
+    <nav class="footer-nav">
+      <p>
+        <a href="0011-p0-field-dictionary.html">← 第 11 课</a>
+        · 下一课：<a href="0013-p1-test-fixtures.html">P1 单测 fixture →</a>
+      </p>
+    </nav>
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

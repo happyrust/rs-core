@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>速查 · lindim 小尺寸</title>
+  <link rel="stylesheet" href="../assets/lesson.css" />
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Reference · lindim</p>
+    <h1>小尺寸 / 加号焊速查</h1>
+
+    <h2>create 顺序</h2>
+    <pre>changeCheightAuto()  // 整链，bili≈0.7 getgoodcheight
+sepSmallDim()        // 拆行
+每行 new lindim + dimpos</pre>
+
+    <h2>双开关都关</h2>
+    <p>整列一点一行，原 cheight。</p>
+
+    <h2>塞不下（len &gt; dis）</h2>
+    <ol>
+      <li>收口已累积的正常行</li>
+      <li>缩字高：getgoodcheight(..., 0.8)，下限 cheight×bili(0.5)</li>
+      <li>仍不够 + sepSmallDim → level++，偏移 ± cheight×1.2×level（沿 ydir）</li>
+      <li>不允许错层 → 原基线硬塞缩小字高</li>
+    </ol>
+
+    <h2>加号焊</h2>
+    <pre>段内命中 adjustweld → plus=true
+plusstring = " +" &amp; adjustlen
+len += 加号字宽（含 plusstringcheightbili）</pre>
+
+    <p class="cite">源：<code>lindim.pmlobj</code> · <code>create</code> / <code>sepSmallDim</code></p>
+    <p class="footer-nav"><a href="../lessons/0006-lindim-smalldim-plus.html">← 第 6 课</a></p>
+  </main>
+</body>
+</html>

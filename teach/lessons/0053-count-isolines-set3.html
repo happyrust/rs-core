@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>第 53 课 · 反推套题 III</title>
+  <link rel="stylesheet" href="../assets/lesson.css" />
+  <style>
+    .viz {
+      margin: 1rem 0 0.9rem;
+      padding: 0.8rem 0.9rem 0.65rem;
+      background: #fff;
+      border: 1px solid var(--rule);
+    }
+    .viz h3 { margin: 0 0 0.45rem; font-size: 0.92rem; }
+    .viz svg { width: 100%; height: auto; display: block; }
+    .trap {
+      font-size: 0.82rem;
+      color: #a33b16;
+      margin: 0 0 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Lesson 0053 · 反推套题 III</p>
+    <h1>综合陷阱：车道 · 错层 · 强制切观感</h1>
+    <p class="lede">
+      把课 36/51/52 的易混点塞进读图题。口诀不变：只数换向直段。
+    </p>
+
+    <figure class="viz">
+      <h3>题图 K · 外长内短 + 流向</h3>
+      <p class="trap">陷阱：两层尺寸 + 箭头 = 2 段？</p>
+      <svg viewBox="0 0 640 180" xmlns="http://www.w3.org/2000/svg" role="img">
+        <line x1="40" y1="110" x2="520" y2="110" stroke="#0b1f33" stroke-width="14"/>
+        <line x1="80" y1="85" x2="240" y2="85" stroke="#007a8a" stroke-width="2"/>
+        <line x1="60" y1="55" x2="480" y2="55" stroke="#a33b16" stroke-width="2.5"/>
+        <polygon points="500,110 530,102 530,118" fill="#1f6b4a"/>
+      </svg>
+    </figure>
+    <section class="quiz">
+      <div class="q">
+        <p><strong>Q1.</strong> 题图 K isoline？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：dimtimes 两车道，1 段。"
+          data-bad="">1 条</button>
+        <button type="button" data-correct="0"
+          data-bad="车道≠段。" data-bad="">2 条</button>
+        <button type="button" data-correct="0"
+          data-bad="太多。" data-bad="">3 条</button>
+        <p class="feedback"></p>
+      </div>
+    </section>
+
+    <figure class="viz">
+      <h3>题图 L · 两排短数字错开</h3>
+      <p class="trap">陷阱：上下两排短尺寸 = 两段？</p>
+      <svg viewBox="0 0 640 180" xmlns="http://www.w3.org/2000/svg" role="img">
+        <line x1="40" y1="120" x2="500" y2="120" stroke="#0b1f33" stroke-width="14"/>
+        <line x1="60" y1="90" x2="150" y2="90" stroke="#0b1f33" stroke-width="2"/>
+        <text x="80" y="80" font-family="IBM Plex Mono, monospace" font-size="12" fill="#a33b16">45</text>
+        <line x1="180" y1="60" x2="280" y2="60" stroke="#0b1f33" stroke-width="2"/>
+        <text x="200" y="50" font-family="IBM Plex Mono, monospace" font-size="12" fill="#a33b16">38</text>
+        <line x1="320" y1="90" x2="420" y2="90" stroke="#0b1f33" stroke-width="2"/>
+        <text x="340" y="80" font-family="IBM Plex Mono, monospace" font-size="12" fill="#a33b16">52</text>
+      </svg>
+    </figure>
+    <section class="quiz">
+      <div class="q">
+        <p><strong>Q2.</strong> 题图 L isoline？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：lindim 错层，仍 1 段。"
+          data-bad="">1 条</button>
+        <button type="button" data-correct="0"
+          data-bad="错层不加段。" data-bad="">3 条</button>
+        <button type="button" data-correct="0"
+          data-bad="不是。" data-bad="">2 条</button>
+        <p class="feedback"></p>
+      </div>
+    </section>
+
+    <figure class="viz">
+      <h3>题图 M · 真拐 + 短字错层</h3>
+      <p class="trap">陷阱：拐弯处又有错层，数成 4？</p>
+      <svg viewBox="0 0 640 220" xmlns="http://www.w3.org/2000/svg" role="img">
+        <line x1="40" y1="160" x2="260" y2="160" stroke="#0b1f33" stroke-width="12"/>
+        <path d="M260 160 Q 310 160 310 110" fill="none" stroke="#007a8a" stroke-width="12"/>
+        <line x1="310" y1="110" x2="310" y2="40" stroke="#0b1f33" stroke-width="12"/>
+        <circle cx="260" cy="160" r="6" fill="#1f6b4a"/>
+        <line x1="60" y1="130" x2="140" y2="130" stroke="#a33b16" stroke-width="2"/>
+        <line x1="160" y1="105" x2="240" y2="105" stroke="#a33b16" stroke-width="2"/>
+        <line x1="350" y1="100" x2="350" y2="55" stroke="#a33b16" stroke-width="2"/>
+      </svg>
+    </figure>
+    <section class="quiz">
+      <div class="q">
+        <p><strong>Q3.</strong> 题图 M isoline？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：真切 2 段；错层不加。"
+          data-bad="">2 条</button>
+        <button type="button" data-correct="0"
+          data-bad="错层不是新段。" data-bad="">4 条</button>
+        <button type="button" data-correct="0"
+          data-bad="有 E 真切。" data-bad="">1 条</button>
+        <p class="feedback"></p>
+      </div>
+    </section>
+
+    <figure class="viz">
+      <h3>题图 N · 贴拐点 + 材料框</h3>
+      <p class="trap">陷阱：方向变了又有材料框？</p>
+      <svg viewBox="0 0 640 200" xmlns="http://www.w3.org/2000/svg" role="img">
+        <line x1="40" y1="140" x2="280" y2="140" stroke="#0b1f33" stroke-width="12"/>
+        <path d="M280 140 Q 310 140 310 110" fill="none" stroke="#007a8a" stroke-width="12"/>
+        <line x1="310" y1="110" x2="310" y2="40" stroke="#0b1f33" stroke-width="12"/>
+        <line x1="50" y1="105" x2="270" y2="105" stroke="#a33b16" stroke-width="2.5"/>
+        <rect x="200" y="155" width="90" height="26" fill="#e5f3ec" stroke="#1f6b4a"/>
+        <text x="215" y="173" font-family="IBM Plex Mono, monospace" font-size="11" fill="#1f6b4a">材料</text>
+      </svg>
+    </figure>
+    <section class="quiz">
+      <div class="q">
+        <p><strong>Q4.</strong> 题图 N？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：贴拐点观感 + 材料不加段 → 1。"
+          data-bad="">1 条（贴拐点）</button>
+        <button type="button" data-correct="0"
+          data-bad="缺第二段尺寸与 E。" data-bad="">2 条</button>
+        <button type="button" data-correct="0"
+          data-bad="材料不加。" data-bad="">3 条</button>
+        <p class="feedback"></p>
+      </div>
+    </section>
+
+    <div class="ask-teacher">
+      下一课：学习记录存档。
+    </div>
+
+    <nav class="footer-nav">
+      <p>
+        <a href="0052-level-vs-dimtimes.html">← 第 52 课</a>
+        · 下一课：<a href="0054-learning-notes.html">学习记录 →</a>
+        · <a href="0037-count-isolines-set2.html">套题 II</a>
+        · <a href="../INDEX.md">目录</a>
+      </p>
+    </nav>
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

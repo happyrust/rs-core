@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>第 9 课 · extract_isolines 改动提案</title>
+  <link rel="stylesheet" href="../assets/lesson.css" />
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Lesson 0009 · 动码前的设计</p>
+    <h1>写一份 <code>extract_isolines</code> 改动提案</h1>
+    <p class="lede">
+      Mission 成功标准之一：能指出 V2 与 PML 切段差异，并知道<strong>改哪一层</strong>。
+      本课练写提案——先对齐语义，再谈 PR；避免「把 5° 改成 1°」式空拧。
+    </p>
+
+    <div class="callout">
+      <strong>本课只钉一件事：</strong>提案五段结构（背景 / 语义差距 / 目标行为 / 非目标 / 验收）。
+      不在本课直接改仓库代码。
+    </div>
+
+    <h2>现状一句话</h2>
+    <pre>// branch_calculator.rs · extract_isolines
+angle &lt; 5° || angle &gt; 175°  → 视为同向，并入当前 isoline
+否则                         → 新开 isoline
+
+输入：LayoutResult.linear_dims（已是排好的段）
+缺失：apos/lpos、贴拐点、桥接 mem、ELBO/BEND 类型</pre>
+    <p class="cite">
+      PML 真值：
+      <a href="../../MBD/markpipe/object/isobran.pmlobj"><code>getisolines</code></a>
+      · 课
+      <a href="0001-when-elbow-splits.html">0001</a>–<a href="0002-hand-push-allarr.html">0002</a>
+      · 差异单
+      <a href="0008-diff-ticket-workshop.html">0008</a>
+    </p>
+
+    <h2>提案模板（推荐结构）</h2>
+    <ol>
+      <li><strong>背景</strong>：哪类 bran 失败（大弯并段 / 上游未断开）。</li>
+      <li><strong>语义差距</strong>：对照 PML 三条岔路 + 桥接；写明 V2 缺哪些输入。</li>
+      <li><strong>目标行为</strong>：用可测试句子写「给定 mem 序列与几何，应输出 N 段且桥接成员为…」。</li>
+      <li><strong>非目标</strong>：本 PR <em>不</em>做 Polar 邻段、不改 lindim、不改前端。</li>
+      <li><strong>验收</strong>：单元测试表（含贴拐点不切、桥接双含、大转角必切）+ 1 条样例 bran。</li>
+    </ol>
+
+    <h2>两种改法，提案里必须二选一（或分阶段）</h2>
+    <p><strong>方案 α · 加固 extract（仍吃 LayoutResult）</strong></p>
+    <ul>
+      <li>适用：上游已在弯头断开，仅合并逻辑过宽/过窄。</li>
+      <li>风险：无 apos/lpos 时仍无法复现「贴拐点不切」。</li>
+    </ul>
+    <p><strong>方案 β · 下沉拆解（吃 BranchMember / 类型）</strong></p>
+    <ul>
+      <li>适用：上游把 168° 弯抹成近共线（第 8 课陷阱）。</li>
+      <li>对齐 PML：在成员遍历层做桥接切段，再生成 dim；extract 只做校验。</li>
+      <li>工作量大，但才是 mission 长期解。</li>
+    </ul>
+
+    <div class="callout">
+      <strong>推荐默认立场：</strong>
+      先用差异单证明是 α 还是 β；证据不足时<strong>先 β 调查上游</strong>，不要先拧角度魔法数。
+    </div>
+
+    <h2>示范：可粘贴的短提案骨架</h2>
+    <pre>## 背景
+样例 bran X：PDMS 3 段主尺寸，V2 2 段；转角处为 BEND。
+
+## 语义差距
+PML getisolines 以方向变化 + apos/lpos 桥接切段；
+V2 extract_isolines 仅根据相邻 linear_dim 方向角合并，
+且依赖 LayoutResult 是否已在弯头断开。
+
+## 目标行为
+- 给定含 BEND 且 apos/lpos 分离的成员序列 → 输出桥接两段
+- lpos 贴上一拐点 → 不新开段，仅更新离开方向
+- 回归：原共线多 dim 仍合并为 1 段
+
+## 非目标
+不改 polar 邻段占位；不改 small_dim 常数；不改前端。
+
+## 验收
+- 单测：同向合并 / 桥接切开 / 贴拐点不切
+- 样例 bran X 段数与 PDMS 一致
+- cargo check -p …（按仓库约定，不默认 test）</pre>
+
+    <h2>技能：审提案</h2>
+    <section class="quiz" aria-label="小测">
+      <h3>小测（3 题）</h3>
+
+      <div class="q">
+        <p><strong>Q1.</strong> 证据显示 Layout 在弯头两侧方向仅差 2°。提案应倾向？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：上游未断开 → 方案 β（或先修 layout），不是只拧 5°。"
+          data-bad="">方案 β：下沉到成员/layout 拆解层</button>
+        <button type="button" data-correct="0"
+          data-bad="2° 会被合并，但根因在上游；只改 extract 阈值治标。" data-bad="">方案 α：只把五度改成零点五度</button>
+        <button type="button" data-correct="0"
+          data-bad="offset 与并段无关。" data-bad="">打开 use_pdms_offset_formula 即可</button>
+        <p class="feedback"></p>
+      </div>
+
+      <div class="q">
+        <p><strong>Q2.</strong> 好提案里「非目标」的作用是？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：锁范围，避免 PR 膨胀到 Polar/前端。"
+          data-bad="">限定本 PR 不做的模块，防止范围膨胀</button>
+        <button type="button" data-correct="0"
+          data-bad="非目标不是列需求清单。" data-bad="">列出所有想做的新功能清单</button>
+        <button type="button" data-correct="0"
+          data-bad="恰恰相反：用来防止乱改。" data-bad="">允许随意改任何相关文件</button>
+        <p class="feedback"></p>
+      </div>
+
+      <div class="q">
+        <p><strong>Q3.</strong> 验收里最应包含的切段用例是？</p>
+        <button type="button" data-correct="0"
+          data-bad="缺桥接与贴拐点，不够对齐 PML。" data-bad="">只测共线多 dim 合并成一段</button>
+        <button type="button" data-correct="1"
+          data-ok="对：合并 + 桥接切开 + 贴拐点不切，才覆盖第 1–2 课语义。"
+          data-bad="">同向合并、桥接切开、贴拐点不切都要有</button>
+        <button type="button" data-correct="0"
+          data-bad="字体错层是 lindim，不是本提案核心。" data-bad="">只测 sepSmallDim 错层是否触发</button>
+        <p class="feedback"></p>
+      </div>
+    </section>
+
+    <h2>作业</h2>
+    <p>
+      按骨架写一版「短提案」（可针对假想 bran），贴到对话；
+      我按五段结构批：缺证据、范围是否膨胀、验收是否可测。
+    </p>
+
+    <div class="ask-teacher">
+      也可说「按方案 β 帮我扩一版实施步骤（仍不动码）」。
+    </div>
+
+    <nav class="footer-nav">
+      <p>
+        <a href="0008-diff-ticket-workshop.html">← 第 8 课</a>
+        · 下一课：<a href="0010-plan-beta-roadmap.html">方案 β 实施步骤 →</a>
+      </p>
+    </nav>
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

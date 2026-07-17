@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>第 62 课 · use_pml_split 旁路动手</title>
+  <link rel="stylesheet" href="../assets/lesson.css" />
+  <style>
+    .viz {
+      margin: 1.1rem 0 1.3rem;
+      padding: 0.85rem 0.95rem 0.7rem;
+      background: #fff;
+      border: 1px solid var(--rule);
+    }
+    .viz h3 { margin: 0 0 0.5rem; font-size: 0.95rem; }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Lesson 0062 · P2 动手草图</p>
+    <h1>写下 <code>use_pml_split</code> 旁路（草图课）</h1>
+    <p class="lede">
+      本课带你<strong>在纸上/草稿文件里</strong>写出开关函数形状。
+      本仓库若尚无完整 <code>extract_isolines</code>，就把草图放在
+      <code>teach/p1_split</code> 旁的 <code>wiring_sketch.rs</code>（不进主链）。
+    </p>
+
+    <div class="callout">
+      目标：关掉开关 = 旧行为；打开 = 调 <code>split_isolines_pml</code> 再
+      <code>bags_to_isolines</code>（可先 stub）。
+    </div>
+
+    <h2>步骤 1 · 配置位</h2>
+    <pre>struct BranchCalcConfig {
+    pub use_pml_split: bool,  // default false
+    // …
+}</pre>
+
+    <h2>步骤 2 · 门面</h2>
+    <pre>fn extract_isolines(layout: &Layout, cfg: &BranchCalcConfig) -> Vec&lt;IsolineInfo&gt; {
+    if cfg.use_pml_split {
+        match try_pml_split(layout) {
+            Ok(v) => return v,
+            Err(issues) => {
+                log_issues(issues);
+                // fall through to legacy
+            }
+        }
+    }
+    extract_isolines_legacy(layout, cfg)
+}</pre>
+
+    <h2>步骤 3 · try_pml_split</h2>
+    <pre>fn try_pml_split(layout: &Layout) -> Result&lt;Vec&lt;IsolineInfo&gt;, Vec&lt;SplitIssue&gt;&gt; {
+    let members = map_to_split_members(layout)?;  // Missing geom → Err
+    let r = split_isolines_pml(&members);
+    if !r.issues.is_empty() && should_abort(&r.issues) {
+        return Err(r.issues);
+    }
+    Ok(bags_to_isolines(layout, &r.allarr, &r.ldirs))
+}</pre>
+
+    <h2>步骤 4 · 最小测</h2>
+    <ol>
+      <li><code>use_pml_split=false</code>：与接线前 golden 一致</li>
+      <li><code>true</code> + 五枚等价 Layout：allarr 对齐 fixture</li>
+      <li>缺字段：走 Err → legacy，日志有 issue</li>
+    </ol>
+
+    <h2>今日不做</h2>
+    <p>Polar、putIntoIsoLine、真实 PDMS 拉数——那些是后日。</p>
+
+    <section class="quiz">
+      <h3>小测</h3>
+      <div class="q">
+        <p><strong>Q1.</strong> 默认 use_pml_split？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：先 false，稳妥旁路。"
+          data-bad="">false</button>
+        <button type="button" data-correct="0"
+          data-bad="风险大。" data-bad="">true</button>
+        <button type="button" data-correct="0"
+          data-bad="不是。" data-bad="">删除该字段</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q2.</strong> P1 失败时？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：记日志并回退 legacy。"
+          data-bad="">log + fall through legacy</button>
+        <button type="button" data-correct="0"
+          data-bad="太狠。" data-bad="">进程直接 abort</button>
+        <button type="button" data-correct="0"
+          data-bad="静默坏。" data-bad="">返回空 Vec 且不记原因</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q3.</strong> bags_to_isolines 需要？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：段成员 + 方向。"
+          data-bad="">allarr + ldirs（+ layout 几何）</button>
+        <button type="button" data-correct="0"
+          data-bad="不够。" data-bad="">只要 refno 字符串</button>
+        <button type="button" data-correct="0"
+          data-bad="不是。" data-bad="">只要 SITE 名</button>
+        <p class="feedback"></p>
+      </div>
+    </section>
+
+    <div class="ask-teacher">
+      下一课：wiring_sketch 落地。
+    </div>
+
+    <nav class="footer-nav">
+      <p>
+        <a href="0061-p3-polar-design.html">← 第 61 课</a>
+        · 下一课：<a href="0063-wiring-sketch-landed.html">sketch 落地 →</a>
+        · <a href="0057-p2-wiring-design.html">课 57</a>
+        · <a href="../INDEX.md">目录</a>
+      </p>
+    </nav>
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

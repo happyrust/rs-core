@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>第 55 课 · 开码日检查单</title>
+  <link rel="stylesheet" href="../assets/lesson.css" />
+  <style>
+    .viz {
+      margin: 1.1rem 0 1.3rem;
+      padding: 0.85rem 0.95rem 0.7rem;
+      background: #fff;
+      border: 1px solid var(--rule);
+    }
+    .viz h3 { margin: 0 0 0.5rem; font-size: 0.95rem; }
+    .viz svg { width: 100%; height: auto; display: block; }
+    .chk { list-style: none; padding: 0; }
+    .chk li {
+      margin: 0.4rem 0;
+      padding: 0.5rem 0.7rem;
+      border: 1px solid var(--rule);
+      background: #fff;
+      font-size: 0.88rem;
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Lesson 0055 · 动手当日</p>
+    <h1>开码日：坐下写之前的 10 分钟</h1>
+    <p class="lede">
+      仍不写业务代码。把「开始实现 P1」落地成可执行检查单——
+      避免打开编辑器后不知道第一文件写哪儿。
+    </p>
+
+    <div class="callout">
+      本工作区笔记：可能<strong>没有</strong> <code>src/mbd</code>。第一步永远是「找到或创建落点」。
+    </div>
+
+    <figure class="viz">
+      <h3>图 · 开码日路径</h3>
+      <svg viewBox="0 0 720 160" xmlns="http://www.w3.org/2000/svg" role="img">
+        <rect x="20" y="40" width="120" height="70" fill="#e5f3ec" stroke="#1f6b4a"/>
+        <text x="80" y="80" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#1f6b4a">找落点</text>
+        <path d="M140 75 L175 75" stroke="#0b1f33"/>
+        <rect x="175" y="40" width="120" height="70" fill="#d4eef1" stroke="#007a8a"/>
+        <text x="235" y="80" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#007a8a">贴伪代码</text>
+        <path d="M295 75 L330 75" stroke="#0b1f33"/>
+        <rect x="330" y="40" width="120" height="70" fill="#fff" stroke="#9aafbc"/>
+        <text x="390" y="80" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#0b1f33">读 JSON</text>
+        <path d="M450 75 L485 75" stroke="#0b1f33"/>
+        <rect x="485" y="40" width="100" height="70" fill="#f8ebe6" stroke="#a33b16"/>
+        <text x="535" y="80" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#a33b16">toy 先绿</text>
+        <path d="M585 75 L620 75" stroke="#0b1f33"/>
+        <rect x="620" y="40" width="80" height="70" fill="#e5f3ec" stroke="#1f6b4a"/>
+        <text x="660" y="80" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#1f6b4a">五枚</text>
+      </svg>
+    </figure>
+
+    <h2>10 分钟检查单</h2>
+    <ul class="chk">
+      <li>□ 1. <code>Test-Path src/mbd</code>（或搜 <code>extract_isolines</code>）——有则挂旁路，无则新建 <code>src/mbd/split_isolines.rs</code> + mod</li>
+      <li>□ 2. 打开 <a href="../reference/split-isolines-pseudocode.html">伪代码</a> 与 <a href="../reference/pseudocode-fixture-map.html">对照表</a></li>
+      <li>□ 3. 打开 <a href="../fixtures/p1-split-isolines.json">fixture JSON</a>，确认五枚 id</li>
+      <li>□ 4. 写最小类型：Member { refno, kind, leave_dir, arrive_dir, apos, lpos, pos }</li>
+      <li>□ 5. 实现 <code>split_isolines_pml(members) -> Vec&lt;Vec&lt;String&gt;&gt;</code></li>
+      <li>□ 6. 单测只断言 <code>toy-bridge-and-stick</code></li>
+      <li>□ 7. 再挂 colinear / near-180 / variant / force</li>
+      <li>□ 8. 强制切<strong>不要去重</strong></li>
+      <li>□ 9. 失败时打印实际 allarr（便于对照手推课）</li>
+      <li>□ 10. 不碰 Polar / putIntoIsoLine / lindim（本日范围）</li>
+    </ul>
+
+    <section class="quiz">
+      <h3>小测</h3>
+      <div class="q">
+        <p><strong>Q1.</strong> 开码日第一刀？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：确认模块落点。"
+          data-bad="">确认/创建 src 落点</button>
+        <button type="button" data-correct="0"
+          data-bad="超范围。" data-bad="">先写 Polar 邻段</button>
+        <button type="button" data-correct="0"
+          data-bad="AGENTS 不建议。" data-bad="">cargo clean</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q2.</strong> 第一枚该绿的 fixture？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：toy 覆盖桥+贴。"
+          data-bad="">toy-bridge-and-stick</button>
+        <button type="button" data-correct="0"
+          data-bad="可后挂。" data-bad="">先 force 再 toy</button>
+        <button type="button" data-correct="0"
+          data-bad="不是。" data-bad="">支架材料 JSON</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q3.</strong> 本日明确不做？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：Polar/归段/lindim 另日。"
+          data-bad="">Polar · 归段 · lindim</button>
+        <button type="button" data-correct="0"
+          data-bad="那是本日目标。" data-bad="">五枚切段 fixture</button>
+        <button type="button" data-correct="0"
+          data-bad="需要。" data-bad="">打印失败 allarr</button>
+        <p class="feedback"></p>
+      </div>
+    </section>
+
+    <div class="ask-teacher">
+      P1 已落地：见下一课。
+    </div>
+
+    <nav class="footer-nav">
+      <p>
+        <a href="0054-learning-notes.html">← 第 54 课</a>
+        · 下一课：<a href="0056-p1-landed.html">P1 落地 →</a>
+        · <a href="0038-p1-preflight-checklist.html">课 38 门禁</a>
+        · <a href="../INDEX.md">目录</a>
+      </p>
+    </nav>
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

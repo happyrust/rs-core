@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>第 27 课 · BRAN 尺寸总复习</title>
+  <link rel="stylesheet" href="../assets/lesson.css" />
+  <style>
+    .card {
+      background: var(--card);
+      border: 1px solid var(--rule);
+      padding: 0.85rem 1rem;
+      margin: 0 0 0.85rem;
+    }
+    .card h3 {
+      margin: 0 0 0.4rem;
+      font-size: 0.95rem;
+      color: var(--accent);
+      font-family: var(--mono);
+    }
+    .card p, .card li { font-size: 0.9rem; color: var(--muted); margin: 0; }
+    .card ul { margin: 0.35rem 0 0; padding-left: 1.1rem; }
+    .card li + li { margin-top: 0.25rem; }
+    .map {
+      display: grid;
+      gap: 0.5rem;
+      font-size: 0.82rem;
+      margin: 1rem 0;
+    }
+    .map a { font-family: var(--mono); }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Lesson 0027 · 总复习提纲</p>
+    <h1>BRAN 尺寸标注：你现在应能讲清什么</h1>
+    <p class="lede">
+      一张提纲收束形象化阶段。每块都能用自己的话讲一遍，并指出对应示意图课。
+    </p>
+
+    <div class="callout">
+      <strong>总目标一句话：</strong>
+      让每条直段尺寸量对一段直管子；弯头处数字接得上；其它标注不搅乱段数。
+    </div>
+
+    <div class="card">
+      <h3>1. 为什么要切段</h3>
+      <ul>
+        <li>不能斜跨拐角画一把尺 → 废尺寸</li>
+        <li>切段 = 给标注准备「尺子的轨道」（isoline）</li>
+        <li>课：<a href="0018-why-split-for-dims.html">0018</a></li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>2. 真切开 vs 贴拐点</h3>
+      <ul>
+        <li>真切开：lpos 走远 → 多一段，弯头双含</li>
+        <li>贴拐点：lpos≈上一拐点 → 只改方向，不加段（避免 0 长废尺）</li>
+        <li>课：<a href="0017-stick-vs-split.html">0017</a></li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>3. 桥接双含与公共端 E</h3>
+      <ul>
+        <li>物理上拐角一个点；两段尺寸都钉 E，A+B 才等于路径长</li>
+        <li>mems 里弯头出现两次，是为了两边都能取到 E</li>
+        <li>课：<a href="0019-bridge-and-leg-visual.html">0019</a> · <a href="0020-shared-e-affects-numbers.html">0020</a> · <a href="0021-when-shared-e-breaks.html">0021</a></li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>4. leg 归段</h3>
+      <ul>
+        <li>腿跟谁平行，尺寸就跟谁的管轴/车道</li>
+        <li>近平行 + attapos 投影；不是「弯头在谁 mems 就进谁」</li>
+        <li>课：<a href="0016-elbow-dim-visual.html">0016 图5</a> · <a href="0019-bridge-and-leg-visual.html">0019 图2</a></li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>5. 同段多层（dimtimes）</h3>
+      <ul>
+        <li>ATTA 子尺寸靠管；主尺寸可抬一层</li>
+        <li>仍是 1 条 isoline，不要数成多段</li>
+        <li>课：<a href="0022-bran-dim-overview.html">0022 图3</a> · 反推 <a href="0025-count-isolines-from-drawing.html">0025-Q3</a></li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>6. 斜管 / 焊缝（不改变段数的常见层）</h3>
+      <ul>
+        <li>斜管过陡 → 拆水平+竖直分量（仍 1 段）</li>
+        <li>焊缝字引线避让；调整焊可在数字旁 +Δ</li>
+        <li>课：<a href="0023-slope-dim-visual.html">0023</a> · <a href="0024-weld-mark-visual.html">0024</a></li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>7. 读图反推 isoline</h3>
+      <ul>
+        <li>数主管换向；斜管拆分/子尺寸/焊缝/腿长默认不加段</li>
+        <li>课：<a href="0025-count-isolines-from-drawing.html">0025</a> · <a href="0026-count-isolines-harder.html">0026</a></li>
+      </ul>
+    </div>
+
+    <h2>流水线（背板）</h2>
+    <pre>BRAN 成员 → 切 isoline（真切/贴/桥）→ 归 objects（含 leg）
+         → 方向/车道（dimtimes）→ lindim（数字=端点距）→ 图纸</pre>
+
+    <h2>自测三问（口述）</h2>
+    <section class="quiz">
+      <div class="q">
+        <p><strong>Q1.</strong> 若只能留一句教别人，应是？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：切段是为了让直段尺寸量对，并在弯头处接得上。"
+          data-bad="">让每段直尺寸量对，弯头处数字接得上</button>
+        <button type="button" data-correct="0"
+          data-bad="太偏技术细节。" data-bad="">必须记住 0.1 毫米这个数字</button>
+        <button type="button" data-correct="0"
+          data-bad="不是最终目的。" data-bad="">把所有焊缝都画成红色</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q2.</strong> mems 是什么？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：该 isoline 包含的构件名单。"
+          data-bad="">该直段包含哪些管件成员的名单</button>
+        <button type="button" data-correct="0"
+          data-bad="那是 objects。" data-bad="">要画的标注对象列表</button>
+        <button type="button" data-correct="0"
+          data-bad="无关。" data-bad="">字体文件名</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q3.</strong> 图上有水平尺寸+竖直尺寸+焊缝字，最少几段？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：换向一次 → 至少 2；焊缝不加段。"
+          data-bad="">2 条 isoline（焊缝不计）</button>
+        <button type="button" data-correct="0"
+          data-bad="焊缝不是第三段。" data-bad="">3 条</button>
+        <button type="button" data-correct="0"
+          data-bad="有换向就不会只有 1。" data-bad="">1 条</button>
+        <p class="feedback"></p>
+      </div>
+    </section>
+
+    <div class="map">
+      <strong>形象化课速链：</strong>
+      <a href="0016-elbow-dim-visual.html">16 弯头总图</a> ·
+      <a href="0017-stick-vs-split.html">17 贴/切</a> ·
+      <a href="0018-why-split-for-dims.html">18 为何</a> ·
+      <a href="0019-bridge-and-leg-visual.html">19 桥/腿</a> ·
+      <a href="0020-shared-e-affects-numbers.html">20 数字</a> ·
+      <a href="0022-bran-dim-overview.html">22 总览</a> ·
+      <a href="0025-count-isolines-from-drawing.html">25–26 反推</a>
+    </div>
+
+    <div class="ask-teacher">
+      提纲里哪一块还讲不利索，点名编号；或换主题（材料标签 / 开始写 P1 代码）。
+    </div>
+
+    <nav class="footer-nav">
+      <p>
+        <a href="0026-count-isolines-harder.html">← 第 26 课</a>
+        · 下一课：<a href="0028-material-tag-visual.html">材料与标签 →</a>
+      </p>
+    </nav>
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

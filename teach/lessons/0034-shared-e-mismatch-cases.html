@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>第 34 课 · 公共端 E 接不上</title>
+  <link rel="stylesheet" href="../assets/lesson.css" />
+  <style>
+    .viz {
+      margin: 1.1rem 0 1.3rem;
+      padding: 0.85rem 0.95rem 0.7rem;
+      background: #fff;
+      border: 1px solid var(--rule);
+    }
+    .viz h3 { margin: 0 0 0.5rem; font-size: 0.95rem; }
+    .viz svg { width: 100%; height: auto; display: block; }
+    .viz figcaption { margin-top: 0.5rem; font-size: 0.8rem; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Lesson 0034 · 病例课</p>
+    <h1>公共端 E：数字为何接不上</h1>
+    <p class="lede">
+      健康切段：<code>DIM-A + DIM-B ≈</code> 路径长，两段在同一点 <strong>E</strong> 相接。
+      本课专看「看起来切了，加起来却对不上」的三种病例。
+    </p>
+
+    <div class="callout">
+      健康基线见课 20；何时 E 会坏见课 21。这里用<strong>对照图</strong>练一眼诊断。
+    </div>
+
+    <figure class="viz">
+      <h3>图 0 · 健康（对照）</h3>
+      <svg viewBox="0 0 700 160" xmlns="http://www.w3.org/2000/svg" role="img">
+        <line x1="40" y1="100" x2="280" y2="100" stroke="#0b1f33" stroke-width="10"/>
+        <path d="M280 100 Q 340 100 340 50" fill="none" stroke="#007a8a" stroke-width="10"/>
+        <line x1="340" y1="50" x2="340" y2="20" stroke="#0b1f33" stroke-width="10"/>
+        <circle cx="280" cy="100" r="7" fill="#1f6b4a"/>
+        <text x="280" y="130" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="13" fill="#1f6b4a">E 同一点</text>
+        <line x1="50" y1="70" x2="270" y2="70" stroke="#a33b16" stroke-width="2"/>
+        <text x="140" y="60" font-family="IBM Plex Mono, monospace" font-size="12" fill="#a33b16">DIM-A</text>
+        <line x1="380" y1="50" x2="380" y2="25" stroke="#a33b16" stroke-width="2"/>
+        <text x="400" y="40" font-family="IBM Plex Mono, monospace" font-size="12" fill="#a33b16">DIM-B</text>
+        <text x="500" y="90" font-family="IBM Plex Sans, sans-serif" font-size="13" fill="#1f6b4a">A+B ≈ 路径</text>
+      </svg>
+      <figcaption>诊断口：先找 E 是否唯一、再问 leg 是否归对段。</figcaption>
+    </figure>
+
+    <figure class="viz">
+      <h3>病例 1 · 假切开（没有共享 E）</h3>
+      <svg viewBox="0 0 700 180" xmlns="http://www.w3.org/2000/svg" role="img">
+        <line x1="40" y1="110" x2="250" y2="110" stroke="#0b1f33" stroke-width="10"/>
+        <path d="M250 110 Q 300 110 300 60" fill="none" stroke="#007a8a" stroke-width="10"/>
+        <line x1="320" y1="55" x2="320" y2="20" stroke="#0b1f33" stroke-width="10"/>
+        <circle cx="250" cy="110" r="6" fill="#a33b16"/>
+        <circle cx="320" cy="55" r="6" fill="#a33b16"/>
+        <text x="250" y="145" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#a33b16">E1</text>
+        <text x="340" y="70" font-family="IBM Plex Mono, monospace" font-size="12" fill="#a33b16">E2</text>
+        <line x1="50" y1="80" x2="240" y2="80" stroke="#a33b16" stroke-width="2"/>
+        <line x1="360" y1="50" x2="360" y2="25" stroke="#a33b16" stroke-width="2"/>
+        <text x="450" y="90" font-family="IBM Plex Sans, sans-serif" font-size="13" fill="#a33b16">两段端点错位</text>
+        <text x="450" y="115" font-family="IBM Plex Sans, sans-serif" font-size="12" fill="#4a5d6e">中间缺口/重叠进不了 A+B</text>
+      </svg>
+      <figcaption>病因：切段端点各算各的（apos/lpos 不一致、偏移公式分叉）。</figcaption>
+    </figure>
+
+    <figure class="viz">
+      <h3>病例 2 · leg 归错段</h3>
+      <svg viewBox="0 0 700 200" xmlns="http://www.w3.org/2000/svg" role="img">
+        <line x1="40" y1="120" x2="280" y2="120" stroke="#0b1f33" stroke-width="10"/>
+        <path d="M280 120 Q 340 120 340 60" fill="none" stroke="#007a8a" stroke-width="10"/>
+        <line x1="340" y1="60" x2="340" y2="20" stroke="#0b1f33" stroke-width="10"/>
+        <circle cx="280" cy="120" r="7" fill="#1f6b4a"/>
+        <text x="280" y="155" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#1f6b4a">E 点对</text>
+        <!-- wrong: vertical dim includes horizontal leg -->
+        <line x1="60" y1="90" x2="330" y2="90" stroke="#a33b16" stroke-width="2" stroke-dasharray="6 3"/>
+        <text x="160" y="80" font-family="IBM Plex Mono, monospace" font-size="12" fill="#a33b16">DIM-A 吃了弯头两腿？</text>
+        <line x1="380" y1="55" x2="380" y2="25" stroke="#9aafbc" stroke-width="2"/>
+        <text x="400" y="40" font-family="IBM Plex Mono, monospace" font-size="12" fill="#9aafbc">DIM-B 偏短</text>
+        <text x="480" y="120" font-family="IBM Plex Sans, sans-serif" font-size="13" fill="#a33b16">E 在，leg 不在该段</text>
+        <text x="480" y="145" font-family="IBM Plex Sans, sans-serif" font-size="12" fill="#4a5d6e">pipedir ∥ ori.zdir 归段失败</text>
+      </svg>
+      <figcaption>病因：桥接双含了，但画尺寸时把弯头腿派错 isoline（课 19）。</figcaption>
+    </figure>
+
+    <figure class="viz">
+      <h3>病例 3 · 偏移/公式不一致（同 E，量错尺）</h3>
+      <svg viewBox="0 0 700 180" xmlns="http://www.w3.org/2000/svg" role="img">
+        <line x1="50" y1="100" x2="300" y2="100" stroke="#0b1f33" stroke-width="10"/>
+        <path d="M300 100 Q 360 100 360 50" fill="none" stroke="#007a8a" stroke-width="10"/>
+        <line x1="360" y1="50" x2="360" y2="20" stroke="#0b1f33" stroke-width="10"/>
+        <circle cx="300" cy="100" r="7" fill="#1f6b4a"/>
+        <line x1="60" y1="70" x2="290" y2="70" stroke="#a33b16" stroke-width="2"/>
+        <text x="140" y="60" font-family="IBM Plex Mono, monospace" font-size="12" fill="#a33b16">A=1200</text>
+        <line x1="400" y1="50" x2="400" y2="25" stroke="#a33b16" stroke-width="2"/>
+        <text x="420" y="40" font-family="IBM Plex Mono, monospace" font-size="12" fill="#a33b16">B=800</text>
+        <text x="500" y="90" font-family="IBM Plex Sans, sans-serif" font-size="13" fill="#a33b16">A+B ≠ 真路径</text>
+        <text x="500" y="115" font-family="IBM Plex Sans, sans-serif" font-size="12" fill="#4a5d6e">一端用 PDMS 偏移</text>
+        <text x="500" y="135" font-family="IBM Plex Sans, sans-serif" font-size="12" fill="#4a5d6e">一端用另一套公式</text>
+      </svg>
+      <figcaption>病因：V2 <code>use_pdms_offset_formula</code> 与 PML 不一致时，E 重合但投影长度漂。</figcaption>
+    </figure>
+
+    <h2>诊断流程（diff 时用）</h2>
+    <ol>
+      <li>两段端点是否同一坐标 E？→ 否：病例 1</li>
+      <li>E 对，但一腿数字「肥」一腿「瘦」？→ 病例 2</li>
+      <li>E 对、leg 对，总和仍偏？→ 病例 3（偏移/单位/投影）</li>
+    </ol>
+
+    <section class="quiz">
+      <h3>病例小测</h3>
+      <div class="q">
+        <p><strong>Q1.</strong> 图上出现 E1 与 E2 两个弯头端点，优先像？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：假切开 / 端点未共享。"
+          data-bad="">病例 1：没有共享 E</button>
+        <button type="button" data-correct="0"
+          data-bad="E 已裂开，不是纯 leg 问题。" data-bad="">仅 leg 归错</button>
+        <button type="button" data-correct="0"
+          data-bad="不是。" data-bad="">正常贴拐点</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q2.</strong> E 重合，但水平尺寸像吃进了竖管腿？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：leg 归段失败。"
+          data-bad="">病例 2：leg 归错段</button>
+        <button type="button" data-correct="0"
+          data-bad="E 还在。" data-bad="">病例 1：无共享 E</button>
+        <button type="button" data-correct="0"
+          data-bad="无关。" data-bad="">SITE 缺 INST</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q3.</strong> E 与 leg 都对，A+B 仍不等于路径？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：查偏移公式 / 投影 / 单位。"
+          data-bad="">病例 3：偏移或投影公式不一致</button>
+        <button type="button" data-correct="0"
+          data-bad="那是病例 1。" data-bad="">一定是没桥接</button>
+        <button type="button" data-correct="0"
+          data-bad="不是。" data-bad="">改 marksupport 即可</button>
+        <p class="feedback"></p>
+      </div>
+    </section>
+
+    <div class="ask-teacher">
+      下一课：支架支线总复习；三病例已落成诊断卡。
+    </div>
+
+    <nav class="footer-nav">
+      <p>
+        <a href="0033-bran-split-decision-tree.html">← 第 33 课</a>
+        · 下一课：<a href="0035-support-branch-review.html">支架支线复习 →</a>
+        · <a href="../reference/shared-e-diagnosis-card.html">E 诊断卡</a>
+        · <a href="0020-shared-e-affects-numbers.html">课 20</a>
+        · <a href="../INDEX.md">目录</a>
+      </p>
+    </nav>
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

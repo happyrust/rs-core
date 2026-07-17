@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>第 42 课 · 强制切 &gt;100°</title>
+  <link rel="stylesheet" href="../assets/lesson.css" />
+  <style>
+    .viz {
+      margin: 1.1rem 0 1.3rem;
+      padding: 0.85rem 0.95rem 0.7rem;
+      background: #fff;
+      border: 1px solid var(--rule);
+    }
+    .viz h3 { margin: 0 0 0.5rem; font-size: 0.95rem; }
+    .viz svg { width: 100%; height: auto; display: block; }
+    .viz figcaption { margin-top: 0.5rem; font-size: 0.8rem; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Lesson 0042 · 弯头岔路 ③</p>
+    <h1>强制切：adir∠memldir &gt; 100°</h1>
+    <p class="lede">
+      2024-12 补丁：有些弯管「② 大切」没拆开，再补一刀。
+      条件极简：到达向与离开向夹角 &gt; 100° → <strong>再做一次桥接切开</strong>。
+      可与 ② 叠刀——迁码时要按 PML 原样，别「智能去重」。
+    </p>
+
+    <div class="callout">
+      源：<code>isobran.getisolines</code> 注释「解决弯管处没有拆成 isoline」·
+      <code>if adir.angle(memldir) gt 100</code> → append/poss + 新袋以 mem 开头。
+    </div>
+
+    <figure class="viz">
+      <h3>图 1 · 决策树里的第三刀</h3>
+      <svg viewBox="0 0 720 280" xmlns="http://www.w3.org/2000/svg" role="img">
+        <rect x="210" y="10" width="300" height="36" fill="#d4eef1" stroke="#007a8a"/>
+        <text x="360" y="33" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#007a8a">进支 angle&gt;0.01</text>
+        <path d="M360 46 L360 60" stroke="#0b1f33"/>
+        <rect x="180" y="60" width="360" height="36" fill="#fff" stroke="#9aafbc"/>
+        <text x="360" y="83" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#0b1f33">① 近 180° → 改向跳过</text>
+        <path d="M360 96 L360 110" stroke="#0b1f33"/>
+        <rect x="180" y="110" width="360" height="36" fill="#e5f3ec" stroke="#1f6b4a"/>
+        <text x="360" y="133" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#1f6b4a">② 大切：贴 / 桥接</text>
+        <path d="M360 146 L360 165" stroke="#0b1f33"/>
+        <rect x="160" y="165" width="400" height="50" fill="#f8ebe6" stroke="#a33b16"/>
+        <text x="360" y="195" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="13" fill="#a33b16">③ adir∠memldir &gt; 100 → 强制桥接 ★</text>
+        <text x="360" y="240" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="12" fill="#4a5d6e">注意：③ 在 ② 之后，可能叠在已切之上</text>
+      </svg>
+      <figcaption>近 180° 走 skip，到不了 ③。强制切专治「夹角大但 ② 没拆干净」。</figcaption>
+    </figure>
+
+    <figure class="viz">
+      <h3>图 2 · 叠刀观感（示意）</h3>
+      <svg viewBox="0 0 720 200" xmlns="http://www.w3.org/2000/svg" role="img">
+        <text x="160" y="28" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="13" fill="#1f6b4a">仅 ② 桥接一次</text>
+        <line x1="40" y1="90" x2="160" y2="90" stroke="#0b1f33" stroke-width="8"/>
+        <path d="M160 90 Q 190 90 190 60" fill="none" stroke="#007a8a" stroke-width="8"/>
+        <line x1="190" y1="60" x2="190" y2="30" stroke="#0b1f33" stroke-width="8"/>
+        <circle cx="160" cy="90" r="5" fill="#1f6b4a"/>
+        <text x="160" y="130" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#1f6b4a">2 段</text>
+
+        <text x="520" y="28" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="13" fill="#a33b16">② 后又触发 ③</text>
+        <line x1="360" y1="100" x2="450" y2="100" stroke="#0b1f33" stroke-width="8"/>
+        <path d="M450 100 Q 480 100 490 70" fill="none" stroke="#007a8a" stroke-width="8"/>
+        <path d="M490 70 Q 510 55 520 40" fill="none" stroke="#a33b16" stroke-width="6"/>
+        <line x1="520" y1="40" x2="580" y2="20" stroke="#0b1f33" stroke-width="8"/>
+        <text x="520" y="130" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#a33b16">可能多一段 / 弯头再双含</text>
+        <text x="520" y="155" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="12" fill="#4a5d6e">diff 时别当偶然多切</text>
+      </svg>
+      <figcaption>P1 伪代码写明：may double-split; match PML。单测若「去重」会和现场不一致。</figcaption>
+    </figure>
+
+    <figure class="viz">
+      <h3>图 3 · 和近 180° 对照</h3>
+      <svg viewBox="0 0 700 160" xmlns="http://www.w3.org/2000/svg" role="img">
+        <rect x="30" y="30" width="300" height="100" fill="#e5f3ec" stroke="#1f6b4a"/>
+        <text x="180" y="70" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="14" fill="#1f6b4a">近 180°</text>
+        <text x="180" y="100" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#0b1f33">≈180 → 校正 · 不切</text>
+        <rect x="370" y="30" width="300" height="100" fill="#f8ebe6" stroke="#a33b16"/>
+        <text x="520" y="70" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="14" fill="#a33b16">强制切</text>
+        <text x="520" y="100" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#0b1f33">&gt;100 → 再桥接切开</text>
+      </svg>
+      <figcaption>同是看 adir∠memldir：一个防假切，一个补真切——阈值区间不同。</figcaption>
+    </figure>
+
+    <h2>实现备忘</h2>
+    <ul>
+      <li>③ 独立于「贴拐点」：即使 ② 走了 stick，只要 &gt;100 仍可能强制切（读 PML 顺序：② 整块跑完再判 ③）</li>
+      <li>桥接动作同 ②-else：poss + 旧袋收尾含 mem + 新袋以 mem 开头</li>
+      <li>fixture 尚未单列 force 案时，先用注释用例 / 真管样例补 P1 case</li>
+    </ul>
+
+    <section class="quiz">
+      <h3>小测</h3>
+      <div class="q">
+        <p><strong>Q1.</strong> 强制切的触发角？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：adir∠memldir &gt; 100°。"
+          data-bad="">adir∠memldir &gt; 100°</button>
+        <button type="button" data-correct="0"
+          data-bad="那是进支门槛。" data-bad="">dir∠ldir &gt; 0.01°</button>
+        <button type="button" data-correct="0"
+          data-bad="那是近 180°。" data-bad="">&gt; 179.99°</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q2.</strong> ③ 相对 ② 的位置？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：② 之后，可叠刀。"
+          data-bad="">在 ② 之后，可能叠切</button>
+        <button type="button" data-correct="0"
+          data-bad="顺序反了。" data-bad="">在近 180° 之前优先</button>
+        <button type="button" data-correct="0"
+          data-bad="不是。" data-bad="">只对仪表管生效</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q3.</strong> P1 对叠刀应？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：按 PML 可能 double-split，勿自作聪明去重。"
+          data-bad="">按 PML 保留，可 double-split</button>
+        <button type="button" data-correct="0"
+          data-bad="会和现场不一致。" data-bad="">自动合并重复桥接</button>
+        <button type="button" data-correct="0"
+          data-bad="无关。" data-bad="">改走 marksupport</button>
+        <p class="feedback"></p>
+      </div>
+    </section>
+
+    <div class="ask-teacher">
+      下一课：三岔路总复习；已补 force fixture。
+    </div>
+
+    <nav class="footer-nav">
+      <p>
+        <a href="0041-hand-push-near-180.html">← 第 41 课</a>
+        · 下一课：<a href="0043-elbow-fork-review.html">三岔路复习 →</a>
+        · <a href="0033-bran-split-decision-tree.html">决策树</a>
+        · <a href="../reference/split-isolines-pseudocode.html">伪代码</a>
+        · <a href="../INDEX.md">目录</a>
+      </p>
+    </nav>
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

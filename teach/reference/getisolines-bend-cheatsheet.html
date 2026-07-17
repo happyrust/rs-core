@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>速查 · getisolines 弯头切段</title>
+  <link rel="stylesheet" href="../assets/lesson.css" />
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Reference · getisolines</p>
+    <h1>弯头切段速查</h1>
+    <p class="lede">对照 <code>isobran.getisolines</code> 时用。权威源：源码本身。</p>
+
+    <h2>入口条件</h2>
+    <pre>dir  = ldir of mem          // 当前件离开方向
+ldir = 运行中的上一段方向
+
+ATTA / TUBI / OLET / WELD  → 只挂入 onearr，不切
+!!isrjpcom(mem)            → 走 PCOM 专支（非弯头）
+dir.angle(ldir) &gt; 0.01     → 进入弯头/变向切段
+否则                       → 同向；或 special PCOM</pre>
+
+    <h2>弯头三步（在 angle &gt; 0.01 内）</h2>
+    <ol>
+      <li><strong>近 180° 校正</strong>：<code>adir∠memldir &gt; 179.99</code> 且 <code>adir∠ldir &gt; 179</code> 且 <code>apos</code> 贴上一拐点 → 改 <code>ldirs[last]</code>，<code>skip</code></li>
+      <li><strong>主切</strong>：<code>apos↔lpos &gt; 1</code> <em>或</em> <code>dir∠ldir &gt; 10°</code>
+        <ul>
+          <li><code>lpos</code> 贴上一拐点 (&lt; 0.1) → 只改方向，不新开段</li>
+          <li>否则 → 在 <code>pos</code> 收口上一段，并以同一 <code>mem</code> 开下一段（桥接）</li>
+        </ul>
+      </li>
+      <li><strong>2024-12 兜底</strong>：<code>adir∠memldir &gt; 100</code> → 再强制收口/新开一次</li>
+    </ol>
+
+    <h2>桥接语义</h2>
+    <p class="callout">弯头是<strong>上一段末成员</strong>，也是<strong>下一段首成员</strong>。注释原文：<span class="mono">elbo is the last member in previous isoline and first mem in next isoline</span></p>
+
+    <h2>与 V2 对照一句</h2>
+    <p>PML：方向变化 + <code>apos/lpos</code> 几何。V2 <code>extract_isolines</code>：方向角阈值切段。大弯头易被 V2 误并一段。</p>
+
+    <p class="cite">源：<code>MBD/markpipe/object/isobran.pmlobj</code> ≈1470–1630；综述：<code>MBD/开发文档/BRAN尺寸标注算法全景文档.md</code> §2.2</p>
+    <p class="footer-nav"><a href="../lessons/0001-when-elbow-splits.html">← 第 1 课</a></p>
+  </main>
+</body>
+</html>

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>第 21 课 · 何时公共端会不一致</title>
+  <link rel="stylesheet" href="../assets/lesson.css" />
+  <style>
+    table.sc {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.84rem;
+      margin: 0 0 1.1rem;
+    }
+    table.sc th, table.sc td {
+      border: 1px solid var(--rule);
+      padding: 0.45rem 0.5rem;
+      text-align: left;
+      vertical-align: top;
+    }
+    table.sc th { background: var(--accent-soft); }
+    .viz {
+      margin: 1rem 0 1.2rem;
+      padding: 0.8rem;
+      background: #fff;
+      border: 1px solid var(--rule);
+    }
+    .viz svg { width: 100%; height: auto; display: block; }
+    .viz figcaption { font-size: 0.8rem; color: var(--muted); margin-top: 0.4rem; }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Lesson 0021 · 建模现场</p>
+    <h1>BRAN 建模时，何时会「公共端不一致」？</h1>
+    <p class="lede">
+      理想模型里，拐角只有一个点 E。出现 E 和 E' 两套端点，通常是
+      <strong>模型几何/顺序有问题</strong>，或 <strong>切段/归段没把弯头放进两段</strong>。
+      下面按「什么时候会遇到」列常见情况。
+    </p>
+
+    <div class="callout">
+      公共端不一致 ≠ 弯头画成两个。指的是：
+      算法给水平尺寸的终点、和给竖直尺寸的起点，<strong>取到了不同的坐标</strong>。
+    </div>
+
+    <h2>一、建模本身容易出问题的情况</h2>
+    <table class="sc">
+      <thead>
+        <tr><th>情况</th><th>模型上什么样</th><th>为何导致 E≠E'</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>弯头顺序/位置不对</td>
+          <td>ELBO 在 bran 成员序里插错；或 pos 不在管段交点</td>
+          <td>一段用弯头中心，另一段只能拿到相邻 TUBI 端点</td>
+        </tr>
+        <tr>
+          <td>到达/离开点拧巴</td>
+          <td>apos、lpos、p1/p2 与真实拐弯不一致</td>
+          <td>切段用的「拐点」和尺寸取点不是同一个</td>
+        </tr>
+        <tr>
+          <td>方向建反</td>
+          <td>PML 会报「此Bran方向建反了」一类 wronglines</td>
+          <td>分段失败或分段错，端点链断开</td>
+        </tr>
+        <tr>
+          <td>极短弯 / 贴建</td>
+          <td>弯头几乎无长度，或两构件坐标几乎重合又不完全重合</td>
+          <td>一段贴拐点、一段又切开，两边取点策略分裂</td>
+        </tr>
+        <tr>
+          <td>特殊件打断</td>
+          <td>OLET/支管/PCOM 插在拐角附近</td>
+          <td>归段时名字/投影进了别的 isoline，端点被「借走」</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>二、模型看起来还行，算法却取错端点</h2>
+    <table class="sc">
+      <thead>
+        <tr><th>情况</th><th>发生什么</th><th>尺寸上的表现</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>没切开（该切未切）</td>
+          <td>大弯仍并成一段</td>
+          <td>可能出现斜跨拐角的怪尺寸，或不该有的单段长</td>
+        </tr>
+        <tr>
+          <td>切开了但未双含</td>
+          <td>弯头只进上一段或只进下一段 mems</td>
+          <td>另一段 poss 拿不到 E → 用了旁侧点 E'</td>
+        </tr>
+        <tr>
+          <td>归段失败</td>
+          <td>putIntoIsoLine 找不到 isoline（打印 Cant find…）</td>
+          <td>相关对象缺尺寸或端点乱跳</td>
+        </tr>
+        <tr>
+          <td>数据近似</td>
+          <td>V2 只有 start/end，无真 apos/lpos</td>
+          <td>Approximate 映射让两边「看起来像」不同点</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <figure class="viz">
+      <h3>示意：模型错位时的两个点</h3>
+      <svg viewBox="0 0 640 200" xmlns="http://www.w3.org/2000/svg" role="img">
+        <line x1="40" y1="120" x2="240" y2="120" stroke="#0b1f33" stroke-width="8"/>
+        <path d="M240 120 Q 290 120 300 80" fill="none" stroke="#007a8a" stroke-width="8"/>
+        <line x1="300" y1="80" x2="300" y2="40" stroke="#0b1f33" stroke-width="8"/>
+        <circle cx="250" cy="118" r="8" fill="#c9a227"/>
+        <text x="220" y="150" font-family="IBM Plex Mono, monospace" font-size="12" fill="#c9a227">E 弯头 pos</text>
+        <circle cx="300" cy="80" r="8" fill="#a33b16"/>
+        <text x="310" y="85" font-family="IBM Plex Mono, monospace" font-size="12" fill="#a33b16">E' 竖直段起点被取成管端</text>
+        <text x="40" y="180" font-family="IBM Plex Sans, sans-serif" font-size="13" fill="#4a5d6e">常见于：弯头未进下段 mems，或下段从「下一根直管端」起算</text>
+      </svg>
+      <figcaption>建模时弯头若没落在交点、或成员序跳号，最容易出现这种「一边认弯头、一边认直管端」。</figcaption>
+    </figure>
+
+    <h2>三、现场怎么快速判断</h2>
+    <ol>
+      <li>看 wronglines / 日志：方向建反、找不到 isoline、顺序/坐标检查</li>
+      <li>在模型里量：弯头 pos 是否就在两直段交点</li>
+      <li>看分段：该拐的地方是不是 2 段；弯头是否两段 mems 都有</li>
+      <li>看尺寸数字：A+B 是否约等于沿管总长</li>
+    </ol>
+
+    <div class="callout">
+      <strong>一句话：</strong>
+      公共端不一致，多半是「拐角几何/成员归属没对齐」；
+      健康 BRAN + 正确桥接切段时，两边会自然钉在同一个 E。
+    </div>
+
+    <section class="quiz">
+      <h3>小测</h3>
+      <div class="q">
+        <p><strong>Q1.</strong> 健康建模 + 正确桥接下，公共端通常？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：两边自然是同一个拐角点。"
+          data-bad="">两边是同一个拐角点 E</button>
+        <button type="button" data-correct="0"
+          data-bad="健康时不应故意弄成两个。" data-bad="">故意做成两个不同点方便避让</button>
+        <button type="button" data-correct="0"
+          data-bad="不是。" data-bad="">尺寸不再需要端点</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q2.</strong> 「弯头只进上一段 mems」时，常见后果是？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：下一段可能取到旁侧点 E'。"
+          data-bad="">下一段尺寸起点可能漂到 E'</button>
+        <button type="button" data-correct="0"
+          data-bad="通常更糟不是更好。" data-bad="">尺寸自动变得更精确</button>
+        <button type="button" data-correct="0"
+          data-bad="无此逻辑。" data-bad="">弯头会从模型里删除</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q3.</strong> 建模方向建反时，PML 侧常见信号是？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：wronglines 一类提示，分段可能失败。"
+          data-bad="">wronglines / 分段失败提示</button>
+        <button type="button" data-correct="0"
+          data-bad="不是庆祝信息。" data-bad="">自动提示标注已完美</button>
+        <button type="button" data-correct="0"
+          data-bad="无关。" data-bad="">字高变成零</button>
+        <p class="feedback"></p>
+      </div>
+    </section>
+
+    <nav class="footer-nav">
+      <p>
+        <a href="0020-shared-e-affects-numbers.html">← 第 20 课</a>
+        · <a href="../INDEX.md">目录</a>
+      </p>
+    </nav>
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>速查 · split 伪代码</title>
+  <link rel="stylesheet" href="../assets/lesson.css" />
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Reference · pseudocode</p>
+    <h1>split_isolines_pml 一页纸</h1>
+    <pre>PASS = Tubi|Atta|Weld|Olet
+Head → open bag + poss + run_ldir
+Tail → close bag
+PASS → append only
+Pcom → issue + locked degrade (P4 later)
+no leave_dir → issue + continue
+
+angle(dir, run) &lt;= 0.01 → append
+else dir-change:
+  ① near-180 → fix ldirs, continue
+  ② (apos↔lpos&gt;1 OR ang&gt;10):
+       lpos stick → update dir only
+       else bridge split (mem in both bags)
+  ③ adir∠memldir&gt;100 → force bridge (may stack)
+
+阈值: 0.01° / 10° / 1mm / 0.1mm / 100° / 179.99°
+</pre>
+    <p class="footer-nav">
+      <a href="../lessons/0014-split-pseudocode.html">← 第 14 课</a>
+      · <a href="../fixtures/p1-split-isolines.json">fixture</a>
+    </p>
+  </main>
+</body>
+</html>

@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>第 2 课 · 手推 allarr</title>
+  <link rel="stylesheet" href="../assets/lesson.css" />
+  <style>
+    .sim-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      margin: 0 0 1.1rem;
+    }
+    .sim-table th, .sim-table td {
+      border: 1px solid var(--rule);
+      padding: 0.45rem 0.55rem;
+      text-align: left;
+      vertical-align: top;
+    }
+    .sim-table th { background: var(--accent-soft); color: var(--ink); font-weight: 600; }
+    .sim-table tr.hi td { background: #fff8e8; }
+    .step {
+      border-left: 3px solid var(--accent);
+      padding-left: 0.85rem;
+      margin: 0 0 1rem;
+    }
+    .step .tag {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      color: var(--accent);
+      letter-spacing: 0.04em;
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Lesson 0002 · 接续 0001</p>
+    <h1>手推一条假 bran 的 <code>allarr</code></h1>
+    <p class="lede">
+      第 1 课知道「何时切」。本课练<strong>怎么切出袋子</strong>：逐步写出 <code>onearr → allarr</code>，直到你能不看答案说出有几段、弯头在哪两段里。
+    </p>
+
+    <div class="callout">
+      <strong>本课只钉一件事：</strong>给定简化的成员序列与方向角，手推 <code>allarr</code>。
+      仍不讲 Polar、PCOM、字高。
+    </div>
+
+    <h2>约定（故意简化的玩具 bran）</h2>
+    <p>
+      真实 PDMS 有 <code>apos/lpos/pos</code>；本课用「转角 + 是否贴拐点」代替，规则仍对应第 1 课三条岔路。
+      通过件（ATTA/TUBI/WELD）只进袋不切。
+    </p>
+
+    <table class="sim-table" aria-label="玩具 branMems">
+      <thead>
+        <tr>
+          <th>顺序</th>
+          <th>成员</th>
+          <th>相对上一段 dir∠ldir</th>
+          <th>apos↔lpos</th>
+          <th>lpos 贴上一拐点？</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>1</td><td>Head</td><td>—</td><td>—</td><td>—</td></tr>
+        <tr><td>2</td><td>TUBI-1</td><td>0°</td><td>—</td><td>—</td></tr>
+        <tr><td>3</td><td>WELD-1</td><td>（通过件）</td><td>—</td><td>—</td></tr>
+        <tr><td>4</td><td>ELBO-A</td><td>90°</td><td>大（&gt;1）</td><td>否</td></tr>
+        <tr><td>5</td><td>TUBI-2</td><td>0°</td><td>—</td><td>—</td></tr>
+        <tr><td>6</td><td>ELBO-B</td><td>12°</td><td>小（&lt;1）</td><td>是（&lt;0.1）</td></tr>
+        <tr><td>7</td><td>TUBI-3</td><td>0°</td><td>—</td><td>—</td></tr>
+        <tr><td>8</td><td>Tail</td><td>—</td><td>—</td><td>—</td></tr>
+      </tbody>
+    </table>
+    <p class="cite">
+      规则对照：
+      <a href="../reference/getisolines-bend-cheatsheet.html">弯头切段速查</a>
+      · 源码
+      <a href="../../MBD/markpipe/object/isobran.pmlobj"><code>getisolines</code></a>
+    </p>
+
+    <h2>逐步仿真</h2>
+
+    <div class="step">
+      <p class="tag">STEP Head → WELD-1</p>
+      <p>
+        Head 开袋；TUBI-1、WELD-1 挂入。<br />
+        <span class="mono">onearr = [Head, TUBI-1, WELD-1]</span>，尚未收口。
+      </p>
+    </div>
+
+    <div class="step">
+      <p class="tag">STEP ELBO-A（主切 · 桥接）</p>
+      <p>
+        <code>90° &gt; 0.01</code> 进门；<code>apos↔lpos</code> 大且不贴拐点 → <strong>切开</strong>。<br />
+        收口：<span class="mono">allarr[1] = [Head, TUBI-1, WELD-1, ELBO-A]</span><br />
+        新开：<span class="mono">onearr = [ELBO-A]</span>
+      </p>
+    </div>
+
+    <div class="step">
+      <p class="tag">STEP TUBI-2</p>
+      <p>同向通过件。<span class="mono">onearr = [ELBO-A, TUBI-2]</span></p>
+    </div>
+
+    <div class="step">
+      <p class="tag">STEP ELBO-B（主切条件部分满足，但贴拐点）</p>
+      <p>
+        <code>12° &gt; 10</code>，主切条件成立；但 <code>lpos</code> 贴上一拐点 → <strong>只改离开方向，不新开段</strong>。<br />
+        <span class="mono">onearr</span> 仍为 <span class="mono">[ELBO-A, TUBI-2, ELBO-B]</span>（ELBO-B 已 append，未收口）。
+      </p>
+    </div>
+
+    <div class="step">
+      <p class="tag">STEP TUBI-3 → Tail</p>
+      <p>
+        挂入后 Tail 收口整袋：<br />
+        <span class="mono">allarr[2] = [ELBO-A, TUBI-2, ELBO-B, TUBI-3, Tail]</span>
+      </p>
+    </div>
+
+    <div class="callout">
+      <strong>终局：</strong>2 条 isoline。<br />
+      段1：<code>[Head, TUBI-1, WELD-1, ELBO-A]</code><br />
+      段2：<code>[ELBO-A, TUBI-2, ELBO-B, TUBI-3, Tail]</code><br />
+      ELBO-A 桥接两段；ELBO-B <em>没有</em>切开（贴拐点只改方向）。
+    </div>
+
+    <h2>和 V2 对照一眼</h2>
+    <p>
+      若 V2 仅用「转角 &gt; 阈值」切：ELBO-B 的 12° 也可能再切一刀，得到 3 段。
+      PML 因「贴拐点」抑制了这次切开——移植时这是常见差异源。
+    </p>
+
+    <h2>技能：默写终局</h2>
+    <section class="quiz" aria-label="小测">
+      <h3>小测（3 题）</h3>
+
+      <div class="q">
+        <p><strong>Q1.</strong> 本玩具 bran 最终有几条 isoline？</p>
+        <button type="button" data-correct="0" data-bad="ELBO-B 贴拐点未切开；不是三段。">最终一共切开成三条 isoline</button>
+        <button type="button" data-correct="1" data-ok="对：只有 ELBO-A 真正桥接切开。" data-bad="">最终一共切开成两条 isoline</button>
+        <button type="button" data-correct="0" data-bad="ELBO-A 已切开，不是整支一段。">最终完全没有切开仍是一段</button>
+        <p class="feedback"></p>
+      </div>
+
+      <div class="q">
+        <p><strong>Q2.</strong> ELBO-A 出现在哪些袋子里？</p>
+        <button type="button" data-correct="1" data-ok="对：桥接语义——上一段末、下一段首。" data-bad="">同时在第一段末尾与第二段开头</button>
+        <button type="button" data-correct="0" data-bad="桥接要求它出现在两段。">只出现在第一段的末尾位置上</button>
+        <button type="button" data-correct="0" data-bad="桥接要求它出现在两段。">只出现在第二段的开头位置上</button>
+        <p class="feedback"></p>
+      </div>
+
+      <div class="q">
+        <p><strong>Q3.</strong> ELBO-B 为什么没有切开新段？</p>
+        <button type="button" data-correct="0" data-bad="12° 已大于 10°，主切条件其实满足。">因为转角十二度尚未超过十度阈值</button>
+        <button type="button" data-correct="1" data-ok="对：主切成立，但 lpos 贴拐点 → 只改方向。" data-bad="">因为 lpos 贴上一拐点，只改方向不新开</button>
+        <button type="button" data-correct="0" data-bad="ATTA/TUBI/WELD 才是通过件跳过；ELBO 会进变向分支。" data-bad="">因为它被当成通过件直接 skip 掉了</button>
+        <p class="feedback"></p>
+      </div>
+    </section>
+
+    <h2>建议的一手练习</h2>
+    <p>
+      把表里的 ELBO-B 改成「转角 12°、<strong>不</strong>贴拐点、apos↔lpos 大」，在纸上重推 <code>allarr</code>。
+      你应得 <strong>3 段</strong>，且 ELBO-A、ELBO-B 各自桥接。想核对就问我。
+    </p>
+
+    <div class="ask-teacher">
+      卡住就直接问：例如「第二段成员我对不齐」或把你推的 <code>allarr</code> 贴过来。
+    </div>
+
+    <nav class="footer-nav">
+      <p>
+        <a href="0001-when-elbow-splits.html">← 第 1 课</a>
+        · <a href="../reference/getisolines-bend-cheatsheet.html">速查表</a>
+        · 下一课：<a href="0003-put-into-isoline.html">putIntoIsoLine 归段 →</a>
+      </p>
+    </nav>
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

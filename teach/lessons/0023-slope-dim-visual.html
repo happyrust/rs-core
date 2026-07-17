@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>第 23 课 · 坡度与斜管尺寸</title>
+  <link rel="stylesheet" href="../assets/lesson.css" />
+  <style>
+    .viz {
+      margin: 1.1rem 0 1.35rem;
+      padding: 0.85rem 0.95rem 0.7rem;
+      background: #fff;
+      border: 1px solid var(--rule);
+    }
+    .viz h3 { margin: 0 0 0.5rem; font-size: 0.95rem; }
+    .viz svg { width: 100%; height: auto; display: block; }
+    .viz figcaption { margin-top: 0.5rem; font-size: 0.8rem; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Lesson 0023 · 斜管怎么标</p>
+    <h1>坡度 / 斜管尺寸（示意图）</h1>
+    <p class="lede">
+      直段不一定水平或竖直。管子一斜，还用一把斜尺子硬标，现场不好下料。
+      PML 常把「太斜」的段拆成<strong>水平投影 + 竖直投影</strong>（再加辅助线）。
+    </p>
+
+    <div class="callout">
+      <strong>和前面的关系：</strong>仍在同一条 isoline 上；先有切段轨道，再决定这根轨道是「一把尺」还是「两把正交尺」。
+      对应 <code>isoDim.dimOneMemSlope</code> / <code>dimslope</code>。
+    </div>
+
+    <figure class="viz">
+      <h3>图 1 · 斜管：一把斜尺（不推荐给施工）</h3>
+      <svg viewBox="0 0 640 220" xmlns="http://www.w3.org/2000/svg" role="img">
+        <line x1="80" y1="160" x2="480" y2="60" stroke="#0b1f33" stroke-width="12" stroke-linecap="round"/>
+        <line x1="100" y1="140" x2="460" y2="50" stroke="#a33b16" stroke-width="2.5"/>
+        <text x="240" y="80" font-family="IBM Plex Mono, monospace" font-size="14" fill="#a33b16">斜长 L？</text>
+        <text x="80" y="200" font-family="IBM Plex Sans, sans-serif" font-size="13" fill="#4a5d6e">图上看着简单，下料要换算，还容易和坐标轴搞混</text>
+      </svg>
+      <figcaption>坡度很大时，PML 不倾向只标这根斜长。</figcaption>
+    </figure>
+
+    <figure class="viz">
+      <h3>图 2 · 拆成水平 + 竖直（dimslope 思路）</h3>
+      <svg viewBox="0 0 640 280" xmlns="http://www.w3.org/2000/svg" role="img">
+        <!-- pipe -->
+        <line x1="100" y1="200" x2="480" y2="80" stroke="#0b1f33" stroke-width="12" stroke-linecap="round"/>
+        <circle cx="100" cy="200" r="6" fill="#0b1f33"/>
+        <circle cx="480" cy="80" r="6" fill="#0b1f33"/>
+        <text x="70" y="220" font-family="IBM Plex Mono, monospace" font-size="12">低点</text>
+        <text x="490" y="75" font-family="IBM Plex Mono, monospace" font-size="12">高点</text>
+        <!-- projected point -->
+        <circle cx="480" cy="200" r="5" fill="#007a8a"/>
+        <text x="490" y="220" font-family="IBM Plex Mono, monospace" font-size="12" fill="#007a8a">投影点</text>
+        <!-- vertical aid -->
+        <line x1="480" y1="200" x2="480" y2="80" stroke="#007a8a" stroke-width="2" stroke-dasharray="6 4"/>
+        <text x="490" y="140" font-family="IBM Plex Mono, monospace" font-size="13" fill="#007a8a">竖直 ΔH</text>
+        <!-- horizontal dim -->
+        <line x1="110" y1="240" x2="470" y2="240" stroke="#a33b16" stroke-width="2.5"/>
+        <line x1="110" y1="234" x2="110" y2="246" stroke="#a33b16"/>
+        <line x1="470" y1="234" x2="470" y2="246" stroke="#a33b16"/>
+        <text x="250" y="235" font-family="IBM Plex Mono, monospace" font-size="13" fill="#a33b16">水平 ΔL</text>
+        <!-- vertical dim -->
+        <line x1="520" y1="200" x2="520" y2="80" stroke="#a33b16" stroke-width="2.5"/>
+        <line x1="514" y1="200" x2="526" y2="200" stroke="#a33b16"/>
+        <line x1="514" y1="80" x2="526" y2="80" stroke="#a33b16"/>
+        <text x="530" y="145" font-family="IBM Plex Mono, monospace" font-size="13" fill="#a33b16">标高差</text>
+      </svg>
+      <figcaption>
+        高点水平投到低点标高 → 得到直角三角形：
+        斜边=管长，直角边=水平尺寸 + 竖直尺寸。辅助线（虚线）帮助读图。
+      </figcaption>
+    </figure>
+
+    <figure class="viz">
+      <h3>图 3 · 何时触发「当斜管拆」？</h3>
+      <svg viewBox="0 0 640 160" xmlns="http://www.w3.org/2000/svg" role="img">
+        <rect x="40" y="30" width="560" height="100" rx="6" fill="#eef1f4" stroke="#9aafbc"/>
+        <text x="60" y="65" font-family="IBM Plex Sans, sans-serif" font-size="14" fill="#0b1f33">看管子方向与水平轴的夹角（坡度）</text>
+        <text x="60" y="95" font-family="IBM Plex Mono, monospace" font-size="13" fill="#4a5d6e">若 tan(夹角) &gt; maxslope → 走 dimslope 拆水平+竖直</text>
+        <text x="60" y="118" font-family="IBM Plex Mono, monospace" font-size="12" fill="#4a5d6e">（具体阈值来自 isoline 的 minslope/maxslope）</text>
+      </svg>
+      <figcaption>直觉：稍微倾斜还能当「近水平/近竖直」标；斜得太厉害就拆成坐标分量。</figcaption>
+    </figure>
+
+    <h2>和主尺寸的关系</h2>
+    <ul>
+      <li>仍属于<strong>该 isoline 的尺寸问题</strong>，不是新切一段</li>
+      <li>公共端、桥接规则不变：斜段若在弯头旁，端点照样要接到 E</li>
+      <li>图面上你会看到：辅助铅垂/水平线 + 两条正交尺寸，而不是单根斜尺寸</li>
+    </ul>
+
+    <section class="quiz">
+      <h3>看图小测</h3>
+      <div class="q">
+        <p><strong>Q1.</strong> 图 2 拆分的目的主要是？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：便于按坐标分量读图、下料。"
+          data-bad="">给出水平与竖直分量，方便施工读图</button>
+        <button type="button" data-correct="0"
+          data-bad="不是为了删掉管子。" data-bad="">把斜管从模型里删除</button>
+        <button type="button" data-correct="0"
+          data-bad="不是。" data-bad="">只改变弯头颜色</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q2.</strong> 斜管拆尺寸，会不会新开一条 isoline？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：一般仍在原 isoline 上处理画法。"
+          data-bad="">通常不会，仍在原直段轨道上</button>
+        <button type="button" data-correct="0"
+          data-bad="拆的是画法，不是再切一段 mems。" data-bad="">一定会再切出两段 mems</button>
+        <button type="button" data-correct="0"
+          data-bad="无关。" data-bad="">会删除原 isoline</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q3.</strong> 图 2 虚线 auxiliary 表示？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：高点投到低点标高的铅垂辅助。"
+          data-bad="">竖直辅助线（投影用）</button>
+        <button type="button" data-correct="0"
+          data-bad="不是焊缝。" data-bad="">焊缝标注引线</button>
+        <button type="button" data-correct="0"
+          data-bad="不是。" data-bad="">材料表的边框</button>
+        <p class="feedback"></p>
+      </div>
+    </section>
+
+    <div class="ask-teacher">
+      下一课可选：焊缝标注配图，或「从成品图反推有几段 isoline」。
+    </div>
+
+    <nav class="footer-nav">
+      <p>
+        <a href="0022-bran-dim-overview.html">← 第 22 课</a>
+        · 下一课：<a href="0024-weld-mark-visual.html">焊缝标注 →</a>
+      </p>
+    </nav>
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

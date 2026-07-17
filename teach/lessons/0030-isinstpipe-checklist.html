@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>第 30 课 · isinstpipe 开关清单</title>
+  <link rel="stylesheet" href="../assets/lesson.css" />
+  <style>
+    .viz {
+      margin: 1.1rem 0 1.3rem;
+      padding: 0.85rem 0.95rem 0.7rem;
+      background: #fff;
+      border: 1px solid var(--rule);
+    }
+    .viz h3 { margin: 0 0 0.5rem; font-size: 0.95rem; }
+    .viz svg { width: 100%; height: auto; display: block; }
+    .viz figcaption { margin-top: 0.5rem; font-size: 0.8rem; color: var(--muted); }
+    .sw { display: inline-block; padding: 0.1rem 0.45rem; font-family: "IBM Plex Mono", monospace; font-size: 0.75rem; }
+    .on { background: #e5f3ec; color: #1f6b4a; }
+    .off { background: #f8ebe6; color: #a33b16; }
+    .same { background: #d4eef1; color: #007a8a; }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Lesson 0030 · 仪表管开关速查</p>
+    <h1><code>isinstpipe</code> 开关清单</h1>
+    <p class="lede">
+      判定极简单：SITE 名含 <code>INST</code> → 仪表管。
+      之后整条 BRAN 标注链靠这个布尔决定「画 / 不画 / 换策略」——不必背文件行号，背<strong>类别</strong>即可。
+    </p>
+
+    <div class="callout">
+      <code>isobran.setisinstpipe()</code>：
+      <code>name of site</code> 的 <code>upcase().match('INST')</code> 非 0 → true。
+      再传给每个 <code>isoline(..., isinstpipe, ...)</code>。
+    </div>
+
+    <figure class="viz">
+      <h3>图 1 · 判定与传递</h3>
+      <svg viewBox="0 0 700 160" xmlns="http://www.w3.org/2000/svg" role="img">
+        <rect x="20" y="40" width="140" height="70" fill="#d4eef1" stroke="#007a8a"/>
+        <text x="90" y="70" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#007a8a">SITE 名</text>
+        <text x="90" y="92" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#007a8a">含 INST?</text>
+        <path d="M160 75 L210 75" stroke="#0b1f33" stroke-width="2" marker-end="url(#a)"/>
+        <rect x="210" y="40" width="160" height="70" fill="#e5f3ec" stroke="#1f6b4a"/>
+        <text x="290" y="70" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#1f6b4a">isinstpipe</text>
+        <text x="290" y="92" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#1f6b4a">true / false</text>
+        <path d="M370 75 L420 75" stroke="#0b1f33" stroke-width="2"/>
+        <rect x="420" y="25" width="250" height="100" fill="#fff" stroke="#9aafbc"/>
+        <text x="545" y="55" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="13" fill="#0b1f33">isobran 收集对象</text>
+        <text x="545" y="78" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="13" fill="#0b1f33">isoline.draw 各层</text>
+        <text x="545" y="101" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="13" fill="#0b1f33">焊缝 / JSON 类型</text>
+      </svg>
+      <figcaption>搜代码：<code>isinstpipe.not()</code> = 仅工艺管；裸 <code>isinstpipe</code> = 仅仪表管策略。</figcaption>
+    </figure>
+
+    <h2>清单 A · 仅工艺管才做（<code>.not()</code>）</h2>
+    <table style="width:100%;border-collapse:collapse;font-size:0.85rem;margin-bottom:1rem">
+      <tr style="background:#e5f3ec">
+        <th style="border:1px solid #9aafbc;padding:0.4rem;text-align:left">类别</th>
+        <th style="border:1px solid #9aafbc;padding:0.4rem;text-align:left">典型行为</th>
+        <th style="border:1px solid #9aafbc;padding:0.4rem;text-align:left">读图观感</th>
+      </tr>
+      <tr>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">收集层</td>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">branmlabel、cutparts、ISOLEG 附件进 objects</td>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">少一批「切割/支管腿」对象</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">弯头旁</td>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">弯段两点距&gt;1 才补弯向；PE 标高类 tag（EM9）</td>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">仪表弯头旁信息更少</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">元件标签</td>
+        <td style="border:1px solid #9aafbc;padding:0.4rem"><code>geteltag</code></td>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">仪表管跳过这批 eltag</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">属性</td>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">ROOM_NO 等工艺属性</td>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">JSON/材料侧差异</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">绘制层</td>
+        <td style="border:1px solid #9aafbc;padding:0.4rem"><strong>流向</strong> <code>drawflow</code>、<strong>TSPEC</strong>（且非 dimtimes==1 双尺寸时）</td>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">课 5 / 图 2：管子旁无箭头、无 TSPEC</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">导出</td>
+        <td style="border:1px solid #9aafbc;padding:0.4rem"><code>zyjc</code> 等工艺 JSON 块</td>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">仪表 JSON type 走 EM9PIPE</td>
+      </tr>
+    </table>
+
+    <h2>清单 B · 仪表管才做 / 换策略</h2>
+    <table style="width:100%;border-collapse:collapse;font-size:0.85rem;margin-bottom:1rem">
+      <tr style="background:#d4eef1">
+        <th style="border:1px solid #9aafbc;padding:0.4rem;text-align:left">类别</th>
+        <th style="border:1px solid #9aafbc;padding:0.4rem;text-align:left">典型行为</th>
+      </tr>
+      <tr>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">判定传递</td>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">每个 isoline / polarsystem 带着同一布尔</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">焊缝</td>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">注释写 <code>EM4 use weld only</code>：Head/Tail、OLET/TEE 等焊缝生成策略不同</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">规格字段</td>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">pspec 取值路径与工艺管分支不同</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">进度 UI</td>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">走 <code>markinstpipeform</code> 进度条</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">JSON type</td>
+        <td style="border:1px solid #9aafbc;padding:0.4rem"><code>EM9PIPE</code>（工艺管走另一 type）</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">特殊元件</td>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">isoline 对 <code>INST</code> 类型 mem 有专支</td>
+      </tr>
+    </table>
+
+    <figure class="viz">
+      <h3>图 2 · 和切段的关系（别混）</h3>
+      <svg viewBox="0 0 700 180" xmlns="http://www.w3.org/2000/svg" role="img">
+        <rect x="30" y="30" width="300" height="120" fill="#e5f3ec" stroke="#1f6b4a"/>
+        <text x="180" y="60" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="14" fill="#1f6b4a">getisolines 切段</text>
+        <text x="180" y="90" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#0b1f33">角度 / 贴拐点 / 桥接</text>
+        <text x="180" y="120" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="13" fill="#1f6b4a">工艺管 ≈ 仪表管（同道）</text>
+        <rect x="370" y="30" width="300" height="120" fill="#d4eef1" stroke="#007a8a"/>
+        <text x="520" y="60" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="14" fill="#007a8a">isinstpipe 开关</text>
+        <text x="520" y="90" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#0b1f33">流向 · tag · 焊缝策略</text>
+        <text x="520" y="120" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="13" fill="#007a8a">改「画什么」，不改「几段」主逻辑</text>
+      </svg>
+      <figcaption>迁 P1 <code>split_isolines</code>：仪表管不是另一套切段公式；差异在绘制/收集层。</figcaption>
+    </figure>
+
+    <div class="callout">
+      速记三色：
+      <span class="sw on">工艺专有</span>
+      <span class="sw off">仪表策略</span>
+      <span class="sw same">切段同道</span>
+    </div>
+
+    <section class="quiz">
+      <h3>小测</h3>
+      <div class="q">
+        <p><strong>Q1.</strong> 如何判定仪表管？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：SITE 名含 INST。"
+          data-bad="">SITE 名 match('INST')</button>
+        <button type="button" data-correct="0"
+          data-bad="不是按管径。" data-bad="">外径 &lt; 50 自动算仪表</button>
+        <button type="button" data-correct="0"
+          data-bad="支架另道。" data-bad="">凡有支架挂接即仪表管</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q2.</strong> 流向 drawflow / TSPEC 在什么条件下画？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：非仪表管，且不是「双尺寸且 dimtimes==1」那种跳过层。"
+          data-bad="">非仪表管，且该层未被 dimtimes 规则跳过</button>
+        <button type="button" data-correct="0"
+          data-bad="仪表管这层是关的。" data-bad="">仅仪表管画流向</button>
+        <button type="button" data-correct="0"
+          data-bad="无关。" data-bad="">只要有焊缝就画</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q3.</strong> 迁 extract_isolines 时，isinstpipe 意味着？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：切段主逻辑可共用；差异留给绘制/收集。"
+          data-bad="">切段公式基本共用；开关管绘制层</button>
+        <button type="button" data-correct="0"
+          data-bad="会误分两套算法。" data-bad="">必须写两套完全不同的切段角阈值</button>
+        <button type="button" data-correct="0"
+          data-bad="混线。" data-bad="">应改走 marksupport</button>
+        <p class="feedback"></p>
+      </div>
+    </section>
+
+    <div class="ask-teacher">
+      下一课：支架材料一层；清单已浓缩到 reference。
+    </div>
+
+    <nav class="footer-nav">
+      <p>
+        <a href="0029-pipe-vs-support-visual.html">← 第 29 课</a>
+        · 下一课：<a href="0031-support-material-visual.html">支架材料 →</a>
+        · <a href="../reference/isinstpipe-cheatsheet.html">速查</a>
+        · <a href="../INDEX.md">目录</a>
+      </p>
+    </nav>
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

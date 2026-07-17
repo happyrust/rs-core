@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>第 45 课 · 伪代码 ↔ fixture 对照</title>
+  <link rel="stylesheet" href="../assets/lesson.css" />
+  <style>
+    .viz {
+      margin: 1.1rem 0 1.3rem;
+      padding: 0.85rem 0.95rem 0.7rem;
+      background: #fff;
+      border: 1px solid var(--rule);
+    }
+    .viz h3 { margin: 0 0 0.5rem; font-size: 0.95rem; }
+    .viz svg { width: 100%; height: auto; display: block; }
+    .viz figcaption { margin-top: 0.5rem; font-size: 0.8rem; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Lesson 0045 · 开码地图</p>
+    <h1>伪代码每一支，对应哪枚 fixture</h1>
+    <p class="lede">
+      把课 14 伪代码钉到五枚 JSON 上。开 P1 时：改哪一支，就跑哪几枚。
+      速查页：<a href="../reference/pseudocode-fixture-map.html"><code>reference/pseudocode-fixture-map.html</code></a>
+    </p>
+
+    <figure class="viz">
+      <h3>图 · 分支覆盖</h3>
+      <svg viewBox="0 0 720 260" xmlns="http://www.w3.org/2000/svg" role="img">
+        <rect x="20" y="20" width="160" height="70" fill="#fff" stroke="#9aafbc"/>
+        <text x="100" y="50" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#0b1f33">≤0.01</text>
+        <text x="100" y="70" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#4a5d6e">colinear</text>
+
+        <rect x="200" y="20" width="160" height="70" fill="#e5f3ec" stroke="#1f6b4a"/>
+        <text x="280" y="50" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#1f6b4a">① 近180</text>
+        <text x="280" y="70" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#4a5d6e">near-180</text>
+
+        <rect x="380" y="20" width="160" height="70" fill="#d4eef1" stroke="#007a8a"/>
+        <text x="460" y="45" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#007a8a">② 桥</text>
+        <text x="460" y="65" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#4a5d6e">toyEA / variant</text>
+
+        <rect x="560" y="20" width="140" height="70" fill="#d4eef1" stroke="#007a8a"/>
+        <text x="630" y="45" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#007a8a">② 贴</text>
+        <text x="630" y="65" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#4a5d6e">toyEB / force②</text>
+
+        <rect x="200" y="120" width="320" height="70" fill="#f8ebe6" stroke="#a33b16"/>
+        <text x="360" y="150" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#a33b16">③ &gt;100 强制</text>
+        <text x="360" y="170" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#4a5d6e">force-split-over-100</text>
+
+        <text x="360" y="230" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="13" fill="#4a5d6e">改代码时：先定位分支，再只跑覆盖它的 fixture</text>
+      </svg>
+      <figcaption>回归策略：全量五枚；调试时按上图缩圈。</figcaption>
+    </figure>
+
+    <h2>改码对照口诀</h2>
+    <ul>
+      <li>同向误切 → 查 ≤0.01 / PASS 件 → <code>colinear</code></li>
+      <li>假切碎段 → 查 ① → <code>near-180</code></li>
+      <li>弯头没双含 → 查 ② 桥 → <code>toy</code> / <code>variant</code></li>
+      <li>不该切却切 → 查 ② 贴 → <code>toy</code> 的 EB</li>
+      <li>该切却 1 段 → 查 ③ → <code>force</code></li>
+    </ul>
+
+    <section class="quiz">
+      <h3>小测</h3>
+      <div class="q">
+        <p><strong>Q1.</strong> 只改了强制切分支，优先跑？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：force-split-over-100；全量再保回归。"
+          data-bad="">force-split-over-100</button>
+        <button type="button" data-correct="0"
+          data-bad="那是不进支。" data-bad="">只跑 colinear</button>
+        <button type="button" data-correct="0"
+          data-bad="次要。" data-bad="">只跑支架材料</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q2.</strong> toy 一案同时覆盖？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：EA 桥 + EB 贴。"
+          data-bad="">② 桥与 ② 贴</button>
+        <button type="button" data-correct="0"
+          data-bad="force 另案。" data-bad="">① 与 ③</button>
+        <button type="button" data-correct="0"
+          data-bad="不是。" data-bad="">仅 Tail 收袋</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q3.</strong> 速查页路径？</p>
+        <button type="button" data-correct="1"
+          data-ok="对。"
+          data-bad="">reference/pseudocode-fixture-map.html</button>
+        <button type="button" data-correct="0"
+          data-bad="那是 JSON。" data-bad="">仅 fixtures/*.json</button>
+        <button type="button" data-correct="0"
+          data-bad="不是。" data-bad="">src/mbd 里注释</button>
+        <p class="feedback"></p>
+      </div>
+    </section>
+
+    <div class="ask-teacher">
+      下一课：Polar 邻段占位配图回炉。
+    </div>
+
+    <nav class="footer-nav">
+      <p>
+        <a href="0044-hand-push-force-split.html">← 第 44 课</a>
+        · 下一课：<a href="0046-polar-neighbor-visual.html">Polar 邻段 →</a>
+        · <a href="../reference/pseudocode-fixture-map.html">对照速查</a>
+        · <a href="../reference/split-isolines-pseudocode.html">伪代码</a>
+        · <a href="../INDEX.md">目录</a>
+      </p>
+    </nav>
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

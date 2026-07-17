@@ -1,0 +1,179 @@
+/* Shared lesson skin — drafting-desk cyan ink on cool film */
+:root {
+  --ink: #0b1f33;
+  --muted: #4a5d6e;
+  --rule: #9aafbc;
+  --paper: #eef1f4;
+  --card: #f7f9fb;
+  --accent: #007a8a;
+  --accent-soft: #d4eef1;
+  --warn: #a33b16;
+  --ok: #1f6b4a;
+  --mono: "IBM Plex Mono", "Cascadia Code", "Consolas", monospace;
+  --sans: "IBM Plex Sans", "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --display: "IBM Plex Sans Condensed", "IBM Plex Sans", sans-serif;
+}
+
+* { box-sizing: border-box; }
+html { font-size: 18px; }
+body {
+  margin: 0;
+  color: var(--ink);
+  background:
+    linear-gradient(180deg, #e6ebf0 0%, var(--paper) 120px),
+    var(--paper);
+  font-family: var(--sans);
+  line-height: 1.55;
+}
+
+.page {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 2.5rem 1.25rem 4rem;
+}
+
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0 0 0.5rem;
+}
+
+h1 {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: clamp(1.6rem, 3vw, 2.1rem);
+  line-height: 1.2;
+  margin: 0 0 0.75rem;
+  letter-spacing: -0.02em;
+}
+
+.lede {
+  font-size: 1.05rem;
+  color: var(--muted);
+  margin: 0 0 1.75rem;
+  max-width: 36em;
+}
+
+h2 {
+  font-family: var(--display);
+  font-size: 1.15rem;
+  margin: 2.25rem 0 0.75rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--rule);
+}
+
+h3 {
+  font-size: 0.95rem;
+  margin: 1.25rem 0 0.4rem;
+  color: var(--accent);
+}
+
+p, li { color: var(--ink); }
+p { margin: 0 0 0.9rem; }
+ul, ol { margin: 0 0 1rem; padding-left: 1.2rem; }
+li + li { margin-top: 0.35rem; }
+
+code, .mono {
+  font-family: var(--mono);
+  font-size: 0.86em;
+}
+
+pre {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  line-height: 1.45;
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--accent);
+  padding: 0.9rem 1rem;
+  overflow-x: auto;
+  margin: 0 0 1.1rem;
+}
+
+a { color: var(--accent); }
+a:hover { text-decoration-thickness: 2px; }
+
+.callout {
+  background: var(--accent-soft);
+  border: 1px solid #a8d5db;
+  padding: 0.85rem 1rem;
+  margin: 1rem 0 1.25rem;
+}
+.callout strong { color: var(--accent); }
+
+.cite {
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin: 0.25rem 0 1rem;
+}
+
+.figure {
+  margin: 1.25rem 0;
+  padding: 1rem;
+  background: var(--card);
+  border: 1px solid var(--rule);
+}
+.figure svg { display: block; width: 100%; height: auto; }
+.figure figcaption {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-top: 0.6rem;
+}
+
+.quiz {
+  margin: 1.5rem 0;
+  padding: 1rem 1rem 0.5rem;
+  background: #fff;
+  border: 1px solid var(--rule);
+}
+.quiz h3 { margin-top: 0; color: var(--ink); }
+.quiz .q { margin-bottom: 1rem; }
+.quiz button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  padding: 0.55rem 0.7rem;
+  margin: 0.35rem 0;
+  border: 1px solid var(--rule);
+  background: var(--paper);
+  cursor: pointer;
+  color: var(--ink);
+}
+.quiz button:hover { border-color: var(--accent); }
+.quiz button[data-correct="1"].picked {
+  border-color: var(--ok);
+  background: #e5f3ec;
+}
+.quiz button[data-correct="0"].picked {
+  border-color: var(--warn);
+  background: #f8ebe6;
+}
+.quiz .feedback {
+  font-size: 0.88rem;
+  min-height: 1.4em;
+  margin: 0.35rem 0 0;
+  color: var(--muted);
+}
+.quiz .feedback.ok { color: var(--ok); }
+.quiz .feedback.bad { color: var(--warn); }
+
+.footer-nav {
+  margin-top: 2.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--rule);
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+.footer-nav a { font-weight: 600; }
+
+.ask-teacher {
+  margin-top: 1.5rem;
+  padding: 0.85rem 1rem;
+  border: 1px dashed var(--accent);
+  background: #fff;
+  font-size: 0.92rem;
+}

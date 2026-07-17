@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>第 20 课 · 公共端如何影响尺寸数字</title>
+  <link rel="stylesheet" href="../assets/lesson.css" />
+  <style>
+    .viz {
+      margin: 1.1rem 0 1.35rem;
+      padding: 0.85rem 0.95rem 0.65rem;
+      background: #fff;
+      border: 1px solid var(--rule);
+    }
+    .viz h3 { margin: 0 0 0.45rem; font-size: 0.95rem; }
+    .viz svg { width: 100%; height: auto; display: block; }
+    .viz figcaption { margin-top: 0.5rem; font-size: 0.82rem; color: var(--muted); }
+    .num {
+      font-family: var(--mono);
+      font-size: 1.05rem;
+      color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Lesson 0020 · 影响在数字上</p>
+    <h1>公共端 E 如何「影响」尺寸标注？</h1>
+    <p class="lede">
+      不谈抽象归属。直接看：尺寸上印出来的<strong>毫米数</strong>从哪来——
+      来自两端点的距离。E 变了，数字就变。
+    </p>
+
+    <div class="callout">
+      <strong>尺寸怎么算出来的（简化）：</strong><br />
+      线性尺寸文字 ≈ 沿管轴，从起点到终点的长度。<br />
+      DIM-A 用点列 <span class="num">[S, E]</span> → 印出 |S→E|<br />
+      DIM-B 用点列 <span class="num">[E, T]</span> → 印出 |E→T|
+    </div>
+
+    <figure class="viz">
+      <h3>情形 ✅：两边都用同一个 E（桥接对了）</h3>
+      <svg viewBox="0 0 680 240" xmlns="http://www.w3.org/2000/svg" role="img">
+        <line x1="60" y1="140" x2="280" y2="140" stroke="#0b1f33" stroke-width="10"/>
+        <path d="M280 140 Q 330 140 330 90" fill="none" stroke="#007a8a" stroke-width="10"/>
+        <line x1="330" y1="90" x2="330" y2="40" stroke="#0b1f33" stroke-width="10"/>
+        <circle cx="60" cy="140" r="6" fill="#0b1f33"/>
+        <circle cx="305" cy="125" r="10" fill="#c9a227"/>
+        <circle cx="330" cy="40" r="6" fill="#0b1f33"/>
+        <text x="50" y="170" font-family="IBM Plex Mono, monospace" font-size="12">S</text>
+        <text x="300" y="155" font-family="IBM Plex Mono, monospace" font-size="12" fill="#c9a227">E</text>
+        <text x="340" y="45" font-family="IBM Plex Mono, monospace" font-size="12">T</text>
+        <line x1="70" y1="100" x2="290" y2="100" stroke="#1f6b4a" stroke-width="2.5"/>
+        <text x="120" y="90" font-family="IBM Plex Mono, monospace" font-size="14" fill="#1f6b4a">DIM-A = 1000</text>
+        <line x1="380" y1="85" x2="380" y2="45" stroke="#1f6b4a" stroke-width="2.5"/>
+        <text x="390" y="70" font-family="IBM Plex Mono, monospace" font-size="14" fill="#1f6b4a">DIM-B = 500</text>
+        <text x="60" y="210" font-family="IBM Plex Sans, sans-serif" font-size="14" fill="#1f6b4a">A+B = 1500 ≈ 沿管从 S 走到 T 的中心线长</text>
+      </svg>
+      <figcaption>施工下料：水平下料约 1000，竖直约 500，在弯头处对接——和图上一致。</figcaption>
+    </figure>
+
+    <figure class="viz">
+      <h3>情形 ❌：没有公共端（B 的起点漂走了）</h3>
+      <svg viewBox="0 0 680 260" xmlns="http://www.w3.org/2000/svg" role="img">
+        <line x1="60" y1="150" x2="280" y2="150" stroke="#0b1f33" stroke-width="10"/>
+        <path d="M280 150 Q 330 150 330 100" fill="none" stroke="#007a8a" stroke-width="10"/>
+        <line x1="330" y1="100" x2="330" y2="40" stroke="#0b1f33" stroke-width="10"/>
+        <circle cx="60" cy="150" r="6" fill="#0b1f33"/>
+        <circle cx="305" cy="135" r="8" fill="#c9a227"/>
+        <circle cx="330" cy="70" r="8" fill="#a33b16"/>
+        <circle cx="330" cy="40" r="6" fill="#0b1f33"/>
+        <text x="50" y="180" font-family="IBM Plex Mono, monospace" font-size="12">S</text>
+        <text x="290" y="165" font-family="IBM Plex Mono, monospace" font-size="11" fill="#c9a227">E（A用）</text>
+        <text x="340" y="75" font-family="IBM Plex Mono, monospace" font-size="11" fill="#a33b16">E'（B用）</text>
+        <text x="340" y="40" font-family="IBM Plex Mono, monospace" font-size="12">T</text>
+        <line x1="70" y1="110" x2="290" y2="110" stroke="#a33b16" stroke-width="2.5"/>
+        <text x="120" y="100" font-family="IBM Plex Mono, monospace" font-size="14" fill="#a33b16">DIM-A = 1000</text>
+        <line x1="400" y1="70" x2="400" y2="45" stroke="#a33b16" stroke-width="2.5"/>
+        <text x="410" y="60" font-family="IBM Plex Mono, monospace" font-size="14" fill="#a33b16">DIM-B = 400？</text>
+        <text x="60" y="220" font-family="IBM Plex Sans, sans-serif" font-size="14" fill="#a33b16">A+B = 1400 ≠ 真实路径 1500</text>
+        <text x="60" y="242" font-family="IBM Plex Sans, sans-serif" font-size="13" fill="#a33b16">中间丢掉了 E→E' 那一截 → 下料短一截 / 对不上现场</text>
+      </svg>
+      <figcaption>
+        这就是「影响尺寸标注」的具体含义：
+        <strong>图上印的数字错了</strong>，不是线画歪那么简单。
+      </figcaption>
+    </figure>
+
+    <h2>和桥接双含的对应</h2>
+    <p>
+      算法若<strong>不</strong>把弯头放进两段 mems：
+      某一段生成 <code>poss</code> 时可能拿不到弯头上的 E，
+      终点会落到相邻直管端、焊接点或别的构件上 → 变成上图的 E'。
+    </p>
+    <p>
+      桥接双含要保证的就是：<strong>生成 DIM-A 和 DIM-B 的点列时，都能选到同一个弯头端点</strong>，
+      于是印出的毫米数才能相加还原路径。
+    </p>
+
+    <section class="quiz">
+      <h3>小测</h3>
+      <div class="q">
+        <p><strong>Q1.</strong> 尺寸数字本质上由什么决定？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：端点之间的距离（点列）。"
+          data-bad="">尺寸两端点之间的距离</button>
+        <button type="button" data-correct="0"
+          data-bad="颜色不决定长度。" data-bad="">尺寸线的颜色</button>
+        <button type="button" data-correct="0"
+          data-bad="字高不决定测量长度。" data-bad="">文字的字高 cheight</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q2.</strong> 公共端不一致时，最直接的危害是？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：分段长度之和对不上真实管长。"
+          data-bad="">图上分段长度加起来对不上实长</button>
+        <button type="button" data-correct="0"
+          data-bad="主要是数字错，不单是字体。" data-bad="">字体变得模糊看不清</button>
+        <button type="button" data-correct="0"
+          data-bad="不是这个。" data-bad="">弯头颜色自动变成红色</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q3.</strong> 桥接双含影响标注的路径是？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：保证两段 poss 都能取到同一 E → 数字正确。"
+          data-bad="">保证两段点列都能取到同一端点 E</button>
+        <button type="button" data-correct="0"
+          data-bad="不是改箭头样式。" data-bad="">只改变箭头是否空心</button>
+        <button type="button" data-correct="0"
+          data-bad="不是前端渲染专属问题。" data-bad="">只影响前端能不能旋转视图</button>
+        <p class="feedback"></p>
+      </div>
+    </section>
+
+    <nav class="footer-nav">
+      <p>
+        <a href="0019-bridge-and-leg-visual.html">← 第 19 课</a>
+        · <a href="../INDEX.md">目录</a>
+      </p>
+    </nav>
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>第 59 课 · SplitResult 加 ldirs</title>
+  <link rel="stylesheet" href="../assets/lesson.css" />
+  <style>
+    .viz {
+      margin: 1.1rem 0 1.3rem;
+      padding: 0.85rem 0.95rem 0.7rem;
+      background: #fff;
+      border: 1px solid var(--rule);
+    }
+    .viz h3 { margin: 0 0 0.5rem; font-size: 0.95rem; }
+    .viz svg { width: 100%; height: auto; display: block; }
+    .viz figcaption { margin-top: 0.5rem; font-size: 0.8rem; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Lesson 0059 · P1 小扩展</p>
+    <h1>为什么要返回 ldirs</h1>
+    <p class="lede">
+      PML 切段时同步维护 <code>ldirs[]</code>（每段离开方向）。
+      现在 P1 只回 <code>allarr</code>，P2 映射轴方向时只能猜。
+      本课设计：<code>SplitResult { allarr, ldirs, issues }</code>，<strong>与袋子等长</strong>。
+    </p>
+
+    <figure class="viz">
+      <h3>图 · toy 案的两段方向</h3>
+      <svg viewBox="0 0 700 180" xmlns="http://www.w3.org/2000/svg" role="img">
+        <line x1="40" y1="120" x2="280" y2="120" stroke="#0b1f33" stroke-width="10"/>
+        <text x="100" y="100" font-family="IBM Plex Mono, monospace" font-size="12" fill="#1f6b4a">ldirs[0]=+X</text>
+        <path d="M280 120 Q 320 120 320 80" fill="none" stroke="#007a8a" stroke-width="10"/>
+        <line x1="320" y1="80" x2="320" y2="30" stroke="#0b1f33" stroke-width="10"/>
+        <text x="340" y="60" font-family="IBM Plex Mono, monospace" font-size="12" fill="#007a8a">ldirs[1]=+Z</text>
+        <text x="450" y="100" font-family="IBM Plex Sans, sans-serif" font-size="12" fill="#4a5d6e">allarr.len() == ldirs.len()</text>
+      </svg>
+      <figcaption>桥接切开时：新袋的 ldir = 弯头 leave_dir（PML 同步 append）。</figcaption>
+    </figure>
+
+    <h2>规则（与实现对齐）</h2>
+    <ul>
+      <li>Head：<code>ldirs.push(leave_dir)</code></li>
+      <li>②/③ 桥接：新袋 <code>ldirs.push(dir)</code></li>
+      <li>贴拐点 / 近180：改 <code>ldirs.last</code> 与 <code>run_ldir</code>，不新增长度</li>
+      <li>Tail 收袋：不单独 push 方向</li>
+    </ul>
+
+    <h2>验收</h2>
+    <pre>assert_eq!(result.allarr.len(), result.ldirs.len());
+// toy: ldirs[0]≈+X, ldirs[1]≈+Z
+// colinear: 单段 +X
+// variant: 三段，末段沿 EB leave</pre>
+
+    <div class="callout">
+      实现时可在 <code>teach/p1_split</code> 先加字段与断言；主链 P2 再读 ldirs。
+      说「实现 ldirs」即可动码。
+    </div>
+
+    <section class="quiz">
+      <h3>小测</h3>
+      <div class="q">
+        <p><strong>Q1.</strong> ldirs 与 allarr 长度？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：等长。"
+          data-bad="">必须相等</button>
+        <button type="button" data-correct="0"
+          data-bad="会错位。" data-bad="">ldirs 永远少 1</button>
+        <button type="button" data-correct="0"
+          data-bad="不是。" data-bad="">只对仪表管等长</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q2.</strong> 贴拐点时 ldirs？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：改 last，不新增段方向。"
+          data-bad="">更新 last，不 push 新段</button>
+        <button type="button" data-correct="0"
+          data-bad="那就多一段方向。" data-bad="">再 push 一个方向</button>
+        <button type="button" data-correct="0"
+          data-bad="不是。" data-bad="">清空全部 ldirs</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q3.</strong> 加 ldirs 属于？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：方便 P2 映射轴。"
+          data-bad="">P1 小扩展，服务 P2</button>
+        <button type="button" data-correct="0"
+          data-bad="过早。" data-bad="">P3 Polar</button>
+        <button type="button" data-correct="0"
+          data-bad="不是。" data-bad="">支架材料</button>
+        <p class="feedback"></p>
+      </div>
+    </section>
+
+    <div class="ask-teacher">
+      下一课：ldirs 落地说明。
+    </div>
+
+    <nav class="footer-nav">
+      <p>
+        <a href="0058-p2-field-mapping.html">← 第 58 课</a>
+        · 下一课：<a href="0060-ldirs-landed.html">ldirs 落地 →</a>
+        · <a href="../p1_split/src/lib.rs">p1_split 源码</a>
+        · <a href="../INDEX.md">目录</a>
+      </p>
+    </nav>
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>速查 · 伪代码 ↔ fixture</title>
+  <link rel="stylesheet" href="../assets/lesson.css" />
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Reference · P1 mapping</p>
+    <h1>伪代码分支 ↔ 五枚 fixture</h1>
+
+    <h2>阈值（PML）</h2>
+    <pre>dir_change_eps        = 0.01°
+main_split_angle      = 10°
+apos_lpos_sep         = 1 mm
+stick_prev_turn       = 0.1 mm
+force_split           = 100°   (adir∠memldir)
+near_180_adir_memldir = 179.99°
+near_180_adir_ldir    = 179°</pre>
+
+    <h2>对照表</h2>
+    <table style="width:100%;border-collapse:collapse;font-size:0.82rem">
+      <tr style="background:#d4eef1">
+        <th style="border:1px solid #9aafbc;padding:0.35rem;text-align:left">fixture</th>
+        <th style="border:1px solid #9aafbc;padding:0.35rem;text-align:left">走到哪</th>
+        <th style="border:1px solid #9aafbc;padding:0.35rem;text-align:left">段</th>
+        <th style="border:1px solid #9aafbc;padding:0.35rem;text-align:left">课</th>
+      </tr>
+      <tr>
+        <td style="border:1px solid #9aafbc;padding:0.35rem">colinear-no-split</td>
+        <td style="border:1px solid #9aafbc;padding:0.35rem">≤0.01 不进支</td>
+        <td style="border:1px solid #9aafbc;padding:0.35rem">1</td>
+        <td style="border:1px solid #9aafbc;padding:0.35rem">40</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #9aafbc;padding:0.35rem">near-180-correct-no-split</td>
+        <td style="border:1px solid #9aafbc;padding:0.35rem">① 校正 continue</td>
+        <td style="border:1px solid #9aafbc;padding:0.35rem">1</td>
+        <td style="border:1px solid #9aafbc;padding:0.35rem">41</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #9aafbc;padding:0.35rem">toy-bridge-and-stick</td>
+        <td style="border:1px solid #9aafbc;padding:0.35rem">EA→②桥 · EB→②贴</td>
+        <td style="border:1px solid #9aafbc;padding:0.35rem">2</td>
+        <td style="border:1px solid #9aafbc;padding:0.35rem">39</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #9aafbc;padding:0.35rem">variant-eb-no-stick</td>
+        <td style="border:1px solid #9aafbc;padding:0.35rem">EA+EB 均②桥</td>
+        <td style="border:1px solid #9aafbc;padding:0.35rem">3</td>
+        <td style="border:1px solid #9aafbc;padding:0.35rem">40</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #9aafbc;padding:0.35rem">force-split-over-100</td>
+        <td style="border:1px solid #9aafbc;padding:0.35rem">②贴 + ③强制桥</td>
+        <td style="border:1px solid #9aafbc;padding:0.35rem">2</td>
+        <td style="border:1px solid #9aafbc;padding:0.35rem">44</td>
+      </tr>
+    </table>
+
+    <h2>伪代码骨架（缩略）</h2>
+    <pre>if angle(dir,run) &lt;= 0.01: append
+else:
+  ① near-180? → fix run; continue
+  ② need? stick→update : bridge
+  ③ adir∠memldir&gt;100? → bridge (may stack)
+  else if !need: append</pre>
+
+    <h2>开码验收</h2>
+    <p>五枚 <code>expect_allarr</code> 全绿 = P1 弯头支最小完成。叠刀勿去重。</p>
+
+    <p class="cite">源：课 14 伪代码 · <code>fixtures/p1-split-isolines.json</code></p>
+    <p class="footer-nav">
+      <a href="../lessons/0045-pseudocode-fixture-map.html">← 第 45 课</a>
+      · <a href="split-isolines-pseudocode.html">完整伪代码</a>
+    </p>
+  </main>
+</body>
+</html>

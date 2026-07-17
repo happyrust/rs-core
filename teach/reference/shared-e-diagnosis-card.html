@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>速查 · 公共端 E 诊断卡</title>
+  <link rel="stylesheet" href="../assets/lesson.css" />
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Reference · Shared E</p>
+    <h1>公共端 E 诊断卡</h1>
+
+    <h2>健康基线</h2>
+    <pre>同一弯头切段 → 两 isoline 共享端点 E
+DIM-A + DIM-B ≈ 路径长
+弯头桥接：上一段末 + 下一段首</pre>
+
+    <h2>三步 diff</h2>
+    <ol>
+      <li>两端点是否同一坐标 E？→ 否：<strong>病例 1 假切开</strong></li>
+      <li>E 对，一腿肥一腿瘦？→ <strong>病例 2 leg 归错</strong></li>
+      <li>E/leg 对，A+B 仍偏？→ <strong>病例 3 偏移/投影公式</strong></li>
+    </ol>
+
+    <h2>病例速查</h2>
+    <table style="width:100%;border-collapse:collapse;font-size:0.88rem">
+      <tr style="background:#d4eef1">
+        <th style="border:1px solid #9aafbc;padding:0.4rem;text-align:left">#</th>
+        <th style="border:1px solid #9aafbc;padding:0.4rem;text-align:left">现象</th>
+        <th style="border:1px solid #9aafbc;padding:0.4rem;text-align:left">优先查</th>
+      </tr>
+      <tr>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">1</td>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">E1 ≠ E2 / 缺口或重叠</td>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">apos/lpos、桥接是否双含</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">2</td>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">E 对，尺寸「吃错腿」</td>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">pipedir ∥ ori.zdir 归段</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">3</td>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">E/leg 对，总和仍偏</td>
+        <td style="border:1px solid #9aafbc;padding:0.4rem">PDMS 偏移公式、投影、单位</td>
+      </tr>
+    </table>
+
+    <h2>勿混</h2>
+    <ul>
+      <li>贴拐点：不新开段 → 无「双 E」问题</li>
+      <li>仪表管 isinstpipe：改绘制层，不另写切段角阈值</li>
+      <li>支架材料：走 marksupport，不进此卡</li>
+    </ul>
+
+    <p class="cite">课 20–21 · 课 34 · P1 fixture 对照用</p>
+    <p class="footer-nav"><a href="../lessons/0034-shared-e-mismatch-cases.html">← 第 34 课</a></p>
+  </main>
+</body>
+</html>

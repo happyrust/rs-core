@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>速查 · V2 对齐 checklist</title>
+  <link rel="stylesheet" href="../assets/lesson.css" />
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Reference · V2 alignment</p>
+    <h1>PML ↔ V2 对照（一页）</h1>
+
+    <h2>切段</h2>
+    <pre>PML: dir∠ldir&gt;0.01 + apos/lpos + 桥接 + 贴拐点不切
+V2:  angle&lt;5° 或 &gt;175° 视为同向（易并大弯）</pre>
+
+    <h2>归段</h2>
+    <pre>PML: mems 名 / elbo-leg 投影近平行 / 双候选决胜
+V2:  若只最近点 → leg/材料易落错段</pre>
+
+    <h2>车道</h2>
+    <pre>PML: od + cheight*1.2*(dimtimes-1)
+V2:  默认 od/2+cheight+… ；use_pdms_offset_formula=true 对齐</pre>
+
+    <h2>小尺寸</h2>
+    <pre>两侧：0.8 / 下限 0.5 / 错层 1.2*cheight*level
+（small_dim.rs 已对齐常数）</pre>
+
+    <h2>排查序</h2>
+    <pre>段数 → 归属 → dimtimes/公式 → 小尺寸输入</pre>
+
+    <p class="footer-nav"><a href="../lessons/0007-v2-alignment-checklist.html">← 第 7 课</a></p>
+  </main>
+</body>
+</html>

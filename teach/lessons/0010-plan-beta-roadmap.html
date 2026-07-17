@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>第 10 课 · 方案 β 实施步骤</title>
+  <link rel="stylesheet" href="../assets/lesson.css" />
+  <style>
+    .phase {
+      margin: 0 0 1rem;
+      padding: 0.85rem 1rem;
+      background: var(--card);
+      border: 1px solid var(--rule);
+    }
+    .phase h3 {
+      margin: 0 0 0.4rem;
+      font-family: var(--mono);
+      font-size: 0.85rem;
+      color: var(--accent);
+    }
+    .phase p { margin: 0; font-size: 0.92rem; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Lesson 0010 · 方案 β 路线图</p>
+    <h1>下沉拆解：实施步骤（不动码）</h1>
+    <p class="lede">
+      第 9 课选 β：在<strong>成员/几何层</strong>复现 <code>getisolines</code> 桥接切段，而不是只拧 <code>extract_isolines</code> 角度。
+      本课把 β 拆成可排期的阶段——仍停在设计，方便你评审后再开 PR。
+    </p>
+
+    <div class="callout">
+      <strong>本课只钉一件事：</strong>能说出 β 的阶段顺序、每阶段交付物、以及「先不做」的边界。
+    </div>
+
+    <h2>总原则</h2>
+    <ul>
+      <li>PML 真值：<code>isobran.getisolines</code>（课 1–2）</li>
+      <li>输入要比 <code>LayoutResult.linear_dims</code> 更「上游」：成员名、类型、ldir/adir、apos/lpos/pos</li>
+      <li>输出：与 isoline 同构的段描述（mems 桥接、pipedir、端点），再交给现有 dim/Polar 管线</li>
+      <li>遵守 AGENTS：默认 debug / 优先 <code>cargo check</code>；失败写 suppress 原因</li>
+    </ul>
+
+    <h2>阶段路线</h2>
+
+    <div class="phase">
+      <h3>P0 · 数据契约</h3>
+      <p>
+        定义 <code>BranchMemberGeom</code>（或扩现有 <code>data_source::BranchMember</code>）：
+        name、type、ldir、adir、apos、lpos、pos。
+        写清：缺字段时是 skip、wrongline，还是降级到角阈值。
+        <strong>交付：</strong>类型 + 一句字段词典（可放 reference）。
+      </p>
+    </div>
+
+    <div class="phase">
+      <h3>P1 · 纯函数切段</h3>
+      <p>
+        实现 <code>split_isolines_pml(members) -&gt; Vec&lt;IsolineMems&gt;</code>，
+        先只覆盖弯头主路径（课 1 三条岔路 + 桥接 + 贴拐点），
+        <em>不</em>接 PCOM / special element。
+        <strong>交付：</strong>单测表（同向不切 / 桥接切开 / 贴拐点不切 / 通过件挂袋）。
+      </p>
+    </div>
+
+    <div class="phase">
+      <h3>P2 · 接到管线</h3>
+      <p>
+        在 V2 pipeline / BranchCalculator 入口：有成员几何则走 P1；
+        否则 fallback 现有 <code>extract_isolines</code>（保持旧样例不崩）。
+        <strong>交付：</strong>feature 开关或显式 API；对照 1 条样例 bran 段数。
+      </p>
+    </div>
+
+    <div class="phase">
+      <h3>P3 · 邻段占位（可选下一 PR）</h3>
+      <p>
+        对齐课 4：相邻 polarcyli；隔段 160° + 15×od + 1.5×od。
+        <strong>明确非本 β-MVP：</strong>可列进非目标，避免第一 PR 过大。
+      </p>
+    </div>
+
+    <div class="phase">
+      <h3>P4 · PCOM / special（更后）</h3>
+      <p>
+        <code>isrjpcom</code> / <code>ispipespecialelement</code> 分支。
+        与弯头主路径分离，防止测试矩阵爆炸。
+      </p>
+    </div>
+
+    <h2>P1 算法核对表（对着写单测）</h2>
+    <pre>for mem in branMems:
+  Head/Tail/通过件(ATTA,TUBI,OLET,WELD) → 课 2 规则
+  PCOM → P4 再说（P1 skip 或 wrongline 策略写死）
+  dir∠ldir &gt; 0.01:
+    ① 近 180° 校正 → skip
+    ② apos↔lpos&gt;1 或角&gt;10°:
+         lpos 贴拐点 → 只改 ldirs
+         else → 桥接切开（mem 双含）
+    ③ adir∠memldir &gt; 100 → 强制再切（知悉可叠切）</pre>
+
+    <h2>风险与顺序</h2>
+    <ul>
+      <li>无 Surreal/PDMS 几何字段 → P0 先打通数据源，否则 β 做不了</li>
+      <li>先 P1 单测绿灯，再 P2 接线——避免「接上了但语义未证」</li>
+      <li>第一 PR 建议：P0+P1+最小 P2；P3/P4 另开</li>
+    </ul>
+
+    <div class="callout">
+      <strong>和 α 的边界：</strong>
+      若差异单证明 Layout 已正确断开，只需调合并——走 α，不必上 β。
+      β 的触发条件是：成员层有弯，但 linear_dims 已被抹直。
+    </div>
+
+    <h2>技能：排期判断</h2>
+    <section class="quiz" aria-label="小测">
+      <h3>小测（3 题）</h3>
+
+      <div class="q">
+        <p><strong>Q1.</strong> β-MVP 第一 PR 最合适的范围是？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：契约 + 弯头纯函数 + 最小接线；邻段/PCOM 后置。"
+          data-bad="">P0 契约、P1 弯头切段、最小 P2 接线</button>
+        <button type="button" data-correct="0"
+          data-bad="范围过大，难审难验。" data-bad="">一次做完 P0 到 P4 含 PCOM</button>
+        <button type="button" data-correct="0"
+          data-bad="没有契约与单测就接线，风险高。" data-bad="">先只改 extract 五度阈值再谈 β</button>
+        <p class="feedback"></p>
+      </div>
+
+      <div class="q">
+        <p><strong>Q2.</strong> P1 为何先不做 PCOM？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：与弯头主路径分离，控制测试矩阵。"
+          data-bad="">与弯头路径分离，避免测试矩阵爆炸</button>
+        <button type="button" data-correct="0"
+          data-bad="PCOM 在 PML 里很重要，只是不应挤进 MVP。" data-bad="">因为 PML 里根本没有 PCOM 切段</button>
+        <button type="button" data-correct="0"
+          data-bad="不是前端问题。" data-bad="">因为前端无法渲染 PCOM</button>
+        <p class="feedback"></p>
+      </div>
+
+      <div class="q">
+        <p><strong>Q3.</strong> 什么证据说明「不该上 β、该走 α」？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：上游已断开，只需修合并逻辑。"
+          data-bad="">Layout 在弯头处已分裂，仅合并过宽/过窄</button>
+        <button type="button" data-correct="0"
+          data-bad="那是 β 的典型触发。" data-bad="">弯头两侧入参方向只差约二度</button>
+        <button type="button" data-correct="0"
+          data-bad="那是小尺寸问题，与 α/β 无关。" data-bad="">sepSmallDim 错层级数不对</button>
+        <p class="feedback"></p>
+      </div>
+    </section>
+
+    <h2>下一步（你来选）</h2>
+    <p>
+      A. 让我把 P0 字段词典写成 <code>reference/</code> 文档<br />
+      B. 开始真正实现 P1（写 Rust，按 AGENTS）<br />
+      C. 先找一条仓库内/样例 bran 做差异单，确认 α/β
+    </p>
+
+    <div class="ask-teacher">
+      直接回 A / B / C，或改一版阶段划分。
+    </div>
+
+    <nav class="footer-nav">
+      <p>
+        <a href="0009-extract-isolines-proposal.html">← 第 9 课</a>
+        · 下一课：<a href="0011-p0-field-dictionary.html">P0 字段词典导读 →</a>
+      </p>
+    </nav>
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

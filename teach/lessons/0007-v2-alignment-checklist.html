@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>第 7 课 · V2 对照 checklist</title>
+  <link rel="stylesheet" href="../assets/lesson.css" />
+  <style>
+    .check {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 1.2rem;
+    }
+    .check li {
+      display: grid;
+      grid-template-columns: 1.4rem 1fr;
+      gap: 0.5rem;
+      padding: 0.65rem 0.75rem;
+      margin: 0 0 0.45rem;
+      background: var(--card);
+      border: 1px solid var(--rule);
+      font-size: 0.92rem;
+    }
+    .check .box {
+      font-family: var(--mono);
+      color: var(--accent);
+    }
+    .diff {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      color: var(--warn);
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Lesson 0007 · 收束 Mission</p>
+    <h1>对照 V2：你现在能查什么？</h1>
+    <p class="lede">
+      Mission：对齐 PML，校验/移植 <code>extract_isolines</code> 与尺寸车道语义。
+      本课把前 6 课压成<strong>可执行 checklist</strong>——对着一条真实差异，逐项打勾。
+    </p>
+
+    <div class="callout">
+      <strong>本课只钉一件事：</strong>拿到「V2 切段/尺寸看起来不对」时，按表排查，而不是凭感觉改阈值。
+    </div>
+
+    <h2>A. 切段（第 1–2、4 课）</h2>
+    <ul class="check">
+      <li><span class="box">[ ]</span><span>PML 入口是 <code>dir.angle(ldir) &gt; 0.01</code> + apos/lpos，不是 <code>type==ELBO</code>。<span class="diff">V2: <code>extract_isolines</code> 用角 &lt;5° 或 &gt;175° 视为同向。</span></span></li>
+      <li><span class="box">[ ]</span><span>弯头桥接：构件同时在上一段末、下一段首。<span class="diff">查 V2 IsolineInfo.mems/点列是否丢桥接点。</span></span></li>
+      <li><span class="box">[ ]</span><span>贴拐点只改方向、不新开段（第 2 课 ELBO-B）。<span class="diff">V2 无「贴拐点」分支 → 易多切。</span></span></li>
+      <li><span class="box">[ ]</span><span>邻段/隔段 <code>polarcyli</code>（160° + 15×od，隔段 1.5×od）。<span class="diff">V2 enhance 若未注入邻段障碍 → 方向对但压邻管。</span></span></li>
+    </ul>
+
+    <h2>B. 归段（第 3 课）</h2>
+    <ul class="check">
+      <li><span class="box">[ ]</span><span>有名对象走 mems；弯头 leg（elboname）走投影+近平行。<span class="diff">仅最近点归段会落错 leg。</span></span></li>
+      <li><span class="box">[ ]</span><span>双候选：焊缝字看距离；其它看更水平 pipedir。<span class="diff">固定选前一段会偏。</span></span></li>
+    </ul>
+
+    <h2>C. 尺寸车道与小尺寸（第 5–6 课）</h2>
+    <ul class="check">
+      <li><span class="box">[ ]</span><span>PML 径向：<code>od + cheight×1.2×(dimtimes-1)</code>。<span class="diff">V2 默认 <code>od/2+cheight+…</code>；对齐时开 <code>use_pdms_offset_formula</code>。</span></span></li>
+      <li><span class="box">[ ]</span><span>twoormoredims → 主尺寸 dimtimes=2。<span class="diff">查 ATTA 子尺寸是否抬层。</span></span></li>
+      <li><span class="box">[ ]</span><span>小尺寸：0.8 getgoodcheight、下限 0.5、错层 1.2×cheight×level。<span class="diff">V2 <code>small_dim.rs</code> 已对齐这组常数——差异多在输入点列。</span></span></li>
+    </ul>
+
+    <h2>推荐排查顺序（技能）</h2>
+    <pre>1. 段数对不对？     → checklist A（先手推 allarr）
+2. 对象在不在对段？ → checklist B
+3. 偏移层对不对？   → checklist C（dimtimes / 公式开关）
+4. 字是否错层/加号？→ small_dim / adjustweld 输入</pre>
+
+    <p class="cite">
+      V2 入口：
+      <code>src/mbd/v2/branch_calculator.rs</code>（extract_isolines ≈5°）、
+      <code>src/mbd/v2/small_dim.rs</code>、
+      config <code>use_pdms_offset_formula</code>
+    </p>
+
+    <h2>验收小测</h2>
+    <section class="quiz" aria-label="小测">
+      <h3>你能否独立排查？（3 题）</h3>
+
+      <div class="q">
+        <p><strong>Q1.</strong> V2 把 170° 弯头并成一段，最该先查哪条？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：5° 同向阈值会把大弯当同向；应对齐 PML 几何切段。"
+          data-bad="">extract_isolines 的同向角阈值与 PML 切段语义</button>
+        <button type="button" data-correct="0"
+          data-bad="并段是切段问题，不是 lindim 错层。">lindim 的 sepSmallDim 错层开关是否打开</button>
+        <button type="button" data-correct="0"
+          data-bad="公式影响偏移远近，不解释并段。">use_pdms_offset_formula 有没有打开</button>
+        <p class="feedback"></p>
+      </div>
+
+      <div class="q">
+        <p><strong>Q2.</strong> 段数对、但弯头 leg 尺寸画到另一直段，优先查？</p>
+        <button type="button" data-correct="0"
+          data-bad="leg 归段是 putIntoIsoLine 路径 A，不是 dimtimes。" data-bad="">主尺寸的 dimtimes 是不是写成了二</button>
+        <button type="button" data-correct="1"
+          data-ok="对：elboname leg 应用投影+近平行，不能只按最近点。"
+          data-bad="">归段是否按 elboname leg 的投影规则</button>
+        <button type="button" data-correct="0"
+          data-bad="隔段加粗影响避让，不直接决定 leg 归属。" data-bad="">隔一段 polarcyli 的 160° 门槛</button>
+        <p class="feedback"></p>
+      </div>
+
+      <div class="q">
+        <p><strong>Q3.</strong> 要对齐 PML 径向偏移，V2 配置应？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：打开 use_pdms_offset_formula，并用同一 1.2 倍率。"
+          data-bad="">打开 PDMS 偏移公式并保持 1.2 倍率</button>
+        <button type="button" data-correct="0"
+          data-bad="关 PDMS 公式时用的是 V2 默认 od/2+cheight。" data-bad="">关掉 PDMS 公式改用默认 V2 偏移</button>
+        <button type="button" data-correct="0"
+          data-bad="look_angle 不替代 offset 公式。" data-bad="">只把 look_angle 改成六十即可对齐</button>
+        <p class="feedback"></p>
+      </div>
+    </section>
+
+    <h2>Mission 收束</h2>
+    <p>
+      若三题都能稳定答对，你已具备 mission 写的能力：
+      <em>对照源码判定 V2 切段/车道对不对</em>。
+      下一步可以是：挑一条真实 bran 做差异单，或改 <code>extract_isolines</code> 提案（改代码前先写 learning-record）。
+    </p>
+
+    <div class="ask-teacher">
+      贴一条「V2 现象 + 期望」，我按本 checklist 带你走一遍排查。
+    </div>
+
+    <nav class="footer-nav">
+      <p>
+        <a href="0006-lindim-smalldim-plus.html">← 第 6 课</a>
+        · <a href="../reference/v2-alignment-checklist.html">对照速查（打印版）</a>
+        · 下一课：<a href="0008-diff-ticket-workshop.html">差异单实战 →</a>
+      </p>
+    </nav>
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

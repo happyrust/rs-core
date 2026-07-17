@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>速查 · putIntoIsoLine 归段</title>
+  <link rel="stylesheet" href="../assets/lesson.css" />
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Reference · putIntoIsoLine</p>
+    <h1>归段速查</h1>
+    <p class="lede">切完 isoline 之后，对象如何选中 <code>goodx</code>。</p>
+
+    <h2>路径选择</h2>
+    <pre>name 空  OR  (ISOLEG 且 elboname 已设)
+  → 路径 A 投影
+否则
+  → 路径 B mems 名匹配
+     （ISOWELDTEXT + ATTA → 仍用投影收集候选）</pre>
+
+    <h2>路径 A（含弯头 leg）</h2>
+    <ul>
+      <li>普通：<code>line.onprojected(pos)</code>，按距离排序取最近</li>
+      <li>弯头 leg：折叠后 <code>pipedir∠ori.zdir &lt; 1°</code>，且 <code>attapos</code> 可投影；按到 attapos 距离取近</li>
+      <li>全无候选：打印并 <code>skip</code></li>
+    </ul>
+
+    <h2>路径 B</h2>
+    <ul>
+      <li><code>mems.findfirst(name)</code>；桥接件可命中多段</li>
+      <li><code>adir∠ldir &lt; 179</code> → <code>samedirs=false</code>，不提前 break</li>
+    </ul>
+
+    <h2>多候选决胜</h2>
+    <ul>
+      <li><code>ISOWELDTEXT</code>：距线段最近</li>
+      <li>其它：<code>pipedir</code> 更接近水平（相对 U）</li>
+    </ul>
+
+    <h2>写入</h2>
+    <p><code>ISOSLOPE</code> / <code>ISOADJUSTWELD</code> / <code>ISOMBDANGLE</code> → <code>insert(1)</code>；其余 → <code>append</code>。</p>
+
+    <p class="cite">源：<code>isobran.pmlobj</code> · <code>putIntoIsoLine</code></p>
+    <p class="footer-nav">
+      <a href="../lessons/0003-put-into-isoline.html">← 第 3 课</a>
+      · <a href="getisolines-bend-cheatsheet.html">切段速查</a>
+    </p>
+  </main>
+</body>
+</html>

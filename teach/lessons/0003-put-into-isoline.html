@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>第 3 课 · putIntoIsoLine 归段</title>
+  <link rel="stylesheet" href="../assets/lesson.css" />
+  <style>
+    .path-grid {
+      display: grid;
+      gap: 0.75rem;
+      margin: 0 0 1.2rem;
+    }
+    @media (min-width: 640px) {
+      .path-grid { grid-template-columns: 1fr 1fr; }
+    }
+    .path-card {
+      background: var(--card);
+      border: 1px solid var(--rule);
+      padding: 0.85rem 0.95rem;
+    }
+    .path-card h3 { margin: 0 0 0.45rem; }
+    .path-card p { margin: 0; font-size: 0.92rem; color: var(--muted); }
+    .flow {
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      line-height: 1.5;
+      background: var(--card);
+      border: 1px solid var(--rule);
+      border-left: 3px solid var(--accent);
+      padding: 0.85rem 1rem;
+      margin: 0 0 1.1rem;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Lesson 0003 · 接续切段 → 归段</p>
+    <h1>对象如何落入 isoline？</h1>
+    <p class="lede">
+      切段只解决「有几条直段」。标注对象（尺寸、焊缝字、弯头 leg……）还要<strong>划进某一条</strong> isoline。
+      本课钉住 <code>putIntoIsoLine</code> 的候选与决胜规则——尤其弯头桥接时「两段都认领」怎么办。
+    </p>
+
+    <div class="callout">
+      <strong>本课只钉一件事：</strong>一个对象如何得到 <code>goodx</code>（目标 isoline 下标）。
+      不讲绘制，不讲 Polar 选位。
+    </div>
+
+    <h2>在总流程里的位置</h2>
+    <div class="flow">split()
+  getisolines()     ← 第 1–2 课：切出 isolines / mems
+  putIntoIsoLine()  ← 本课
+    getobjects()    ← 按优先级造对象列表
+    逐对象 → 找候选 → 决胜 → append/insert</div>
+    <p class="cite">
+      源：
+      <a href="../../MBD/markpipe/object/isobran.pmlobj"><code>isobran.putIntoIsoLine</code></a>
+      （约 1144–1353 行）
+    </p>
+
+    <h2>知识：两条「找候选」路径</h2>
+    <div class="path-grid">
+      <div class="path-card">
+        <h3>路径 A · 投影归段</h3>
+        <p>
+          触发：<code>name</code> 空，<strong>或</strong> <code>ISOLEG</code> 且已挂 <code>elboname</code>（弯头 leg）。
+          普通：点投影到 <code>isoline.line</code>，取最近。
+          弯头 leg：leg 的 <code>ori.zdir</code> 与段 <code>pipedir</code> 夹角折叠后 &lt; 1°，且 <code>attapos</code> 能投影上线。
+        </p>
+      </div>
+      <div class="path-card">
+        <h3>路径 B · 成员名归段</h3>
+        <p>
+          触发：有名字的常规对象。在各 isoline 的 <code>mems</code> 里 <code>findfirst(name)</code>。
+          弯头桥接 → 同一名字可命中<strong>两段</strong>。特殊：挂在 ATTA 上的 <code>ISOWELDTEXT</code>（elbopad/leg 焊缝字）改走投影。
+        </p>
+      </div>
+    </div>
+
+    <h3>桥接件为何会「双候选」</h3>
+    <p>
+      第 2 课：ELBO-A 同时在段1末与段2首。挂在该 ELBO 上的材料/标签，路径 B 会得到两个下标。
+      代码用 <code>samedirs</code> 控制：若构件 <code>adir∠ldir &lt; 179</code>（到达/离开不完全反向），<strong>不 break</strong>，继续收集多段。
+    </p>
+
+    <h3>多候选时怎么决胜</h3>
+    <ul>
+      <li>只有 1 个候选 → 直接用</li>
+      <li>多个且是 <code>ISOWELDTEXT</code> → 选到线段<strong>距离最近</strong>的</li>
+      <li>多个且其它类型 → 选 <code>pipedir</code> 更接近水平的那段（相对 U 的夹角折叠后更小）</li>
+    </ul>
+
+    <h3>写入顺序</h3>
+    <p>
+      <code>ISOSLOPE</code> / <code>ISOADJUSTWELD</code> / <code>ISOMBDANGLE</code> → <code>insert(1, …)</code>（插到最前，优先占位）。
+      其余 → <code>append</code>。
+    </p>
+
+    <h3>找不到候选</h3>
+    <p>
+      路径 A 找不到会 <code>$p</code> 提示后 <code>skip</code>；路径 B 空候选会打调试 aid 字并打印——
+      <strong>不静默硬画</strong>（对齐 AGENTS.md 的 suppress 精神）。
+    </p>
+
+    <div class="callout">
+      <strong>和 mission 的钉子：</strong>
+      V2 若只按几何最近点塞对象、忽略「mems 归属 + 弯头双候选决胜」，
+      会出现「个别对象落在错误直段」——文档里写过的前后端差异同源。
+    </div>
+
+    <h2>技能：判归段路径</h2>
+    <section class="quiz" aria-label="小测">
+      <h3>小测（3 题）</h3>
+
+      <div class="q">
+        <p><strong>Q1.</strong> 带 <code>elboname</code> 的弯头 <code>ISOLEG</code>，优先用哪条找候选？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：走路径 A 的 elbo isoleg 分支（方向平行 + attapos 投影）。"
+          data-bad="">路径 A：投影，并检查与 pipedir 近平行</button>
+        <button type="button" data-correct="0"
+          data-bad="有 elboname 的 ISOLEG 被显式送进路径 A，不是 mems 名匹配。">路径 B：在 mems 里按 leg 名字查找</button>
+        <button type="button" data-correct="0"
+          data-bad="没有「永远跟材料走」的捷径；代码写的是几何条件。">不找候选，直接跟主尺寸绑一段</button>
+        <p class="feedback"></p>
+      </div>
+
+      <div class="q">
+        <p><strong>Q2.</strong> ELBO 桥接两段时，挂在它上面的有名材料对象常出现双候选。决胜默认看什么？</p>
+        <button type="button" data-correct="0"
+          data-bad="距离最近是 ISOWELDTEXT 多候选时的规则，不是材料默认。">选到对象点距离更近的那条 isoline</button>
+        <button type="button" data-correct="1"
+          data-ok="对：非焊缝字多候选时，选 pipedir 更接近水平的段。"
+          data-bad="">选 pipedir 更接近水平的那条 isoline</button>
+        <button type="button" data-correct="0"
+          data-bad="代码不会无脑选下标更小的段。">固定选下标更小的前一段 isoline</button>
+        <p class="feedback"></p>
+      </div>
+
+      <div class="q">
+        <p><strong>Q3.</strong> <code>ISOSLOPE</code> 划入目标 isoline 时，写入方式是？</p>
+        <button type="button" data-correct="0"
+          data-bad="坡度要 insert 到最前，让其它标注让路。">像普通对象一样 append 到 objects 末尾</button>
+        <button type="button" data-correct="1"
+          data-ok="对：insert(1)，优先占位。"
+          data-bad="">用 insert(1) 插到 objects 列表最前面</button>
+        <button type="button" data-correct="0"
+          data-bad="找不到才会跳过；找到了会插入。">直接 skip，坡度不进入任何 isoline</button>
+        <p class="feedback"></p>
+      </div>
+    </section>
+
+    <h2>建议的一手材料</h2>
+    <p>
+      打开 <code>putIntoIsoLine</code>，只盯三处：① 路径 A/B 的 <code>if</code>；② <code>samedirs</code> 与 <code>break</code>；③ 多候选 <code>sortedindices</code>。
+      用第 2 课的两段 <code>mems</code> 想象一个挂在 ELBO-A 上的材料，走一遍决胜。
+    </p>
+
+    <div class="ask-teacher">
+      问我时可以贴对象类型 + 是否有 name/elboname，我帮你判走 A 还是 B。
+    </div>
+
+    <nav class="footer-nav">
+      <p>
+        <a href="0002-hand-push-allarr.html">← 第 2 课</a>
+        · <a href="../reference/put-into-isoline-cheatsheet.html">归段速查</a>
+        · 下一课：<a href="0004-polar-neighbor-occupancy.html">邻段 Polar 占位 →</a>
+      </p>
+    </nav>
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

@@ -1,0 +1,77 @@
+{
+  "$schema_comment": "P3 polar neighbor fixture draft — teaching only, not implemented yet",
+  "version": 1,
+  "thresholds": {
+    "skip_one_angle_deg": 160,
+    "skip_one_dist_od_mult": 15,
+    "thick_diameter_od_mult": 1.5
+  },
+  "cases": [
+    {
+      "id": "ortho-neighbors",
+      "title": "课64：两段正交互加柱",
+      "isolines": [
+        {
+          "id": 0,
+          "od": 100,
+          "pipedir": [1, 0, 0],
+          "p0": [0, 0, 0],
+          "p1": [1000, 0, 0]
+        },
+        {
+          "id": 1,
+          "od": 100,
+          "pipedir": [0, 0, 1],
+          "p0": [1000, 0, 0],
+          "p1": [1000, 0, 800]
+        }
+      ],
+      "expect_obstacles": {
+        "0": [{ "from": 1, "diameter_scale": 1.0 }],
+        "1": [{ "from": 0, "diameter_scale": 1.0 }]
+      }
+    },
+    {
+      "id": "u-turn-skip",
+      "title": "课64：隔一段近折返加粗柱",
+      "isolines": [
+        {
+          "id": 0,
+          "od": 100,
+          "pipedir": [1, 0, 0],
+          "p0": [0, 0, 0],
+          "p1": [1000, 0, 0]
+        },
+        {
+          "id": 1,
+          "od": 100,
+          "pipedir": [0, 0, 1],
+          "p0": [1000, 0, 0],
+          "p1": [1000, 0, 200]
+        },
+        {
+          "id": 2,
+          "od": 100,
+          "pipedir": [-1, 0, 0],
+          "p0": [1000, 0, 200],
+          "p1": [0, 0, 200]
+        }
+      ],
+      "expect_obstacles": {
+        "0": [
+          { "from": 1, "diameter_scale": 1.0 },
+          { "from": 2, "diameter_scale": 1.5 }
+        ],
+        "1": [
+          { "from": 0, "diameter_scale": 1.0 },
+          { "from": 2, "diameter_scale": 1.0 }
+        ],
+        "2": [
+          { "from": 1, "diameter_scale": 1.0 },
+          { "from": 0, "diameter_scale": 1.5 }
+        ]
+      },
+      "notes": "0 vs 2: angle 180>160 and close in space → thick; also adjacent pairs"
+    }
+  ]
+}

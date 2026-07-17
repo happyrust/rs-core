@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>速查 · isinstpipe</title>
+  <link rel="stylesheet" href="../assets/lesson.css" />
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Reference · 仪表管开关</p>
+    <h1>isinstpipe 速查</h1>
+
+    <h2>判定</h2>
+    <pre>sitename = name of site of bran
+isinstpipe = sitename.upcase().match('INST') ≠ 0</pre>
+    <p>再传入每个 <code>isoline(..., isinstpipe, ...)</code> / <code>polarsystem</code>。</p>
+
+    <h2>仅工艺管（<code>isinstpipe.not()</code>）</h2>
+    <ul>
+      <li>收集：branmlabel、cutparts、ISOLEG 进 objects</li>
+      <li>弯头：弯段两点距&gt;1 补弯向；PE 标高 tag（EM9）</li>
+      <li>标签：geteltag</li>
+      <li>属性：ROOM_NO 等</li>
+      <li>绘制：drawflow / TSPEC（且非 <code>twoormoredims &amp;&amp; dimtimes==1</code>）</li>
+      <li>导出：zyjc JSON 块</li>
+    </ul>
+
+    <h2>仪表管策略（<code>isinstpipe</code>）</h2>
+    <ul>
+      <li>焊缝：EM4「偏 weld」——Head/Tail、OLET/TEE 等</li>
+      <li>pspec 取值路径不同</li>
+      <li>进度 UI：markinstpipeform</li>
+      <li>JSON type：EM9PIPE</li>
+      <li>isoline 对 INST 类型 mem 有专支</li>
+    </ul>
+
+    <h2>与切段</h2>
+    <p><code>getisolines</code> 主逻辑工艺≈仪表；开关管绘制/收集，不另写一套角阈值。</p>
+    <p>支架 → <code>marksupport</code>，不在此表。</p>
+
+    <p class="cite">源：<code>isobran.setisinstpipe</code> / <code>isoline.drawdim</code> · 课 30</p>
+    <p class="footer-nav"><a href="../lessons/0030-isinstpipe-checklist.html">← 第 30 课</a></p>
+  </main>
+</body>
+</html>
