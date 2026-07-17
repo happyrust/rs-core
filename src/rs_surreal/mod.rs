@@ -98,40 +98,18 @@ use surrealdb::opt::auth::Root;
 pub type SurlValue = surrealdb::types::Value;
 pub static SUL_DB: Lazy<Surreal<Any>> = Lazy::new(Surreal::init);
 pub static SECOND_SUL_DB: Lazy<Surreal<Any>> = Lazy::new(Surreal::init);
-pub static KV_DB: Lazy<Surreal<Any>> = Lazy::new(Surreal::init);
 
 /// 内存KV数据库全局连接（用于PE数据额外备份）
 #[cfg(feature = "mem-kv-save")]
 pub static SUL_MEM_DB: Lazy<Surreal<Any>> = Lazy::new(Surreal::init);
 
-use std::sync::atomic::{AtomicBool, Ordering};
-
-/// 运行时标记：模型 KV 是否已启用
-static MODEL_KV_ENABLED: AtomicBool = AtomicBool::new(false);
-
-/// 模型 KV 是否已启用
-#[inline]
-pub fn is_model_kv_enabled() -> bool {
-    MODEL_KV_ENABLED.load(Ordering::Relaxed)
-}
-
-/// 标记模型 KV 已启用（由 runtime::initialize_databases 在嵌入式连接成功后调用）
-#[inline]
-pub fn mark_model_kv_enabled() {
-    MODEL_KV_ENABLED.store(true, Ordering::Relaxed);
-}
-
 /// 返回"模型数据主读写库"连接。
 ///
-/// 当 KV_DB 已启用（`surrealkv.enabled = true`）时返回 KV_DB；
-/// 否则回退到 SUL_DB，使模型数据与 PE/属性写入同一个数据库。
+/// 模型数据与 PE/属性固定同库（SUL_DB）。历史上的 SurrealKV/MODEL_KV
+/// 双库分离机制已移除；保留此别名以最小化调用面改动。
 #[inline]
 pub fn model_primary_db() -> &'static Surreal<Any> {
-    if MODEL_KV_ENABLED.load(Ordering::Relaxed) {
-        &KV_DB
-    } else {
-        &SUL_DB
-    }
+    &SUL_DB
 }
 
 /// 返回"项目数据主读写库"连接。
@@ -143,31 +121,7 @@ pub fn project_primary_db() -> &'static Surreal<Any> {
     &SUL_DB
 }
 
-/// 连接模型 KV（WebSocket）作为模型数据写入目标
-pub async fn connect_model_kv(
-    conn_str: &str,
-    ns: &str,
-    db: &str,
-    username: &str,
-    password: &str,
-) -> Result<(), surrealdb::Error> {
-    let config = surrealdb::opt::Config::default().ast_payload();
-    KV_DB
-        .connect((conn_str, config))
-        .with_capacity(1000)
-        .await?;
-    KV_DB
-        .signin(Root {
-            username: username.to_owned(),
-            password: password.to_owned(),
-        })
-        .await?;
-    use_ns_db_compat(&KV_DB, ns, db).await?;
-    MODEL_KV_ENABLED.store(true, Ordering::Relaxed);
-    Ok(())
-}
-
-/// 统一模型写入入口：固定写入 KV_DB（如果已启用），否则回退 SUL_DB。
+/// 统一模型写入入口：固定写入 SUL_DB（经 `model_primary_db` 别名）。
 pub async fn model_query_response(sql: &str) -> anyhow::Result<SurrealResponse> {
     let resp = model_primary_db().query(sql).await?;
     Ok(resp)
@@ -358,9 +312,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn model_kv_enabled_default_false() {
-        // 默认状态下 KV 未启用
-        // 注意：测试间可能有全局状态残留
-        assert!(!MODEL_KV_ENABLED.load(std::sync::atomic::Ordering::Relaxed) || true);
+    fn model_primary_db_is_sul_db() {
+        // SurrealKV 分离机制已移除：模型库恒等于 SUL_DB
+        assert!(std::ptr::eq(model_primary_db(), &*SUL_DB));
     }
 }

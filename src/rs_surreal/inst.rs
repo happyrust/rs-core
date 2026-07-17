@@ -9,8 +9,8 @@ use crate::shape::pdms_shape::RsVec3;
 use crate::types::PlantAabb;
 
 use crate::{
-    KV_DB, RefU64, RefnoEnum, SUL_DB, SurlValue, SurrealQueryExt, get_inst_relate_keys,
-    is_model_kv_enabled, model_primary_db, model_query_response,
+    RefU64, RefnoEnum, SUL_DB, SurlValue, SurrealQueryExt, get_inst_relate_keys, model_primary_db,
+    model_query_response,
 };
 
 use anyhow::Context;
@@ -76,15 +76,9 @@ pub struct FullPtsetPoint {
 
 pub async fn init_model_tables() -> anyhow::Result<()> {
     async fn exec_schema_sql(sql: &str) -> anyhow::Result<()> {
-        // 在主 SurrealDB 上执行
+        // 模型表与 PE/属性同库，直接在主 SurrealDB 上执行
 
         SUL_DB.query(sql).await?;
-
-        // 如果 KV 已启用，也在 KV_DB 上执行
-
-        if is_model_kv_enabled() {
-            KV_DB.query(sql).await?;
-        }
 
         Ok(())
     }
@@ -132,7 +126,7 @@ pub async fn init_model_tables() -> anyhow::Result<()> {
     for aabb_table in ["inst_relate_aabb", "inst_relate_booled_aabb"] {
         let info_sql = format!("INFO FOR TABLE {aabb_table};");
 
-        let is_old_relation = match KV_DB.query(&info_sql).await {
+        let is_old_relation = match SUL_DB.query(&info_sql).await {
             Ok(mut resp) => match resp.take::<Option<serde_json::Value>>(0) {
                 Ok(Some(val)) => val.to_string().contains("RELATION"),
 
@@ -143,7 +137,7 @@ pub async fn init_model_tables() -> anyhow::Result<()> {
         };
 
         if is_old_relation {
-            let _ = KV_DB.query(&format!("REMOVE TABLE {aabb_table};")).await;
+            let _ = SUL_DB.query(&format!("REMOVE TABLE {aabb_table};")).await;
         }
 
         let schema_sql = format!(

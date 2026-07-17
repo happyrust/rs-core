@@ -5,6 +5,17 @@ All notable changes to the rs-core library will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 2026-07-17
+
+### Removed
+
+- **移除 SurrealKV/MODEL_KV 双库分离机制**（模型数据固定与 PE/属性同库写 SUL_DB）
+  - 删除 `KV_DB` 全局连接、`MODEL_KV_ENABLED` 运行时开关、`is_model_kv_enabled` / `mark_model_kv_enabled` / `connect_model_kv`；`model_primary_db()` 保留为兼容别名，恒返回 `SUL_DB`。
+  - 删除 `SurrealKvConfig` 与 `DbOption.surrealkv`（`[surrealkv]` 配置段）、`effective_surrealkv` / `surrealkv_conn_str` / `surrealkv_data_path` / `get_model_kv_*`；旧 toml 残留 `[surrealkv]` 段会被 serde 静默忽略，不影响启动。
+  - 删除 `SURREALKV_ENABLED/MODE/IP/PORT` 环境变量覆盖，以及 `initialize_databases` / `init_surreal` 中的 KV 初始化分支和 `start/stop_surreal_kv_server` 进程管理。
+  - `init_model_tables` 不再向 KV 双写建表语句；旧 RELATION AABB 表探测改在 SUL_DB 上执行。
+  - 影响：versioned（specs/022）站点模型表与 PE/ATT 一并版本化，磁盘增长由 retention 兜底；如未来需要写分离，走 ModelWriter parquet/DuckLake 后端。
+
 ## 2026-06-02
 
 ### Removed

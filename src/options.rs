@@ -158,69 +158,6 @@ fn default_surreal_bind() -> String {
     "0.0.0.0:8020".to_string()
 }
 
-/// SurrealKV 连接配置（模型数据写入）
-///
-/// 当 `enabled = false` 时，跳过 KV_DB 初始化，模型数据写回主 SurrealDB（SUL_DB）。
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SurrealKvConfig {
-    /// 是否启用独立的 KV 数据库。
-    /// 设为 false 时模型数据写回主 SurrealDB（与 PE/属性同库），避免跨库引用缺失。
-    #[serde(default = "default_true_kv")]
-    pub enabled: bool,
-    /// 连接模式：file（嵌入式）或 ws（WebSocket）
-    #[serde(default)]
-    pub mode: DbConnMode,
-    /// file 模式：本地数据目录路径
-    #[serde(default)]
-    pub path: Option<String>,
-    /// ws 模式：IP 地址
-    #[serde(default = "default_surrealkv_ip")]
-    pub ip: String,
-    /// ws 模式：端口
-    #[serde(default = "default_surrealkv_port")]
-    pub port: u16,
-    /// ws 模式：用户名
-    #[serde(default = "default_surrealkv_user")]
-    pub user: String,
-    /// ws 模式：密码
-    #[serde(default = "default_surrealkv_password")]
-    pub password: String,
-}
-
-impl Default for SurrealKvConfig {
-    fn default() -> Self {
-        Self {
-            enabled: true,
-            mode: DbConnMode::File,
-            path: None,
-            ip: "localhost".to_string(),
-            port: 8010,
-            user: "root".to_string(),
-            password: "root".to_string(),
-        }
-    }
-}
-
-impl SurrealKvConfig {
-    /// 获取连接字符串
-    pub fn conn_str(&self) -> String {
-        match self.mode {
-            DbConnMode::File => {
-                let path = self.path.as_deref().unwrap_or("db-data/default.kv");
-                format!("rocksdb://{}", path)
-            }
-            DbConnMode::Ws => {
-                let ip = if self.ip == "localhost" {
-                    "127.0.0.1"
-                } else {
-                    &self.ip
-                };
-                format!("ws://{}:{}", ip, self.port)
-            }
-        }
-    }
-}
-
 #[derive(Debug, Default, Clone, Parser, Serialize, Deserialize)]
 pub struct DbOption {
     /// 是否启用日志
@@ -527,11 +464,6 @@ pub struct DbOption {
     #[serde(default)]
     pub surrealdb: SurrealDbConfig,
 
-    /// SurrealKV 连接配置（[surrealkv] 子表）
-    #[clap(skip)]
-    #[serde(default)]
-    pub surrealkv: SurrealKvConfig,
-
     /// Web Server 配置（[web_server] 子表）
     #[clap(skip)]
     #[serde(default)]
@@ -786,12 +718,6 @@ impl DbOption {
         cfg
     }
 
-    /// 获取 SurrealKV 连接配置
-    #[inline]
-    pub fn effective_surrealkv(&self) -> SurrealKvConfig {
-        self.surrealkv.clone()
-    }
-
     /// 获取 SurrealDB 嵌入式模式的数据目录路径
     ///
     /// 优先使用 `[surrealdb].path`，未配置时默认 `db-data/{project_name}_{surreal_port}.rdb`
@@ -801,17 +727,6 @@ impl DbOption {
             .path
             .clone()
             .unwrap_or_else(|| format!("db-data/{}_{}.rdb", self.project_name, self.surreal_port))
-    }
-
-    /// 获取 SurrealKV 嵌入式模式的数据目录路径
-    ///
-    /// 优先使用 `[surrealkv].path`，未配置时默认 `db-data/{project_name}_{kv_port}.kv`
-    #[inline]
-    pub fn surrealkv_data_path(&self) -> String {
-        self.surrealkv
-            .path
-            .clone()
-            .unwrap_or_else(|| format!("db-data/{}_{}.kv", self.project_name, self.surrealkv.port))
     }
 
     /// 获取 SurrealDB 嵌入式模式的完整连接字符串
@@ -824,38 +739,10 @@ impl DbOption {
         }
     }
 
-    /// 获取模型 KV 嵌入式模式的完整连接字符串
-    ///
-    /// 当 mode=File 时使用 `surrealkv_data_path()` 生成 `rocksdb://` 连接串。
-    pub fn surrealkv_conn_str(&self) -> String {
-        match self.surrealkv.mode {
-            DbConnMode::File => format!("rocksdb://{}", self.surrealkv_data_path()),
-            DbConnMode::Ws => self.surrealkv.conn_str(),
-        }
-    }
-
     /// 获取主 SurrealDB 连接字符串
     #[inline]
     pub fn get_version_db_conn_str(&self) -> String {
         self.surrealdb_conn_str()
-    }
-
-    /// 获取模型 KV 连接字符串
-    #[inline]
-    pub fn get_model_kv_conn_str(&self) -> String {
-        self.surrealkv_conn_str()
-    }
-
-    /// 获取模型 KV 用户名
-    #[inline]
-    pub fn get_model_kv_user(&self) -> &str {
-        &self.surrealkv.user
-    }
-
-    /// 获取模型 KV 密码
-    #[inline]
-    pub fn get_model_kv_password(&self) -> &str {
-        &self.surrealkv.password
     }
 
     #[inline]
@@ -955,26 +842,6 @@ fn default_surrealdb_password() -> String {
     "root".to_string()
 }
 
-fn default_true_kv() -> bool {
-    true
-}
-
-fn default_surrealkv_ip() -> String {
-    "localhost".to_string()
-}
-
-fn default_surrealkv_port() -> u16 {
-    8010
-}
-
-fn default_surrealkv_user() -> String {
-    "root".to_string()
-}
-
-fn default_surrealkv_password() -> String {
-    "root".to_string()
-}
-
 // ============================================================================
 // 内存KV数据库配置默认值函数
 // ============================================================================
@@ -1017,7 +884,7 @@ fn default_parse_channel_capacity() -> Option<usize> {
 
 #[cfg(test)]
 mod tests {
-    use super::{DbConnMode, DbOption, SurrealDbConfig, SurrealKvConfig};
+    use super::{DbConnMode, DbOption, SurrealDbConfig};
 
     #[test]
     fn surrealdb_file_mode_conn_str() {
@@ -1041,27 +908,6 @@ mod tests {
     }
 
     #[test]
-    fn surrealkv_file_mode_conn_str() {
-        let cfg = SurrealKvConfig {
-            mode: DbConnMode::File,
-            path: Some("D:/data/test.kv".to_string()),
-            ..Default::default()
-        };
-        assert_eq!(cfg.conn_str(), "rocksdb://D:/data/test.kv");
-    }
-
-    #[test]
-    fn surrealkv_ws_mode_conn_str() {
-        let cfg = SurrealKvConfig {
-            mode: DbConnMode::Ws,
-            ip: "192.168.1.10".to_string(),
-            port: 8010,
-            ..Default::default()
-        };
-        assert_eq!(cfg.conn_str(), "ws://192.168.1.10:8010");
-    }
-
-    #[test]
     fn effective_surrealdb_uses_new_config() {
         let mut opt = DbOption::default();
         opt.surrealdb = SurrealDbConfig {
@@ -1073,19 +919,6 @@ mod tests {
         assert_eq!(eff.mode, DbConnMode::File);
         assert_eq!(eff.path.as_deref(), Some("/data/test.db"));
         assert_eq!(eff.conn_str(), "rocksdb:///data/test.db");
-    }
-
-    #[test]
-    fn effective_surrealkv_uses_new_config() {
-        let mut opt = DbOption::default();
-        opt.surrealkv = SurrealKvConfig {
-            mode: DbConnMode::File,
-            path: Some("D:/data/test.kv".to_string()),
-            ..Default::default()
-        };
-        let eff = opt.effective_surrealkv();
-        assert_eq!(eff.mode, DbConnMode::File);
-        assert_eq!(eff.conn_str(), "rocksdb://D:/data/test.kv");
     }
 
     #[test]

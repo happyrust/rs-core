@@ -81,7 +81,7 @@ pub async fn define_common_functions(script_dir: Option<&str>) -> anyhow::Result
 
 /// 在指定的数据库连接上执行 SurrealDB 脚本目录中的所有脚本。
 ///
-/// 与 `define_common_functions` 相同逻辑，但可指定目标 DB（用于在 KV_DB 上定义函数）。
+/// 与 `define_common_functions` 相同逻辑，但可指定目标 DB。
 pub async fn define_common_functions_on_db(
     db: &surrealdb::Surreal<surrealdb::engine::any::Any>,
     script_dir: Option<&str>,
