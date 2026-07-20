@@ -8,8 +8,6 @@
   Z 型 PCOM 特殊件判定；ELBO/BEND 不走此路径。Use for: 对照「同向分支」里谁才算 special。
 - [Source: `MBD/function/pipe/isrjpcom.pmlfnc`]
   RJ PCOM 识别。Use for: 与弯头分支并列的另一条大切段路径。
-- [Doc: `MBD/开发文档/BRAN尺寸标注算法全景文档.md` §2.2]
-  对 `getisolines` 的综述与 V2 简化点说明。Use for: 建立全景后再回源码。
 - [Source: `MBD/markpipe/object/isobran.pmlobj` · `.putIntoIsoLine()`]
   对象归段：路径 A 投影 / 路径 B mems，弯头双候选决胜。Use for: 对象落错段排查。
 - [Source: `MBD/markpipe/object/isobran.pmlobj` · `getisolines` 邻段 polarcyli]
@@ -18,7 +16,7 @@
 
 ## Wisdom (Communities)
 
-- 组内对照：拿 `AvevaMarineSample` 等样例 bran，与 PDMS 实测 isoline 数核对（见 BRAN 文档验收入口）。
+- 组内对照：拿 `AvevaMarineSample` 等样例 bran，与 PDMS 实测 isoline 数核对。
 - 用户偏好：未要求加入外部社区；优先仓库内源码与样例。
 
 - [Reference: `teach/reference/p0-branch-member-geom.html`]
