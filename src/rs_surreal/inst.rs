@@ -258,11 +258,11 @@ fn decode_values<T: DeserializeOwned>(values: Vec<SurlValue>) -> anyhow::Result<
 
 ///
 
-/// `tubi_relate` 表的 ID 格式是 `[pe:⟨第一个子元素refno⟩, index]`，
+/// `tubi_relate` 使用纯 refno 数组 ID `[ref0, ref1, index]`。
 
-/// 而不是 `[pe:⟨BRAN_refno⟩, index]`。因此需要先查询 BRAN 的第一个子元素，
+/// 模型历史由 versioned 存储层负责，record id 不携带 sesno。
 
-/// 然后用它来查询 `tubi_relate`。
+///
 
 pub async fn query_tubi_insts_by_brans(
     bran_refnos: &[RefnoEnum],
@@ -275,23 +275,24 @@ pub async fn query_tubi_insts_by_brans(
 
     for bran_refno in bran_refnos {
         let pe_key = bran_refno.to_pe_key();
+        let base = bran_refno.refno();
+        let ref0 = base.get_0();
+        let ref1 = base.get_1();
 
-        // 使用 ID range 查询：tubi_relate 的 ID 格式是 [pe:branch_refno, index]
+        // 使用 ID range 查询比 WHERE 条件更高效。
 
-        // 直接用 range 查询比 WHERE 条件更高效
+        //
 
         let sql = format!(
             r#"
 
             SELECT
 
-                id[0] as refno,
+                {pe_key} as refno,
 
                 in as leave,
 
-                id[0].old_pe as old_refno,
-
-                id[0].owner.noun as generic,
+                {pe_key}.owner.noun as generic,
 
                 aabb.d as world_aabb,
 
@@ -303,10 +304,9 @@ pub async fn query_tubi_insts_by_brans(
 
                 spec_value
 
-            FROM tubi_relate:[{}, 0]..[{}, 999999]
+            FROM tubi_relate:[{ref0}, {ref1}, NONE]..=[{ref0}, {ref1}, ..]
 
-            "#,
-            pe_key, pe_key
+            "#
         );
 
         let mut results: Vec<TubiInstQuery> = model_primary_db().query_take(&sql, 0).await?;
