@@ -1124,6 +1124,9 @@ impl NamedAttrMap {
                             DVec3::NEG_Z,
                         ));
                     }
+            // generation_read / Surreal record 引用常落成 RefnoEnumType；
+            // 若落到 UNSET，cal_cata_hash 会把不同 SPRE 的 VALV/OLET 等错误并组。
+            RefnoEnumType(d) => RefI32Tuple::from(&d.refno()).into(),
                 }
                 _ => {
                     if let Some(angs) = self.get_dvec3("ORI") {
@@ -1420,5 +1423,35 @@ impl NamedAttrMap {
 
         // 🔧 修改：返回 None 而不是 refno.to_string()
         return None;
+    }
+}
+
+#[cfg(test)]
+mod refno_enum_cata_hash_tests {
+    use super::*;
+
+    #[test]
+    fn different_spre_values_do_not_share_a_cata_hash() {
+        let make_valve = |refno: &str, spre: &str| {
+            let mut attributes = NamedAttrMap::default();
+            attributes.insert(
+                "REFNO".to_string(),
+                NamedAttrValue::RefnoEnumType(RefnoEnum::from(refno)),
+            );
+            attributes.insert(
+                "TYPE".to_string(),
+                NamedAttrValue::StringType("VALV".to_string()),
+            );
+            attributes.insert(
+                "SPRE".to_string(),
+                NamedAttrValue::RefnoEnumType(RefnoEnum::from(spre)),
+            );
+            attributes
+        };
+
+        let first = make_valve("24381/145035", "13246/465874");
+        let second = make_valve("24381/145036", "13246/465938");
+
+        assert_ne!(first.cal_cata_hash(), second.cal_cata_hash());
     }
 }
