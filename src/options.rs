@@ -355,10 +355,10 @@ pub struct DbOption {
     /// 是否保存到数据库
     #[clap(long)]
     pub save_db: Option<bool>,
-    /// 解析期只生成 scene tree 文件，跳过 PE/属性数据保存
+    /// 解析期轻量扫描：只维护 db_meta_info.json，跳过 PE/属性数据保存（不写 .tree）
     #[clap(long, default_value = "false")]
     #[serde(default)]
-    pub gen_tree_only: bool,
+    pub gen_db_meta_only: bool,
     /// 是否导出 JSON 实例文件
     #[clap(long)]
     #[serde(default)]

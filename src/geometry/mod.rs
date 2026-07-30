@@ -80,6 +80,9 @@ pub struct TubiData {
     /// TUBI 段在 BRAN/HANG 下的顺序号（tubi_relate 的 id[1]）
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub index: Option<u32>,
+    /// Legacy `tubi_relate.bore_size` payload, matching `TubiSize::to_vec()`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub bore_size: Option<Vec<f32>>,
     /// ARRIVE 轴点世界坐标 [x, y, z]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub arrive_axis_pt: Option<[f32; 3]>,
