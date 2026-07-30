@@ -1090,6 +1090,9 @@ impl NamedAttrMap {
                 .collect::<String>()
                 .into(),
             RefU64Type(d) => RefI32Tuple::from(d).into(),
+            // generation_read / Surreal record 引用常落成 RefnoEnumType；
+            // 若落到 UNSET，cal_cata_hash 会把不同 SPRE 的 VALV/OLET 等错误并组。
+            RefnoEnumType(d) => RefI32Tuple::from(&d.refno()).into(),
             _ => UNSET_STR.into(),
         };
         Some(s)
@@ -1124,9 +1127,6 @@ impl NamedAttrMap {
                             DVec3::NEG_Z,
                         ));
                     }
-            // generation_read / Surreal record 引用常落成 RefnoEnumType；
-            // 若落到 UNSET，cal_cata_hash 会把不同 SPRE 的 VALV/OLET 等错误并组。
-            RefnoEnumType(d) => RefI32Tuple::from(&d.refno()).into(),
                 }
                 _ => {
                     if let Some(angs) = self.get_dvec3("ORI") {
