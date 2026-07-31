@@ -45,6 +45,21 @@ pub struct SCTorus {
 }
 
 impl SCTorus {
+    /// 返回环面在 PAAX/PBAX 两侧的实际切点。
+    pub fn tangent_points(&self) -> Option<(Vec3, Vec3)> {
+        let info = RotateInfo::cal_rotate_info(
+            self.paax_dir,
+            self.paax_pt,
+            self.pbax_dir,
+            self.pbax_pt,
+            self.pdia / 2.0,
+        )?;
+        let pa = info.center
+            + Quat::from_axis_angle(info.rot_axis.normalize(), info.angle.to_radians())
+                * (info.start - info.center);
+        Some((pa, info.start))
+    }
+
     pub fn convert_to_ctorus(&self) -> Option<(CTorus, Transform)> {
         self.convert_to_ctorus_with_ref(None)
     }
@@ -69,7 +84,7 @@ impl SCTorus {
             ctorus.rout = torus_info.radius + self.pdia / 2.0;
 
             let z_axis = torus_info.rot_axis.normalize();
-            let mut x_axis = (self.pbax_pt - torus_info.center).normalize();
+            let mut x_axis = (torus_info.start - torus_info.center).normalize();
             let translation = torus_info.center;
             // dbg!(torus_info.center);
             if x_axis.is_nan() {

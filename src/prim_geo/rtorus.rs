@@ -82,7 +82,7 @@ impl SRTorus {
             rtorus.rins = torus_info.radius - self.pdia / 2.0;
             rtorus.rout = torus_info.radius + self.pdia / 2.0;
             let z_axis = torus_info.rot_axis.normalize();
-            let x_axis = (self.pbax_pt - torus_info.center).normalize();
+            let x_axis = (torus_info.start - torus_info.center).normalize();
             let y_axis = z_axis.cross(x_axis).normalize();
             let translation = torus_info.center;
             let mat = Transform {

@@ -158,7 +158,8 @@ impl Ray2D {
         let t = q_minus_p.perp_dot(s) / r_cross_s;
         let u = qmp_cross_r / r_cross_s;
 
-        if t >= 0.0 && u >= 0.0 {
+        // 轴线交点落在端点时，f32 变换会产生约 1e-7 的负参数；它仍是有效射线交点。
+        if t >= -1.0e-5 && u >= -1.0e-5 {
             Some(p + t * r)
         } else {
             None
@@ -169,6 +170,7 @@ impl Ray2D {
 #[derive(Default, Debug)]
 pub struct RotateInfo {
     pub center: Vec3,
+    pub start: Vec3,
     pub angle: f32,
     pub rot_axis: Vec3,
     pub radius: f32,
@@ -209,6 +211,7 @@ impl RotateInfo {
             }
             return Some(RotateInfo {
                 center: Default::default(),
+                start: b_pt,
                 angle: pb_dir.angle_between(pa_dir).to_degrees(),
                 rot_axis,
                 radius: default_r,
@@ -253,6 +256,7 @@ impl RotateInfo {
                 };
                 return Some(RotateInfo {
                     center,
+                    start: b_pt,
                     angle: 180.0,
                     rot_axis,
                     radius: dist / 2.0,
@@ -285,16 +289,28 @@ impl RotateInfo {
         //如果pa, pb 平行，直接返回一个pb为基准的半圆
         // if a_dir.cross(b_dir).try_normalize().is_none(){
         let c_dir = pb_2d.rotate(Vec2::from_angle(PI / 2.0));
+        let mut start_2d = Vec2::ZERO;
         let r = if let Some(f_pt) = ray_a.intersect(&ray_b) {
             // dbg!(f_pt);
-            let r = f_pt.length() * (PI / 2.0 - angle / 2.0).tan();
+            // PDIS 可能只定义在 PAAX 上，此时 PBAX 点就是两轴交点。
+            // 交点到 PBAX 的距离为 0，应改用 PAAX 到交点的切线长度。
+            let b_tangent_len = f_pt.length();
+            let tangent_len = if b_tangent_len <= dist.max(1.0) * 1.0e-5 {
+                let tangent_len = (f_pt - pt_a).length();
+                start_2d = f_pt - pb_2d * tangent_len;
+                tangent_len
+            } else {
+                b_tangent_len
+            };
+            let r = tangent_len * (PI / 2.0 - angle / 2.0).tan();
             r
         } else {
             // dbg!("not intersect");
             ray_a.perpendicular_distance(&ray_b).unwrap_or(0.0) / 2.0
         };
         rotate_info.radius = r;
-        rotate_info.center = b_pt + mat3 * c_dir.extend(0.0) * r;
+        rotate_info.start = b_pt + mat3 * start_2d.extend(0.0);
+        rotate_info.center = rotate_info.start + mat3 * c_dir.extend(0.0) * r;
         Some(rotate_info)
     }
 
@@ -317,6 +333,7 @@ impl RotateInfo {
             }
             return Some(RotateInfo {
                 center: Default::default(),
+                start: b_pt,
                 angle: (-pa_dir).angle_between(pb_dir).to_degrees(),
                 rot_axis,
                 radius: default_r,
