@@ -5,17 +5,10 @@ use crate::pdms_types::{
 use crate::tool::db_tool::{db1_dehash, db1_hash};
 use crate::{RefU64, RefnoEnum, SUL_DB, SurrealQueryExt};
 use async_trait::async_trait;
-use flate2::Compression;
-use flate2::write::{DeflateDecoder, DeflateEncoder};
-use indextree::{Arena, NodeId};
 use once_cell::sync::Lazy;
 use parking_lot::RwLock;
-use rkyv::{from_bytes, rancor::Error as RkyvError, to_bytes};
-use std::collections::{HashMap, HashSet, VecDeque};
-use std::io::Write;
-use std::num::NonZeroUsize;
+use std::collections::{HashMap, HashSet};
 use std::path::Path;
-use std::sync::Arc;
 
 #[derive(Debug, Clone, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
 pub struct TreeNodeMeta {
@@ -33,7 +26,9 @@ pub struct TreeQueryFilter {
 }
 
 impl TreeQueryFilter {
-    fn matches(&self, node: &TreeNodeMeta, node_has_geo: bool, node_is_leaf: bool) -> bool {
+    /// 供各 `TreeQuery` 实现复用的节点匹配语义，保证不同层级数据源（SurrealDB 图查询、
+    /// 调用方自建的内存快照）对 has_geo / is_leaf / noun 三个维度的判定完全一致。
+    pub fn matches(&self, node: &TreeNodeMeta, node_has_geo: bool, node_is_leaf: bool) -> bool {
         if let Some(filter_has_geo) = self.has_geo {
             if node_has_geo != filter_has_geo {
                 return false;
@@ -94,292 +89,6 @@ pub trait TreeQuery: Send + Sync {
         node: RefU64,
         options: TreeQueryOptions,
     ) -> anyhow::Result<Vec<RefU64>>;
-}
-
-#[derive(Debug, Clone, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize)]
-pub struct TreeFile {
-    pub dbnum: u32,
-    pub root_refno: RefU64,
-    pub arena: Arena<TreeNodeMeta>,
-}
-
-impl TreeFile {
-    pub fn load(path: impl AsRef<Path>) -> anyhow::Result<Self> {
-        let path = path.as_ref();
-        let bytes = std::fs::read(path)?;
-        Self::from_rkyv_compress_bytes(&bytes)
-    }
-
-    pub fn save(&self, path: impl AsRef<Path>) -> anyhow::Result<()> {
-        let bytes = self.to_rkyv_compress_bytes()?;
-        std::fs::write(path, bytes)?;
-        Ok(())
-    }
-
-    pub fn to_rkyv_compress_bytes(&self) -> anyhow::Result<Vec<u8>> {
-        let bytes = to_bytes::<RkyvError>(self)
-            .map_err(|e| anyhow::anyhow!("rkyv serialize tree file failed: {e}"))?;
-        let mut encoder = DeflateEncoder::new(Vec::new(), Compression::default());
-        encoder.write_all(&bytes)?;
-        Ok(encoder.finish()?)
-    }
-
-    pub fn from_rkyv_compress_bytes(bytes: &[u8]) -> anyhow::Result<Self> {
-        let mut decoder = DeflateDecoder::new(Vec::new());
-        decoder.write_all(bytes)?;
-        let decoded = decoder.finish()?;
-        let file = from_bytes::<TreeFile, RkyvError>(&decoded)
-            .map_err(|e| anyhow::anyhow!("rkyv deserialize tree file failed: {e}"))?;
-        Ok(file)
-    }
-}
-
-#[derive(Debug)]
-pub struct TreeIndex {
-    dbnum: u32,
-    root_refno: RefU64,
-    roots: Vec<RefU64>,
-    arena: Arena<TreeNodeMeta>,
-    id_map: HashMap<RefU64, NodeId>,
-}
-
-impl TreeIndex {
-    pub fn load_from_path(path: impl AsRef<Path>) -> anyhow::Result<Self> {
-        let file = TreeFile::load(path)?;
-        Ok(Self::from_tree_file(file))
-    }
-
-    pub fn from_tree_file(file: TreeFile) -> Self {
-        let arena = file.arena;
-        let mut id_map = HashMap::with_capacity(arena.count());
-        let mut roots: Vec<RefU64> = Vec::new();
-        for index1 in 1..=arena.count() {
-            let Some(index1) = NonZeroUsize::new(index1) else {
-                continue;
-            };
-            let Some(node_id) = arena.get_node_id_at(index1) else {
-                continue;
-            };
-            let node = arena[node_id].get();
-            id_map.insert(node.refno, node_id);
-            if node_id.parent(&arena).is_none() {
-                roots.push(node.refno);
-            }
-        }
-
-        roots.sort_by_key(|refno| refno.0);
-        if file.root_refno.0 != 0 {
-            if let Some(pos) = roots.iter().position(|r| *r == file.root_refno) {
-                roots.remove(pos);
-            }
-            roots.insert(0, file.root_refno);
-        }
-
-        Self {
-            dbnum: file.dbnum,
-            root_refno: file.root_refno,
-            roots,
-            arena,
-            id_map,
-        }
-    }
-
-    pub fn dbnum(&self) -> u32 {
-        self.dbnum
-    }
-
-    pub fn root_refno(&self) -> RefU64 {
-        self.root_refno
-    }
-
-    pub fn roots(&self) -> &[RefU64] {
-        &self.roots
-    }
-
-    pub fn node_count(&self) -> usize {
-        self.id_map.len()
-    }
-
-    pub fn contains_refno(&self, refno: RefU64) -> bool {
-        self.id_map.contains_key(&refno)
-    }
-
-    pub fn all_refnos(&self) -> Vec<RefU64> {
-        self.id_map.keys().copied().collect()
-    }
-
-    pub fn node_meta(&self, refno: RefU64) -> Option<TreeNodeMeta> {
-        self.id_map
-            .get(&refno)
-            .map(|id| self.arena[*id].get().clone())
-    }
-
-    fn collect_children(&self, parent: RefU64, filter: &TreeQueryFilter) -> Vec<RefU64> {
-        let Some(&parent_id) = self.id_map.get(&parent) else {
-            return Vec::new();
-        };
-        parent_id
-            .children(&self.arena)
-            .filter_map(|child_id| {
-                let meta = self.arena[child_id].get();
-                let has_geo = is_geo_noun_hash(meta.noun);
-                let is_leaf = child_id.children(&self.arena).next().is_none();
-                if filter.matches(meta, has_geo, is_leaf) {
-                    Some(meta.refno)
-                } else {
-                    None
-                }
-            })
-            .collect()
-    }
-
-    pub fn collect_descendants_bfs(&self, root: RefU64, options: &TreeQueryOptions) -> Vec<RefU64> {
-        let Some(&root_id) = self.id_map.get(&root) else {
-            return Vec::new();
-        };
-        let mut out = Vec::new();
-        let mut queue: VecDeque<(NodeId, usize)> = VecDeque::new();
-        queue.push_back((root_id, 0));
-        while let Some((node_id, depth)) = queue.pop_front() {
-            let node = self.arena[node_id].get();
-            let is_root = depth == 0;
-            let has_geo = is_geo_noun_hash(node.noun);
-            let is_leaf = node_id.children(&self.arena).next().is_none();
-            let matched = !(is_root && !options.include_self)
-                && options.filter.matches(node, has_geo, is_leaf);
-            if matched {
-                out.push(node.refno);
-            }
-            // prune_on_match: 匹配到目标节点后不再递归其子节点
-            if options.prune_on_match && matched && !is_root {
-                continue;
-            }
-            if let Some(max_depth) = options.max_depth {
-                if depth >= max_depth {
-                    continue;
-                }
-            }
-            for child_id in node_id.children(&self.arena) {
-                queue.push_back((child_id, depth + 1));
-            }
-        }
-        out
-    }
-
-    /// BFS 收集子孙节点，按 noun_hash 分组返回
-    pub fn collect_descendants_bfs_grouped(
-        &self,
-        root: RefU64,
-        options: &TreeQueryOptions,
-    ) -> HashMap<u32, Vec<RefU64>> {
-        let Some(&root_id) = self.id_map.get(&root) else {
-            return HashMap::new();
-        };
-        let mut out: HashMap<u32, Vec<RefU64>> = HashMap::new();
-        let mut queue: VecDeque<(NodeId, usize)> = VecDeque::new();
-        queue.push_back((root_id, 0));
-        while let Some((node_id, depth)) = queue.pop_front() {
-            let node = self.arena[node_id].get();
-            let is_root = depth == 0;
-            let has_geo = is_geo_noun_hash(node.noun);
-            let is_leaf = node_id.children(&self.arena).next().is_none();
-            let matched = !(is_root && !options.include_self)
-                && options.filter.matches(node, has_geo, is_leaf);
-            if matched {
-                out.entry(node.noun).or_default().push(node.refno);
-            }
-            if options.prune_on_match && matched && !is_root {
-                continue;
-            }
-            if let Some(max_depth) = options.max_depth {
-                if depth >= max_depth {
-                    continue;
-                }
-            }
-            for child_id in node_id.children(&self.arena) {
-                queue.push_back((child_id, depth + 1));
-            }
-        }
-        out
-    }
-
-    pub fn collect_ancestors_root_to_parent(
-        &self,
-        node: RefU64,
-        options: &TreeQueryOptions,
-    ) -> Vec<RefU64> {
-        let mut chain: Vec<RefU64> = Vec::new();
-        let mut current = node;
-        let mut depth = 0usize;
-        let mut visited = HashSet::new();
-        loop {
-            if !visited.insert(current) {
-                break;
-            }
-            if !(current == node && !options.include_self) {
-                if let Some(meta) = self.node_meta(current) {
-                    let is_leaf = self
-                        .id_map
-                        .get(&current)
-                        .map(|id| id.children(&self.arena).next().is_none())
-                        .unwrap_or(false);
-                    let has_geo = is_geo_noun_hash(meta.noun);
-                    if options.filter.matches(&meta, has_geo, is_leaf) {
-                        chain.push(current);
-                    }
-                    current = meta.owner;
-                } else {
-                    break;
-                }
-            } else if let Some(meta) = self.node_meta(current) {
-                current = meta.owner;
-            } else {
-                break;
-            }
-            depth += 1;
-            if let Some(max_depth) = options.max_depth {
-                if depth >= max_depth {
-                    break;
-                }
-            }
-            if current.0 == 0 {
-                break;
-            }
-        }
-        chain.reverse();
-        chain
-    }
-}
-
-#[async_trait]
-impl TreeQuery for TreeIndex {
-    async fn get_node_meta(&self, refno: RefU64) -> anyhow::Result<Option<TreeNodeMeta>> {
-        Ok(self.node_meta(refno))
-    }
-
-    async fn query_children(
-        &self,
-        parent: RefU64,
-        filter: TreeQueryFilter,
-    ) -> anyhow::Result<Vec<RefU64>> {
-        Ok(self.collect_children(parent, &filter))
-    }
-
-    async fn query_descendants_bfs(
-        &self,
-        root: RefU64,
-        options: TreeQueryOptions,
-    ) -> anyhow::Result<Vec<RefU64>> {
-        Ok(self.collect_descendants_bfs(root, &options))
-    }
-
-    async fn query_ancestors_root_to_parent(
-        &self,
-        node: RefU64,
-        options: TreeQueryOptions,
-    ) -> anyhow::Result<Vec<RefU64>> {
-        Ok(self.collect_ancestors_root_to_parent(node, &options))
-    }
 }
 
 #[derive(Debug, Default, Clone)]
@@ -481,42 +190,6 @@ impl TreeQuery for SurrealTreeQuery {
     }
 }
 
-static TREE_INDEX_CACHE: Lazy<RwLock<HashMap<u32, Arc<TreeIndex>>>> =
-    Lazy::new(|| RwLock::new(HashMap::new()));
-
-pub fn get_cached_tree_index(dbnum: u32) -> Option<Arc<TreeIndex>> {
-    TREE_INDEX_CACHE.read().get(&dbnum).cloned()
-}
-
-pub fn load_tree_index_from_dir(
-    dbnum: u32,
-    dir: impl AsRef<Path>,
-) -> anyhow::Result<Arc<TreeIndex>> {
-    if let Some(index) = get_cached_tree_index(dbnum) {
-        return Ok(index);
-    }
-    let path = dir.as_ref().join(format!("{}.tree", dbnum));
-    let index = Arc::new(TreeIndex::load_from_path(&path)?);
-    TREE_INDEX_CACHE.write().insert(dbnum, index.clone());
-    Ok(index)
-}
-
-pub fn load_tree_index_from_path(path: impl AsRef<Path>) -> anyhow::Result<Arc<TreeIndex>> {
-    let index = Arc::new(TreeIndex::load_from_path(path.as_ref())?);
-    TREE_INDEX_CACHE
-        .write()
-        .insert(index.dbnum(), index.clone());
-    Ok(index)
-}
-
-pub fn remove_tree_index(dbnum: u32) {
-    TREE_INDEX_CACHE.write().remove(&dbnum);
-}
-
-pub fn clear_tree_index_cache() {
-    TREE_INDEX_CACHE.write().clear();
-}
-
 static GEO_NOUN_HASHES: Lazy<HashSet<u32>> = Lazy::new(|| {
     let mut set = HashSet::new();
     let iter = USE_CATE_NOUN_NAMES
@@ -610,88 +283,47 @@ pub fn get_dbnum_by_refno(refno: RefU64) -> Option<u32> {
     get_dbnum_by_ref0(refno.get_0())
 }
 
-/// 根据 refno 自动获取对应的 TreeIndex
-pub fn get_tree_index_by_refno(refno: RefU64) -> Option<Arc<TreeIndex>> {
-    let dbnum = get_dbnum_by_refno(refno)?;
-    get_cached_tree_index(dbnum)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use indextree::Arena;
 
-    #[test]
-    fn test_tree_file_roundtrip_with_cata_hash() {
-        let mut arena = Arena::new();
-        let root_refno = RefU64(1);
-        let root_id = arena.new_node(TreeNodeMeta {
-            refno: root_refno,
-            owner: root_refno,
-            noun: db1_hash("SITE"),
+    fn meta(refno: u64, owner: u64, noun: &str) -> TreeNodeMeta {
+        TreeNodeMeta {
+            refno: RefU64(refno),
+            owner: RefU64(owner),
+            noun: db1_hash(noun),
             cata_hash: None,
-        });
-        let child_refno = RefU64(2);
-        let child_id = arena.new_node(TreeNodeMeta {
-            refno: child_refno,
-            owner: root_refno,
-            noun: db1_hash("BRAN"),
-            cata_hash: Some(123456),
-        });
-        root_id.append(child_id, &mut arena);
-
-        let tree = TreeFile {
-            dbnum: 1,
-            root_refno,
-            arena,
-        };
-
-        let mut path = std::env::temp_dir();
-        path.push(format!("tree_query_test_{}.tree", std::process::id()));
-        tree.save(&path).expect("save tree file");
-        let loaded = TreeFile::load(&path).expect("load tree file");
-        let index = TreeIndex::from_tree_file(loaded);
-        let meta = index.node_meta(child_refno).expect("child meta");
-        assert_eq!(meta.cata_hash, Some(123456));
-        let _ = std::fs::remove_file(path);
+        }
     }
 
     #[test]
-    fn test_tree_filter_dynamic_flags() {
-        let mut arena = Arena::new();
-        let root_refno = RefU64(10);
-        let root_id = arena.new_node(TreeNodeMeta {
-            refno: root_refno,
-            owner: root_refno,
-            noun: db1_hash("SITE"),
-            cata_hash: None,
-        });
-        let child_refno = RefU64(11);
-        let child_id = arena.new_node(TreeNodeMeta {
-            refno: child_refno,
-            owner: root_refno,
-            noun: db1_hash("BRAN"),
-            cata_hash: Some(234567),
-        });
-        root_id.append(child_id, &mut arena);
+    fn test_filter_matches_dynamic_flags() {
+        let node = meta(2, 1, "BRAN");
+        let filter = TreeQueryFilter {
+            has_geo: Some(true),
+            is_leaf: Some(true),
+            noun_hashes: None,
+        };
+        assert!(filter.matches(&node, true, true));
+        assert!(!filter.matches(&node, false, true));
+        assert!(!filter.matches(&node, true, false));
+    }
 
-        let tree = TreeFile {
-            dbnum: 1,
-            root_refno,
-            arena,
+    #[test]
+    fn test_filter_matches_noun_hashes() {
+        let node = meta(2, 1, "BRAN");
+        let filter = TreeQueryFilter {
+            has_geo: None,
+            is_leaf: None,
+            noun_hashes: Some(HashSet::from([db1_hash("BRAN")])),
         };
-        let index = TreeIndex::from_tree_file(tree);
-        let options = TreeQueryOptions {
-            include_self: false,
-            max_depth: None,
-            filter: TreeQueryFilter {
-                has_geo: Some(true),
-                is_leaf: Some(true),
-                noun_hashes: None,
-            },
-            prune_on_match: false,
+        assert!(filter.matches(&node, false, false));
+
+        let other = TreeQueryFilter {
+            has_geo: None,
+            is_leaf: None,
+            noun_hashes: Some(HashSet::from([db1_hash("SITE")])),
         };
-        let descendants = index.collect_descendants_bfs(root_refno, &options);
-        assert_eq!(descendants, vec![child_refno]);
+        assert!(!other.matches(&node, false, false));
     }
 }

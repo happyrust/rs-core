@@ -557,6 +557,14 @@ pub struct ExportInstQuery {
 
 /// 返回只包含 hash 引用的查询结果，用于导出时直接引用 trans.json 和 aabb.json
 
+/// 模型产物表（inst_relate / inst_relate_aabb / …）写入使用数组 id：`table:[ref0,ref1]`。
+/// 查询侧必须与 `plant-model-gen::model_refno_id` 对齐；`to_inst_relate_key()` 的字符串 id
+/// （`table:`ref0_ref1``）对应当前写入路径会 miss。
+fn model_array_record_key(table: &str, refno: &RefnoEnum) -> String {
+    let base = refno.refno();
+    format!("{}:[{},{}]", table, base.get_0(), base.get_1())
+}
+
 pub async fn query_insts_for_export(
     refnos: impl IntoIterator<Item = &RefnoEnum>,
 
@@ -578,7 +586,7 @@ pub async fn query_insts_for_export(
 
             let bool_keys: Vec<String> = chunk
                 .iter()
-                .map(|r| format!("inst_relate_bool:{}", r))
+                .map(|r| model_array_record_key("inst_relate_bool", r))
                 .collect();
 
             let bool_keys_str = bool_keys.join(",");
@@ -595,7 +603,9 @@ pub async fn query_insts_for_export(
                     refno,
 
                     refno.owner as owner,
-                    (if type::record("inst_relate_aabb", record::id(refno)).aabb_id != NONE {{
+                    (if type::record("inst_relate_aabb", record::id(id)).aabb_id != NONE {{
+                        record::id(type::record("inst_relate_aabb", record::id(id)).aabb_id)
+                    }} else if type::record("inst_relate_aabb", record::id(refno)).aabb_id != NONE {{
                         record::id(type::record("inst_relate_aabb", record::id(refno)).aabb_id)
                     }} else {{ None }}) as world_aabb_hash,
                     (if type::record("pe_transform", record::id(refno)).world_trans != NONE {{
@@ -632,13 +642,14 @@ pub async fn query_insts_for_export(
             let non_bool_keys: Vec<String> = chunk
                 .iter()
                 .filter(|r| !bool_refnos.contains(*r))
-                .map(|r| r.to_inst_relate_key())
+                .map(|r| model_array_record_key("inst_relate", r))
                 .collect();
 
             if !non_bool_keys.is_empty() {
                 let non_bool_keys_str = non_bool_keys.join(",");
 
                 // 只查询 hash ID，不查询实际数据
+                // AABB：优先数组 id（与写入对齐），回退字符串 id（存量站点）
 
                 let geo_sql = format!(
                     r#"
@@ -648,7 +659,9 @@ pub async fn query_insts_for_export(
                         in as refno,
 
                         in.owner ?? in as owner,
-                        (if type::record("inst_relate_aabb", record::id(in)).aabb_id != NONE {{
+                        (if type::record("inst_relate_aabb", record::id(id)).aabb_id != NONE {{
+                            record::id(type::record("inst_relate_aabb", record::id(id)).aabb_id)
+                        }} else if type::record("inst_relate_aabb", record::id(in)).aabb_id != NONE {{
                             record::id(type::record("inst_relate_aabb", record::id(in)).aabb_id)
                         }} else {{ None }}) as world_aabb_hash,
                         (if type::record("pe_transform", record::id(in)).world_trans != NONE {{
@@ -667,7 +680,9 @@ pub async fn query_insts_for_export(
 
                            && (trans.d ?? NONE) != NONE
 
-                           && geo_type IN ['Pos', 'CatePos', 'Compound']) as insts,
+                           && geo_type IN ['Pos', 'CatePos', 'Compound']
+                           && record::id(id)[0] = type::number(string::split(record::id($parent.in), '_')[0])
+                           && record::id(id)[1] = type::number(string::split(record::id($parent.in), '_')[1])) as insts,
 
                         false as has_neg
 
@@ -683,14 +698,17 @@ pub async fn query_insts_for_export(
                     .query_take(&geo_sql, 0)
                     .await
                     .with_context(|| format!("query_insts_for_export geo SQL: {}", geo_sql))?;
+                dedupe_export_inst_geos(&mut geo_results);
 
                 results.append(&mut geo_results);
             }
         } else {
             // ========== enable_holes=false：始终返回原始几何 ==========
 
-            let inst_relate_keys: Vec<String> =
-                chunk.iter().map(|r| r.to_inst_relate_key()).collect();
+            let inst_relate_keys: Vec<String> = chunk
+                .iter()
+                .map(|r| model_array_record_key("inst_relate", r))
+                .collect();
 
             let inst_relate_keys_str = inst_relate_keys.join(",");
 
@@ -704,7 +722,9 @@ pub async fn query_insts_for_export(
                     in as refno,
 
                     in.owner ?? in as owner,
-                    (if type::record("inst_relate_aabb", record::id(in)).aabb_id != NONE {{
+                    (if type::record("inst_relate_aabb", record::id(id)).aabb_id != NONE {{
+                        record::id(type::record("inst_relate_aabb", record::id(id)).aabb_id)
+                    }} else if type::record("inst_relate_aabb", record::id(in)).aabb_id != NONE {{
                         record::id(type::record("inst_relate_aabb", record::id(in)).aabb_id)
                     }} else {{ None }}) as world_aabb_hash,
                     (if type::record("pe_transform", record::id(in)).world_trans != NONE {{
@@ -723,7 +743,9 @@ pub async fn query_insts_for_export(
 
                        && (trans.d ?? NONE) != NONE
 
-                       && geo_type IN ['Pos', 'DesiPos', 'CatePos', 'Compound']) as insts,
+                       && geo_type IN ['Pos', 'DesiPos', 'CatePos', 'Compound']
+                       && record::id(id)[0] = type::number(string::split(record::id($parent.in), '_')[0])
+                       && record::id(id)[1] = type::number(string::split(record::id($parent.in), '_')[1])) as insts,
 
                     false as has_neg
 
@@ -739,12 +761,28 @@ pub async fn query_insts_for_export(
                 .query_take(&sql, 0)
                 .await
                 .with_context(|| format!("query_insts_for_export SQL: {}", sql))?;
+            dedupe_export_inst_geos(&mut chunk_result);
 
             results.append(&mut chunk_result);
         }
     }
 
     Ok(results)
+}
+
+/// 共享 inst_info / 重复写入时，同一 PE 可能叠出多份相同 (geo_hash, trans)。
+/// 导出侧按 (geo_hash, trans_hash) 保序去重，避免前端叠画。
+fn dedupe_export_inst_geos(rows: &mut [ExportInstQuery]) {
+    for row in rows.iter_mut() {
+        let mut seen = std::collections::HashSet::new();
+        row.insts.retain(|inst| {
+            let key = (
+                inst.geo_hash.clone(),
+                inst.trans_hash.clone().unwrap_or_default(),
+            );
+            seen.insert(key)
+        });
+    }
 }
 
 /// 根据最新refno查询最新insts
@@ -920,7 +958,7 @@ pub async fn query_insts_with_batch(
 
             let bool_keys: Vec<String> = chunk
                 .iter()
-                .map(|r| format!("inst_relate_bool:{}", r))
+                .map(|r| model_array_record_key("inst_relate_bool", r))
                 .collect();
 
             let bool_keys_str = bool_keys.join(",");
@@ -938,7 +976,8 @@ pub async fn query_insts_with_batch(
 
                     type::record("pe_transform", record::id(refno)).world_trans.d as world_trans,
 
-                    type::record("inst_relate_aabb", record::id(refno)).aabb_id.d as world_aabb,
+                    (type::record("inst_relate_aabb", record::id(id)).aabb_id.d
+                      ?? type::record("inst_relate_aabb", record::id(refno)).aabb_id.d) as world_aabb,
 
                     [{{ "geo_transform": type::record("pe_transform", record::id(refno)).world_trans.d, "geo_hash": mesh_id, "is_tubi": false, "unit_flag": false }}] as insts,
 
@@ -970,13 +1009,13 @@ pub async fn query_insts_with_batch(
             let non_bool_keys: Vec<String> = chunk
                 .iter()
                 .filter(|r| !bool_refnos.contains(*r))
-                .map(|r| r.to_inst_relate_key())
+                .map(|r| model_array_record_key("inst_relate", r))
                 .collect();
 
             if !non_bool_keys.is_empty() {
                 let non_bool_keys_str = non_bool_keys.join(",");
 
-                // 直接从 inst_relate:{refno} 查询
+                // 直接从 inst_relate:[ref0,ref1] 查询（与写入 id 对齐）
 
                 // 使用 graph traversal 获取 world_aabb
 
@@ -991,7 +1030,8 @@ pub async fn query_insts_with_batch(
 
                         type::record("pe_transform", record::id(in)).world_trans.d as world_trans,
 
-                        type::record("inst_relate_aabb", record::id(in)).aabb_id.d as world_aabb,
+                        (type::record("inst_relate_aabb", record::id(id)).aabb_id.d
+                          ?? type::record("inst_relate_aabb", record::id(in)).aabb_id.d) as world_aabb,
 
                         (SELECT trans.d as geo_transform, record::id(out) as geo_hash, false as is_tubi, out.unit_flag ?? false as unit_flag
 
@@ -1003,7 +1043,9 @@ pub async fn query_insts_with_batch(
 
                            && (trans.d ?? NONE) != NONE
 
-                           && geo_type IN ['Pos', 'CatePos', 'Compound']) as insts,
+                           && geo_type IN ['Pos', 'CatePos', 'Compound']
+                           && record::id(id)[0] = type::number(string::split(record::id($parent.in), '_')[0])
+                           && record::id(id)[1] = type::number(string::split(record::id($parent.in), '_')[1])) as insts,
 
                         false as has_neg
 
@@ -1025,12 +1067,14 @@ pub async fn query_insts_with_batch(
         } else {
             // ========== enable_holes=false：始终返回原始几何 ==========
 
-            let inst_relate_keys: Vec<String> =
-                chunk.iter().map(|r| r.to_inst_relate_key()).collect();
+            let inst_relate_keys: Vec<String> = chunk
+                .iter()
+                .map(|r| model_array_record_key("inst_relate", r))
+                .collect();
 
             let inst_relate_keys_str = inst_relate_keys.join(",");
 
-            // 直接从 inst_relate:{refno} 查询
+            // 直接从 inst_relate:[ref0,ref1] 查询（与写入 id 对齐）
 
             // 使用 graph traversal 获取 world_aabb
 
@@ -1045,7 +1089,8 @@ pub async fn query_insts_with_batch(
 
                     type::record("pe_transform", record::id(in)).world_trans.d as world_trans,
 
-                    type::record("inst_relate_aabb", record::id(in)).aabb_id.d as world_aabb,
+                    (type::record("inst_relate_aabb", record::id(id)).aabb_id.d
+                      ?? type::record("inst_relate_aabb", record::id(in)).aabb_id.d) as world_aabb,
 
                     (SELECT trans.d as geo_transform, record::id(out) as geo_hash, false as is_tubi, out.unit_flag ?? false as unit_flag
 
@@ -1057,7 +1102,9 @@ pub async fn query_insts_with_batch(
 
                        && (trans.d ?? NONE) != NONE
 
-                       && geo_type IN ['Pos', 'DesiPos', 'CatePos', 'Compound']) as insts,
+                       && geo_type IN ['Pos', 'DesiPos', 'CatePos', 'Compound']
+                       && record::id(id)[0] = type::number(string::split(record::id($parent.in), '_')[0])
+                       && record::id(id)[1] = type::number(string::split(record::id($parent.in), '_')[1])) as insts,
 
                     false as has_neg
 

@@ -325,8 +325,21 @@ impl ProfileProcessor {
         );
 
         for (i, hole_contour) in self.inner_contours.iter().enumerate() {
-            let hole_polyline =
-                self.process_single_contour(&hole_contour.vertices, &format!("hole_{}", i), None)?;
+            let hole_polyline = match self.process_single_contour(
+                &hole_contour.vertices,
+                &format!("hole_{}", i),
+                None,
+            ) {
+                Ok(polyline) => polyline,
+                Err(error) => {
+                    println!(
+                        "⚠️  跳过退化内孔 {}（ProfileProcessor 处理失败: {}）",
+                        i + 1,
+                        error
+                    );
+                    continue;
+                }
+            };
 
             // 执行 boolean subtract (base - hole)
             let result = base.boolean(&hole_polyline, BooleanOp::Not);

@@ -1,5 +1,6 @@
 use crate::debug_model_debug;
 use crate::geometry::csg::{construct_basis_from_z_axis, construct_basis_from_z_axis_with_ref};
+use crate::parsed_data::CateAxisParam;
 use crate::parsed_data::geo_params_data::CateGeoParam;
 use crate::plant_transform::Transform;
 use crate::prim_geo::LCylinder;
@@ -16,6 +17,7 @@ use crate::prim_geo::sphere::Sphere;
 use crate::shape::pdms_shape::BrepShapeTrait;
 use crate::types::*;
 use glam::*;
+use std::collections::BTreeMap;
 use std::f32::consts::FRAC_PI_2;
 
 #[derive(Debug, Clone)]
@@ -37,6 +39,99 @@ pub struct CateCsgShape {
     pub pts: Vec<i32>,
     //是否要和design发生负实体运算
     pub is_ngmr: bool,
+}
+
+/// L*/S* 圆柱族图元的范围/口径兜底推导(E3D 隐含语义)。
+///
+/// 样本目录里大量 LCYL/SCYL 不写 PTDI/PBDI/PHEI 甚至 PDIA(如联轴节本体
+/// `LCYL PAXI=Z, PDIA=PARAM 10, PTDI/PBDI 为空`):此时几何范围由构件
+/// p-point 在轴上的投影跨距隐含给出,口径缺失时回退到跨距端点的最大 pbore。
+///
+/// 范围兜底只对“目录压根没写表达式”生效(`extent_specified == false`)。
+/// 写了表达式但求值为 0 是合法语义——例如现场焊缝 `/LAO.WELD.FIELD.FF20`
+/// 的 `SCYL PHEI = PARAM 3` 而 `PARAM 3 = 0`,它本就是零长度标记,推导出
+/// 一个高度反而是错的。
+pub fn derive_implied_extent_from_axis_map(
+    geom: &mut CateGeoParam,
+    axis_map: &BTreeMap<i32, CateAxisParam>,
+) {
+    fn axis_dir_of(axis: &CateAxisParam, fallback: Vec3) -> Vec3 {
+        axis.dir
+            .as_ref()
+            .map(|d| d.0.normalize_or_zero())
+            .unwrap_or(axis.dir_flag * fallback)
+    }
+
+    /// 构件 p-point 投影到 (origin, dir) 轴上的跨距;偏离轴线的点(如支管出口)不参与。
+    fn axis_span(
+        axis: &CateAxisParam,
+        axis_map: &BTreeMap<i32, CateAxisParam>,
+        fallback_dir: Vec3,
+    ) -> Option<(f32, f32, f32)> {
+        let dir = axis_dir_of(axis, fallback_dir);
+        if !dir.is_normalized() {
+            return None;
+        }
+        let origin = axis.pt.0;
+        let mut lo = f32::MAX;
+        let mut hi = f32::MIN;
+        let mut bore = 0.0f32;
+        let mut on_axis = 0usize;
+        for p in axis_map.values() {
+            let rel = p.pt.0 - origin;
+            let t = rel.dot(dir);
+            let radial = (rel - dir * t).length();
+            if radial > 1.0f32.max(t.abs() * 0.05) {
+                continue;
+            }
+            on_axis += 1;
+            lo = lo.min(t);
+            hi = hi.max(t);
+            bore = bore.max(p.pbore);
+        }
+        (on_axis >= 2 && hi - lo > f32::EPSILON).then_some((lo, hi, bore))
+    }
+
+    match geom {
+        CateGeoParam::LCylinder(d) => {
+            let Some(axis) = d.axis.as_ref() else { return };
+            let need_extent =
+                !d.extent_specified && (d.dist_to_top - d.dist_to_btm).abs() <= f32::EPSILON;
+            let need_dia = d.diameter <= f32::EPSILON;
+            if !(need_extent || need_dia) {
+                return;
+            }
+            let Some((lo, hi, bore)) = axis_span(axis, axis_map, Vec3::Y) else {
+                return;
+            };
+            if need_extent {
+                d.dist_to_btm = lo;
+                d.dist_to_top = hi;
+            }
+            if need_dia && bore > 0.0 {
+                d.diameter = bore;
+            }
+        }
+        CateGeoParam::SCylinder(d) => {
+            let Some(axis) = d.axis.as_ref() else { return };
+            let need_extent = !d.extent_specified && d.height.abs() <= f32::EPSILON;
+            let need_dia = d.diameter <= f32::EPSILON;
+            if !(need_extent || need_dia) {
+                return;
+            }
+            let Some((lo, hi, bore)) = axis_span(axis, axis_map, Vec3::Y) else {
+                return;
+            };
+            if need_extent {
+                d.dist_to_btm = lo;
+                d.height = hi - lo;
+            }
+            if need_dia && bore > 0.0 {
+                d.diameter = bore;
+            }
+        }
+        _ => {}
+    }
 }
 
 /// 将几何参数（CateGeoParam）转换为CSG形状（CateCsgShape）
@@ -332,9 +427,24 @@ pub fn try_convert_cate_geo_to_csg_shape(geom: &CateGeoParam) -> Option<CateCsgS
 
             let origin = pa.pt.0;
             let x_axis = x_dir;
-            let translation = origin + z_dir * (d.dist_to_btm as f32 + d.dist_to_top as f32) / 2.0;
-            let mut height = (d.dist_to_top - d.dist_to_top) as f32; // [Potential Meta-bug fix needed during debug: should be dist_to_top - dist_to_btm]
-            let mut height = (d.dist_to_top - d.dist_to_btm) as f32;
+
+            let mut dist_to_btm = d.dist_to_btm as f32;
+            let mut dist_to_top = d.dist_to_top as f32;
+            // LSNO 的 PTDI/PBDI 允许为空(样本目录里 olet 本体即如此):此时顶面锚在
+            // A 轴点、底面锚在 B 轴锚点,范围由两锚点沿 A 轴的投影距离隐含给出
+            // (E3D 语义,与 SCTO 切点推导同族)。仅在显式距离缺失时兜底。
+            if (dist_to_top - dist_to_btm).abs() <= f32::EPSILON {
+                if let Some(pb) = d.pb.as_ref() {
+                    let derived = (pb.pt.0 - origin).dot(z_dir);
+                    if derived.abs() > f32::EPSILON {
+                        dist_to_btm = derived;
+                        dist_to_top = 0.0;
+                    }
+                }
+            }
+
+            let translation = origin + z_dir * (dist_to_btm + dist_to_top) / 2.0;
+            let mut height = dist_to_top - dist_to_btm;
             let poff = d.offset as f32;
 
             let mut ptdm = d.top_diameter as f32;
@@ -346,8 +456,8 @@ pub fn try_convert_cate_geo_to_csg_shape(geom: &CateGeoParam) -> Option<CateCsgS
                 height,
                 ptdm,
                 pbdm,
-                d.dist_to_btm,
-                d.dist_to_top
+                dist_to_btm,
+                dist_to_top
             );
 
             //统一使用旋转来实现
@@ -783,6 +893,7 @@ mod tests {
             diameter: 20.0,
             centre_line_flag: true,
             tube_flag: true,
+            extent_specified: true,
         });
 
         let shape = try_convert_cate_geo_to_csg_shape(&geom).expect("SCylinder 应该可转换");

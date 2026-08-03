@@ -1,13 +1,16 @@
+use super::NposHandler;
 use super::TransformStrategy;
+use super::spine_strategy::SpineStrategy;
+use crate::plant_transform::Transform;
 use crate::rs_surreal::spatial::{
-    construct_basis_x_cutplane, construct_basis_z_opdir, construct_basis_z_y_exact,
-    construct_basis_z_ref_y, construct_basis_z_y_hint, cal_zdis_pkdi_in_section_by_spine,
-    get_spline_path, query_pline,
+    construct_basis_x_cutplane, construct_basis_z_opdir, construct_basis_z_ref_y,
+    construct_basis_z_y_exact, construct_basis_z_y_hint, get_spline_path, query_pline,
 };
-use crate::{NamedAttrMap, RefnoEnum, get_named_attmap};
+use crate::transform::source::{SurrealTransformFactSource, TransformFactSource};
+use crate::{NamedAttrMap, RefnoEnum};
 use async_trait::async_trait;
 use glam::{DMat3, DMat4, DQuat, DVec3};
-use super::NposHandler;
+use std::sync::Arc;
 
 /// SJOI 专用的 CREF/CUTP 处理器
 pub struct SjoiCrefHandler;
@@ -22,6 +25,7 @@ impl SjoiCrefHandler {
         parent_refno: RefnoEnum,
         translation: &mut DVec3,
         rotation: DQuat,
+        source: Arc<dyn TransformFactSource>,
     ) -> anyhow::Result<(DVec3, f64)> {
         // 快速路径：如果没有 CREF，直接返回默认值
         let Some(c_ref) = att.get_foreign_refno("CREF") else {
@@ -32,19 +36,19 @@ impl SjoiCrefHandler {
         let cut_len = att.get_f64("CUTB").unwrap_or_default();
 
         // 缓存属性获取，避免重复查询
-        let Ok(c_att) = get_named_attmap(c_ref).await else {
+        let Ok(c_att) = source.get_attribute(c_ref).await else {
             return Ok((DVec3::Z, 0.0));
         };
 
         let jline = c_att.get_str("JLIN").map(|x| x.trim()).unwrap_or("NA");
 
-        if let Ok(Some(param)) = query_pline(c_ref, jline.into()).await {
+        if let Ok(Some(param)) = source.query_pline(c_ref, jline).await {
             let jlin_pos = param.pt;
 
             // 并行获取世界坐标变换（优化性能）
             let (c_world_result, parent_world_result) = tokio::join!(
-                crate::transform::get_world_mat4(c_ref, false),
-                crate::transform::get_world_mat4(parent_refno, false)
+                crate::transform::get_world_mat4_with_source(c_ref, source.clone()),
+                crate::transform::get_world_mat4_with_source(parent_refno, source.clone())
             );
 
             let c_world = c_world_result?.unwrap_or(DMat4::IDENTITY);
@@ -85,17 +89,36 @@ impl SjoiCrefHandler {
     }
 }
 
-pub struct SjoiStrategy;
+pub struct SjoiStrategy {
+    att: Arc<NamedAttrMap>,
+    parent_att: Arc<NamedAttrMap>,
+    source: Arc<dyn TransformFactSource>,
+}
+
+impl SjoiStrategy {
+    pub fn new(att: Arc<NamedAttrMap>, parent_att: Arc<NamedAttrMap>) -> Self {
+        Self::with_source(att, parent_att, Arc::new(SurrealTransformFactSource))
+    }
+
+    pub fn with_source(
+        att: Arc<NamedAttrMap>,
+        parent_att: Arc<NamedAttrMap>,
+        source: Arc<dyn TransformFactSource>,
+    ) -> Self {
+        Self {
+            att,
+            parent_att,
+            source,
+        }
+    }
+}
 
 #[async_trait]
 impl TransformStrategy for SjoiStrategy {
-    async fn get_local_transform(
-        &self,
-        _refno: RefnoEnum,
-        parent_refno: RefnoEnum,
-        att: &NamedAttrMap,
-        parent_att: &NamedAttrMap,
-    ) -> anyhow::Result<Option<DMat4>> {
+    async fn get_local_transform(&mut self) -> anyhow::Result<Option<DMat4>> {
+        let att = &self.att;
+        let parent_att = &self.parent_att;
+        let parent_refno = parent_att.get_refno().unwrap_or_else(|| att.get_owner());
         let cur_type = att.get_type_str();
         let parent_type = parent_att.get_type_str();
 
@@ -106,9 +129,14 @@ impl TransformStrategy for SjoiStrategy {
         let mut is_world_quat = false;
 
         // 1. 处理 SJOI 特有的 CREF 连接逻辑
-        let (connection_axis, cut_len) =
-            SjoiCrefHandler::handle_sjoi_cref(att, parent_refno, &mut translation, rotation)
-                .await?;
+        let (connection_axis, cut_len) = SjoiCrefHandler::handle_sjoi_cref(
+            att,
+            parent_refno,
+            &mut translation,
+            rotation,
+            self.source.clone(),
+        )
+        .await?;
 
         // 2. 处理 NPOS 属性
         NposHandler::apply_npos_offset(&mut pos, att);
@@ -122,12 +150,21 @@ impl TransformStrategy for SjoiStrategy {
             let zdist = att.get_f32("ZDIS").unwrap_or_default();
             let pkdi = att.get_f32("PKDI").unwrap_or_default();
 
-            if let Some((tmp_quat, tmp_pos)) =
-                cal_zdis_pkdi_in_section_by_spine(parent_refno, pkdi, zdist, None).await?
+            if let Ok(strategy) =
+                SpineStrategy::from_wall_or_gensec_with_source(parent_refno, self.source.clone())
+                    .await
             {
-                quat = tmp_quat;
-                pos = tmp_pos;
-                is_world_quat = true;
+                if let Some(matrix) = strategy
+                    .cal_trans_by_pkdi_zdis(pkdi as f64, zdist as f64)
+                    .await
+                {
+                    let (_, tmp_quat, tmp_pos) = matrix.to_scale_rotation_translation();
+                    quat = tmp_quat;
+                    pos = tmp_pos;
+                    is_world_quat = true;
+                } else {
+                    translation += rotation * DVec3::Z * zdist as f64;
+                }
             } else {
                 translation += rotation * DVec3::Z * zdist as f64;
             }
@@ -215,7 +252,6 @@ impl TransformStrategy for SjoiStrategy {
 }
 
 impl SjoiStrategy {
-
     /// 初始化旋转
     async fn initialize_rotation(
         att: &NamedAttrMap,

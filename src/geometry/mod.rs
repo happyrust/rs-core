@@ -80,6 +80,9 @@ pub struct TubiData {
     /// TUBI 段在 BRAN/HANG 下的顺序号（tubi_relate 的 id[1]）
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub index: Option<u32>,
+    /// Legacy `tubi_relate.bore_size` payload, matching `TubiSize::to_vec()`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub bore_size: Option<Vec<f32>>,
     /// ARRIVE 轴点世界坐标 [x, y, z]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub arrive_axis_pt: Option<[f32; 3]>,
@@ -491,12 +494,17 @@ impl ShapeInstancesData {
 
     #[inline]
     pub fn insert_geos_data(&mut self, hash: String, geo: EleInstGeosData) {
-        if self.inst_geos_map.contains_key(&hash) {
-            self.inst_geos_map
-                .get_mut(&hash)
-                .unwrap()
-                .insts
-                .extend_from_slice(&geo.insts);
+        if let Some(existing) = self.inst_geos_map.get_mut(&hash) {
+            // content-addressed key：同 catalog 多 PE 会反复 insert。
+            // 按 (geo_hash, transform) 去重合并，避免 geo_index 叠成 0..3N。
+            for inst in geo.insts {
+                let dup = existing.insts.iter().any(|e| {
+                    e.geo_hash == inst.geo_hash && e.geo_transform == inst.geo_transform
+                });
+                if !dup {
+                    existing.insts.push(inst);
+                }
+            }
         } else {
             self.inst_geos_map.insert(hash, geo);
         }

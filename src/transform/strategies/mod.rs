@@ -1,3 +1,4 @@
+use crate::transform::source::{SurrealTransformFactSource, TransformFactSource};
 use crate::{NamedAttrMap, RefnoEnum};
 use async_trait::async_trait;
 use glam::{DMat4, DQuat, DVec3};
@@ -48,20 +49,28 @@ impl TransformStrategyFactory {
         att: Arc<NamedAttrMap>,
         parent_att: Arc<NamedAttrMap>,
     ) -> Box<dyn TransformStrategy> {
+        Self::get_strategy_with_source(att, parent_att, Arc::new(SurrealTransformFactSource))
+    }
+
+    pub fn get_strategy_with_source(
+        att: Arc<NamedAttrMap>,
+        parent_att: Arc<NamedAttrMap>,
+        source: Arc<dyn TransformFactSource>,
+    ) -> Box<dyn TransformStrategy> {
         let type_str = att.get_type_str();
         let parent_type = parent_att.get_type_str();
 
         // STWALL 和 SCTN 类型需要特殊处理
         // 它们的 BANG 影响 local transform，而不是几何体本身
         if type_str == "STWALL" || type_str == "SCTN" {
-            return Box::new(WallStrategy::new(att, parent_att));
+            return Box::new(WallStrategy::with_source(att, parent_att, source));
         };
         // 基于父节点类型进行策略分发
         match parent_type {
-            "SPINE" => Box::new(SpineStrategy::new(att, parent_att)),
-            "GENSEC" | "WALL" => Box::new(SweepStrategy::new(att, parent_att)),
+            "SPINE" => Box::new(SpineStrategy::with_source(att, parent_att, source)),
+            "GENSEC" | "WALL" => Box::new(SweepStrategy::with_source(att, parent_att, source)),
             // 父节点不是特殊类型，使用默认策略（仅POS+ORI）
-            _ => Box::new(DefaultStrategy::new(att, parent_att)),
+            _ => Box::new(DefaultStrategy::with_source(att, parent_att, source)),
         }
     }
 
@@ -73,6 +82,14 @@ impl TransformStrategyFactory {
         parent_att: &NamedAttrMap,
     ) -> Box<dyn TransformStrategy> {
         Self::get_strategy(Arc::new(att.clone()), Arc::new(parent_att.clone()))
+    }
+
+    pub fn get_strategy_from_ref_with_source(
+        att: &NamedAttrMap,
+        parent_att: &NamedAttrMap,
+        source: Arc<dyn TransformFactSource>,
+    ) -> Box<dyn TransformStrategy> {
+        Self::get_strategy_with_source(Arc::new(att.clone()), Arc::new(parent_att.clone()), source)
     }
 }
 

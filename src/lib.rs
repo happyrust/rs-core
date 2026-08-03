@@ -101,7 +101,6 @@ pub mod types;
 
 pub mod material;
 pub mod math;
-pub mod mbd;
 pub mod mesh_precision;
 pub mod room;
 
@@ -138,9 +137,8 @@ pub use runtime::{
 #[cfg(feature = "kv-rocksdb")]
 pub use runtime::{cleanup_stale_rocksdb_lock, connect_local_rocksdb};
 pub use tree_query::{
-    DbMetaInfo, TreeIndex, TreeQuery, TreeQueryFilter, TreeQueryOptions, get_cached_tree_index,
-    get_dbnum_by_ref0, get_dbnum_by_refno, get_tree_index_by_refno, load_db_meta_info,
-    load_tree_index_from_dir, load_tree_index_from_path,
+    DbMetaInfo, TreeQuery, TreeQueryFilter, TreeQueryOptions, get_dbnum_by_ref0,
+    get_dbnum_by_refno, load_db_meta_info,
 };
 
 #[cfg(feature = "web_server")]

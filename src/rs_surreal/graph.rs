@@ -446,6 +446,45 @@ pub async fn collect_descendant_ids_batch(
         return Ok(Vec::new());
     }
 
+    let range = range_str.unwrap_or("..");
+    let chunk_size = descendant_ids_query_chunk_size(refnos.len(), nouns, range);
+    if refnos.len() > chunk_size {
+        let mut out = Vec::new();
+        let mut seen = HashSet::new();
+        for chunk in refnos.chunks(chunk_size) {
+            let ids = collect_descendant_ids_batch_query(chunk, nouns, range, include_self).await?;
+            for id in ids {
+                if seen.insert(id) {
+                    out.push(id);
+                }
+            }
+        }
+        return Ok(out);
+    }
+
+    collect_descendant_ids_batch_query(refnos, nouns, range, include_self).await
+}
+
+fn descendant_ids_query_chunk_size(total_roots: usize, nouns: &[&str], range: &str) -> usize {
+    if let Ok(value) = std::env::var("AIOS_DESCENDANT_QUERY_CHUNK_SIZE") {
+        if let Ok(parsed) = value.trim().parse::<usize>() {
+            return parsed.clamp(1, total_roots.max(1));
+        }
+    }
+
+    if nouns.is_empty() && range == ".." {
+        1
+    } else {
+        32.min(total_roots.max(1))
+    }
+}
+
+async fn collect_descendant_ids_batch_query(
+    refnos: &[RefnoEnum],
+    nouns: &[&str],
+    range: &str,
+    include_self: bool,
+) -> anyhow::Result<Vec<RefnoEnum>> {
     let nouns_str = rs_surreal::convert_to_sql_str_array(nouns);
     let types_expr = if nouns.is_empty() {
         "[]".to_string()
@@ -456,7 +495,6 @@ pub async fn collect_descendant_ids_batch(
     let refno_keys: Vec<String> = refnos.iter().map(|r| r.to_pe_key()).collect();
     let refno_list = refno_keys.join(", ");
 
-    let range = range_str.unwrap_or("..");
     let include_self_expr = if include_self { "true" } else { "none" };
 
     let sql = format!(

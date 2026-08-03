@@ -1,16 +1,5 @@
-use crate::shape::pdms_shape::PlantMesh;
-use crate::{RefU64, RefnoEnum, SUL_DB, query_insts};
+use crate::{RefnoEnum, SUL_DB};
 use glam::Vec3;
-use nalgebra::Point3;
-use parry3d::bounding_volume::Aabb;
-use parry3d::math::Isometry;
-use parry3d::query::PointQuery;
-use parry3d::shape::TriMeshFlags;
-
-#[cfg(all(not(target_arch = "wasm32"), feature = "sqlite"))]
-use crate::spatial::sqlite;
-#[cfg(all(not(target_arch = "wasm32"), feature = "sqlite"))]
-use anyhow::Context;
 
 #[cfg(all(not(target_arch = "wasm32"), feature = "sqlite"))]
 pub async fn query_room_number_by_point(point: Vec3) -> anyhow::Result<Option<String>> {
@@ -32,50 +21,9 @@ pub async fn query_room_number_by_point(point: Vec3) -> anyhow::Result<Option<St
 
 //传进来的是世界坐标系下的点
 #[cfg(all(not(target_arch = "wasm32"), feature = "sqlite"))]
-pub async fn query_room_panel_by_point(point: Vec3) -> anyhow::Result<Option<RefnoEnum>> {
-    let candidates =
-        tokio::task::spawn_blocking(move || sqlite::query_containing_point(point, 256))
-            .await
-            .context("查询房间空间索引失败")??;
-    if candidates.is_empty() {
-        return Ok(None);
-    }
-    let refnos: Vec<RefnoEnum> = candidates
-        .iter()
-        .map(|(refno, _)| RefnoEnum::Refno(*refno))
-        .collect();
-    let insts = query_insts(&refnos, true).await?;
-    let pt: Point3<f32> = point.into();
-    let parry_pt = parry3d::math::Point::new(pt.x, pt.y, pt.z);
-
-    for (refno, aabb) in candidates {
-        if aabb.mins.x > 1_000_000.0 {
-            continue;
-        }
-        let Some(geom_inst) = insts.iter().find(|x| x.refno.refno() == refno) else {
-            continue;
-        };
-        for inst in &geom_inst.insts {
-            // 使用配置路径和 L0 最低精度 LOD
-            use crate::utils::lod_path_detector::build_mesh_path;
-            let mesh_path = crate::get_db_option()
-                .get_meshes_path()
-                .join(build_mesh_path(&inst.geo_hash, "L0", false));
-
-            let Ok(mesh) = PlantMesh::des_mesh_file(&mesh_path) else {
-                continue;
-            };
-            let Some(mut tri_mesh) = mesh.get_tri_mesh_with_flag(
-                (geom_inst.world_trans * &inst.geo_transform).to_matrix(),
-                TriMeshFlags::ORIENTED,
-            ) else {
-                continue;
-            };
-            if tri_mesh.contains_point(&Isometry::identity(), &parry_pt) {
-                return Ok(Some(RefnoEnum::Refno(refno)));
-            }
-        }
-    }
-
+pub async fn query_room_panel_by_point(_point: Vec3) -> anyhow::Result<Option<RefnoEnum>> {
+    // 磁盘 .mesh 几何读取路径已下线（无写入方，rkyv unchecked 反序列化存在脏读/UB 风险）。
+    // 该点-面片包含判定依赖磁盘 mesh；固化为“无磁盘几何可用 → 不命中”，与下线前新环境
+    // （.mesh 文件恒不存在 → 逐候选读取失败跳过 → 返回 None）行为完全一致。
     Ok(None)
 }

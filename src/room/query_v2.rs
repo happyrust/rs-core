@@ -1,4 +1,3 @@
-use crate::shape::pdms_shape::PlantMesh;
 use crate::{RefU64, RefnoEnum, SUL_DB, query_insts};
 use glam::Vec3;
 use nalgebra::Point3;
@@ -187,33 +186,10 @@ async fn load_geometry_cached(
         return Ok(cached_mesh.clone());
     }
 
-    // 加载几何文件
-    let file_path = format!("assets/meshes/{}.mesh", geo_hash);
-    let mesh = tokio::task::spawn_blocking(move || {
-        crate::shape::pdms_shape::PlantMesh::des_mesh_file(&file_path)
-    })
-    .await
-    .context("几何文件加载任务失败")??;
-
-    let mesh_arc = Arc::new(mesh);
-
-    // 缓存管理：如果缓存过大，清理一些条目
-    if cache.len() > 1000 {
-        // 简单的 LRU 策略：随机清理一些条目
-        let keys_to_remove: Vec<String> = cache
-            .iter()
-            .take(100)
-            .map(|entry| entry.key().clone())
-            .collect();
-
-        for key in keys_to_remove {
-            cache.remove(&key);
-        }
-    }
-
-    cache.insert(geo_hash.to_string(), mesh_arc.clone());
-
-    Ok(mesh_arc)
+    // 磁盘 .mesh 读取路径已下线（无写入方，rkyv unchecked 反序列化存在脏读/UB 风险）。
+    // 固化为“无磁盘几何可用 → 加载失败”，与下线前新环境（.mesh 文件恒不存在→读取失败）
+    // 行为一致；调用方按原有 Err 分支跳过该实例。
+    anyhow::bail!("磁盘 .mesh 几何读取路径已下线: geo_hash={geo_hash}")
 }
 
 /// 更新查询统计信息

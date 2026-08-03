@@ -36,11 +36,14 @@ use glam::{Mat3, Quat, Vec2, Vec3};
 use nalgebra::Point3;
 use parry3d::bounding_volume::{Aabb, BoundingVolume};
 use std::collections::HashSet;
+use std::fs::OpenOptions;
 use std::io::Write;
 use std::sync::Mutex;
 
 /// 最小长度阈值，用于判断几何形状是否有效
 const MIN_LEN: f32 = 1e-6;
+const CSG_DEGRADED_FRADIUS_FALLBACK_ENV: &str = "AIOS_CSG_ALLOW_DEGRADED_PROFILE_FALLBACK";
+const CSG_DEGRADED_FRADIUS_FALLBACK_LOG_ENV: &str = "AIOS_CSG_DEGRADED_PROFILE_FALLBACK_LOG";
 
 /// 单位网格的基准尺寸
 /// 使用 1.0 作为基础尺寸，基本体直接使用实际尺寸缩放
@@ -2838,23 +2841,39 @@ fn generate_torus_mesh(
         }
     }
 
-    // 对于部分圆环，需要添加端面（复用侧面顶点，不生成新顶点）
+    // 对于部分圆环，需要添加端面。端面必须用截面中心点做扇形封盖；
+    // 复用截面圆上的某个顶点作为 fan pivot 会生成跨过圆面的退化拓扑，Manifold 会判空。
     if sweep_angle < std::f32::consts::TAU - 1e-3 {
-        // 起始端面：复用第一圈顶点 [0, samples_s)
-        // 扇状三角化，法向量指向 -X 方向
-        for i in 1..(samples_s - 1) {
-            // 绕序：从外部看逆时针
-            indices.extend_from_slice(&[0, (i + 1) as u32, i as u32]);
+        // 起始端面：第一圈顶点 [0, samples_s)，中心在 (major_radius, 0, 0)。
+        // 起始截面的外法线是 -e_theta；在 theta=0 时为 -Y。
+        let start_center_idx = vertices.len() as u32;
+        let start_center = Vec3::new(major_radius, 0.0, 0.0);
+        vertices.push(start_center);
+        normals.push(Vec3::new(0.0, -1.0, 0.0));
+        extend_aabb(&mut aabb, start_center);
+        for i in 0..samples_s {
+            let next = (i + 1) % samples_s;
+            indices.extend_from_slice(&[start_center_idx, i as u32, next as u32]);
         }
 
-        // 结束端面：复用最后一圈顶点 [(samples_l-1)*samples_s, samples_l*samples_s)
+        // 结束端面：最后一圈顶点 [(samples_l-1)*samples_s, samples_l*samples_s)，
+        // 中心随 sweep 角度旋转；结束截面的外法线是 +e_theta。
         let last_ring_start = ((samples_l - 1) * samples_s) as u32;
-        for i in 1..(samples_s - 1) {
-            // 绕序：从外部看逆时针
+        let end_center_idx = vertices.len() as u32;
+        let end_center = Vec3::new(
+            major_radius * sweep_angle.cos(),
+            major_radius * sweep_angle.sin(),
+            0.0,
+        );
+        vertices.push(end_center);
+        normals.push(Vec3::new(-sweep_angle.sin(), sweep_angle.cos(), 0.0));
+        extend_aabb(&mut aabb, end_center);
+        for i in 0..samples_s {
+            let next = (i + 1) % samples_s;
             indices.extend_from_slice(&[
-                last_ring_start,
+                end_center_idx,
+                last_ring_start + next as u32,
                 last_ring_start + i as u32,
-                last_ring_start + (i + 1) as u32,
             ]);
         }
     }
@@ -2964,8 +2983,8 @@ fn generate_pyramid_mesh(pyr: &Pyramid, refno: RefnoEnum, manifold: bool) -> Opt
     };
 
     if let Some(bottom) = bottom_corners {
-        indices.extend_from_slice(&[bottom[0], bottom[1], bottom[2]]);
-        indices.extend_from_slice(&[bottom[0], bottom[2], bottom[3]]);
+        indices.extend_from_slice(&[bottom[2], bottom[1], bottom[0]]);
+        indices.extend_from_slice(&[bottom[3], bottom[2], bottom[0]]);
     }
 
     if bottom_corners.is_none() && top_vertices.is_some() {
@@ -2973,8 +2992,8 @@ fn generate_pyramid_mesh(pyr: &Pyramid, refno: RefnoEnum, manifold: bool) -> Opt
     }
 
     if let Some(top) = top_vertices {
-        indices.extend_from_slice(&[top[2], top[1], top[0]]);
-        indices.extend_from_slice(&[top[3], top[2], top[0]]);
+        indices.extend_from_slice(&[top[0], top[1], top[2]]);
+        indices.extend_from_slice(&[top[0], top[2], top[3]]);
         if let Some(bottom) = bottom_corners {
             for i in 0..4 {
                 let next = (i + 1) % 4;
@@ -2985,7 +3004,7 @@ fn generate_pyramid_mesh(pyr: &Pyramid, refno: RefnoEnum, manifold: bool) -> Opt
     } else if let (Some(bottom), Some(apex)) = (bottom_corners, apex_index) {
         for i in 0..4 {
             let next = (i + 1) % 4;
-            indices.extend_from_slice(&[bottom[next], bottom[i], apex]);
+            indices.extend_from_slice(&[bottom[i], bottom[next], apex]);
         }
     }
 
@@ -3977,7 +3996,10 @@ fn generate_extrusion_mesh(
         frads.push(r);
     }
 
-    let processor = match ProfileProcessor::from_wires(verts2d, frads, true) {
+    let refno_str = Some(refno.to_string());
+    let refno_ref = refno_str.as_deref();
+
+    let processor = match ProfileProcessor::from_wires(verts2d.clone(), frads.clone(), true) {
         Ok(p) => p,
         Err(e) => {
             println!("⚠️  [CSG] Extrusion ProfileProcessor 创建失败: {}", e);
@@ -3985,10 +4007,39 @@ fn generate_extrusion_mesh(
         }
     };
 
-    let refno_str = Some(refno.to_string());
-    let refno_ref = refno_str.as_deref();
     let profile = match processor.process("EXTRUSION", refno_ref) {
         Ok(p) => p,
+        Err(e) if degraded_fradius_fallback_enabled() && has_nonzero_fradius(&frads) => {
+            println!(
+                "⚠️  [CSG] Extrusion ProfileProcessor 处理失败，尝试无 FRADIUS 降级轮廓: {}",
+                e
+            );
+            let zero_frads = zero_frads_like(&frads);
+            let fallback_processor = match ProfileProcessor::from_wires(verts2d, zero_frads, true) {
+                Ok(processor) => processor,
+                Err(fallback_error) => {
+                    println!(
+                        "⚠️  [CSG] Extrusion 无 FRADIUS 降级轮廓创建失败: {}",
+                        fallback_error
+                    );
+                    return None;
+                }
+            };
+            match fallback_processor.process("EXTRUSION_DEGRADED_NO_FRADIUS", refno_ref) {
+                Ok(profile) => {
+                    append_degraded_fradius_fallback_log(refno, &e.to_string());
+                    println!("⚠️  [CSG] Extrusion 使用无 FRADIUS 降级轮廓生成成功");
+                    profile
+                }
+                Err(fallback_error) => {
+                    println!(
+                        "⚠️  [CSG] Extrusion 无 FRADIUS 降级轮廓处理失败: {}; 原始错误: {}",
+                        fallback_error, e
+                    );
+                    return None;
+                }
+            }
+        }
         Err(e) => {
             println!("⚠️  [CSG] Extrusion ProfileProcessor 处理失败: {}", e);
             return None;
@@ -4026,6 +4077,66 @@ fn generate_extrusion_mesh(
     }
 
     Some(GeneratedMesh { mesh, aabb })
+}
+
+fn degraded_fradius_fallback_enabled() -> bool {
+    std::env::var(CSG_DEGRADED_FRADIUS_FALLBACK_ENV)
+        .map(|value| {
+            matches!(
+                value.trim().to_ascii_lowercase().as_str(),
+                "1" | "true" | "yes" | "on"
+            )
+        })
+        .unwrap_or(false)
+}
+
+fn has_nonzero_fradius(frads: &[Vec<f32>]) -> bool {
+    frads
+        .iter()
+        .flat_map(|wire| wire.iter())
+        .any(|radius| radius.abs() > MIN_LEN)
+}
+
+fn zero_frads_like(frads: &[Vec<f32>]) -> Vec<Vec<f32>> {
+    frads.iter().map(|wire| vec![0.0; wire.len()]).collect()
+}
+
+fn append_degraded_fradius_fallback_log(refno: RefnoEnum, original_error: &str) {
+    let Ok(path) = std::env::var(CSG_DEGRADED_FRADIUS_FALLBACK_LOG_ENV) else {
+        return;
+    };
+    let path = path.trim();
+    if path.is_empty() {
+        return;
+    }
+    if let Some(parent) = std::path::Path::new(path).parent() {
+        if let Err(error) = std::fs::create_dir_all(parent) {
+            println!(
+                "⚠️  [CSG] 无法创建降级轮廓日志目录 {}: {}",
+                parent.display(),
+                error
+            );
+            return;
+        }
+    }
+    match OpenOptions::new().create(true).append(true).open(path) {
+        Ok(mut file) => {
+            let sanitized_error = original_error
+                .replace('\r', " ")
+                .replace('\n', " ")
+                .replace('\t', " ");
+            if let Err(error) = writeln!(
+                file,
+                "{}\tdegraded_fradius_fallback\t{}",
+                refno, sanitized_error
+            ) {
+                println!("⚠️  [CSG] 写入降级轮廓日志失败: {}", error);
+            }
+        }
+        Err(error) => {
+            println!("⚠️  [CSG] 打开降级轮廓日志失败 {}: {}", path, error);
+        }
+    }
 }
 
 /// 生成圆柱面网格（用于RTorus的组成部分）

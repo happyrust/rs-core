@@ -1,5 +1,4 @@
 use crate::geometry::PlantGeoData;
-use crate::shape::pdms_shape::PlantMesh;
 use crate::{GeomInstQuery, SUL_DB, types::*};
 use approx::{AbsDiffEq, abs_diff_ne, assert_abs_diff_eq};
 use dashmap::DashMap;
@@ -278,30 +277,11 @@ impl AccelerationTree {
         if let Some(r) = self.mesh_cache.get(&refno) {
             return Some(r);
         }
-        let geom_insts = crate::query_insts(&[refno], true).await.ok()?;
-        // dbg!(geom_insts.len());
-        let mut meshes = vec![];
-        for g in geom_insts {
-            // dbg!(&g);
-            for inst in &g.insts {
-                let Ok(mesh) =
-                    PlantMesh::des_mesh_file(&format!("assets/meshes/{}.mesh", inst.geo_hash))
-                else {
-                    continue;
-                };
-                // dbg!(mesh.vertices.len());
-                if mesh.vertices.is_empty() {
-                    continue;
-                }
-                let trans = g.world_trans * &inst.geo_transform;
-                let Some(tri_mesh) = mesh.get_tri_mesh(trans.to_matrix()) else {
-                    continue;
-                };
-                meshes.push(tri_mesh);
-            }
-        }
-        self.mesh_cache.insert(refno, meshes);
-        return self.mesh_cache.get(&refno);
+        // 磁盘 .mesh 读取路径已下线（无写入方，rkyv unchecked 反序列化存在脏读/UB 风险）。
+        // 固化为“无磁盘几何 → 空 mesh 集”，与下线前新环境（.mesh 文件恒不存在→逐实例跳过）
+        // 输出一致（原实现最终也得到空集），并省去无意义的 query_insts 调用。
+        self.mesh_cache.insert(refno, Vec::new());
+        self.mesh_cache.get(&refno)
     }
 
     /// Returns the refno of the nearest object to `query_point`

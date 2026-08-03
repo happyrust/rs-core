@@ -83,6 +83,36 @@ impl NamedAttrMap {
     }
 }
 
+#[cfg(test)]
+mod uda_serialization_tests {
+    use super::*;
+
+    #[test]
+    fn quotes_uda_name_that_contains_subtraction_syntax() {
+        let mut attributes = NamedAttrMap::default();
+        attributes.insert(
+            "REFNO".to_string(),
+            NamedAttrValue::RefU64Type(RefU64::from("13244/690097")),
+        );
+        attributes.insert(
+            "TYPE".to_string(),
+            NamedAttrValue::StringType("SPWL".to_string()),
+        );
+        attributes.insert("DBNUM".to_string(), NamedAttrValue::IntegerType(5052));
+        attributes.insert(
+            "UDA_TEST-1".to_string(),
+            NamedAttrValue::StringType("value".to_string()),
+        );
+
+        let sql_value = attributes.gen_sur_json_uda(&[]).unwrap();
+
+        assert!(
+            sql_value.contains(r#"'u': "UDA_TEST-1""#),
+            "UDA name must be serialized as a string literal: {sql_value}"
+        );
+    }
+}
+
 impl From<SurlValue> for NamedAttrMap {
     fn from(s: SurlValue) -> Self {
         let mut map = BTreeMap::default();
@@ -435,6 +465,7 @@ impl NamedAttrMap {
         let v = self.get_val(key)?;
         match v {
             NamedAttrValue::RefU64Type(d) => Some(*d),
+            NamedAttrValue::RefnoEnumType(d) => Some(d.refno()),
             _ => None,
         }
     }
@@ -841,6 +872,9 @@ impl NamedAttrMap {
                 continue;
             }
             if key.starts_with("UDA_") {
+                // UDA 名称必须作为 SurrealQL 字符串值写入；裸名称会被当作字段表达式，
+                // 名称中的 "-" 进而会被解析成 `none - int`。
+                let key_json = serde_json::Value::String(key.clone()).to_string();
                 let json = if matches!(val, NamedAttrValue::RefU64Type(_))
                     || matches!(val, NamedAttrValue::ElementType(_))
                 {
@@ -848,7 +882,7 @@ impl NamedAttrMap {
                 } else {
                     serde_json::to_string(&val).unwrap()
                 };
-                uda_json_vec.push(format!("{{ 'u': {}, 'v': {} }}", key.as_str(), json));
+                uda_json_vec.push(format!("{{ 'u': {}, 'v': {} }}", key_json, json));
             }
         }
         if uda_json_vec.is_empty() {
@@ -1090,6 +1124,9 @@ impl NamedAttrMap {
                 .collect::<String>()
                 .into(),
             RefU64Type(d) => RefI32Tuple::from(d).into(),
+            // generation_read / Surreal record 引用常落成 RefnoEnumType；
+            // 若落到 UNSET，cal_cata_hash 会把不同 SPRE 的 VALV/OLET 等错误并组。
+            RefnoEnumType(d) => RefI32Tuple::from(&d.refno()).into(),
             _ => UNSET_STR.into(),
         };
         Some(s)
@@ -1124,9 +1161,6 @@ impl NamedAttrMap {
                             DVec3::NEG_Z,
                         ));
                     }
-            // generation_read / Surreal record 引用常落成 RefnoEnumType；
-            // 若落到 UNSET，cal_cata_hash 会把不同 SPRE 的 VALV/OLET 等错误并组。
-            RefnoEnumType(d) => RefI32Tuple::from(&d.refno()).into(),
                 }
                 _ => {
                     if let Some(angs) = self.get_dvec3("ORI") {

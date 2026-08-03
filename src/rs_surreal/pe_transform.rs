@@ -27,6 +27,7 @@ struct PeTransformRow {
 }
 
 const INSERT_CHUNK_SIZE: usize = 200;
+const PE_TRANSFORM_UPSERT_CHUNK_SIZE: usize = 100;
 
 pub async fn ensure_pe_transform_schema() -> Result<()> {
     let sql = r#"
@@ -99,7 +100,9 @@ pub async fn save_pe_transform_entries(entries: &[PeTransformEntry]) -> Result<(
     ensure_pe_transform_schema().await?;
 
     let mut trans_map: HashMap<u64, String> = HashMap::new();
+    let mut update_sqls = Vec::new();
     let mut update_sql = String::new();
+    let mut update_count = 0usize;
 
     for entry in entries {
         let (local_ref, local_hash) = to_trans_ref(&entry.local, &mut trans_map)?;
@@ -119,6 +122,16 @@ pub async fn save_pe_transform_entries(entries: &[PeTransformEntry]) -> Result<(
             local_ref,
             world_ref
         ));
+        update_count += 1;
+
+        if update_count >= PE_TRANSFORM_UPSERT_CHUNK_SIZE {
+            update_sqls.push(std::mem::take(&mut update_sql));
+            update_count = 0;
+        }
+    }
+
+    if !update_sql.is_empty() {
+        update_sqls.push(update_sql);
     }
 
     if !trans_map.is_empty() {
@@ -136,8 +149,10 @@ pub async fn save_pe_transform_entries(entries: &[PeTransformEntry]) -> Result<(
         }
     }
 
-    if !update_sql.is_empty() {
-        SUL_DB.query(&update_sql).await?;
+    for sql in update_sqls {
+        if !sql.is_empty() {
+            SUL_DB.query(&sql).await?;
+        }
     }
 
     Ok(())

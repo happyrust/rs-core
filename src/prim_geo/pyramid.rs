@@ -76,14 +76,19 @@ impl Default for Pyramid {
 
 impl VerifiedShape for Pyramid {
     fn check_valid(&self) -> bool {
-        // dbg!(self);
-        let size_flag =
-            self.pbtp * self.pctp >= f32::EPSILON || self.pbbt * self.pcbt >= f32::EPSILON;
-        if !size_flag {
+        if (self.ptdi - self.pbdi).abs() <= f32::EPSILON {
             return false;
         }
-        (self.pbtp >= 0.0 && self.pctp >= 0.0 && self.pbbt >= 0.0 && self.pcbt >= 0.0)
-            && ((self.pbtp + self.pctp) > f32::EPSILON || (self.pbbt + self.pcbt) > f32::EPSILON)
+        if self.pbbt <= f32::EPSILON || self.pcbt <= f32::EPSILON {
+            return false;
+        }
+        if self.pbtp < 0.0 || self.pctp < 0.0 {
+            return false;
+        }
+
+        let top_is_point = self.pbtp <= f32::EPSILON && self.pctp <= f32::EPSILON;
+        let top_is_face = self.pbtp > f32::EPSILON && self.pctp > f32::EPSILON;
+        top_is_point || top_is_face
     }
 }
 

@@ -629,6 +629,12 @@ pub(crate) fn resolve_gmse_params_with_cache(
         })
         .collect();
 
+    let distances_specified: Vec<bool> = gm
+        .distances
+        .iter()
+        .map(|exp| !exp.trim().is_empty())
+        .collect();
+
     let shears = gm
         .shears
         .iter()
@@ -659,6 +665,7 @@ pub(crate) fn resolve_gmse_params_with_cache(
     crate::debug_model_debug!("🎯 开始求值 PHEI: refno={}, type={}", gm.refno, gm.gm_type);
     crate::debug_model_debug!("   原始 PHEI 表达式: {}", gm.phei);
     let phei = eval_str_to_f32_cached(&gm.phei, context, "DIST", cache);
+    let phei_specified = !gm.phei.trim().is_empty();
     crate::debug_model_debug!("   PHEI 求值结果: {}", phei);
     crate::clear_expr_debug_info!(context);
 
@@ -847,8 +854,10 @@ pub(crate) fn resolve_gmse_params_with_cache(
         pang,
         diameters,
         distances,
+        distances_specified,
         shears,
         phei,
+        phei_specified,
         offset,
         verts,
         dxy,

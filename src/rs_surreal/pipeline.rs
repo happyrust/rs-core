@@ -6,8 +6,9 @@ use futures::future::try_join_all;
 use glam::Vec3;
 
 use crate::{
-    NamedAttrMap, NamedAttrValue, RefU64, RefnoEnum, get_named_attmap, parsed_data::CateAxisParam,
-    pdms_pluggin::heat_dissipation::InstPointMap, pdms_types::PdmsGenericType,
+    NamedAttrMap, NamedAttrValue, RefU64, RefnoEnum, SUL_DB, SurrealQueryExt, get_named_attmap,
+    parsed_data::CateAxisParam, pdms_pluggin::heat_dissipation::InstPointMap,
+    pdms_types::PdmsGenericType,
 };
 
 use super::{
@@ -30,6 +31,7 @@ pub struct PipelinePort {
     pub role: PortRole,
     pub world_pos: Vec3,
     pub world_dir: Option<Vec3>,
+    pub reliable: bool,
 }
 
 impl PipelinePort {
@@ -39,6 +41,18 @@ impl PipelinePort {
             role,
             world_pos: axis.pt.0,
             world_dir: axis.dir.as_ref().map(|dir| dir.0),
+            reliable: true,
+        }
+    }
+
+    fn inferred_from_axis(
+        axis: &CateAxisParam,
+        role: PortRole,
+        override_number: Option<i32>,
+    ) -> Self {
+        Self {
+            reliable: false,
+            ..Self::from_axis(axis, role, override_number)
         }
     }
 }
@@ -142,6 +156,12 @@ impl PipelineSegmentRecord {
 pub struct PipelineQueryService;
 
 impl PipelineQueryService {
+    pub async fn branch_exists(branch_refno: &RefnoEnum) -> Result<bool> {
+        let sql = format!("SELECT VALUE id FROM {} LIMIT 1;", branch_refno.to_pe_key());
+        let id: Option<RefnoEnum> = SUL_DB.query_take(&sql, 0).await?;
+        Ok(id.is_some())
+    }
+
     /// 预拉取单个 BRAN 下所有管件的尺寸标注数据
     pub async fn fetch_branch_segments(
         branch_refno: RefnoEnum,
@@ -292,7 +312,7 @@ impl PipelineQueryService {
             if arrive_port.is_none() {
                 if let Some(axis) = world_axes.first() {
                     arrive_number = Some(axis.number);
-                    arrive_port = Some(PipelinePort::from_axis(
+                    arrive_port = Some(PipelinePort::inferred_from_axis(
                         axis,
                         PortRole::Arrive,
                         Some(axis.number),
@@ -306,7 +326,7 @@ impl PipelineQueryService {
                     .find(|axis| Some(axis.number) != arrive_number)
                 {
                     leave_number = Some(axis.number);
-                    leave_port = Some(PipelinePort::from_axis(
+                    leave_port = Some(PipelinePort::inferred_from_axis(
                         axis,
                         PortRole::Leave,
                         Some(axis.number),
@@ -344,6 +364,7 @@ impl PipelineQueryService {
                         role: PortRole::Arrive,
                         world_pos: hpos,
                         world_dir: attr_to_vec3(&attrs, "HDIR"),
+                        reliable: true,
                     });
                     if arrive_number.is_none() {
                         arrive_number = Some(1);
@@ -357,6 +378,7 @@ impl PipelineQueryService {
                         role: PortRole::Leave,
                         world_pos: tpos,
                         world_dir: attr_to_vec3(&attrs, "TDIR"),
+                        reliable: true,
                     });
                     if leave_number.is_none() {
                         leave_number = Some(2);
@@ -372,6 +394,7 @@ impl PipelineQueryService {
                         role: PortRole::Arrive,
                         world_pos: pos,
                         world_dir: None,
+                        reliable: false,
                     });
                     if arrive_number.is_none() {
                         arrive_number = Some(1);
@@ -385,6 +408,7 @@ impl PipelineQueryService {
                         role: PortRole::Leave,
                         world_pos: pos,
                         world_dir: None,
+                        reliable: false,
                     });
                     if leave_number.is_none() {
                         leave_number = Some(2);

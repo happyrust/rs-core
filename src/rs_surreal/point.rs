@@ -4,11 +4,13 @@ use crate::plant_transform::Transform;
 use crate::rs_surreal::geometry_query::PlantTransform;
 use crate::types::PlantAabb;
 use crate::{RefU64, RefnoEnum, SUL_DB, SurrealQueryExt};
+use anyhow::Context;
 use dashmap::DashMap;
 use glam::Vec3;
 use itertools::Itertools;
 use parry3d::bounding_volume::Aabb;
 use serde_derive::{Deserialize, Serialize};
+use serde_json::Value;
 use serde_with::serde_as;
 use std::collections::HashMap;
 use surrealdb::types as surrealdb_types;
@@ -49,14 +51,12 @@ pub async fn query_arrive_leave_points(
 
     println!("query_arrive_leave_points sql: {}", sql);
 
-    let rows: Vec<(
-        RefU64,
-        PlantTransform,
-        Option<CateAxisParam>,
-        Option<CateAxisParam>,
-    )> = SUL_DB.query_take(&sql, 0).await?;
+    let rows: Vec<(RefU64, PlantTransform, Option<Value>, Option<Value>)> =
+        SUL_DB.query_take(&sql, 0).await?;
     let mut map = DashMap::new();
     for (refno, trans, arri, leav) in rows {
+        let arri = decode_axis_param(refno, "arrive", arri)?;
+        let leav = decode_axis_param(refno, "leave", leav)?;
         if arri.is_none() || leav.is_none() {
             continue;
         }
@@ -90,10 +90,11 @@ pub async fn query_arrive_leave_points_of_component(
 
     // println!("query_arrive_leave_points_of_component sql: {}", sql);
 
-    let rows: Vec<(RefnoEnum, Option<CateAxisParam>, Option<CateAxisParam>)> =
-        SUL_DB.query_take(&sql, 0).await?;
+    let rows: Vec<(RefnoEnum, Option<Value>, Option<Value>)> = SUL_DB.query_take(&sql, 0).await?;
     let mut map = DashMap::new();
     for (refno, arri, leav) in rows {
+        let arri = decode_axis_param(refno, "arrive", arri)?;
+        let leav = decode_axis_param(refno, "leave", leav)?;
         if arri.is_none() || leav.is_none() {
             continue;
         }
@@ -123,16 +124,29 @@ pub async fn query_arrive_leave_points_of_branch(
     let rows: Vec<(
         RefnoEnum,
         Option<PlantTransform>,
-        Option<CateAxisParam>,
-        Option<CateAxisParam>,
+        Option<Value>,
+        Option<Value>,
     )> = SUL_DB.query_take(&sql, 0).await?;
     let mut map = DashMap::new();
     for (refno, world_trans, arri, leav) in rows {
+        let arri = decode_axis_param(refno, "arrive", arri)?;
+        let leav = decode_axis_param(refno, "leave", leav)?;
         if let Some(pts) = to_world_branch_points(world_trans, arri, leav) {
             map.insert(refno, pts);
         }
     }
     Ok(map)
+}
+
+fn decode_axis_param(
+    refno: impl std::fmt::Display,
+    port: &str,
+    value: Option<Value>,
+) -> anyhow::Result<Option<CateAxisParam>> {
+    value
+        .map(serde_json::from_value)
+        .transpose()
+        .with_context(|| format!("failed to decode {port} port for {refno}"))
 }
 
 fn to_world_branch_points(

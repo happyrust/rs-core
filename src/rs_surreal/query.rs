@@ -91,7 +91,7 @@ pub async fn get_pe(refno: RefnoEnum) -> anyhow::Result<Option<SPdmsElement>> {
     );
     let pe: Option<SPdmsElement> = SUL_DB.query_take::<Option<SPdmsElement>>(&sql, 0).await?;
 
-    // 仅在 debug-model 场景输出：用于定位“TreeIndex 有节点但 SurrealDB 无 pe 记录”的情况
+    // 仅在 debug-model 场景输出：用于定位“层级里有该节点但 SurrealDB 无 pe 记录”的情况
     if pe.is_none() && crate::debug_macros::is_debug_model_enabled() {
         crate::debug_model_debug!(
             "[DBG][PE_MISS] get_pe=None refno={} pe_key={}",
@@ -134,18 +134,6 @@ pub async fn get_default_name(refno: RefnoEnum) -> anyhow::Result<Option<String>
 /// * 如果查询失败会返回错误
 #[cached(result = true, size = 5000)]
 pub async fn query_ancestor_refnos(refno: RefnoEnum) -> anyhow::Result<Vec<RefnoEnum>> {
-    // 优先使用 TreeIndex（内存查询，O(depth)）
-    if let Some(index) = crate::tree_query::get_tree_index_by_refno(refno.refno()) {
-        let options = crate::tree_query::TreeQueryOptions {
-            include_self: false,
-            max_depth: None,
-            filter: crate::tree_query::TreeQueryFilter::default(),
-            prune_on_match: false,
-        };
-        let ancestors = index.collect_ancestors_root_to_parent(refno.refno(), &options);
-        return Ok(ancestors.into_iter().map(RefnoEnum::from).collect());
-    }
-    // fallback 到 SurrealDB 查询
     let sql = format!("return (fn::ancestor({}).refno)?:[];", refno.to_pe_key());
     SUL_DB.query_take::<Vec<RefnoEnum>>(&sql, 0).await
 }

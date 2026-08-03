@@ -5,6 +5,7 @@ use crate::rs_surreal::spatial::{
     construct_basis_z_opdir, construct_basis_z_ref_y, construct_basis_z_y_exact,
     construct_basis_z_y_hint, construct_basis_z_y_raw, get_spline_line_dir,
 };
+use crate::transform::source::{SurrealTransformFactSource, TransformFactSource};
 use crate::{
     NamedAttrMap, RefnoEnum, get_children_named_attmaps, get_children_refnos, get_named_attmap,
     get_type_name, transform::get_effective_parent_att,
@@ -13,23 +14,43 @@ use async_trait::async_trait;
 use glam::{DMat3, DMat4, DQuat, DVec3, Vec3};
 use std::sync::Arc;
 
-#[derive(Debug, Default, Clone)]
+#[derive(Clone)]
 pub struct SpineStrategy {
     // POSSP  属性
     att: Arc<NamedAttrMap>,
     parent_att: Arc<NamedAttrMap>,
+    source: Arc<dyn TransformFactSource>,
 }
 
 impl SpineStrategy {
     pub fn new(att: Arc<NamedAttrMap>, parent_att: Arc<NamedAttrMap>) -> Self {
-        Self { att, parent_att }
+        Self::with_source(att, parent_att, Arc::new(SurrealTransformFactSource))
+    }
+
+    pub fn with_source(
+        att: Arc<NamedAttrMap>,
+        parent_att: Arc<NamedAttrMap>,
+        source: Arc<dyn TransformFactSource>,
+    ) -> Self {
+        Self {
+            att,
+            parent_att,
+            source,
+        }
     }
 
     /// 从 GENSEC 或 WALL refno 创建 SpineStrategy
     /// 自动获取 GENSEC/WALL 下的 SPINE 和第一个 POINSP
     pub async fn from_wall_or_gensec(gen_refno: RefnoEnum) -> anyhow::Result<Self> {
+        Self::from_wall_or_gensec_with_source(gen_refno, Arc::new(SurrealTransformFactSource)).await
+    }
+
+    pub async fn from_wall_or_gensec_with_source(
+        gen_refno: RefnoEnum,
+        source: Arc<dyn TransformFactSource>,
+    ) -> anyhow::Result<Self> {
         // 获取所有子节点属性，查找 SPINE
-        let children_atts = get_children_named_attmaps(gen_refno).await?;
+        let children_atts = source.get_children_attributes(gen_refno).await?;
 
         let spine_att = children_atts
             .iter()
@@ -39,16 +60,17 @@ impl SpineStrategy {
         let spine_refno = spine_att.get_refno().unwrap();
 
         // 获取 SPINE 下的第一个 POINSP
-        let spine_children = get_children_named_attmaps(spine_refno).await?;
+        let spine_children = source.get_children_attributes(spine_refno).await?;
         let poinsp_att = spine_children
             .iter()
             .find(|att| att.get_type_str() == "POINSP")
             .ok_or_else(|| anyhow::anyhow!("No POINSP found under SPINE {}", spine_refno))?;
 
         // 如果 SpineStrategy 期望 parent_att 是 SPINE 自身的属性：
-        Ok(SpineStrategy::new(
+        Ok(SpineStrategy::with_source(
             Arc::new(poinsp_att.clone()),
             Arc::new(spine_att.clone()),
+            source,
         ))
     }
 
@@ -136,7 +158,9 @@ impl SpineStrategy {
     /// 计算当前 POINSP 的切线方向
     async fn calculate_self_tangent(&self) -> anyhow::Result<(Option<DVec3>, Option<DVec3>)> {
         let owner_refno = self.parent_att.get_refno().unwrap();
-        let ch_atts = get_children_named_attmaps(owner_refno)
+        let ch_atts = self
+            .source
+            .get_children_attributes(owner_refno)
             .await
             .unwrap_or_default();
         let self_refno = self.att.get_refno().unwrap_or_default();
@@ -259,7 +283,9 @@ impl SpineStrategy {
 
         let owner_refno = self.parent_att.get_refno().unwrap();
 
-        let ch_atts = get_children_named_attmaps(owner_refno)
+        let ch_atts = self
+            .source
+            .get_children_attributes(owner_refno)
             .await
             .unwrap_or_default();
         let len = ch_atts.len();
@@ -374,7 +400,9 @@ impl SpineStrategy {
 
                 match segment {
                     SegmentPath::Line(_) => {
-                        let mut z_dir = get_spline_line_dir(self.parent_att.get_refno().unwrap())
+                        let mut z_dir = self
+                            .source
+                            .get_spline_line_dir(self.parent_att.get_refno().unwrap())
                             .await
                             .unwrap_or_default()
                             .normalize_or_zero();

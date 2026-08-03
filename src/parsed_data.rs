@@ -48,9 +48,15 @@ pub struct GmseParamData {
     pub diameters: Vec<f32>,
     /// 顺序 pdistance pbdistance ptdistance, 先bottom, 后top
     pub distances: Vec<f32>,
+    /// 与 `distances` 同序：该位表达式在目录里是否写了。
+    /// 求值结果 0 有两种来源——没写（缺省 0）和写了但算出 0——下游的隐含范围
+    /// 兜底只能对前者生效，靠这个位区分。
+    pub distances_specified: Vec<bool>,
     pub shears: Vec<f32>,
     /// 元件库里的height
     pub phei: f32,
+    /// PHEI 表达式在目录里是否写了，语义同 `distances_specified`。
+    pub phei_specified: bool,
     pub offset: f32,
     /// 顶点集合
     pub verts: Vec<Vec3>,
@@ -788,6 +794,9 @@ pub struct CateSCylinderParam {
     pub diameter: f32,
     pub centre_line_flag: bool,
     pub tube_flag: bool,
+    /// 目录里写了 PHEI 表达式（哪怕求值为 0）。零长度现场焊缝这类构件靠它
+    /// 挡住 p-point 跨距兜底，避免把刻意的 0 改写成推导值。
+    pub extent_specified: bool,
 }
 
 #[derive(
@@ -809,6 +818,8 @@ pub struct CateLCylinderParam {
     pub diameter: f32,
     pub centre_line_flag: bool,
     pub tube_flag: bool,
+    /// 目录里写了 PBDI 或 PTDI，语义同 `CateSCylinderParam::extent_specified`。
+    pub extent_specified: bool,
 }
 
 ///拉伸的基本体

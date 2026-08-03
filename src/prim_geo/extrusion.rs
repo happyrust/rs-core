@@ -43,7 +43,7 @@ impl Default for Extrusion {
 
 impl VerifiedShape for Extrusion {
     fn check_valid(&self) -> bool {
-        self.height > std::f32::EPSILON
+        self.height > std::f32::EPSILON && self.verts.iter().any(|wire| wire.len() >= 3)
     }
 }
 

@@ -22,7 +22,8 @@ use cached::proc_macro::cached;
 use glam::{DMat3, DMat4, DQuat, DVec3};
 
 use glam::{Quat, Vec3};
-use std::collections::VecDeque;
+use std::collections::{HashSet, VecDeque};
+use std::sync::Arc;
 
 /// Compute a Transform that rotates from a standard up axis to the target PLAX.
 /// This should be applied in geo_relate.trans (orientation layer), not at mesh time.
@@ -81,8 +82,10 @@ pub async fn get_local_transform(refno: RefnoEnum) -> anyhow::Result<Option<Tran
         .map(|m| m.map(|x| Transform::from_matrix(x.as_mat4())))
 }
 
+pub mod source;
 pub mod strategies;
 
+use source::{SurrealTransformFactSource, TransformFactSource};
 use strategies::TransformStrategyFactory;
 
 /// 递归获取有效的父节点属性，处理虚拟节点属性合并
@@ -96,14 +99,28 @@ use strategies::TransformStrategyFactory;
 /// # Returns
 /// * 合并后的属性映射
 pub async fn get_effective_parent_att(parent_refno: RefnoEnum) -> anyhow::Result<NamedAttrMap> {
+    get_effective_parent_att_with_source(parent_refno, Arc::new(SurrealTransformFactSource)).await
+}
+
+/// 使用显式事实源递归获取有效父节点属性。
+pub async fn get_effective_parent_att_with_source(
+    parent_refno: RefnoEnum,
+    source: Arc<dyn TransformFactSource>,
+) -> anyhow::Result<NamedAttrMap> {
     let mut current_refno = parent_refno;
     let mut virtual_attrs: Vec<NamedAttrMap> = Vec::new();
+    let mut visited = HashSet::new();
     let mut depth = 0;
     const MAX_DEPTH: usize = 10; // 防止循环引用
 
     // 向上遍历，收集所有虚拟节点的属性
     while depth < MAX_DEPTH {
-        let current_att = get_named_attmap(current_refno).await?;
+        anyhow::ensure!(
+            visited.insert(current_refno),
+            "Cycle detected while resolving effective parent attributes at {}",
+            current_refno
+        );
+        let current_att = source.get_attribute(current_refno).await?;
         let current_type = current_att.get_type_str();
 
         if !is_virtual_node(current_type) {
@@ -155,14 +172,58 @@ pub async fn get_effective_parent_att(parent_refno: RefnoEnum) -> anyhow::Result
 /// * `Err` - If an error occurs during calculation
 #[cached(result = true)]
 pub async fn get_local_mat4(refno: RefnoEnum) -> anyhow::Result<Option<DMat4>> {
+    get_local_mat4_with_source(refno, Arc::new(SurrealTransformFactSource)).await
+}
+
+/// 从显式事实源计算 local transform；该入口不读取或写入全局 transform cache。
+pub async fn get_local_mat4_with_source(
+    refno: RefnoEnum,
+    source: Arc<dyn TransformFactSource>,
+) -> anyhow::Result<Option<DMat4>> {
     // Get attribute maps for the entity and its parent
-    let att = get_named_attmap(refno).await?;
+    let att = source.get_attribute(refno).await?;
     let parent_refno = att.get_owner();
-    let parent_att = get_effective_parent_att(parent_refno).await?;
+    if parent_refno.is_unset() {
+        return Ok(Some(DMat4::IDENTITY));
+    }
+    let parent_att = get_effective_parent_att_with_source(parent_refno, source.clone()).await?;
 
     // Use strategy factory to get the appropriate strategy
-    let mut strategy = TransformStrategyFactory::get_strategy_from_ref(&att, &parent_att);
+    let mut strategy =
+        TransformStrategyFactory::get_strategy_from_ref_with_source(&att, &parent_att, source);
     strategy.get_local_transform().await
+}
+
+/// 从显式事实源计算 world transform，不访问全局 transform cache。
+pub async fn get_world_mat4_with_source(
+    refno: RefnoEnum,
+    source: Arc<dyn TransformFactSource>,
+) -> anyhow::Result<Option<DMat4>> {
+    let mut chain = vec![refno];
+    let mut visited = HashSet::from([refno]);
+    let mut current = refno;
+    loop {
+        let owner = source.get_owner(current).await?;
+        if owner.is_unset() {
+            break;
+        }
+        anyhow::ensure!(
+            visited.insert(owner),
+            "Cycle detected while resolving world transform at {}",
+            owner
+        );
+        chain.push(owner);
+        current = owner;
+    }
+    chain.reverse();
+
+    let mut world = DMat4::IDENTITY;
+    for node in chain {
+        if let Some(local) = get_local_mat4_with_source(node, source.clone()).await? {
+            world *= local;
+        }
+    }
+    Ok(Some(world))
 }
 
 /// 获取变换矩阵（统一入口）

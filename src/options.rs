@@ -355,10 +355,10 @@ pub struct DbOption {
     /// 是否保存到数据库
     #[clap(long)]
     pub save_db: Option<bool>,
-    /// 解析期只生成 scene tree 文件，跳过 PE/属性数据保存
+    /// 解析期轻量扫描：只维护 db_meta_info.json，跳过 PE/属性数据保存（不写 .tree）
     #[clap(long, default_value = "false")]
     #[serde(default)]
-    pub gen_tree_only: bool,
+    pub gen_db_meta_only: bool,
     /// 是否导出 JSON 实例文件
     #[clap(long)]
     #[serde(default)]
@@ -644,21 +644,9 @@ impl DbOption {
             return vec![];
         }
 
-        // 使用 TreeIndex 查询子孙节点（内存 BFS，速度快）
+        // 只返回配置里显式列出的 debug root，不再展开子孙：.tree 下线后
+        // 原来的 TreeIndex 内存 BFS 恒为空，此处保持同样的运行时语义。
         let mut refnos = root_refnos.clone();
-        for refno in &root_refnos {
-            if let Some(index) = crate::tree_query::get_tree_index_by_refno(refno.refno()) {
-                let options = crate::tree_query::TreeQueryOptions {
-                    include_self: false, // root 已在 refnos 中
-                    max_depth: None,
-                    filter: crate::tree_query::TreeQueryFilter::default(),
-                    prune_on_match: false,
-                };
-                let descendants: Vec<RefU64> =
-                    index.collect_descendants_bfs(refno.refno(), &options);
-                refnos.extend(descendants.into_iter().map(RefnoEnum::from));
-            }
-        }
 
         if self.is_gen_history_model() {
             let mut h_refnos = vec![];

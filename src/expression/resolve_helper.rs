@@ -95,6 +95,12 @@ pub const INTERNAL_PDMS_EXPRESS: [&'static str; 23] = [
     "ACOS", "ATAN2", "ASIN", "INT", "OF", "MOD", "NEGATE", "SUM", "TANF", "TAN",
 ];
 
+/// `gmse.distances[idx]` 对应的目录表达式是否写了。越界按“没写”处理。
+#[inline]
+fn expr_specified(gmse: &GmseParamData, idx: usize) -> bool {
+    gmse.distances_specified.get(idx).copied().unwrap_or(false)
+}
+
 /// 解析成不同的几何体参数
 pub fn resolve_to_cate_geo_params(gmse: &GmseParamData) -> anyhow::Result<CateGeoParam> {
     let geo = panic::catch_unwind(|| {
@@ -150,6 +156,8 @@ pub fn resolve_to_cate_geo_params(gmse: &GmseParamData) -> anyhow::Result<CateGe
                     centre_line_flag: gmse.centre_line_flag,
                     tube_flag: gmse.tube_flag,
                     dist_to_top: gmse.distances[2],
+                    // 两端任一写了表达式就算显式给了范围，不再走 p-point 兜底。
+                    extent_specified: expr_specified(gmse, 1) || expr_specified(gmse, 2),
                 })
             }
             "NSCY" | "SCYL" => {
@@ -162,6 +170,7 @@ pub fn resolve_to_cate_geo_params(gmse: &GmseParamData) -> anyhow::Result<CateGe
                     diameter: gmse.diameters[0],
                     centre_line_flag: gmse.centre_line_flag,
                     tube_flag: gmse.tube_flag,
+                    extent_specified: gmse.phei_specified,
                 })
             }
             "LINE" => {

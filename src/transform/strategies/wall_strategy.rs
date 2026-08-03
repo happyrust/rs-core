@@ -4,6 +4,7 @@
 use super::{BangHandler, NposHandler, TransformStrategy};
 use crate::NamedAttrMap;
 use crate::rs_surreal::spatial::construct_basis_z_y_exact;
+use crate::transform::source::{SurrealTransformFactSource, TransformFactSource};
 use async_trait::async_trait;
 use glam::{DMat4, DQuat, DVec3};
 use std::sync::Arc;
@@ -11,11 +12,24 @@ use std::sync::Arc;
 pub struct WallStrategy {
     att: Arc<NamedAttrMap>,
     parent_att: Arc<NamedAttrMap>,
+    _source: Arc<dyn TransformFactSource>,
 }
 
 impl WallStrategy {
     pub fn new(att: Arc<NamedAttrMap>, parent_att: Arc<NamedAttrMap>) -> Self {
-        Self { att, parent_att }
+        Self::with_source(att, parent_att, Arc::new(SurrealTransformFactSource))
+    }
+
+    pub fn with_source(
+        att: Arc<NamedAttrMap>,
+        parent_att: Arc<NamedAttrMap>,
+        source: Arc<dyn TransformFactSource>,
+    ) -> Self {
+        Self {
+            att,
+            parent_att,
+            _source: source,
+        }
     }
 
     /// 计算墙体/截面的方向向量

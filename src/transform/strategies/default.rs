@@ -6,6 +6,7 @@ use crate::rs_surreal::spatial::{
     construct_basis_z_ref_y, construct_basis_z_y_exact, construct_basis_z_y_hint, is_virtual_node,
     query_pline,
 };
+use crate::transform::source::{SurrealTransformFactSource, TransformFactSource};
 use crate::{
     NamedAttrMap, RefnoEnum, SUL_DB, get_named_attmap, pdms_data::PlinParam,
     tool::direction_parse::parse_expr_to_dir,
@@ -31,6 +32,23 @@ impl PoslHandler {
         pos: &mut DVec3,
         quat: &mut DQuat,
     ) -> anyhow::Result<()> {
+        Self::handle_posl_with_source(
+            att,
+            parent_att,
+            pos,
+            quat,
+            Arc::new(SurrealTransformFactSource),
+        )
+        .await
+    }
+
+    pub async fn handle_posl_with_source(
+        att: &NamedAttrMap,
+        parent_att: &NamedAttrMap,
+        pos: &mut DVec3,
+        quat: &mut DQuat,
+        source: Arc<dyn TransformFactSource>,
+    ) -> anyhow::Result<()> {
         let pos_line = att.get_str("POSL").map(|x| x.trim()).unwrap_or_default();
 
         if !pos_line.is_empty() {
@@ -38,16 +56,12 @@ impl PoslHandler {
             let mut pline_plax = DVec3::X;
             let mut is_lmirror = false;
 
-            let ancestor_refnos = crate::query_filter_ancestors(
-                att.get_refno_or_default(),
-                &crate::consts::HAS_PLIN_TYPES,
-            )
-            .await?;
+            let ancestor_refnos = source
+                .get_ancestors_of_types(att.get_refno_or_default(), &crate::consts::HAS_PLIN_TYPES)
+                .await?;
 
             if let Some(plin_owner) = ancestor_refnos.into_iter().next() {
-                let target_own_att = crate::get_named_attmap(plin_owner)
-                    .await
-                    .unwrap_or_default();
+                let target_own_att = source.get_attribute(plin_owner).await.unwrap_or_default();
 
                 is_lmirror = target_own_att.get_bool("LMIRR").unwrap_or_default();
                 let own_pos_line = target_own_att.get_str("JUSL").unwrap_or("NA");
@@ -57,14 +71,13 @@ impl PoslHandler {
                     own_pos_line
                 };
 
-                if let Ok(Some(param)) = crate::query_pline(plin_owner, pos_line.into()).await {
+                if let Ok(Some(param)) = source.query_pline(plin_owner, pos_line).await {
                     plin_pos = param.pt;
                     pline_plax = param.plax;
                 }
 
                 if !own_pos_line.is_empty() && own_pos_line != "NA" {
-                    if let Ok(Some(own_param)) =
-                        crate::query_pline(plin_owner, own_pos_line.into()).await
+                    if let Ok(Some(own_param)) = source.query_pline(plin_owner, own_pos_line).await
                     {
                         plin_pos -= own_param.pt;
                     }
@@ -140,11 +153,24 @@ impl CutpHandler {
 pub struct DefaultStrategy {
     att: Arc<NamedAttrMap>,
     parent_att: Arc<NamedAttrMap>,
+    source: Arc<dyn TransformFactSource>,
 }
 
 impl DefaultStrategy {
     pub fn new(att: Arc<NamedAttrMap>, parent_att: Arc<NamedAttrMap>) -> Self {
-        Self { att, parent_att }
+        Self::with_source(att, parent_att, Arc::new(SurrealTransformFactSource))
+    }
+
+    pub fn with_source(
+        att: Arc<NamedAttrMap>,
+        parent_att: Arc<NamedAttrMap>,
+        source: Arc<dyn TransformFactSource>,
+    ) -> Self {
+        Self {
+            att,
+            parent_att,
+            source,
+        }
     }
 }
 
@@ -167,7 +193,14 @@ impl TransformStrategy for DefaultStrategy {
         NposHandler::apply_npos_offset(&mut position, att);
 
         // 调用 handle_posl 处理
-        PoslHandler::handle_posl(att, parent_att, &mut position, &mut rotation).await?;
+        PoslHandler::handle_posl_with_source(
+            att,
+            parent_att,
+            &mut position,
+            &mut rotation,
+            self.source.clone(),
+        )
+        .await?;
 
         // 处理 CUTP 属性（切割平面方向）
         // let has_opdir = att.contains_key("OPDIR");

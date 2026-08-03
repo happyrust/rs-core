@@ -6,6 +6,7 @@ use crate::rs_surreal::spatial::{
     construct_basis_z_opdir, construct_basis_z_ref_y, construct_basis_z_y_exact,
     construct_basis_z_y_hint,
 };
+use crate::transform::source::{SurrealTransformFactSource, TransformFactSource};
 use crate::{
     NamedAttrMap, RefnoEnum, get_children_named_attmaps, get_children_refnos, get_named_attmap,
     get_type_name,
@@ -17,11 +18,24 @@ use std::sync::Arc;
 pub struct SweepStrategy {
     att: Arc<NamedAttrMap>,
     parent_att: Arc<NamedAttrMap>,
+    source: Arc<dyn TransformFactSource>,
 }
 
 impl SweepStrategy {
     pub fn new(att: Arc<NamedAttrMap>, parent_att: Arc<NamedAttrMap>) -> Self {
-        Self { att, parent_att }
+        Self::with_source(att, parent_att, Arc::new(SurrealTransformFactSource))
+    }
+
+    pub fn with_source(
+        att: Arc<NamedAttrMap>,
+        parent_att: Arc<NamedAttrMap>,
+        source: Arc<dyn TransformFactSource>,
+    ) -> Self {
+        Self {
+            att,
+            parent_att,
+            source,
+        }
     }
 
     /// 处理 GENSEC 的特殊挤出方向逻辑
@@ -51,7 +65,11 @@ impl TransformStrategy for SweepStrategy {
             "JLDATU" => {
                 // JLDATU 使用标准的 ZDIS/PKDI 计算
                 // SpineStrategy 需要是有状态的，但我们这里只需要它计算一次
-                let mut strategy = SpineStrategy::from_wall_or_gensec(gensec_refno).await?;
+                let mut strategy = SpineStrategy::from_wall_or_gensec_with_source(
+                    gensec_refno,
+                    self.source.clone(),
+                )
+                .await?;
                 let transform = strategy
                     .cal_trans_by_pkdi_zdis(pkdi, zdis)
                     .await

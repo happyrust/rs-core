@@ -873,16 +873,20 @@ pub async fn get_site_pes_by_dbnum(dbnum: u32) -> anyhow::Result<Vec<SPdmsElemen
 #[cached(result = true)]
 pub async fn get_world(mdb: String) -> anyhow::Result<Option<SPdmsElement>> {
     let mdb_name = to_e3d_name(&mdb);
+    // CURD 里第一个设计库(STYP=1)可能对应的 DESI 数据未解析(如 included_db_files 只解析了 8000
+    // 而 CURD 首个是 1112)，直接取 $dbnos[0] 会得到无 WORL 的空库。改为按 CURD 顺序取第一个
+    // 真正落库了 WORL(即已解析)的设计 dbnum，实现「顺延到第一个有数据的设计库」。
     let sql = format!(
         " \
-            let $f = (select value (select value DBNO from CURD.refno where STYP=1) from only MDB where NAME='{}' limit 1)[0]; \
+            let $dbnos = (select value (select value DBNO from CURD.refno where STYP=1) from only MDB where NAME='{}' limit 1); \
+            let $f = (select value dbnum from (select REFNO.dbnum as dbnum, array::find_index($dbnos, REFNO.dbnum) as o from WORL where REFNO.dbnum in $dbnos and REFNO.noun='WORL' order by o limit 1))[0]; \
             (select value REFNO.* from WORL where REFNO.dbnum=$f and REFNO.noun='WORL' limit 1)[0]",
         mdb_name
     );
     // println!("Executing SQL: {}", sql);
     let mut response = SUL_DB.query_response(&sql).await?;
     // dbg!(&response);
-    let pe: Option<SPdmsElement> = response.take(1)?;
+    let pe: Option<SPdmsElement> = response.take(2)?;
     Ok(pe)
 }
 
@@ -908,11 +912,14 @@ pub async fn get_world_refno(mdb: String) -> anyhow::Result<RefnoEnum> {
     };
 
     // 构建SQL查询
-    // 1. 首先获取MDB对应的DBNO(数据库编号)
-    // 2. 然后查询该DBNO下类型为WORL的参考号
+    // 1. 取 MDB 下 CURD 中所有设计库(STYP=1)的 DBNO(保持 CURD 顺序)
+    // 2. 在这些 DBNO 里按顺序选出「第一个真正解析了 WORL」的设计库 $f
+    //    (CURD 首个如 1112 未解析时自动顺延到下一个有数据的，如 8000)
+    // 3. 返回该设计库 WORL 的参考号
     let sql = format!(
         "
-            let $f = (select value (select value DBNO from CURD.refno where STYP=1) from only MDB where NAME='{}' limit 1)[0]; \
+            let $dbnos = (select value (select value DBNO from CURD.refno where STYP=1) from only MDB where NAME='{}' limit 1); \
+            let $f = (select value dbnum from (select REFNO.dbnum as dbnum, array::find_index($dbnos, REFNO.dbnum) as o from WORL where REFNO.dbnum in $dbnos and REFNO.noun='WORL' order by o limit 1))[0]; \
             (select value REFNO from WORL where REFNO.dbnum=$f and REFNO.noun='WORL' limit 1)[0]",
         mdb_name
     );
@@ -920,7 +927,7 @@ pub async fn get_world_refno(mdb: String) -> anyhow::Result<RefnoEnum> {
     println!("Executing SQL: {}", sql);
 
     // 执行查询并获取结果
-    let id: Option<RefnoEnum> = SUL_DB.query_take(&sql, 1).await?;
+    let id: Option<RefnoEnum> = SUL_DB.query_take(&sql, 2).await?;
     // dbg!(&id);
     Ok(id.unwrap_or_default())
 }

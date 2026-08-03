@@ -409,9 +409,7 @@ pub const PBS_STR: &'static str = "PBS";
 /// 校审等纯查询场景应直接走 SurrealDB 已存的 pbs 数据。
 #[cfg(not(feature = "spec-loader"))]
 pub async fn set_pbs_fixed_node(_handles: &mut Vec<JoinHandle<()>>) -> anyhow::Result<()> {
-    Err(anyhow!(
-        "set_pbs_fixed_node 需要启用 spec-loader feature"
-    ))
+    Err(anyhow!("set_pbs_fixed_node 需要启用 spec-loader feature"))
 }
 
 #[cfg(feature = "spec-loader")]

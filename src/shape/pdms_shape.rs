@@ -15,7 +15,6 @@ use std::fmt::Debug;
 use std::fs::File;
 use std::hash::{DefaultHasher, Hash, Hasher};
 use std::io::BufWriter;
-use std::io::Read;
 use std::io::Write;
 use std::path::Path;
 use std::vec;
@@ -535,23 +534,11 @@ impl PlantMesh {
         Ok(())
     }
 
-    ///从文件反序列化
-    pub fn des_mesh_file(file_path: &dyn AsRef<Path>) -> anyhow::Result<Self> {
-        let mut file = File::open(file_path)?;
-        let mut buf: Vec<u8> = Vec::new();
-        file.read_to_end(&mut buf).ok();
-        Self::des_from_bytes(&buf)
-    }
-
-    ///从bytes反序列化
-    pub fn des_from_bytes(bytes: &[u8]) -> anyhow::Result<Self> {
-        let mut aligned: rkyv::util::AlignedVec<16> =
-            rkyv::util::AlignedVec::with_capacity(bytes.len());
-        aligned.extend_from_slice(bytes);
-        // SAFETY: bytes 来自本项目序列化结果，且已拷贝到对齐内存。
-        unsafe { rkyv::from_bytes_unchecked::<Self, rkyv::rancor::Error>(&aligned) }
-            .map_err(|e| anyhow!("rkyv 反序列化失败: {:?}", e))
-    }
+    // NOTE: 磁盘 .mesh 反序列化入口（`des_mesh_file` / `des_from_bytes` /
+    // `from_compress_bytes`）已下线：它们基于 rkyv `from_bytes_unchecked`，在 rkyv 0.8
+    // 布局/校验变更后读旧文件会静默脏读/UB，且全仓已无 .mesh 写入方。room/accel_tree
+    // 的读取点已固化为“无磁盘几何 → 跳过”。如需重新引入，请改用带 bytecheck 的
+    // `rkyv::from_bytes`（不要用 unchecked）。
 
     ///压缩bytes
     ///
@@ -565,16 +552,6 @@ impl PlantMesh {
         let serialized = self.ser_to_bytes()?;
         e.write_all(&serialized)?;
         Ok(e.finish()?)
-    }
-
-    ///从压缩bytes反序列化
-    #[inline]
-    pub fn from_compress_bytes(bytes: &[u8]) -> anyhow::Result<Self> {
-        use flate2::write::DeflateDecoder;
-        let writer = Vec::new();
-        let mut deflater = DeflateDecoder::new(writer);
-        deflater.write_all(bytes)?;
-        Self::des_from_bytes(&deflater.finish()?)
     }
 
     ///导出obj

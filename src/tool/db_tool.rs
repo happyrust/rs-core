@@ -43,9 +43,13 @@ pub fn convert_to_hash(bytes: &[u8]) -> i32 {
     i32::from_be_bytes(bytes.try_into().unwrap())
 }
 
+/// `PDMS_Hash::IsUDA`：`hash > 0x171FAD39`（**无符号**比较）。
+///
+/// 不可写成有符号 `hash > 0x171FAD39`：`0xFFF?xxxx` 派生 UDA 的高位为 1，
+/// 作为 `i32` 为负，会被误判为非 UDA（sam7200 `23584/128` 曾因此 `uda_atts=0`）。
 #[inline]
 pub fn is_uda(hash: i32) -> bool {
-    hash > 0x171FAD39
+    (hash as u32) > 0x171FAD39
 }
 
 #[inline]

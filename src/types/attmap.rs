@@ -109,6 +109,11 @@ impl AttrMap {
         e.finish().unwrap_or_default()
     }
 
+    // WARNING(遗留 MySQL/sql 字节消费路径，默认构建未编译)：`from_rkyv_bytes` /
+    // `from_rkvy_compress_bytes` / `from_compress_bytes` 基于 rkyv `from_bytes_unchecked`。
+    // rkyv 0.8 的全局特性 (aligned/little_endian/pointer_width_64) 变更后，旧字节可能静默
+    // 脏读/UB。当前仅被 sql 特性路径调用（review 默认未编译）。若重新启用，请改用带
+    // bytecheck 的 `rkyv::from_bytes`（不要用 unchecked）。
     #[inline]
     pub fn from_rkyv_bytes(bytes: &[u8]) -> anyhow::Result<Self> {
         let mut aligned: rkyv::util::AlignedVec<16> =
