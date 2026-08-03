@@ -287,31 +287,19 @@ let children = collect_children_filter_ids(refno, &["EQUI", "PIPE"]).await?;
 let zones = query_filter_ancestors(refno, &["ZONE"]).await?;
 ```
 
-### 7.2 gen_model-dev 层级查询 (TreeIndex)
+### 7.2 统一 QueryProvider 层级查询
 
-**gen_model-dev 项目提供基于内存 indextree 的高性能层级查询**
-
-#### 前置条件
-
-1. **生成 `.tree` 文件**：需要先导出场景树索引文件到 `output/scene_tree/` 目录
-2. **文件格式**：`{dbnum}.tree`（如 `1112.tree`）
-
-#### 初始化 TreeIndexQueryProvider
+> **已下线**：基于内存 `indextree` 的 `TreeIndexQueryProvider` 和 `.tree` 文件
+> （`output/scene_tree/{dbnum}.tree`）已于 2026-07 全部删除，连同 `--gen-indextree` CLI。
+> 层级查询现在统一由 `SurrealQueryProvider`（走 `pe_owner` 关系表）承担；
+> `plant-model-gen` 侧若需要在一次 run 内反复遍历，用按 run 失效的
+> `versioned_db/pe_owner_snapshot.rs` 内存快照，而不是常驻索引。
 
 ```rust
-// 位置: rs-core/src/query_provider/tree_index_provider.rs
-use aios_core::query_provider::TreeIndexQueryProvider;
+// 位置: rs-core/src/query_provider/surreal_provider.rs
+use aios_core::query_provider::SurrealQueryProvider;
 
-// 方式1：从目录加载所有 .tree 文件（推荐）
-// 注意：Windows 上需要使用大栈线程避免栈溢出
-let handle = std::thread::Builder::new()
-    .name("tree-index-loader".to_string())
-    .stack_size(64 * 1024 * 1024)  // 64MB 栈
-    .spawn(|| TreeIndexQueryProvider::from_tree_dir("output/scene_tree"))
-    .context("创建线程失败")?;
-
-let provider = handle.join()
-    .map_err(|_| anyhow::anyhow!("线程 panic"))??;
+let provider = SurrealQueryProvider::new()?;
 ```
 
 #### 使用全局 Provider (gen_model-dev)
@@ -370,31 +358,24 @@ let pes = get_pes_batch(&refnos).await?;
 let attmaps = get_attmaps_batch(&refnos).await?;
 ```
 
-#### TreeIndex vs SurrealDB 性能对比
-
-| 场景 | SurrealDB | TreeIndex | 说明 |
-|------|-----------|-----------|------|
-| 1000 节点子孙查询 | ~500ms | ~5ms | TreeIndex 快 100 倍 |
-| 数据来源 | 数据库实时查询 | 内存索引 (`.tree` 文件) | |
-| 使用位置 | aios-core | gen_model-dev | |
-| 层级查询 | ❌ 较慢 | ✅ 推荐 | |
-| PE/属性查询 | ✅ 必须 | 委托 SurrealDB | |
-
 #### 架构说明
 
 ```
-TreeIndexQueryProvider
-├── 层级查询 (HierarchyQuery) → TreeIndex (内存 indextree)
+SurrealQueryProvider
+├── 层级查询 (HierarchyQuery) → pe_owner 关系表
 │   ├── get_children()
 │   ├── get_descendants()
 │   ├── get_ancestors()
 │   └── get_descendants_filtered()
 │
-└── 其他查询 → 委托 SurrealQueryProvider
+└── 其他查询 → 同一个 SurrealDB 连接
     ├── get_pe() / get_pes_batch()
     ├── get_attmaps_batch()
     └── query_by_type()
 ```
+
+需要跨多个数据源路由时用 `QueryRouter`（`src/query_provider/router.rs`），它同样实现了
+`HierarchyQuery`，方法签名与上面一致。
 
 ### 7.3 泛型查询函数 (SurrealDB)
 
@@ -555,7 +536,7 @@ for refno in refnos {
 ### ✅ 推荐做法
 
 1. **使用 SurrealValue trait** 替代 serde_json::Value
-2. **使用 TreeIndex** 替代 SurrealDB 图遍历进行层级查询
+2. **使用 `collect_*` / `HierarchyQuery` 封装** 替代手写 `pe_owner` 图遍历
 3. **使用 ID Range** 替代 WHERE 条件查询复合 ID 表
 4. **使用 `id[0]`** 直接访问复合 ID，避免 `record::id()`
 5. **批量查询** 优于循环单条查询
@@ -568,7 +549,7 @@ for refno in refnos {
 2. 循环单条查询数据库
 3. 使用 `record::id(id)` 解析复合 ID
 4. 使用 WHERE 条件过滤复合 ID 表
-5. 在 gen_model-dev 中使用 SurrealDB 图遍历（应使用 TreeIndex QueryProvider）
+5. 在业务代码里手写 `pe_owner` 递归（应走 `collect_*` / `HierarchyQuery` 封装）
 
 ---
 

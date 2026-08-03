@@ -1,6 +1,6 @@
 ---
 name: SurrealDB Integration
-description: Guide and best practices for using SurrealDB 3.0 with rs-core/gen-model-fork. Covers database schema, query patterns, TreeIndex, and performance optimization.
+description: Guide and best practices for using SurrealDB 3.0 with rs-core/gen-model-fork. Covers database schema, query patterns, hierarchy traversal, and performance optimization.
 ---
 
 # SurrealDB 3.0 Integration Skills for rs-core/gen-model-fork
@@ -12,7 +12,7 @@ description: Guide and best practices for using SurrealDB 3.0 with rs-core/gen-m
 ## 核心原则
 
 ### 1. 查询优先级
-- **层级查询**：优先使用 TreeIndex（`collect_*` 系列函数），性能提升 10-100 倍
+- **层级查询**：使用 `rs_surreal::graph` 的 `collect_*` 系列封装（走 `pe_owner` 关系表），不要手写递归 SurrealQL
 - **属性关系**：使用 SurrealDB 图遍历（`->GMRE`, `->LSTU->CATR` 等）
 - **批量查询**：使用数据库端函数（`fn::*`）和 `array::map` 模式，避免循环查询
 
@@ -28,7 +28,7 @@ description: Guide and best practices for using SurrealDB 3.0 with rs-core/gen-m
 - 限制递归深度（如 `Some("1..5")`），避免无限递归
 - 使用 `array::distinct()` 去重（SurrealDB 不支持 `SELECT DISTINCT`）
 - 直接访问字段，避免 `record::id()` 函数调用
-- **避免过度防御**：TreeIndex 已保证类型，批量查询时无需再用 noun 过滤（主键查询最快）
+- **避免过度防御**：上游已按 noun 过滤出的 refno 集合，批量取数据时无需再过滤一次（主键查询最快）
 
 ---
 
@@ -204,7 +204,7 @@ pe (元素主表) - 统一存储所有工程元素
 
 ### pe_owner 关系表（层级关系）
 - **关系方向**: `child (in) -[pe_owner]-> parent (out)`
-- **⚠️ 推荐**: 层级查询使用 TreeIndex，性能提升 100 倍
+- **⚠️ 推荐**: 层级查询走 `collect_*` 系列封装，不要在业务代码里手写 `pe_owner` 递归
 
 ### geo_relate 表的 geo_type 字段
 | geo_type | 含义 | 是否导出 |
@@ -220,33 +220,35 @@ pe (元素主表) - 统一存储所有工程元素
 
 ---
 
-## TreeIndex 使用指南
+## 层级查询指南
 
-### 何时使用 TreeIndex
-- ✅ **层级查询**（子节点、子孙节点、祖先节点）
-- ❌ **属性关系**（GMRE、GSTR、LSTU、CATR 等）- 仍需使用 SurrealDB
+> 历史提示：曾经存在一套基于 `indextree` 的 `.tree` 内存索引（TreeIndex / TreeIndexQueryProvider），
+> 已于 2026-07 全部下线并从代码库删除。任何提到 `.tree` 文件、`TreeIndex`、`--gen-indextree`
+> 的旧文档都已失效，层级查询统一走下面的封装。
 
-### 性能对比
-| 场景 | SurrealDB 递归 | TreeIndex | 性能提升 |
-|------|---------------|-----------|----------|
-| 查询 1000 个节点的子孙（10 层） | ~500ms | ~5ms | **100 倍** |
-| 查询单层子节点（100 个） | ~50ms | ~0.5ms | **100 倍** |
-| 查询祖先（5 层） | ~30ms | ~0.3ms | **100 倍** |
-| 批量查询（10 个根节点） | ~5s | ~50ms | **100 倍** |
+### 适用范围
+- ✅ **层级关系**（子节点、子孙节点、祖先节点）→ `pe_owner` 关系表
+- ❌ **属性关系**（GMRE、GSTR、LSTU、CATR 等）→ 用图遍历，不属于层级
 
-### 迁移建议
-| 旧方式（SurrealDB） | 新方式（TreeIndex） | 性能提升 |
-|-------------------|-------------------|----------|
-| `SELECT VALUE in FROM pe:⟨refno⟩<-pe_owner` | `collect_children_filter_ids(refno, &[])` | **100 倍** |
-| `SELECT VALUE array::flatten(@.{..+collect}.children)` | `collect_descendant_filter_ids(&[refno], &[], None)` | **100 倍** |
-| `SELECT VALUE out FROM pe:⟨refno⟩->pe_owner` | `query_filter_ancestors(refno, &[])` | **100 倍** |
+### 不要手写递归，用现成封装
+| 手写 SurrealQL | 应改用的封装 |
+|-------------------|-------------------|
+| `SELECT VALUE in FROM pe:⟨refno⟩<-pe_owner` | `collect_children_filter_ids(refno, &[])` |
+| `SELECT VALUE array::flatten(@.{..+collect}.children)` | `collect_descendant_filter_ids(&[refno], &[], None)` |
+| `SELECT VALUE out FROM pe:⟨refno⟩->pe_owner` | `query_filter_ancestors(refno, &[])` |
+
+这些封装在 `src/rs_surreal/graph.rs`，内部已处理深度限制、noun 过滤和去重。
+
+### 需要在一次生成里反复遍历同一棵树？
+不要自己再造一层常驻内存索引。`plant-model-gen` 侧提供了按 run 生效的 `pe_owner` 内存快照
+（`versioned_db/pe_owner_snapshot.rs`），查询语义与 `TreeQuery` 对齐且会随 run 失效。
 
 ---
 
 ## 快速决策树
 
 ### 我需要查询层级关系？
-- **是** → 使用 TreeIndex（`collect_children_filter_ids`, `collect_descendant_filter_ids`, `query_filter_ancestors`）
+- **是** → 使用 `collect_children_filter_ids` / `collect_descendant_filter_ids` / `query_filter_ancestors`
 
 ### 我需要查询属性关系？
 - **是** → 使用 SurrealDB 图遍历（`query_single_by_paths`）

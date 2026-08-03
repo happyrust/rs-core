@@ -1,4 +1,4 @@
-# 课程索引（1–7）
+# 课程索引（1–68）
 
 对齐 PML 尺寸标注主链 → 校验 V2。
 
@@ -71,7 +71,11 @@
 | 65 | P3 JSON 空壳已建 | `lessons/0065-p3-json-landed.html` |
 | 66 | P3 开码检查单 | `lessons/0066-p3-coding-checklist.html` |
 | 67 | P3 Polar 已落地 | `lessons/0067-p3-polar-landed.html` |
+| 68 | β 进度总览（三截落地·主链未接） | `lessons/0068-beta-progress-overview.html` |
+| 69 | P4 归段 fixture 导读（putIntoIsoLine） | `lessons/0069-p4-put-into-isoline-design.html` |
+| 70 | P4 归段开码检查单 | `lessons/0070-p4-coding-checklist.html` |
+| 71 | P4 归段已落地（putIntoIsoLine 绿） | `lessons/0071-p4-put-into-isoline-landed.html` |
 
 速查见 `reference/`。使命见 `MISSION.md`。
 
-`teach/p1_split`：**12 测**（P1 切段 + wiring + Polar）· `src/mbd/split_isolines.rs`。
+`teach/p1_split`：**14 测**（P1 切段 7 + wiring 2 + Polar 3 + 归段 2）· 仅教学 crate，本工作区 `src/` 下暂无 `mbd` 落点、主链未接。

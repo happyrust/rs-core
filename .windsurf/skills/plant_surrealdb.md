@@ -1,19 +1,21 @@
 ---
-description: 面向 plant/rs-core/aios-core/gen_model-dev 的 SurrealDB/SurrealQL 查询与性能实践技能。用于：编写/优化/排错 SurrealQL（pe、pe_owner、inst_relate、geo_relate、inst_geo、neg_relate、tubi_relate、scene_node/contains 等），在 Rust 侧用 SUL_DB/SurrealQueryExt/SurrealValue 做强类型查询封装，以及在层级查询场景下选择 TreeIndex/SceneTree 以获得数量级加速。
+description: 面向 plant/rs-core/aios-core/gen_model-dev 的 SurrealDB/SurrealQL 查询与性能实践技能。用于：编写/优化/排错 SurrealQL（pe、pe_owner、inst_relate、geo_relate、inst_geo、neg_relate、tubi_relate、scene_node/contains 等），在 Rust 侧用 SUL_DB/SurrealQueryExt/SurrealValue 做强类型查询封装，以及在层级查询场景下选择 pe_owner 封装/SceneTree 以获得数量级加速。
 ---
 
 # Plant SurrealDB（plant 数据模型查询）
 
 ## 用法提要（先选路由）
 
-- 先判定你要查的是什么：层级/状态/几何/管道/属性；再决定用 TreeIndex/SceneTree 还是直接 SurrealQL。
+- 先判定你要查的是什么：层级/状态/几何/管道/属性；再决定用 `collect_*` 封装/SceneTree 还是直接 SurrealQL。
 
+> 基于 `indextree` 的 `.tree` 内存索引（TreeIndex）已于 2026-07 下线并从代码库删除，
+> 旧文档里“优先走 TreeIndex”的建议一律失效。
 
 ## 决策树
 
 - 要"层级"（子节点/子孙/祖先）
-  - 优先：TreeIndex（.tree 内存索引，性能通常高两个数量级）
-  - 备选：SurrealDB 递归/图遍历（仅在 TreeIndex 不覆盖的关系上使用）
+  - 优先：`rs_surreal::graph` 的 `collect_children_filter_ids` / `collect_descendant_filter_ids` / `query_filter_ancestors`
+  - 备选：手写 SurrealDB 递归/图遍历（仅在封装未覆盖的关系上使用）
 - 要"生成状态/叶子未生成"（gen_model 场景）
   - 优先：SceneTree（`scene_node` + `contains`）
 - 要"几何实例链路"（pe -> inst_relate -> inst_info -> geo_relate -> inst_geo）
@@ -74,8 +76,8 @@ ref0 到 dbnum 的映射存储在 `output/<project>/scene_tree/db_meta_info.json
 - **查 pe 基本信息**
   - 按 noun/dbnum 过滤，避免扫全表；deleted/逻辑删除按项目约定带上过滤条件
 - **查层级**
-  - 子节点/子孙/祖先：优先走 TreeIndex API（性能、稳定性更好）
-  - 若必须用 SurrealDB：用 `->pe_owner`/`<-pe_owner` 或递归路径（见 references）
+  - 子节点/子孙/祖先：优先走 `collect_*` / `query_filter_ancestors` 封装（已处理深度、noun 过滤、去重）
+  - 若必须手写：用 `->pe_owner`/`<-pe_owner` 或递归路径（见 references）
 - **查几何实例链路**
   - 先批量收集 refnos，再 `WHERE ir.in IN $refnos`（减少往返与重复查询）
   - 导出几何时注意 `geo_type`/`visible` 等过滤条件（见 references）
@@ -84,13 +86,13 @@ ref0 到 dbnum 的映射存储在 `output/<project>/scene_tree/db_meta_info.json
 
 ## 排错与性能检查清单
 
-- 查询慢：先检查是否误用递归/全表扫描；层级优先 TreeIndex/SceneTree；tubi_relate 必须 ID Range
+- 查询慢：先检查是否误用递归/全表扫描；层级优先 `collect_*` 封装/SceneTree；tubi_relate 必须 ID Range
 - 结果空：先确认 record id 形制与 refno 编码；再核对 deleted/visible/geo_type 等过滤条件
 - 类型反序列化失败：检查结构体字段类型与 `serde(alias="id")` 等映射；确保 derive 了 `SurrealValue`
 
 ## 参考资料（按需加载）
 
-- `references/数据库查询总结.md`：总览（架构、语法、Record ID、图遍历、递归、RELATE、TreeIndex、批量优化、Rust API）
+- `references/数据库查询总结.md`：总览（架构、语法、Record ID、图遍历、递归、RELATE、层级查询、批量优化、Rust API）
 - `references/数据库架构.md`：表结构详解（pe/inst_* / geo_relate / tubi_relate 等）
 - `references/常用查询方法.md`：Rust 侧查询封装与常用函数入口
 - `references/SurrealDB函数参考.md`：`fn::*` 自定义函数一览与用法

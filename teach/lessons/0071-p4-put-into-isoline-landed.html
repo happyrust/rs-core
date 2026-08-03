@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>第 71 课 · P4 归段已落地</title>
+  <link rel="stylesheet" href="../assets/lesson.css" />
+  <style>
+    .viz {
+      margin: 1.1rem 0 1.3rem;
+      padding: 0.85rem 0.95rem 0.7rem;
+      background: #fff;
+      border: 1px solid var(--rule);
+    }
+    .viz h3 { margin: 0 0 0.5rem; font-size: 0.95rem; }
+    .viz svg { width: 100%; height: auto; display: block; }
+    .viz figcaption { margin-top: 0.5rem; font-size: 0.8rem; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Lesson 0071 · P4 首胜</p>
+    <h1><code>put_into_isoline_pml</code> 两案全绿</h1>
+    <p class="lede">
+      模块：<code>teach/p1_split/src/put_into_isoline.rs</code>。
+      消费第 69 课导读的 <code>p4-put-into-isoline.json</code> 两案。
+      全 crate 现 <strong>14/14</strong> 测试通过(P1 切段 7 + wiring 2 + Polar 3 + <strong>归段 2</strong>)。
+    </p>
+
+    <div class="callout">
+      <pre>cargo test --manifest-path teach/p1_split/Cargo.toml</pre>
+      勿对整库默认 <code>cargo test</code>(AGENTS)。
+    </div>
+
+    <figure class="viz">
+      <h3>图 · β 四截离线全绿，主链仍未接</h3>
+      <svg viewBox="0 0 720 130" xmlns="http://www.w3.org/2000/svg" role="img">
+        <rect x="20" y="35" width="150" height="46" fill="#e5f3ec" stroke="#1f6b4a"/>
+        <text x="95" y="63" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#1f6b4a">P1 切段 ✓ 7</text>
+        <rect x="185" y="35" width="150" height="46" fill="#d4eef1" stroke="#007a8a"/>
+        <text x="260" y="63" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#007a8a">P4 归段 ✓ 2</text>
+        <rect x="350" y="35" width="150" height="46" fill="#f8ebe6" stroke="#a33b16"/>
+        <text x="425" y="63" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#a33b16">P3 Polar ✓ 3</text>
+        <rect x="515" y="35" width="185" height="46" fill="#fff" stroke="#9aafbc" stroke-dasharray="4 4"/>
+        <text x="607" y="57" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#4a5d6e">aios_core 主链</text>
+        <text x="607" y="73" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#a33b16">✕ 未接</text>
+      </svg>
+      <figcaption>四截各自绿(含 P2 wiring 草稿 2)；仍是离线教学件,无真实 extract 调用。</figcaption>
+    </figure>
+
+    <h2>落地要点</h2>
+    <ul>
+      <li>输入 = P1 切好的段(含 <code>mems</code>)+ 待归对象；输出 = 每对象 <code>goodx</code> 或 skip,不改段数</li>
+      <li>路径分流:无名 / 弯头 leg → 投影;有名 → <code>mems</code> 名匹配;ATTA 焊缝字 → 投影收集</li>
+      <li><code>samedirs</code>(<code>adir∠ldir≥179°</code> 或 HEAD/TAIL)→ 首命中 break;否则收集多段进决胜</li>
+      <li>决胜:<code>ISOWELDTEXT</code> 看到线段距离,其它看 <code>pipedir</code> 更接近水平</li>
+      <li><code>ISOWELDTEXT</code> <code>movedis</code>:<code>movedir∠showdir&gt;90°</code> 先取反,再偏移(断言 <code>final_pos</code>)</li>
+      <li>写入:<code>ISOSLOPE</code>/<code>ISOADJUSTWELD</code>/<code>ISOMBDANGLE</code> → <code>insert(1)</code> 袋首;其余 append —— 测试比<strong>袋内顺序</strong>不只比集合</li>
+      <li>无候选 → skip 并记「Cant find good isoline」原因,不硬塞(对齐 suppress)</li>
+    </ul>
+
+    <div class="callout">
+      P4 与 P1/P2/P3 一样<strong>未接主链</strong>。至此病例 2 的根源层(归段决胜)已有可回归的教学实现;
+      要变成真实出图,仍缺把 P1→P4→P3 挂上真实 extract 路径(需 V2 就位)。
+    </div>
+
+    <nav class="footer-nav">
+      <p>
+        <a href="0070-p4-coding-checklist.html">← 第 70 课</a>
+        · <a href="../p1_split/src/put_into_isoline.rs">源码</a>
+        · <a href="../fixtures/p4-put-into-isoline.json">fixture</a>
+        · <a href="0068-beta-progress-overview.html">课 68 总览</a>
+        · <a href="../INDEX.md">目录</a>
+      </p>
+    </nav>
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

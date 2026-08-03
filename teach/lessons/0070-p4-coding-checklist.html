@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>第 70 课 · P4 归段开码检查单</title>
+  <link rel="stylesheet" href="../assets/lesson.css" />
+  <style>
+    .chk { list-style: none; padding: 0; }
+    .chk li {
+      margin: 0.4rem 0;
+      padding: 0.5rem 0.7rem;
+      border: 1px solid var(--rule);
+      background: #fff;
+      font-size: 0.88rem;
+    }
+    .chk code { font-size: 0.82rem; }
+    .viz {
+      margin: 1.1rem 0 1.3rem;
+      padding: 0.85rem 0.95rem 0.7rem;
+      background: #fff;
+      border: 1px solid var(--rule);
+    }
+    .viz h3 { margin: 0 0 0.5rem; font-size: 0.95rem; }
+    .viz svg { width: 100%; height: auto; display: block; }
+    .viz figcaption { margin-top: 0.5rem; font-size: 0.8rem; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Lesson 0070 · P4 动手前</p>
+    <h1>实现 <code>put_into_isoline_pml</code> 前的检查单</h1>
+    <p class="lede">
+      对照 <a href="../fixtures/p4-put-into-isoline.json"><code>p4-put-into-isoline.json</code></a>(第 69 课已导读)。
+      仍写在教学 crate <code>teach/p1_split</code>,新增一个 <code>put_into_isoline</code> 模块即可,<strong>不必碰主链</strong>——
+      和 P1/P3 一样,先离线绿,再谈接线。
+    </p>
+
+    <div class="callout">
+      跑测(快):
+      <pre>cargo test --manifest-path teach/p1_split/Cargo.toml</pre>
+      勿对整库默认 <code>cargo test</code>(AGENTS)。
+    </div>
+
+    <figure class="viz">
+      <h3>图 · P4 只吃「段 + 对象」，吐 goodx</h3>
+      <svg viewBox="0 0 720 180" xmlns="http://www.w3.org/2000/svg" role="img">
+        <rect x="20" y="45" width="210" height="100" fill="#e5f3ec" stroke="#1f6b4a"/>
+        <text x="125" y="80" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="13" fill="#1f6b4a">输入</text>
+        <text x="125" y="105" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#0b1f33">isolines(含 mems)</text>
+        <text x="125" y="126" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#0b1f33">objects[]</text>
+
+        <path d="M230 95 L268 95" stroke="#0b1f33" stroke-width="2"/>
+        <path d="M264 91 L272 95 L264 99 Z" fill="#0b1f33"/>
+
+        <rect x="272" y="45" width="180" height="100" fill="#d4eef1" stroke="#007a8a"/>
+        <text x="362" y="80" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="13" fill="#007a8a">P4 归段</text>
+        <text x="362" y="105" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#0b1f33">路径 A/B + 决胜</text>
+        <text x="362" y="126" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#0b1f33">写入次序</text>
+
+        <path d="M452 95 L490 95" stroke="#0b1f33" stroke-width="2"/>
+        <path d="M486 91 L494 95 L486 99 Z" fill="#0b1f33"/>
+
+        <rect x="494" y="45" width="206" height="100" fill="#fff" stroke="#9aafbc"/>
+        <text x="597" y="80" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="13" fill="#4a5d6e">输出</text>
+        <text x="597" y="105" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#0b1f33">每对象 goodx</text>
+        <text x="597" y="126" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#4a5d6e">无候选 → skip</text>
+      </svg>
+      <figcaption>不新开/合并段,不画尺寸,不做 Polar 选位——只决定「对象落哪袋、袋内排第几」。</figcaption>
+    </figure>
+
+    <h2>检查单</h2>
+    <ul class="chk">
+      <li>□ 1. lib.rs 加 <code>pub mod put_into_isoline;</code>,仿 <code>polar_neighbors.rs</code> 建 loader 读 <code>../fixtures/p4-put-into-isoline.json</code></li>
+      <li>□ 2. 定 <code>put_into_isoline_pml(isolines, objects) -&gt; Vec&lt;Placement&gt;</code>,<code>Placement{ obj_id, goodx: Option&lt;usize&gt;, write: Append|InsertFront }</code></li>
+      <li>□ 3. <strong>路径分流</strong>:<code>name</code> 空 或 (<code>ISOLEG</code> 且有 <code>elboname</code>) → 路径 A 投影;否则路径 B 名匹配</li>
+      <li>□ 4. <strong>路径 A</strong>:点投影到段 <code>p0..p1</code>,越界不算候选;弯头 leg 另判 <code>ori_zdir∠pipedir</code> 折叠 &lt;1° 且 attapos 可投影,按到 attapos 距离取近</li>
+      <li>□ 5. <strong>路径 B</strong>:各段 <code>mems.findfirst(name)</code>;<code>adir∠ldir≥179°</code> → samedirs 首命中 break,否则收集多段;HEAD/TAIL 免查(保持 true)</li>
+      <li>□ 6. <strong>ATTA 焊缝字</strong>(<code>ISOWELDTEXT</code> 且 name_is_atta) → 改走投影收集全部命中段,此分支不看 samedirs</li>
+      <li>□ 7. <strong>多候选决胜</strong>:<code>ISOWELDTEXT</code> → 到线段距离最小;其它 → <code>oneangle=fold(|pipedir∠U−90|)</code> 最小(更水平)</li>
+      <li>□ 8. <strong>ISOWELDTEXT movedis</strong>:≠0 时,<code>movedir∠goodx.showdir&gt;90°</code> 先取反,再 <code>pos.offset(movedir, movedis)</code>,断言 <code>final_pos</code></li>
+      <li>□ 9. <strong>写入次序</strong>:<code>ISOSLOPE</code>/<code>ISOADJUSTWELD</code>/<code>ISOMBDANGLE</code> → <code>insert(1)</code>(袋首);其余 → append</li>
+      <li>□ 10. <strong>无候选</strong> → skip 并记 reason(含「Cant find good isoline」),不硬塞(对齐 suppress)</li>
+      <li>□ 11. 单测先绿 <code>bridge-legs-and-material</code>(比 <code>expect_bags</code> 逐袋含序),再绿 <code>weldtext-distance-and-slope-order</code></li>
+      <li>□ 12. 断言<strong>袋内顺序</strong>(insert_front 在前),不只比集合;<code>final_pos</code> 用容差比较</li>
+      <li>□ 13. 不改 isoline 条数,不动 P1/P3 已绿测(总数应从 12 → 14)</li>
+    </ul>
+
+    <h2>易踩点(第 69 课的坑)</h2>
+    <ul>
+      <li>材料 <code>MAT-EA</code> 双候选默认<strong>不是</strong>最近段,是「更水平」的段0;距离规则只属焊缝字。</li>
+      <li><code>DIM-UNNAMED</code> 走路径 A,收集时就取唯一最近段,<strong>不进</strong>决胜块。</li>
+      <li>p4 的 <code>member_adir/ldir</code> 用 PDMS 外向约定(直通件 adir≈−ldir),与 p1 fixture 的「流向」约定不同,别混。</li>
+    </ul>
+
+    <div class="callout">
+      下一课:P4 落地说明。说「开始实现 P4」即按本单动码。
+    </div>
+
+    <section class="quiz">
+      <h3>门禁小测</h3>
+      <div class="q">
+        <p><strong>Q1.</strong> P4 实现应写在哪、动主链吗?</p>
+        <button type="button" data-correct="1"
+          data-ok="对:仿 P1/P3,写教学 crate 新模块,离线绿即可。">teach/p1_split 新模块,不动主链</button>
+        <button type="button" data-correct="0"
+          data-bad="本工作区 src/ 无 mbd 落点,且不该现在接。">直接改真实 extract 主链</button>
+        <button type="button" data-correct="0"
+          data-bad="Polar 是 P3,已绿。">改 polar_neighbors.rs</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q2.</strong> 单测除了「对象归对段」还必须断言什么?</p>
+        <button type="button" data-correct="1"
+          data-ok="对:insert(1) 会改袋内顺序,必须比顺序 + final_pos。">袋内顺序 + 焊缝字 final_pos</button>
+        <button type="button" data-correct="0"
+          data-bad="P4 不改段数。">isoline 条数是否 +1</button>
+        <button type="button" data-correct="0"
+          data-bad="那是 P3 的柱。">障碍柱 diameter_scale</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q3.</strong> 两案全绿后,crate 测试总数应为?</p>
+        <button type="button" data-correct="1"
+          data-ok="对:原 12 + P4 两案 = 14。">14</button>
+        <button type="button" data-correct="0"
+          data-bad="没删旧测。">2</button>
+        <button type="button" data-correct="0"
+          data-bad="只加了 2 个。">24</button>
+        <p class="feedback"></p>
+      </div>
+    </section>
+
+    <nav class="footer-nav">
+      <p>
+        <a href="0069-p4-put-into-isoline-design.html">← 第 69 课</a>
+        · <a href="../fixtures/p4-put-into-isoline.json">P4 fixture</a>
+        · <a href="0048-multi-candidate-tiebreak.html">课 48 决胜</a>
+        · <a href="../reference/put-into-isoline-cheatsheet.html">归段速查</a>
+        · <a href="../INDEX.md">目录</a>
+      </p>
+    </nav>
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

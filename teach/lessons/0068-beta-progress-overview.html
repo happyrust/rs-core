@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>第 68 课 · β 进度总览</title>
+  <link rel="stylesheet" href="../assets/lesson.css" />
+  <style>
+    .viz {
+      margin: 1.1rem 0 1.3rem;
+      padding: 0.85rem 0.95rem 0.7rem;
+      background: #fff;
+      border: 1px solid var(--rule);
+    }
+    .viz h3 { margin: 0 0 0.5rem; font-size: 0.95rem; }
+    .viz svg { width: 100%; height: auto; display: block; }
+    .viz figcaption { margin-top: 0.5rem; font-size: 0.8rem; color: var(--muted); }
+    table.scope { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin: 0.5rem 0 1rem; }
+    table.scope th, table.scope td { border: 1px solid #9aafbc; padding: 0.4rem 0.5rem; text-align: left; vertical-align: top; }
+    table.scope th { background: #d4eef1; }
+    table.scope td.no { color: var(--warn); font-weight: 600; }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Lesson 0068 · β 阶段盘点</p>
+    <h1>β 三截落地 · 主链未接</h1>
+    <p class="lede">
+      不学新算法——盘点方案 β 走到哪了。
+      P1 切段 / P2 接线草稿 / P3 Polar 三截都在教学 crate
+      <code>teach/p1_split</code> 落地（<strong>12/12</strong> 绿），
+      但都还没接进 <code>aios_core</code> 真实抽取主链。
+    </p>
+
+    <div class="callout">
+      一条命令验全部三截：
+      <pre>cargo test --manifest-path teach/p1_split/Cargo.toml</pre>
+      勿对整库默认 <code>cargo test</code>（AGENTS）。
+    </div>
+
+    <figure class="viz">
+      <h3>图 · 三截已落地，主链是断的</h3>
+      <svg viewBox="0 0 740 345" xmlns="http://www.w3.org/2000/svg" role="img">
+        <rect x="20" y="24" width="700" height="176" fill="#f7f9fb" stroke="#1f6b4a" stroke-width="1.5"/>
+        <text x="34" y="47" font-family="IBM Plex Mono, monospace" font-size="12" fill="#1f6b4a">teach/p1_split · 离线教学 crate · 12/12 绿</text>
+
+        <rect x="40" y="62" width="205" height="122" fill="#e5f3ec" stroke="#1f6b4a"/>
+        <text x="142" y="88" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="15" fill="#1f6b4a">P1 · 切段</text>
+        <text x="142" y="112" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#0b1f33">split_isolines_pml</text>
+        <text x="142" y="134" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="12" fill="#1f6b4a">7 测 · ✓ 落地</text>
+        <text x="142" y="156" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#4a5d6e">append→180→split→ldirs</text>
+
+        <rect x="267" y="62" width="205" height="122" fill="#d4eef1" stroke="#007a8a" stroke-dasharray="5 3"/>
+        <text x="369" y="88" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="15" fill="#007a8a">P2 · 接线草稿</text>
+        <text x="369" y="112" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#0b1f33">wiring_sketch</text>
+        <text x="369" y="134" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="12" fill="#007a8a">2 测 · ✓ 草稿</text>
+        <text x="369" y="156" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#4a5d6e">use_pml_split 门面</text>
+
+        <rect x="494" y="62" width="205" height="122" fill="#f8ebe6" stroke="#a33b16"/>
+        <text x="596" y="88" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="15" fill="#a33b16">P3 · 占位</text>
+        <text x="596" y="112" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#0b1f33">apply_polar_neighbors</text>
+        <text x="596" y="134" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="12" fill="#a33b16">3 测 · ✓ 落地</text>
+        <text x="596" y="156" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#4a5d6e">邻段/隔段互加</text>
+
+        <path d="M370 200 L370 224" stroke="#a33b16" stroke-width="2" stroke-dasharray="4 4"/>
+        <path d="M370 250 L370 272" stroke="#a33b16" stroke-width="2" stroke-dasharray="4 4"/>
+        <path d="M366 268 L370 276 L374 268 Z" fill="#a33b16"/>
+        <text x="384" y="240" font-family="IBM Plex Sans, sans-serif" font-size="13" fill="#a33b16">✕ 未接</text>
+
+        <rect x="150" y="278" width="440" height="52" fill="#fff" stroke="#9aafbc" stroke-dasharray="4 4"/>
+        <text x="370" y="302" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="13" fill="#0b1f33">aios_core 主链 · extract_isolines / BranchCalculator</text>
+        <text x="370" y="320" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#4a5d6e">尚无调用 · 真实 src 里没有 use_pml_split</text>
+      </svg>
+      <figcaption>三截各自绿、可编译；但没有任何真实抽取路径调用它们——出图还是老路。</figcaption>
+    </figure>
+
+    <h2>已落地范围</h2>
+    <table class="scope">
+      <tr>
+        <th>阶段</th><th>模块</th><th>已落地范围</th><th>测</th><th>接主链</th>
+      </tr>
+      <tr>
+        <td>P1 切段</td>
+        <td><code>p1_split/src/lib.rs</code><br/>（仅教学 crate；本工作区 <code>src/</code> 下无 <code>mbd</code> 落点）</td>
+        <td>先 append 再判切、近 180° 校正、主切（角 &gt;10° 或 apos/lpos 分离）、stick 贴拐点、force-split &gt;100°、每袋 <code>ldirs</code></td>
+        <td>7</td>
+        <td class="no">否</td>
+      </tr>
+      <tr>
+        <td>P2 接线</td>
+        <td><code>wiring_sketch.rs</code></td>
+        <td><code>use_pml_split</code> 门面、<code>try_pml_split</code>、<code>bags_to_isolines</code>、flag off/on 两测；仅可编译草稿</td>
+        <td>2</td>
+        <td class="no">否（草稿）</td>
+      </tr>
+      <tr>
+        <td>P3 占位</td>
+        <td><code>polar_neighbors.rs</code></td>
+        <td>邻段互加 scale=1、隔段近 U 转 scale=1.5、不改 isoline 条数</td>
+        <td>3</td>
+        <td class="no">否</td>
+      </tr>
+    </table>
+
+    <h2>「主链未接」是什么意思</h2>
+    <p>
+      P1 的 <code>split_isolines_pml</code> 只活在教学 crate <code>teach/p1_split</code> 里、被它自己的单测调用；
+      本工作区 <code>src/</code> 下<strong>没有</strong> <code>mbd/split_isolines.rs</code> 这个落点，
+      也没有任何 <code>BranchCalculator</code> / <code>Layout</code> / <code>extract</code> 路径调它。
+      P2 的 <code>use_pml_split</code> flag 也只活在 <code>wiring_sketch</code> 草稿里，真实 <code>src</code> 找不到。
+      P3 是独立模块，还没串进 <em>P1→归段→Polar</em> 那条线。
+    </p>
+    <div class="callout">
+      结论：三截是「离线可编译 + 自测绿」，<strong>尚未影响真实出图</strong>。
+      要变成产出，缺的是把它挂上真实抽取路径。
+    </div>
+
+    <h2>下一步建议</h2>
+    <ol>
+      <li><strong>接主链（需 V2 extract 路径就位）</strong>：在真实 <code>extract_isolines</code> 后挂 flag →
+        <code>try_pml_split</code> → 失败落回 legacy。契约已在 <code>wiring_sketch</code> 定型，照搬即可。</li>
+      <li><strong>补归段这一环</strong>：<code>putIntoIsoLine</code> 归段是 P1 与 P3 之间缺的桥（病例 2 根源）；
+        P3 目前独立、未接到归段结果之后。</li>
+      <li><strong>或继续教程</strong>：补 <code>putIntoIsoLine</code> fixture / 归段决胜练习，把中间段先讲透再动码。</li>
+    </ol>
+
+    <section class="quiz">
+      <h3>盘点小测</h3>
+      <div class="q">
+        <p><strong>Q1.</strong> 现在 β 三截的真实状态是？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：teach crate 里 12/12 绿，但主链没调用。">教学 crate 自测全绿，主链未接</button>
+        <button type="button" data-correct="0"
+          data-bad="不是：真实 extract 还没调它。">已接入并改变了真实出图</button>
+        <button type="button" data-correct="0"
+          data-bad="P1/P3 已落地，不是没写。">三截都还没写</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q2.</strong> P2 <code>wiring_sketch</code> 的定位？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：定型接线契约的可编译草稿，flag 未接真实 src。">use_pml_split 门面草稿，尚未接主链</button>
+        <button type="button" data-correct="0"
+          data-bad="不是：它不切段，只做门面。">切段主算法</button>
+        <button type="button" data-correct="0"
+          data-bad="Polar 是 P3 的活。">Polar 占位实现</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q3.</strong> P1 与 P3 之间还缺哪一环？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：putIntoIsoLine 归段还没串进去（病例 2 根源）。">putIntoIsoLine 归段</button>
+        <button type="button" data-correct="0"
+          data-bad="ldirs 已随 P1 落地。">ldirs 方向</button>
+        <button type="button" data-correct="0"
+          data-bad="那是旁支，不在主线。">支架材料标注</button>
+        <p class="feedback"></p>
+      </div>
+    </section>
+
+    <div class="ask-teacher">
+      推荐下一步：等 V2 extract 路径就位后，按建议 ① 把 <code>use_pml_split</code> 挂上主链；
+      否则先按建议 ②/③ 补归段。
+    </div>
+
+    <nav class="footer-nav">
+      <p>
+        <a href="0067-p3-polar-landed.html">← 第 67 课</a>
+        · <a href="../p1_split/src/wiring_sketch.rs">P2 草稿</a>
+        · <a href="../p1_split/src/polar_neighbors.rs">P3 源码</a>
+        · <a href="../INDEX.md">目录</a>
+        · <a href="../MISSION.md">使命</a>
+      </p>
+    </nav>
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>

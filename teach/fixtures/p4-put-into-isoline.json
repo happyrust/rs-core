@@ -1,0 +1,391 @@
+{
+  "$schema_comment": "P4 fixture draft for put_into_isoline_pml — teaching only, not wired to cargo test yet. Source: isobran.pmlobj .putIntoIsoLine() (~1144–1353). Input bags reuse P1 toy-bridge-and-stick allarr; lessons 3 / 47 / 48.",
+  "version": 1,
+  "field_docs": {
+    "isolines[].mems": "P1 allarr 的 refno 序列（桥接弯头两袋都含，如 EA）",
+    "isolines[].p0_p1": "直段线段端点（mm）。onprojected = 投影点落在 p0..p1 内；distance = 点到线距离（用例数值已选成『无界线/线段』两种解释同胜负）",
+    "isolines[].pipedir": "直段方向（决胜『更水平』用）",
+    "isolines[].showdir": "polarsystem.showdir，仅 ISOWELDTEXT movedis 翻转判定用",
+    "objects[].name": "null → 路径 A 投影归段；有名 → 路径 B mems 名匹配",
+    "objects[].name_is_atta": "true 且 ISOWELDTEXT → 改走投影收集全部命中段（elbopad/leg 焊缝字）",
+    "objects[].elboname": "仅 ISOLEG：非空走弯头 leg 分支（ori_zdir∠pipedir 折叠 <1° 且 attapos 可投影，按到 attapos 距离取近）",
+    "objects[].member_adir_ldir": "路径 B samedirs 用，PDMS 外向约定：直通件 adir≈-ldir（夹角≥179 → samedirs=true → 首命中 break）；弯头 90° → false → 收集多段。注意与 p1-split-isolines.json 的『流向』约定不同。HEAD/TAIL 免查（保持 true）",
+    "objects[].movedir_movedis": "仅 ISOWELDTEXT：movedis≠0 时，movedir∠goodx.showdir>90° 先取反，再 pos.offset(movedir, movedis)",
+    "expect.write": "append | insert_front（ISOSLOPE/ISOADJUSTWELD/ISOMBDANGLE → insert(1)）",
+    "expect_bags": "各 isoline 最终 objects 的 id 序列（按处理后顺序，insert_front 在前）",
+    "iteration_order": "objects 数组顺序即 PML this.objects 遍历顺序"
+  },
+  "thresholds_pml": {
+    "leg_parallel_max_deg": 1.0,
+    "samedirs_adir_ldir_min_deg": 179.0,
+    "weldtext_flip_showdir_deg": 90.0,
+    "u_dir": [0, 0, 1]
+  },
+  "write_rules": {
+    "insert_front_types": ["ISOSLOPE", "ISOADJUSTWELD", "ISOMBDANGLE"],
+    "append_types": "其余类型（含 ISOMATERIAL、ISOWELDTEXT、ISOLEG、无名对象）",
+    "no_candidate": "打印原因后 skip，不硬塞（对齐 suppress 精神）",
+    "path_a_note": "路径 A（无名 / leg）在收集时就按距离取唯一最近段；多候选决胜只发生在路径 B 与 ATTA 焊缝字投影收集"
+  },
+  "tiebreak_rules": {
+    "ISOWELDTEXT": "line.distance(pos) 最小者胜",
+    "others": "oneangle = fold(|pipedir∠U − 90|) 最小者胜（更水平的段）"
+  },
+  "cases": [
+    {
+      "id": "bridge-legs-and-material",
+      "title": "课47/48：EA 桥接双候选——两条 leg 各归一段，材料选更水平段，无候选 skip",
+      "isolines": [
+        {
+          "index": 0,
+          "mems": ["HEAD", "T1", "W1", "EA"],
+          "p0": [0, 0, 0],
+          "p1": [1000, 0, 0],
+          "pipedir": [1, 0, 0],
+          "showdir": [0, 0, 1]
+        },
+        {
+          "index": 1,
+          "mems": ["EA", "T2", "EB", "T3", "TAIL"],
+          "p0": [1100, 0, 100],
+          "p1": [1100, 0, 1500],
+          "pipedir": [0, 0, 1],
+          "showdir": [1, 0, 0]
+        }
+      ],
+      "objects": [
+        {
+          "id": "LEG-EA-IN",
+          "objecttype": "ISOLEG",
+          "name": "LEGA",
+          "elboname": "EA",
+          "ori_zdir": [1, 0, 0],
+          "attapos": [950, 0, 0],
+          "pos": [950, 0, 40],
+          "expect": { "isoline": 0, "write": "append" },
+          "notes": "zdir∠pipedir0=0<1 且 attapos 投影在段0；对段1 折叠 90 → 拒。病例2的入侧 leg"
+        },
+        {
+          "id": "LEG-EA-OUT",
+          "objecttype": "ISOLEG",
+          "name": "LEGB",
+          "elboname": "EA",
+          "ori_zdir": [0, 0, 1],
+          "attapos": [1100, 0, 300],
+          "pos": [1140, 0, 300],
+          "expect": { "isoline": 1, "write": "append" },
+          "notes": "出侧 leg：仅段1 近平行且可投影"
+        },
+        {
+          "id": "DIM-UNNAMED",
+          "objecttype": "ISOCUTPIPE",
+          "name": null,
+          "pos": [900, 0, 120],
+          "expect": { "isoline": 0, "write": "append" },
+          "notes": "无名走路径 A：段0 距离 120 < 段1 距离 200，收集时即取最近，不进决胜块"
+        },
+        {
+          "id": "MAT-EA",
+          "objecttype": "ISOMATERIAL",
+          "name": "EA",
+          "member_adir": [-1, 0, 0],
+          "member_ldir": [0, 0, 1],
+          "pos": [1050, 0, 50],
+          "expect": { "isoline": 0, "write": "append" },
+          "notes": "adir∠ldir=90<179 → samedirs=false 不 break → 双候选；非焊缝字决胜：段0 oneangle=0（水平）胜段1 的 90"
+        },
+        {
+          "id": "LOST-UNNAMED",
+          "objecttype": "ISOCUTPIPE",
+          "name": null,
+          "pos": [-200, 0, 50],
+          "expect": { "skip": true, "reason_contains": "Cant find good isoline" },
+          "notes": "两段都投影不上（t 越界）→ 打印后 skip，不得硬塞"
+        }
+      ],
+      "expect_bags": {
+        "0": ["LEG-EA-IN", "DIM-UNNAMED", "MAT-EA"],
+        "1": ["LEG-EA-OUT"]
+      }
+    },
+    {
+      "id": "weldtext-distance-and-slope-order",
+      "title": "课48：焊缝字按距离决胜（含 movedis 翻转）、ISOSLOPE insert(1) 占位、HEAD 免查 samedirs",
+      "isolines": [
+        {
+          "index": 0,
+          "mems": ["HEAD", "T1", "W1", "EA"],
+          "p0": [0, 0, 0],
+          "p1": [1000, 0, 0],
+          "pipedir": [1, 0, 0],
+          "showdir": [0, 0, 1]
+        },
+        {
+          "index": 1,
+          "mems": ["EA", "T2", "EB", "T3", "TAIL"],
+          "p0": [1100, 0, 100],
+          "p1": [1100, 0, 1500],
+          "pipedir": [0, 0, 1],
+          "showdir": [1, 0, 0]
+        }
+      ],
+      "objects": [
+        {
+          "id": "WTX-EA",
+          "objecttype": "ISOWELDTEXT",
+          "name": "EA",
+          "name_is_atta": false,
+          "member_adir": [-1, 0, 0],
+          "member_ldir": [0, 0, 1],
+          "pos": [1080, 0, 400],
+          "movedir": [-1, 0, 0],
+          "movedis": 30,
+          "expect": {
+            "isoline": 1,
+            "write": "append",
+            "final_pos": [1110, 0, 400]
+          },
+          "notes": "双候选（EA 桥接）；焊缝字决胜按距离：段1=20 < 段0=400。movedir∠showdir1=180>90 → 取反成 +X 再偏 30"
+        },
+        {
+          "id": "SLOPE-T2",
+          "objecttype": "ISOSLOPE",
+          "name": "T2",
+          "member_adir": [0, 0, -1],
+          "member_ldir": [0, 0, 1],
+          "pos": [1100, 0, 800],
+          "expect": { "isoline": 1, "write": "insert_front" },
+          "notes": "直通件 adir∠ldir=180≥179 → samedirs=true 首命中 break；ISOSLOPE insert(1) → 袋内排最前"
+        },
+        {
+          "id": "WTX-ATTA-PAD",
+          "objecttype": "ISOWELDTEXT",
+          "name": "PAD1",
+          "name_is_atta": true,
+          "member_adir": null,
+          "member_ldir": null,
+          "pos": [980, 0, 130],
+          "movedis": 0,
+          "expect": { "isoline": 1, "write": "append" },
+          "notes": "ATTA 焊缝字：改走投影收集全部命中段（0 与 1 都投影上），再按距离决胜：段1=120 < 段0=130；该分支不看 samedirs"
+        },
+        {
+          "id": "MAT-HEAD",
+          "objecttype": "ISOMATERIAL",
+          "name": "HEAD",
+          "pos": [50, 0, 30],
+          "expect": { "isoline": 0, "write": "append" },
+          "notes": "HEAD/TAIL 免查 adir → samedirs 保持 true → 首命中 break，单候选直取"
+        }
+      ],
+      "expect_bags": {
+        "0": ["MAT-HEAD"],
+        "1": ["SLOPE-T2", "WTX-EA", "WTX-ATTA-PAD"]
+      }
+    },
+    {
+      "id": "edge-skips-and-insert-order",
+      "title": "课70/71 补：insert(1) 三型叠序 + 四类 skip + samedirs 空方向臂 + movedis 不翻转",
+      "isolines": [
+        {
+          "index": 0,
+          "mems": ["HEAD", "T1", "W1", "EA"],
+          "p0": [0, 0, 0],
+          "p1": [1000, 0, 0],
+          "pipedir": [1, 0, 0],
+          "showdir": [0, 0, 1]
+        },
+        {
+          "index": 1,
+          "mems": ["EA", "T2", "EB", "T3", "TAIL"],
+          "p0": [1100, 0, 100],
+          "p1": [1100, 0, 1500],
+          "pipedir": [0, 0, 1],
+          "showdir": [1, 0, 0]
+        }
+      ],
+      "objects": [
+        {
+          "id": "MAT-T1",
+          "objecttype": "ISOMATERIAL",
+          "name": "T1",
+          "member_adir": [-1, 0, 0],
+          "member_ldir": [1, 0, 0],
+          "pos": [400, 0, 40],
+          "expect": { "isoline": 0, "write": "append" },
+          "notes": "直通件 adir∠ldir=180≥179 → samedirs=true 首命中 break；append 打底，验证后续 insert(1) 会插到它前面"
+        },
+        {
+          "id": "ADJ-W1",
+          "objecttype": "ISOADJUSTWELD",
+          "name": "W1",
+          "member_adir": [-1, 0, 0],
+          "member_ldir": [1, 0, 0],
+          "pos": [1000, 0, 40],
+          "expect": { "isoline": 0, "write": "insert_front" },
+          "notes": "ISOADJUSTWELD ∈ insert(1) 型：插到袋首"
+        },
+        {
+          "id": "MBD-T1",
+          "objecttype": "ISOMBDANGLE",
+          "name": "T1",
+          "member_adir": [-1, 0, 0],
+          "member_ldir": [1, 0, 0],
+          "pos": [420, 0, 40],
+          "expect": { "isoline": 0, "write": "insert_front" },
+          "notes": "ISOMBDANGLE ∈ insert(1) 型：再插到袋首 → 多个 insert(1) 呈逆序叠放（MBD 在 ADJ 之前）"
+        },
+        {
+          "id": "LEG-NOATTA",
+          "objecttype": "ISOLEG",
+          "name": "LEGX",
+          "elboname": "EA",
+          "ori_zdir": [1, 0, 0],
+          "attapos": null,
+          "pos": [950, 0, 40],
+          "expect": { "skip": true, "reason_contains": "Cant find good isoline" },
+          "notes": "leg 分支缺 attapos → 无从投影 → skip，不硬塞"
+        },
+        {
+          "id": "LEG-SKID",
+          "objecttype": "ISOLEG",
+          "name": "LEGY",
+          "elboname": "EA",
+          "ori_zdir": [0, 1, 0],
+          "attapos": [500, 0, 0],
+          "pos": [500, 0, 40],
+          "expect": { "skip": true, "reason_contains": "Cant find good isoline" },
+          "notes": "attapos 能投影到段0，但 zdir=Y 对两段折叠角都=90≥1 → 平行度筛掉全部候选 → skip"
+        },
+        {
+          "id": "NAME-GHOST",
+          "objecttype": "ISOMATERIAL",
+          "name": "ZZZ",
+          "member_adir": [-1, 0, 0],
+          "member_ldir": [1, 0, 0],
+          "pos": [500, 0, 40],
+          "expect": { "skip": true, "reason_contains": "Cant find good isoline" },
+          "notes": "名字不在任何 isoline.mems → 候选空 → skip（路径 B 无命中）"
+        },
+        {
+          "id": "NAME-NULLDIR",
+          "objecttype": "ISOMATERIAL",
+          "name": "EB",
+          "member_adir": null,
+          "member_ldir": null,
+          "pos": [1120, 0, 700],
+          "expect": { "isoline": 1, "write": "append" },
+          "notes": "adir/ldir 皆缺 → samedirs 落到 `_ => true` 臂 → 首命中 break；EB 仅在段1 → 单候选归段1"
+        },
+        {
+          "id": "WTX-NOFLIP",
+          "objecttype": "ISOWELDTEXT",
+          "name": "EB",
+          "name_is_atta": false,
+          "member_adir": null,
+          "member_ldir": null,
+          "pos": [1080, 0, 600],
+          "movedir": [1, 0, 0],
+          "movedis": 40,
+          "expect": {
+            "isoline": 1,
+            "write": "append",
+            "final_pos": [1120, 0, 600]
+          },
+          "notes": "movedis≠0 但 movedir∠showdir1([1,0,0])=0≤90 → 不翻转，直接沿 +X 偏 40 → [1120,0,600]（对照课48 WTX-EA 的翻转分支）"
+        }
+      ],
+      "expect_bags": {
+        "0": ["MBD-T1", "ADJ-W1", "MAT-T1"],
+        "1": ["NAME-NULLDIR", "WTX-NOFLIP"]
+      }
+    },
+    {
+      "id": "parallel-runs-distance-tiebreak",
+      "title": "课47/48 补：上下平行双段——leg 双候选按距离取近、桥接焊缝字/ATTA 焊缝字按距离决胜（两方向都验）",
+      "notes": "换一套几何：段0、段1同向水平([1,0,0])、仅 Z 相隔 300，EA 为共享桥接件。此时非焊缝字『更水平』决胜会并列，故本例只用 leg/焊缝字的距离决胜，避免依赖并列的实现细节。",
+      "isolines": [
+        {
+          "index": 0,
+          "mems": ["HEAD", "T1", "EA"],
+          "p0": [0, 0, 0],
+          "p1": [1000, 0, 0],
+          "pipedir": [1, 0, 0],
+          "showdir": [0, 0, 1]
+        },
+        {
+          "index": 1,
+          "mems": ["EA", "T2", "EB"],
+          "p0": [0, 0, 300],
+          "p1": [1000, 0, 300],
+          "pipedir": [1, 0, 0],
+          "showdir": [0, 0, 1]
+        }
+      ],
+      "objects": [
+        {
+          "id": "LEG-LOW",
+          "objecttype": "ISOLEG",
+          "name": "LEGL",
+          "elboname": "EA",
+          "ori_zdir": [1, 0, 0],
+          "attapos": [500, 0, 100],
+          "pos": [500, 0, 100],
+          "expect": { "isoline": 0, "write": "append" },
+          "notes": "两段都近平行且可投影 → leg 也进双候选；按到 attapos 距离取近：段0=100 < 段1=200 → 段0"
+        },
+        {
+          "id": "LEG-HIGH",
+          "objecttype": "ISOLEG",
+          "name": "LEGH",
+          "elboname": "EA",
+          "ori_zdir": [1, 0, 0],
+          "attapos": [600, 0, 250],
+          "pos": [600, 0, 250],
+          "expect": { "isoline": 1, "write": "append" },
+          "notes": "同上、反方向：段0=250 > 段1=50 → 段1（验证 leg 距离决胜两个方向都对）"
+        },
+        {
+          "id": "WTX-NEAR1",
+          "objecttype": "ISOWELDTEXT",
+          "name": "EA",
+          "name_is_atta": false,
+          "member_adir": [1, 0, 0],
+          "member_ldir": [0, 0, 1],
+          "pos": [400, 0, 80],
+          "movedis": 0,
+          "expect": { "isoline": 0, "write": "append" },
+          "notes": "桥接件 adir∠ldir=90<179 → samedirs=false 收集两段；焊缝字按距离：段0=80 < 段1=220 → 段0"
+        },
+        {
+          "id": "WTX-NEAR2",
+          "objecttype": "ISOWELDTEXT",
+          "name": "EA",
+          "name_is_atta": false,
+          "member_adir": [1, 0, 0],
+          "member_ldir": [0, 0, 1],
+          "pos": [700, 0, 260],
+          "movedis": 0,
+          "expect": { "isoline": 1, "write": "append" },
+          "notes": "反方向：段0=260 > 段1=40 → 段1"
+        },
+        {
+          "id": "WTX-ATTA-MID",
+          "objecttype": "ISOWELDTEXT",
+          "name": "PADX",
+          "name_is_atta": true,
+          "member_adir": null,
+          "member_ldir": null,
+          "pos": [500, 0, 90],
+          "movedis": 0,
+          "expect": { "isoline": 0, "write": "append" },
+          "notes": "ATTA 焊缝字：投影收集两段（t 均=0.5）再按距离：段0=90 < 段1=210 → 段0（该分支不看 samedirs）"
+        }
+      ],
+      "expect_bags": {
+        "0": ["LEG-LOW", "WTX-NEAR1", "WTX-ATTA-MID"],
+        "1": ["LEG-HIGH", "WTX-NEAR2"]
+      }
+    }
+  ]
+}

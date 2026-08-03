@@ -359,6 +359,7 @@ pub mod fixture_load {
 
 pub mod wiring_sketch;
 pub mod polar_neighbors;
+pub mod put_into_isoline;
 
 #[cfg(test)]
 mod tests {

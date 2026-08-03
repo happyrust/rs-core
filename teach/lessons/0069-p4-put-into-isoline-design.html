@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>第 69 课 · P4 归段 fixture 导读</title>
+  <link rel="stylesheet" href="../assets/lesson.css" />
+  <style>
+    .viz {
+      margin: 1.1rem 0 1.3rem;
+      padding: 0.85rem 0.95rem 0.7rem;
+      background: #fff;
+      border: 1px solid var(--rule);
+    }
+    .viz h3 { margin: 0 0 0.5rem; font-size: 0.95rem; }
+    .viz svg { width: 100%; height: auto; display: block; }
+    .viz figcaption { margin-top: 0.5rem; font-size: 0.8rem; color: var(--muted); }
+    table.scope { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin: 0.5rem 0 1rem; }
+    table.scope th, table.scope td { border: 1px solid #9aafbc; padding: 0.4rem 0.5rem; text-align: left; vertical-align: top; }
+    table.scope th { background: #d4eef1; }
+    table.scope code { font-size: 0.92em; }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Lesson 0069 · 方案 β · P4 归段</p>
+    <h1>putIntoIsoLine 归段：fixture 导读</h1>
+    <p class="lede">
+      第 68 课盘点出：P1 切段、P3 Polar 都各自绿了，但两者之间那座桥——<strong>归段</strong>——还没接（病例 2 的根源层）。
+      这一环的测资已经先落地：<code>teach/fixtures/p4-put-into-isoline.json</code> 两案已把字段与期望 <code>goodx</code> 钉清，<strong>等 Rust 去消费</strong>。
+      本课带你读懂这份 fixture,不写实现。
+    </p>
+
+    <div class="callout">
+      输入复用 P1 <code>toy-bridge-and-stick</code> 切出的两袋：<br/>
+      段0 <code>mems=[HEAD,T1,W1,EA]</code> · 段1 <code>mems=[EA,T2,EB,T3,TAIL]</code>——<strong>EA 被两袋共含</strong>,这正是双候选的来源。
+    </div>
+
+    <figure class="viz">
+      <h3>图 · 两袋共含 EA，对象各自找 goodx</h3>
+      <svg viewBox="0 0 720 250" xmlns="http://www.w3.org/2000/svg" role="img">
+        <line x1="60" y1="90" x2="360" y2="90" stroke="#1f6b4a" stroke-width="12"/>
+        <text x="200" y="72" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#1f6b4a">段0 · pipedir=X（水平）</text>
+        <path d="M360 90 Q 400 90 400 130" fill="none" stroke="#007a8a" stroke-width="12"/>
+        <line x1="400" y1="130" x2="400" y2="220" stroke="#0b1f33" stroke-width="12"/>
+        <text x="470" y="180" font-family="IBM Plex Mono, monospace" font-size="12" fill="#0b1f33">段1 · pipedir=Z（竖直）</text>
+        <circle cx="360" cy="90" r="7" fill="#a33b16"/>
+        <text x="360" y="120" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#a33b16">EA 双含</text>
+
+        <rect x="150" y="150" width="120" height="26" rx="2" fill="#f8ebe6" stroke="#a33b16"/>
+        <text x="210" y="168" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#a33b16">MAT-EA → 段0</text>
+        <text x="150" y="205" font-family="IBM Plex Sans, sans-serif" font-size="11" fill="#4a5d6e">材料双候选 → 选更水平的段0</text>
+      </svg>
+      <figcaption>切段对了也会画歪：对象落错段就是病例 2。fixture 把「谁归哪段、为什么」逐条写成断言。</figcaption>
+    </figure>
+
+    <h2>案 1 · <code>bridge-legs-and-material</code>：五个对象，四种归法</h2>
+    <table class="scope">
+      <tr><th>对象</th><th>类型 / 触发</th><th>期望 goodx</th><th>为什么</th></tr>
+      <tr>
+        <td><code>LEG-EA-IN</code></td>
+        <td>ISOLEG · 有 elboname → 路径 A（弯头 leg）</td>
+        <td>段0</td>
+        <td><code>ori_zdir∠pipedir0=0&lt;1°</code> 且 attapos 投影在段0；对段1 折叠 90° 被拒</td>
+      </tr>
+      <tr>
+        <td><code>LEG-EA-OUT</code></td>
+        <td>ISOLEG · leg</td>
+        <td>段1</td>
+        <td>只有段1 近平行且可投影（出侧腿）</td>
+      </tr>
+      <tr>
+        <td><code>DIM-UNNAMED</code></td>
+        <td><code>name=null</code> → 路径 A（投影）</td>
+        <td>段0</td>
+        <td>收集时即取最近：到段0 距离 120 &lt; 段1 的 200，<strong>不进决胜块</strong></td>
+      </tr>
+      <tr>
+        <td><code>MAT-EA</code></td>
+        <td>ISOMATERIAL · 有名 → 路径 B</td>
+        <td>段0</td>
+        <td><code>adir∠ldir=90&lt;179</code> → 不 break → 双候选；非焊缝字决胜：段0 <code>oneangle=0</code>（水平）胜段1 的 90</td>
+      </tr>
+      <tr>
+        <td><code>LOST-UNNAMED</code></td>
+        <td><code>name=null</code>，pos 在 <code>[-200,…]</code></td>
+        <td>skip</td>
+        <td>两段都投影不上 → 打印「Cant find good isoline」后跳过,<strong>不硬塞</strong></td>
+      </tr>
+    </table>
+    <p>期望袋：段0 = <code>[LEG-EA-IN, DIM-UNNAMED, MAT-EA]</code>；段1 = <code>[LEG-EA-OUT]</code>。</p>
+
+    <h2>案 2 · <code>weldtext-distance-and-slope-order</code>：距离决胜 + 写入次序</h2>
+    <table class="scope">
+      <tr><th>对象</th><th>类型 / 触发</th><th>期望</th><th>为什么</th></tr>
+      <tr>
+        <td><code>WTX-EA</code></td>
+        <td>ISOWELDTEXT · 有名双候选</td>
+        <td>段1 · append · <code>final_pos=[1110,0,400]</code></td>
+        <td>焊缝字按<strong>距离</strong>决胜：段1=20 &lt; 段0=400；再 movedis 翻转：<code>movedir∠showdir1=180&gt;90</code> → 取反成 +X → 偏移 30</td>
+      </tr>
+      <tr>
+        <td><code>SLOPE-T2</code></td>
+        <td>ISOSLOPE</td>
+        <td>段1 · <code>insert_front</code></td>
+        <td>直通件 <code>adir∠ldir=180≥179</code> → 首命中 break（段1）；ISOSLOPE 用 <code>insert(1)</code> 排到袋首</td>
+      </tr>
+      <tr>
+        <td><code>WTX-ATTA-PAD</code></td>
+        <td>ISOWELDTEXT · 挂 ATTA → 投影收集</td>
+        <td>段1 · append</td>
+        <td>两段都投影上,再按距离：段1=120 &lt; 段0=130；此分支<strong>不看</strong> samedirs</td>
+      </tr>
+      <tr>
+        <td><code>MAT-HEAD</code></td>
+        <td>ISOMATERIAL · 名=HEAD</td>
+        <td>段0 · append</td>
+        <td>HEAD/TAIL 免查 adir → samedirs 保持 true → 首命中 break,单候选直取</td>
+      </tr>
+    </table>
+    <p>
+      期望袋：段0 = <code>[MAT-HEAD]</code>；段1 = <code>[SLOPE-T2, WTX-EA, WTX-ATTA-PAD]</code>。
+      注意段1 里 <code>SLOPE-T2</code> 因 <code>insert(1)</code> 排在最前——<strong>写入次序也在断言里</strong>。
+    </p>
+
+    <div class="callout">
+      与 P1/P3 一致的落地节奏：<strong>fixture（本课导读，已建）→ 开码检查单 → Rust 消费实现绿</strong>。
+      P4 目前只到「fixture 已建、待消费」;它同样<strong>未接主链</strong>,和 P1/P2/P3 一样是离线教学件。
+    </div>
+
+    <p class="cite">
+      源：<a href="../../MBD/markpipe/object/isobran.pmlobj"><code>isobran.putIntoIsoLine</code></a>（约 1144–1353）
+      · fixture <a href="../fixtures/p4-put-into-isoline.json"><code>p4-put-into-isoline.json</code></a>
+      · 概念见 <a href="0003-put-into-isoline.html">课 3</a> / <a href="0047-put-into-isoline-visual.html">课 47</a> / <a href="0048-multi-candidate-tiebreak.html">课 48</a>
+    </p>
+
+    <section class="quiz">
+      <h3>小测</h3>
+      <div class="q">
+        <p><strong>Q1.</strong> P4 fixture 的 isolines 输入从哪来？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：复用 P1 toy-bridge-and-stick 切出的两袋 mems。">P1 切好的两袋（含共含的 EA）</button>
+        <button type="button" data-correct="0"
+          data-bad="Polar 在归段之后，不是输入。">P3 的障碍柱列表</button>
+        <button type="button" data-correct="0"
+          data-bad="那是更后面的绘制。">dimtimes 车道结果</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q2.</strong> 同为双候选，<code>MAT-EA</code> 与 <code>WTX-EA</code> 决胜规则为何不同？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：焊缝字按距离，其它按 pipedir 更水平。">焊缝字看距离，材料看谁更水平</button>
+        <button type="button" data-correct="0"
+          data-bad="不是固定小下标。">都固定选下标更小的段</button>
+        <button type="button" data-correct="0"
+          data-bad="反了。">材料看距离，焊缝字看水平</button>
+        <p class="feedback"></p>
+      </div>
+      <div class="q">
+        <p><strong>Q3.</strong> 段1 期望袋里 <code>SLOPE-T2</code> 为何排在最前？</p>
+        <button type="button" data-correct="1"
+          data-ok="对：ISOSLOPE 用 insert(1) 优先占位。">ISOSLOPE 走 insert_front（insert(1)）</button>
+        <button type="button" data-correct="0"
+          data-bad="它不是最先处理的对象。">因为它在 objects 数组里最先</button>
+        <button type="button" data-correct="0"
+          data-bad="坡度不跳过。">因为其它对象都被 skip 了</button>
+        <p class="feedback"></p>
+      </div>
+    </section>
+
+    <div class="ask-teacher">
+      推荐下一课：P4 归段<strong>开码检查单</strong>（把这份 fixture 变成 Rust <code>put_into_isoline_pml</code> 前的核对项），随后照 P1/P3 节奏实现到绿。
+    </div>
+
+    <nav class="footer-nav">
+      <p>
+        <a href="0068-beta-progress-overview.html">← 第 68 课</a>
+        · <a href="../fixtures/p4-put-into-isoline.json">P4 fixture</a>
+        · <a href="0048-multi-candidate-tiebreak.html">课 48 决胜</a>
+        · <a href="../reference/put-into-isoline-cheatsheet.html">归段速查</a>
+        · <a href="../INDEX.md">目录</a>
+      </p>
+    </nav>
+  </main>
+  <script src="../assets/quiz.js"></script>
+</body>
+</html>
