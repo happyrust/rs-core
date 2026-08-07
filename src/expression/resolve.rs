@@ -7,7 +7,7 @@ use crate::expression::resolve_helper::{
     parse_str_axis_to_vec3, resolve_axis_with_cache, resolve_to_cate_geo_params,
 };
 use crate::parsed_data::geo_params_data::CateGeoParam;
-use crate::parsed_data::{CateAxisParam, GmseParamData};
+use crate::parsed_data::{CateAxisParam, GmseParamData, ResolvedPlinePoint};
 use crate::pdms_data::{AxisParam, GmParam, PlinParam, ScomInfo};
 use crate::pdms_types::RefU64;
 use crate::shape::pdms_shape::RsVec3;
@@ -879,6 +879,34 @@ fn calc_plin_pos(vxy: Vec2, dxy: Vec2, plax: Vec3) -> Vec2 {
     vxy + dxy * Vec2::new(plax.x, plax.y)
 }
 
+pub(crate) fn resolve_plin_points_with_cache(
+    scom: &ScomInfo,
+    context: &CataContext,
+    cache: &mut ResolveEvalCache,
+) -> Vec<ResolvedPlinePoint> {
+    let mut points = scom
+        .plin_map
+        .iter()
+        .map(|(pkey, plin)| {
+            let vxy = Vec2::new(
+                eval_str_to_f32_cached(&plin.vxy[0], context, "DIST", cache),
+                eval_str_to_f32_cached(&plin.vxy[1], context, "DIST", cache),
+            );
+            let dxy = Vec2::new(
+                eval_str_to_f32_cached(&plin.dxy[0], context, "DIST", cache),
+                eval_str_to_f32_cached(&plin.dxy[1], context, "DIST", cache),
+            );
+            let plax = parse_axis_to_vec3_cached(&plin.plax, context, cache).unwrap_or(Vec3::Y);
+            ResolvedPlinePoint {
+                pkey: pkey.clone(),
+                position: calc_plin_pos(vxy, dxy, plax),
+            }
+        })
+        .collect::<Vec<_>>();
+    points.sort_by(|a, b| a.pkey.cmp(&b.pkey));
+    points
+}
+
 pub fn resolve_axis_param(
     axis_param: &AxisParam,
     scom: &ScomInfo,
@@ -1113,7 +1141,9 @@ pub fn parse_to_f32_arr(input: &[u8]) -> [f64; 3] {
 
 #[cfg(test)]
 mod tests {
-    use super::calc_plin_pos;
+    use super::{ResolveEvalCache, calc_plin_pos, resolve_plin_points_with_cache};
+    use crate::CataContext;
+    use crate::pdms_data::{PlinParam, ScomInfo};
     use glam::{Vec2, Vec3};
 
     #[test]
@@ -1144,5 +1174,38 @@ mod tests {
         let p = calc_plin_pos(vxy, dxy, plax);
         assert!((p.x - 3.5).abs() < 1e-6, "x={}", p.x);
         assert!((p.y + 5.0).abs() < 1e-6, "y={}", p.y);
+    }
+
+    #[test]
+    fn resolves_all_plines_in_stable_pkey_order() {
+        let mut scom = ScomInfo::default();
+        scom.plin_map.insert(
+            "TOS".into(),
+            PlinParam {
+                vxy: ["10".into(), "20".into()],
+                dxy: ["3".into(), "4".into()],
+                plax: "Y".into(),
+            },
+        );
+        scom.plin_map.insert(
+            "BOS".into(),
+            PlinParam {
+                vxy: ["1".into(), "2".into()],
+                dxy: ["5".into(), "7".into()],
+                plax: "X".into(),
+            },
+        );
+
+        let points = resolve_plin_points_with_cache(
+            &scom,
+            &CataContext::default(),
+            &mut ResolveEvalCache::default(),
+        );
+        assert_eq!(
+            points.iter().map(|p| p.pkey.as_str()).collect::<Vec<_>>(),
+            ["BOS", "TOS"]
+        );
+        assert_eq!(points[0].position, Vec2::new(6.0, 2.0));
+        assert_eq!(points[1].position, Vec2::new(10.0, 24.0));
     }
 }

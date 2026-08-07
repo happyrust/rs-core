@@ -748,6 +748,26 @@ fn compute_offset(local: Vec3, path_dir: Vec3, plane_normal: Vec3) -> f32 {
     }
 }
 
+fn resolve_cap_normal(dir: Option<DVec3>, tangent: Vec3, fallback: Vec3) -> Vec3 {
+    let Some(d) = dir else { return fallback };
+    let v = d.as_vec3();
+    if v.length_squared() <= 0.001 {
+        return fallback;
+    }
+    let mut normal = v.normalize();
+    if normal.dot(tangent).abs() < 0.1 {
+        return fallback;
+    }
+    if fallback.dot(tangent) < 0.0 {
+        if normal.dot(tangent) > 0.0 {
+            normal = -normal;
+        }
+    } else if normal.dot(tangent) < 0.0 {
+        normal = -normal;
+    }
+    normal
+}
+
 /// 生成 Mesh
 fn generate_mesh_from_frames(
     profile: &ProfileData,
@@ -811,33 +831,6 @@ fn generate_mesh_from_frames(
     // 解析 Start/End 法线 (用于斜切)
     let start_tan = path_samples.first().unwrap().tangent;
     let end_tan = path_samples.last().unwrap().tangent;
-
-    let resolve_cap_normal = |dir: Option<DVec3>, tangent: Vec3, fallback: Vec3| {
-        if let Some(d) = dir {
-            let v = d.as_vec3();
-            if v.length_squared() > 0.001 {
-                let mut n = v.normalize();
-                // 若与路径方向几乎垂直，直接退回默认法线，避免偏移放大
-                if n.dot(tangent).abs() < 0.1 {
-                    return fallback;
-                }
-                // 确保法线朝向外 (背离路径方向)
-                if fallback.dot(tangent) < 0.0 {
-                    // Start
-                    if n.dot(tangent) > 0.0 {
-                        n = -n;
-                    }
-                } else {
-                    // End
-                    if n.dot(tangent) < 0.0 {
-                        n = -n;
-                    }
-                }
-                return n;
-            }
-        }
-        fallback
-    };
 
     let start_plane_normal = resolve_cap_normal(drns, start_tan, -start_tan);
     let end_plane_normal = resolve_cap_normal(drne, end_tan, end_tan);
@@ -1261,7 +1254,32 @@ pub fn generate_sweep_solid_mesh(
     }
     let profile = apply_profile_transform(profile, plin_pos, plin_rotation, bangle, sweep.lmirror);
 
-    let arc_segments = if sweep.path.is_single_segment() {
+    let arc_segments = sweep_arc_segments(sweep, settings);
+
+    // 使用实际几何坐标进行路径采样
+    // plax 由 SweepSolid 提供，决定直线路径的参考朝向
+    let frames = match sample_path_frames_sync(&sweep.path.segments, arc_segments, sweep.plax) {
+        Some(f) => f,
+        None => {
+            if is_debug_model_enabled() {
+                eprintln!(
+                    "[SweepSolid] sample_path_frames_sync 返回 None: segments_len={}, plax={:?}",
+                    sweep.path.segments.len(),
+                    sweep.plax
+                );
+            }
+            return None;
+        }
+    };
+
+    // 正常生成 mesh（不再需要后处理变换）
+    let mesh = generate_mesh_from_frames(&profile, &frames, sweep.drns, sweep.drne);
+
+    Some(mesh)
+}
+
+fn sweep_arc_segments(sweep: &SweepSolid, settings: &LodMeshSettings) -> usize {
+    if sweep.path.is_single_segment() {
         if let Some(arc) = sweep.path.as_single_arc() {
             compute_arc_segments(settings, arc.angle.abs() * arc.radius, arc.radius)
         } else {
@@ -1287,28 +1305,59 @@ pub fn generate_sweep_solid_mesh(
             max_segs = max_segs.max(segs);
         }
         max_segs
+    }
+}
+
+/// 将 catalog PLIN 的截面 XY 点映射到当前 sweep 的实际起、终端面。
+pub fn sweep_reference_endpoints(
+    sweep: &SweepSolid,
+    reference_xy: Vec2,
+    settings: &LodMeshSettings,
+) -> Option<[Vec3; 2]> {
+    let bangle = if sweep.path.as_single_line().is_some() {
+        0.0
+    } else {
+        sweep.bangle
+    };
+    let profile_transform = build_profile_transform_matrix(
+        sweep.profile.get_plin_pos(),
+        plin_axis_to_rotation(sweep.profile.get_plin_axis()),
+        bangle,
+        sweep.lmirror,
+    );
+    let p = profile_transform.transform_point3(DVec3::new(
+        reference_xy.x as f64,
+        reference_xy.y as f64,
+        0.0,
+    ));
+    let reference = Vec3::new(p.x as f32, p.y as f32, 0.0);
+    let frames = sample_path_frames_sync(
+        &sweep.path.segments,
+        sweep_arc_segments(sweep, settings),
+        sweep.plax,
+    )?;
+    let start = frames.first()?;
+    let end = frames.last()?;
+    let closed = start.pos.distance(end.pos) < 1e-2 && frames.len() >= 3;
+
+    let place = |sample: &PathSample, cap_dir: Option<DVec3>, fallback: Vec3| {
+        let local = sample.rot.x_axis * reference.x + sample.rot.y_axis * reference.y;
+        let offset = if closed {
+            0.0
+        } else {
+            compute_offset(
+                local,
+                sample.tangent,
+                resolve_cap_normal(cap_dir, sample.tangent, fallback),
+            )
+        };
+        sample.pos + local + sample.tangent * offset
     };
 
-    // 使用实际几何坐标进行路径采样
-    // plax 由 SweepSolid 提供，决定直线路径的参考朝向
-    let frames = match sample_path_frames_sync(&sweep.path.segments, arc_segments, sweep.plax) {
-        Some(f) => f,
-        None => {
-            if is_debug_model_enabled() {
-                eprintln!(
-                    "[SweepSolid] sample_path_frames_sync 返回 None: segments_len={}, plax={:?}",
-                    sweep.path.segments.len(),
-                    sweep.plax
-                );
-            }
-            return None;
-        }
-    };
-
-    // 正常生成 mesh（不再需要后处理变换）
-    let mesh = generate_mesh_from_frames(&profile, &frames, sweep.drns, sweep.drne);
-
-    Some(mesh)
+    Some([
+        place(start, sweep.drns, -start.tangent),
+        place(end, sweep.drne, end.tangent),
+    ])
 }
 
 /// 从 SweepPath 提取 Spine3D 段信息（临时实现）
@@ -1317,4 +1366,40 @@ fn extract_spine_segments_from_sweep_path(_path: &SweepPath3D) -> Option<Vec<Spi
     // 暂时返回空，这会导致变换失败
     // 需要修改调用链来传递 Spine3D 信息
     None
+}
+
+#[cfg(test)]
+mod pline_endpoint_tests {
+    use super::sweep_reference_endpoints;
+    use crate::mesh_precision::LodMeshSettings;
+    use crate::parsed_data::CateProfileParam;
+    use crate::prim_geo::SweepSolid;
+    use crate::prim_geo::spine::{Line3D, SegmentPath, SweepPath3D};
+    use glam::{DVec3, Vec2, Vec3};
+
+    #[test]
+    fn maps_profile_reference_to_both_straight_path_ends() {
+        let sweep = SweepSolid {
+            profile: CateProfileParam::UNKOWN,
+            drns: None,
+            drne: None,
+            plax: Vec3::Y,
+            bangle: 0.0,
+            extrude_dir: DVec3::Z,
+            height: 10.0,
+            path: SweepPath3D::from_segments(vec![SegmentPath::Line(Line3D {
+                start: Vec3::ZERO,
+                end: Vec3::Z * 10.0,
+                is_spine: true,
+            })]),
+            lmirror: false,
+            spine_segments: Vec::new(),
+        };
+
+        let [start, end] =
+            sweep_reference_endpoints(&sweep, Vec2::new(2.0, 3.0), &LodMeshSettings::default())
+                .expect("straight sweep endpoints");
+        assert!(start.abs_diff_eq(Vec3::new(2.0, 3.0, 0.0), 1e-6));
+        assert!(end.abs_diff_eq(Vec3::new(2.0, 3.0, 10.0), 1e-6));
+    }
 }

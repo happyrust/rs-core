@@ -1,8 +1,10 @@
 use std::collections::BTreeMap;
 use std::time::Instant;
 
+use crate::consts::HAS_PLIN_TYPES;
 use crate::expression::resolve::{
     ResolveEvalCache, resolve_axis_params_with_cache, resolve_gms_with_cache,
+    resolve_plin_points_with_cache,
 };
 use crate::parsed_data::CateGeomsInfo;
 use crate::pdms_data::{AxisParam, GmParam, ScomInfo};
@@ -99,6 +101,11 @@ pub fn resolve_cata_comp(
         }
     }
     let plin_ms = t_plin.elapsed().as_millis();
+    let plin_points = if HAS_PLIN_TYPES.contains(&des_att.get_type_str()) {
+        resolve_plin_points_with_cache(scom_info, &cur_context, &mut cache)
+    } else {
+        Vec::new()
+    };
 
     let t_gm = Instant::now();
     let geometries = resolve_gms_with_cache(
@@ -149,6 +156,7 @@ pub fn resolve_cata_comp(
         geometries,
         n_geometries,
         axis_map: axis_param_map,
+        plin_points,
     })
 }
 

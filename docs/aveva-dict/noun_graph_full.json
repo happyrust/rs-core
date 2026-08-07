@@ -1,0 +1,15906 @@
+{
+ "TP": {
+  "hash": 531893,
+  "members": [],
+  "owners": [
+   "BRAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "TEE": {
+  "hash": 535241,
+  "members": [
+   "PIPCA",
+   "SUBCOM",
+   "HVHACC",
+   "HVBRCO",
+   "HVFLAN",
+   "HVIDAM",
+   "HVSADD",
+   "HVSPLR",
+   "HVSTIF",
+   "HVTPPO",
+   "HVSKIR",
+   "PIGEN"
+  ],
+  "owners": [
+   "BRAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "LUG": {
+  "hash": 537123,
+  "members": [
+   "LUANCI"
+  ],
+  "owners": [
+   "REST",
+   "SUPPO"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CAP": {
+  "hash": 543135,
+  "members": [
+   "PIPCA",
+   "SUBCOM",
+   "HVHACC",
+   "HVBRCO",
+   "HVFLAN",
+   "HVIDAM",
+   "HVSADD",
+   "HVSPLR",
+   "HVSTIF",
+   "HVTPPO",
+   "HVSKIR",
+   "PIGEN"
+  ],
+  "owners": [
+   "BRAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "AHU": {
+  "hash": 546967,
+  "members": [
+   "PIPCA",
+   "SUBCOM",
+   "HVHACC",
+   "HVBRCO",
+   "HVFLAN",
+   "HVIDAM",
+   "HVSADD",
+   "HVSPLR",
+   "HVSTIF",
+   "HVTPPO",
+   "HVSKIR"
+  ],
+  "owners": [
+   "BRAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SHU": {
+  "hash": 546985,
+  "members": [
+   "SUBCOM",
+   "HVHACC",
+   "HVBRCO",
+   "HVFLAN",
+   "HVIDAM",
+   "HVSADD",
+   "HVSPLR",
+   "HVSTIF",
+   "HVTPPO",
+   "HVSKIR"
+  ],
+  "owners": [
+   "BRAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "BOX": {
+  "hash": 549344,
+  "members": [
+   "NBOX",
+   "NPOLYH",
+   "NCYL",
+   "NSLC",
+   "NSNO",
+   "NDIS",
+   "NCON",
+   "NPYR",
+   "NCTO",
+   "NRTO",
+   "NXTR",
+   "NREV"
+  ],
+  "owners": [
+   "EQUI",
+   "PULLP",
+   "JNTBOX",
+   "VOLM",
+   "SVOLM",
+   "STRU",
+   "PTRA",
+   "SUBE",
+   "SUBS",
+   "TMPL",
+   "ENVLOP",
+   "TRNPRI"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "LCCA": {
+  "hash": 553404,
+  "members": [],
+  "owners": [
+   "LNKI"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DPCA": {
+  "hash": 553747,
+  "members": [],
+  "owners": [
+   "DPSE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PCLA": {
+  "hash": 559969,
+  "members": [],
+  "owners": [
+   "HANG",
+   "SUPC"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SCLA": {
+  "hash": 559972,
+  "members": [],
+  "owners": [
+   "HANG",
+   "SUPC"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "RPLA": {
+  "hash": 560322,
+  "members": [],
+  "owners": [
+   "ZONE",
+   "CONVEY",
+   "EQUI",
+   "PULLP",
+   "JNTBOX",
+   "VOLM",
+   "SVOLM",
+   "STRU",
+   "PTRA",
+   "SUBE",
+   "SUBS",
+   "RPLG"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PTRA": {
+  "hash": 564802,
+  "members": [
+   "TEXT",
+   "CYLI",
+   "SLCY",
+   "SNOU",
+   "BOX",
+   "POLYHE",
+   "GENPRI",
+   "GENCUR",
+   "DISH",
+   "CONE",
+   "POHE",
+   "PYRA",
+   "CTOR",
+   "RTOR",
+   "RPLA",
+   "PVOL",
+   "DRAW",
+   "EXTR",
+   "REVO",
+   "PANE",
+   "DPSE",
+   "DDSE",
+   "PORS",
+   "LNKS",
+   "BPANEL"
+  ],
+  "owners": [
+   "ZONE",
+   "CONVEY"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PYRA": {
+  "hash": 564937,
+  "members": [
+   "NBOX",
+   "NPOLYH",
+   "NCYL",
+   "NSLC",
+   "NSNO",
+   "NDIS",
+   "NCON",
+   "NPYR",
+   "NCTO",
+   "NRTO",
+   "NXTR",
+   "NREV"
+  ],
+  "owners": [
+   "EQUI",
+   "PULLP",
+   "JNTBOX",
+   "VOLM",
+   "SVOLM",
+   "STRU",
+   "PTRA",
+   "SUBE",
+   "SUBS",
+   "TMPL",
+   "TRNPRI"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "BVSA": {
+  "hash": 565571,
+  "members": [
+   "BVCL"
+  ],
+  "owners": [
+   "BVAR"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "ATTA": {
+  "hash": 566245,
+  "members": [],
+  "owners": [
+   "BRAN",
+   "TRUNNI"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "VFWA": {
+  "hash": 568075,
+  "members": [
+   "PIPCA",
+   "SUBCOM",
+   "HVHACC",
+   "HVBRCO",
+   "HVFLAN",
+   "HVIDAM",
+   "HVSADD",
+   "HVSPLR",
+   "HVSTIF",
+   "HVTPPO",
+   "HVSKIR",
+   "PIGEN"
+  ],
+  "owners": [
+   "BRAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "VTWA": {
+  "hash": 568453,
+  "members": [
+   "PIPCA",
+   "SUBCOM",
+   "HVHACC",
+   "HVBRCO",
+   "HVFLAN",
+   "HVIDAM",
+   "HVSADD",
+   "HVSPLR",
+   "HVSTIF",
+   "HVTPPO",
+   "HVSKIR",
+   "PIGEN"
+  ],
+  "owners": [
+   "BRAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "TRNB": {
+  "hash": 581519,
+  "members": [],
+  "owners": [
+   "HANG",
+   "SUPC"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SNUB": {
+  "hash": 586513,
+  "members": [],
+  "owners": [
+   "HANG",
+   "SUPC"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "FTUB": {
+  "hash": 586662,
+  "members": [
+   "PIPCA",
+   "SUBCOM",
+   "HVHACC",
+   "HVBRCO",
+   "HVFLAN",
+   "HVIDAM",
+   "HVSADD",
+   "HVSPLR",
+   "HVSTIF",
+   "HVTPPO",
+   "HVSKIR",
+   "PIGEN"
+  ],
+  "owners": [
+   "BRAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SPAC": {
+  "hash": 591670,
+  "members": [],
+  "owners": [
+   "HANG",
+   "SUPC"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HVAC": {
+  "hash": 591821,
+  "members": [
+   "BRAN",
+   "TEXT",
+   "REST",
+   "HSLIST"
+  ],
+  "owners": [
+   "ZONE",
+   "CONVEY"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HACC": {
+  "hash": 592712,
+  "members": [],
+  "owners": [
+   "BRAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DVEC": {
+  "hash": 594733,
+  "members": [
+   "DCRDEX"
+  ],
+  "owners": [
+   "DCRDSY",
+   "DENDCT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "NSLC": {
+  "hash": 599765,
+  "members": [],
+  "owners": [
+   "PANE",
+   "SCREED",
+   "FLOOR",
+   "GWALL",
+   "CYLI",
+   "SLCY",
+   "SNOU",
+   "BOX",
+   "DISH",
+   "CONE",
+   "PYRA",
+   "CTOR",
+   "RTOR",
+   "EXTR",
+   "REVO",
+   "POLYHE",
+   "TMPL",
+   "BPANEL",
+   "TRNPRI"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SUPC": {
+  "hash": 602740,
+  "members": [
+   "PCLA",
+   "PCLI",
+   "PLUG",
+   "SHOE",
+   "UBOL",
+   "POST",
+   "TRNN",
+   "HELE",
+   "HROD",
+   "EYRD",
+   "RCPL",
+   "TRNB",
+   "WASH",
+   "CLEV",
+   "EYNT",
+   "HPIN",
+   "HNUT",
+   "VSPR",
+   "SWBR",
+   "SNUB",
+   "SCLA",
+   "SLUG",
+   "BWLD",
+   "BBLT",
+   "SOST",
+   "STLS",
+   "SPAC",
+   "WPAD",
+   "TUBI",
+   "ANCI"
+  ],
+  "owners": [
+   "REST",
+   "SUPPO"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "WPAD": {
+  "hash": 611357,
+  "members": [],
+  "owners": [
+   "HANG",
+   "SUPC"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HSAD": {
+  "hash": 611423,
+  "members": [],
+  "owners": [
+   "BRAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SSBD": {
+  "hash": 612163,
+  "members": [],
+  "owners": [
+   "SUBD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SUBD": {
+  "hash": 612217,
+  "members": [
+   "SSBD"
+  ],
+  "owners": [
+   "DOCU"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "WELD": {
+  "hash": 619079,
+  "members": [],
+  "owners": [
+   "BRAN",
+   "TRUNNI"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "BWLD": {
+  "hash": 619544,
+  "members": [],
+  "owners": [
+   "HANG",
+   "SUPC"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "BEND": {
+  "hash": 620516,
+  "members": [
+   "PIPCA",
+   "SUBCOM",
+   "HVHACC",
+   "HVBRCO",
+   "HVFLAN",
+   "HVIDAM",
+   "HVSADD",
+   "HVSPLR",
+   "HVSTIF",
+   "HVTPPO",
+   "HVSKIR",
+   "PIGEN"
+  ],
+  "owners": [
+   "BRAN",
+   "TRUNNI"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PNOD": {
+  "hash": 621502,
+  "members": [
+   "PJOI",
+   "NOLO",
+   "NODI",
+   "RELE",
+   "PCOJ",
+   "DPSE",
+   "DDSE",
+   "PORS",
+   "LNKS",
+   "FIXING"
+  ],
+  "owners": [
+   "FRMW",
+   "SBFR",
+   "CFLOOR",
+   "CWALL",
+   "TMPL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SNOD": {
+  "hash": 621505,
+  "members": [
+   "SJOI",
+   "NOLO",
+   "NODI",
+   "RELE",
+   "SCOJ",
+   "DPSE",
+   "DDSE",
+   "PORS",
+   "LNKS"
+  ],
+  "owners": [
+   "SCTN",
+   "STWALL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HROD": {
+  "hash": 621602,
+  "members": [],
+  "owners": [
+   "HANG",
+   "SUPC"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "EYRD": {
+  "hash": 623975,
+  "members": [],
+  "owners": [
+   "HANG",
+   "SUPC"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SUBE": {
+  "hash": 631900,
+  "members": [
+   "TEXT",
+   "CYLI",
+   "SLCY",
+   "SNOU",
+   "BOX",
+   "POLYHE",
+   "GENPRI",
+   "GENCUR",
+   "DISH",
+   "CONE",
+   "NOZZ",
+   "POHE",
+   "PYRA",
+   "CTOR",
+   "RTOR",
+   "DRAW",
+   "PVOL",
+   "RPLA",
+   "LOAP",
+   "EXTR",
+   "REVO",
+   "PANE",
+   "TMPL",
+   "DPSE",
+   "DDSE",
+   "PORS",
+   "LNKS",
+   "ELCONN",
+   "EQUCOM",
+   "BPANEL"
+  ],
+  "owners": [
+   "EQUI"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "LCDE": {
+  "hash": 632865,
+  "members": [],
+  "owners": [
+   "STRU"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "POHE": {
+  "hash": 636109,
+  "members": [
+   "POGO"
+  ],
+  "owners": [
+   "EQUI",
+   "PULLP",
+   "JNTBOX",
+   "VOLM",
+   "SVOLM",
+   "STRU",
+   "PTRA",
+   "SUBE",
+   "SUBS",
+   "TMPL",
+   "TRNPRI"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "BVIE": {
+  "hash": 637013,
+  "members": [
+   "BVAR"
+  ],
+  "owners": [
+   "BUWL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HELE": {
+  "hash": 638747,
+  "members": [],
+  "owners": [
+   "HANG",
+   "SUPC"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "RELE": {
+  "hash": 638757,
+  "members": [],
+  "owners": [
+   "LOAP",
+   "INODE",
+   "PNOD",
+   "JLDATU",
+   "ENDATU",
+   "SNOD",
+   "FITT",
+   "CMFI",
+   "PAVE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SILE": {
+  "hash": 638866,
+  "members": [
+   "PIPCA",
+   "SUBCOM",
+   "HVHACC",
+   "HVBRCO",
+   "HVFLAN",
+   "HVIDAM",
+   "HVSADD",
+   "HVSPLR",
+   "HVSTIF",
+   "HVTPPO",
+   "HVSKIR"
+  ],
+  "owners": [
+   "BRAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PANE": {
+  "hash": 640105,
+  "members": [
+   "PLOO",
+   "PFIT",
+   "CMPF",
+   "COFI",
+   "PALJ",
+   "STCSET",
+   "DPSE",
+   "DDSE",
+   "PORS",
+   "LNKS",
+   "BFDT",
+   "NBOX",
+   "NPOLYH",
+   "NCYL",
+   "NSLC",
+   "NSNO",
+   "NDIS",
+   "NCON",
+   "NPYR",
+   "NCTO",
+   "NRTO",
+   "NXTR",
+   "NREV",
+   "TMPL",
+   "STWSET"
+  ],
+  "owners": [
+   "SUBCNV",
+   "EQUI",
+   "PULLP",
+   "JNTBOX",
+   "STRU",
+   "TWRSTL",
+   "TREAD",
+   "INTLNG",
+   "TOPEXT",
+   "BOTEXT",
+   "STRSTR",
+   "STRLNG",
+   "SLRAIL",
+   "RLGATE",
+   "LDRSTR",
+   "LDRRUN",
+   "CEILIN",
+   "EXTFRM",
+   "INTFRM",
+   "PLTGRD",
+   "HRTERM",
+   "HRPANE",
+   "HRPOST",
+   "PTRA",
+   "SUBE",
+   "SUBS",
+   "FRMW",
+   "SBFR",
+   "CFLOOR",
+   "CSCREE",
+   "CWALL",
+   "TMPL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CONE": {
+  "hash": 640470,
+  "members": [
+   "NBOX",
+   "NPOLYH",
+   "NCYL",
+   "NSLC",
+   "NSNO",
+   "NDIS",
+   "NCON",
+   "NPYR",
+   "NCTO",
+   "NRTO",
+   "NXTR",
+   "NREV"
+  ],
+  "owners": [
+   "EQUI",
+   "PULLP",
+   "JNTBOX",
+   "VOLM",
+   "SVOLM",
+   "STRU",
+   "PTRA",
+   "SUBE",
+   "SUBS",
+   "TMPL",
+   "TRNPRI"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "ZONE": {
+  "hash": 640493,
+  "members": [
+   "TEXT",
+   "BOUN",
+   "EQUI",
+   "PIPE",
+   "STRU",
+   "PTRA",
+   "PVOL",
+   "DRAW",
+   "RPLA",
+   "DATU",
+   "REST",
+   "SUPPO",
+   "HVAC",
+   "XGEOM",
+   "DPSE",
+   "DDSE",
+   "PORS",
+   "LNKS",
+   "ZONE",
+   "VOLM",
+   "RBRAN",
+   "CWAY",
+   "CABLE",
+   "CNODE",
+   "GENPG",
+   "GENPC",
+   "GENPI",
+   "AIDGRO",
+   "DIMGRO",
+   "TRNMOD",
+   "CONVEY",
+   "PULLP",
+   "JNTBOX",
+   "UPANEL",
+   "BUNDLE"
+  ],
+  "owners": [
+   "SITE",
+   "APPLDA",
+   "ZONE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SHOE": {
+  "hash": 641026,
+  "members": [],
+  "owners": [
+   "HANG",
+   "SUPC"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "TAPE": {
+  "hash": 641567,
+  "members": [
+   "PIPCA",
+   "SUBCOM",
+   "HVHACC",
+   "HVBRCO",
+   "HVFLAN",
+   "HVIDAM",
+   "HVSADD",
+   "HVSPLR",
+   "HVSTIF",
+   "HVTPPO",
+   "HVSKIR"
+  ],
+  "owners": [
+   "BRAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PIPE": {
+  "hash": 641779,
+  "members": [
+   "BRAN",
+   "TEXT",
+   "REST",
+   "PPLIST",
+   "PSLIST"
+  ],
+  "owners": [
+   "ZONE",
+   "CONVEY"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "BARE": {
+  "hash": 643007,
+  "members": [
+   "BSAR",
+   "CELL"
+  ],
+  "owners": [
+   "BUILD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "THRE": {
+  "hash": 643214,
+  "members": [
+   "PIPCA",
+   "SUBCOM",
+   "HVHACC",
+   "HVBRCO",
+   "HVFLAN",
+   "HVIDAM",
+   "HVSADD",
+   "HVSPLR",
+   "HVSTIF",
+   "HVTPPO",
+   "HVSKIR"
+  ],
+  "owners": [
+   "BRAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CORE": {
+  "hash": 643386,
+  "members": [],
+  "owners": [
+   "CABLE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CDSE": {
+  "hash": 643818,
+  "members": [],
+  "owners": [
+   "PCDSE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DDSE": {
+  "hash": 643819,
+  "members": [
+   "DDAT"
+  ],
+  "owners": [
+   "SITE",
+   "APPLDA",
+   "ZONE",
+   "CONVEY",
+   "CNVCOM",
+   "EQUI",
+   "PULLP",
+   "JNTBOX",
+   "VOLM",
+   "SVOLM",
+   "STRU",
+   "STRWEL",
+   "STRTWR",
+   "STRFLT",
+   "TREADS",
+   "TREAD",
+   "INTLNG",
+   "TOPEXT",
+   "BOTEXT",
+   "STRSTR",
+   "STRLNG",
+   "LADDER",
+   "SLADDR",
+   "SLRAIL",
+   "RLGATE",
+   "CAGSEG",
+   "HOOPSE",
+   "RUNGSE",
+   "LDRRUN",
+   "PLTFRM",
+   "FURNIT",
+   "FIXTUR",
+   "DOOR",
+   "WINDOW",
+   "ELFITT",
+   "HVACFI",
+   "FPFITT",
+   "INFITT",
+   "HANDRA",
+   "HRGATE",
+   "HRTERM",
+   "HRPANE",
+   "HRPOST",
+   "CTRAY",
+   "CTJOIN",
+   "CTFEAT",
+   "PTRA",
+   "SUBE",
+   "SUBS",
+   "FRMW",
+   "SBFR",
+   "CFLOOR",
+   "CSCREE",
+   "CWALL",
+   "PNOD",
+   "GENSEC",
+   "WALL",
+   "PLDATU",
+   "ENDATU",
+   "FIXING",
+   "SDAFIX",
+   "MFIX",
+   "SCTN",
+   "STWALL",
+   "PJOI",
+   "PCOJ",
+   "SNOD",
+   "SCOJ",
+   "SUBJ",
+   "FITT",
+   "CMFI",
+   "SJOI",
+   "PANE",
+   "SCREED",
+   "FLOOR",
+   "GWALL",
+   "PFIT",
+   "CMPF",
+   "SBFI",
+   "NOZZ",
+   "ELCONN",
+   "EQUCOM",
+   "NXTR",
+   "TMPL",
+   "DDAR",
+   "SYSMDA",
+   "ASSOC",
+   "ASSMBR",
+   "RESTRI",
+   "DERDAT",
+   "RESDEF",
+   "DATDEF",
+   "ASREQU",
+   "DTNODE",
+   "DTPROF",
+   "DTPLAT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "LJSE": {
+  "hash": 643989,
+  "members": [
+   "PIPCA",
+   "PIGEN"
+  ],
+  "owners": [
+   "BRAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DPSE": {
+  "hash": 644143,
+  "members": [
+   "DPCA",
+   "DPSP",
+   "DPCY"
+  ],
+  "owners": [
+   "SITE",
+   "APPLDA",
+   "ZONE",
+   "CONVEY",
+   "CNVCOM",
+   "EQUI",
+   "PULLP",
+   "JNTBOX",
+   "VOLM",
+   "SVOLM",
+   "STRU",
+   "TREAD",
+   "RLGATE",
+   "CAGSEG",
+   "HOOPSE",
+   "LDRRUN",
+   "FURNIT",
+   "FIXTUR",
+   "DOOR",
+   "WINDOW",
+   "ELFITT",
+   "HVACFI",
+   "FPFITT",
+   "INFITT",
+   "HRGATE",
+   "HRTERM",
+   "HRPANE",
+   "HRPOST",
+   "PTRA",
+   "SUBE",
+   "XGEOM",
+   "SUBS",
+   "FRMW",
+   "SBFR",
+   "CFLOOR",
+   "CSCREE",
+   "CWALL",
+   "PNOD",
+   "GENSEC",
+   "WALL",
+   "PLDATU",
+   "ENDATU",
+   "FIXING",
+   "SDAFIX",
+   "MFIX",
+   "SCTN",
+   "STWALL",
+   "PJOI",
+   "PCOJ",
+   "SNOD",
+   "SCOJ",
+   "SUBJ",
+   "FITT",
+   "CMFI",
+   "SJOI",
+   "PANE",
+   "SCREED",
+   "FLOOR",
+   "GWALL",
+   "PFIT",
+   "CMPF",
+   "SBFI",
+   "NOZZ",
+   "ELCONN",
+   "EQUCOM",
+   "TMPL",
+   "DPAR",
+   "ASSOC",
+   "ASSMBR",
+   "RESTRI",
+   "DERDAT",
+   "RESDEF",
+   "DATDEF",
+   "ASREQU"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SITE": {
+  "hash": 644698,
+  "members": [
+   "TEXT",
+   "ZONE",
+   "BOUN",
+   "DRAW",
+   "GRDM",
+   "DPSE",
+   "DDSE",
+   "PORS",
+   "LNKS",
+   "AIDGRO",
+   "DIMGRO",
+   "TRNMOD"
+  ],
+  "owners": [
+   "WORL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PAVE": {
+  "hash": 645937,
+  "members": [
+   "NOLO",
+   "SPLO",
+   "NODI",
+   "RELE",
+   "SDLO"
+  ],
+  "owners": [
+   "PALJ",
+   "PLOO"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SEVE": {
+  "hash": 646048,
+  "members": [],
+  "owners": [
+   "SELJ"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "STIF": {
+  "hash": 656659,
+  "members": [],
+  "owners": [
+   "BRAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CINF": {
+  "hash": 659991,
+  "members": [],
+  "owners": [
+   "CINV"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CMPF": {
+  "hash": 661557,
+  "members": [
+   "SBFI",
+   "TMPL",
+   "DPSE",
+   "DDSE",
+   "PORS",
+   "LNKS",
+   "ACDT"
+  ],
+  "owners": [
+   "PANE",
+   "SCREED",
+   "FLOOR",
+   "GWALL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DSEG": {
+  "hash": 673384,
+  "members": [
+   "DBOX",
+   "DENDFR",
+   "DENDTO",
+   "DINTC",
+   "DINTER",
+   "DPLL",
+   "DMODRF",
+   "DEPNT",
+   "DPODR"
+  ],
+  "owners": [
+   "DCRCUR"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "RSEG": {
+  "hash": 673398,
+  "members": [],
+  "owners": [
+   "SEGSEQ"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "RPLG": {
+  "hash": 678420,
+  "members": [
+   "RPLA"
+  ],
+  "owners": [
+   "STRU"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HANG": {
+  "hash": 679463,
+  "members": [
+   "PCLA",
+   "PCLI",
+   "PLUG",
+   "SHOE",
+   "UBOL",
+   "POST",
+   "TRNN",
+   "HELE",
+   "HROD",
+   "EYRD",
+   "RCPL",
+   "TRNB",
+   "WASH",
+   "CLEV",
+   "EYNT",
+   "HPIN",
+   "HNUT",
+   "VSPR",
+   "SWBR",
+   "SNUB",
+   "SCLA",
+   "SLUG",
+   "BWLD",
+   "BBLT",
+   "SOST",
+   "STLS",
+   "SPAC",
+   "WPAD",
+   "TUBI",
+   "ANCI",
+   "HANCI"
+  ],
+  "owners": [
+   "REST",
+   "SUPPO"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PLUG": {
+  "hash": 684871,
+  "members": [],
+  "owners": [
+   "HANG",
+   "SUPC"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SLUG": {
+  "hash": 684874,
+  "members": [],
+  "owners": [
+   "HANG",
+   "SUPC"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "WASH": {
+  "hash": 702806,
+  "members": [],
+  "owners": [
+   "HANG",
+   "SUPC"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "MESH": {
+  "hash": 702904,
+  "members": [
+   "PIPCA",
+   "SUBCOM",
+   "HVHACC",
+   "HVBRCO",
+   "HVFLAN",
+   "HVIDAM",
+   "HVSADD",
+   "HVSPLR",
+   "HVSTIF",
+   "HVTPPO",
+   "HVSKIR"
+  ],
+  "owners": [
+   "BRAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DISH": {
+  "hash": 703003,
+  "members": [
+   "NBOX",
+   "NPOLYH",
+   "NCYL",
+   "NSLC",
+   "NSNO",
+   "NDIS",
+   "NCON",
+   "NPYR",
+   "NCTO",
+   "NRTO",
+   "NXTR",
+   "NREV"
+  ],
+  "owners": [
+   "EQUI",
+   "PULLP",
+   "JNTBOX",
+   "VOLM",
+   "SVOLM",
+   "STRU",
+   "PTRA",
+   "SUBE",
+   "SUBS",
+   "TMPL",
+   "TRNPRI"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "TUBI": {
+  "hash": 710633,
+  "members": [],
+  "owners": [
+   "BRAN",
+   "HANG",
+   "SUPC",
+   "TRUNNI"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "ANCI": {
+  "hash": 711154,
+  "members": [
+   "SSREFE"
+  ],
+  "owners": [
+   "HANG",
+   "SUPC"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "NODI": {
+  "hash": 711923,
+  "members": [],
+  "owners": [
+   "LOAP",
+   "INODE",
+   "PNOD",
+   "JLDATU",
+   "ENDATU",
+   "SNOD",
+   "FITT",
+   "CMFI",
+   "PAVE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SBFI": {
+  "hash": 713035,
+  "members": [
+   "TMPL",
+   "DPSE",
+   "DDSE",
+   "PORS",
+   "LNKS"
+  ],
+  "owners": [
+   "CMFI",
+   "CMPF"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CMFI": {
+  "hash": 713316,
+  "members": [
+   "SBFI",
+   "RELE",
+   "NOLO",
+   "NODI",
+   "TMPL",
+   "DPSE",
+   "DDSE",
+   "PORS",
+   "LNKS",
+   "ACDT"
+  ],
+  "owners": [
+   "SCTN",
+   "STWALL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "COFI": {
+  "hash": 713370,
+  "members": [],
+  "owners": [
+   "PANE",
+   "SCREED",
+   "FLOOR",
+   "GWALL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "LNKI": {
+  "hash": 716997,
+  "members": [
+   "LCCA",
+   "LCSP",
+   "LCCY"
+  ],
+  "owners": [
+   "LNKS"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "FBLI": {
+  "hash": 717396,
+  "members": [
+   "PIPCA",
+   "SUBCOM",
+   "HVHACC",
+   "HVBRCO",
+   "HVFLAN",
+   "HVIDAM",
+   "HVSADD",
+   "HVSPLR",
+   "HVSTIF",
+   "HVTPPO",
+   "HVSKIR",
+   "PIGEN"
+  ],
+  "owners": [
+   "BRAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PCLI": {
+  "hash": 717433,
+  "members": [],
+  "owners": [
+   "HANG",
+   "SUPC"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CYLI": {
+  "hash": 718014,
+  "members": [
+   "NBOX",
+   "NPOLYH",
+   "NCYL",
+   "NSLC",
+   "NSNO",
+   "NDIS",
+   "NCON",
+   "NPYR",
+   "NCTO",
+   "NRTO",
+   "NXTR",
+   "NREV"
+  ],
+  "owners": [
+   "EQUI",
+   "PULLP",
+   "JNTBOX",
+   "VOLM",
+   "SVOLM",
+   "STRU",
+   "PTRA",
+   "SUBE",
+   "SUBS",
+   "TMPL",
+   "TRNPRI"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PJOI": {
+  "hash": 719809,
+  "members": [
+   "TMPL",
+   "DPSE",
+   "DDSE",
+   "PORS",
+   "LNKS"
+  ],
+  "owners": [
+   "PNOD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SJOI": {
+  "hash": 719812,
+  "members": [
+   "TMPL",
+   "DPSE",
+   "DDSE",
+   "PORS",
+   "LNKS"
+  ],
+  "owners": [
+   "SNOD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "IPOI": {
+  "hash": 719964,
+  "members": [],
+  "owners": [
+   "BOUN",
+   "POGO",
+   "DRAW"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PORI": {
+  "hash": 722131,
+  "members": [],
+  "owners": [
+   "PORS"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "EQUI": {
+  "hash": 724361,
+  "members": [
+   "SUBE",
+   "TEXT",
+   "CYLI",
+   "SLCY",
+   "SNOU",
+   "BOX",
+   "POLYHE",
+   "GENPRI",
+   "GENCUR",
+   "DISH",
+   "CONE",
+   "NOZZ",
+   "POHE",
+   "PYRA",
+   "CTOR",
+   "RTOR",
+   "DRAW",
+   "PVOL",
+   "RPLA",
+   "LOAP",
+   "EXTR",
+   "REVO",
+   "PANE",
+   "TMPL",
+   "DPSE",
+   "DDSE",
+   "PORS",
+   "LNKS",
+   "ELCONN",
+   "EQUCOM",
+   "BPANEL",
+   "AIDGRO",
+   "DIMGRO"
+  ],
+  "owners": [
+   "ZONE",
+   "CONVEY"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SUBJ": {
+  "hash": 730315,
+  "members": [
+   "TMPL",
+   "DPSE",
+   "DDSE",
+   "PORS",
+   "LNKS"
+  ],
+  "owners": [
+   "PCOJ",
+   "SCOJ"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PALJ": {
+  "hash": 737062,
+  "members": [
+   "PAVE"
+  ],
+  "owners": [
+   "FRMW",
+   "SBFR",
+   "CFLOOR",
+   "CSCREE",
+   "CWALL",
+   "PANE",
+   "SCREED",
+   "FLOOR",
+   "GWALL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SELJ": {
+  "hash": 737173,
+  "members": [
+   "SEVE"
+  ],
+  "owners": [
+   "GENSEC",
+   "WALL",
+   "SCTN",
+   "STWALL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PCOJ": {
+  "hash": 739303,
+  "members": [
+   "SUBJ",
+   "TMPL",
+   "DPSE",
+   "DDSE",
+   "PORS",
+   "LNKS"
+  ],
+  "owners": [
+   "PNOD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SCOJ": {
+  "hash": 739306,
+  "members": [
+   "SUBJ",
+   "TMPL",
+   "DPSE",
+   "DDSE",
+   "PORS",
+   "LNKS"
+  ],
+  "owners": [
+   "SNOD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "GASK": {
+  "hash": 761839,
+  "members": [],
+  "owners": [
+   "BRAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "BVCL": {
+  "hash": 770420,
+  "members": [],
+  "owners": [
+   "BVAR",
+   "BVSA"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "RAIL": {
+  "hash": 774243,
+  "members": [],
+  "owners": [
+   "RAILSE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "GRIL": {
+  "hash": 774691,
+  "members": [
+   "PIPCA",
+   "SUBCOM",
+   "HVHACC",
+   "HVBRCO",
+   "HVFLAN",
+   "HVIDAM",
+   "HVSADD",
+   "HVSPLR",
+   "HVSTIF",
+   "HVTPPO",
+   "HVSKIR"
+  ],
+  "owners": [
+   "BRAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "WALL": {
+  "hash": 776435,
+  "members": [
+   "SPINE",
+   "JLDATU",
+   "COMFIX",
+   "DPSE",
+   "DDSE",
+   "PORS",
+   "LNKS",
+   "TMPL",
+   "SELJ"
+  ],
+  "owners": [
+   "FRMW",
+   "SBFR",
+   "CWALL",
+   "TMPL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CELL": {
+  "hash": 776523,
+  "members": [
+   "CPOR",
+   "CBOU",
+   "CINV"
+  ],
+  "owners": [
+   "BARE",
+   "BSAR"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DPLL": {
+  "hash": 776821,
+  "members": [
+   "DMODRF"
+  ],
+  "owners": [
+   "DSEG"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DGML": {
+  "hash": 777307,
+  "members": [
+   "ARCHIV",
+   "DGTXTU",
+   "DTCMNT"
+  ],
+  "owners": [
+   "DGRAPH"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "UBOL": {
+  "hash": 778647,
+  "members": [],
+  "owners": [
+   "HANG",
+   "SUPC"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PVOL": {
+  "hash": 779182,
+  "members": [],
+  "owners": [
+   "ZONE",
+   "CONVEY",
+   "EQUI",
+   "PULLP",
+   "JNTBOX",
+   "VOLM",
+   "SVOLM",
+   "STRU",
+   "PTRA",
+   "SUBE",
+   "SUBS"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "RCPL": {
+  "hash": 779400,
+  "members": [],
+  "owners": [
+   "HANG",
+   "SUPC"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "TMPL": {
+  "hash": 779672,
+  "members": [
+   "SCTN",
+   "PANE",
+   "PNOD",
+   "DPSE",
+   "DDSE",
+   "TMRPSE",
+   "GENSEC",
+   "WALL",
+   "STWALL",
+   "GWALL",
+   "FLOOR",
+   "SCREED",
+   "LNKS",
+   "PORS",
+   "CYLI",
+   "SLCY",
+   "SNOU",
+   "BOX",
+   "POLYHE",
+   "DISH",
+   "CONE",
+   "PYRA",
+   "CTOR",
+   "GENPRI",
+   "GENCUR",
+   "RTOR",
+   "EXTR",
+   "REVO",
+   "POHE",
+   "NOZZ",
+   "NCYL",
+   "NSLC",
+   "NSNO",
+   "NBOX",
+   "NPOLYH",
+   "NDIS",
+   "NCON",
+   "NPYR",
+   "NCTO",
+   "NRTO",
+   "NXTR",
+   "NREV",
+   "TEXT",
+   "ELCONN",
+   "DRAW",
+   "BPANEL",
+   "EQUCOM",
+   "STWSET"
+  ],
+  "owners": [
+   "SUBCNV",
+   "CNVCOM",
+   "EQUI",
+   "PULLP",
+   "JNTBOX",
+   "STRU",
+   "TREAD",
+   "INTLNG",
+   "TOPEXT",
+   "BOTEXT",
+   "RLGATE",
+   "CAGSEG",
+   "HOOPSE",
+   "LDRRUN",
+   "CLNTIL",
+   "WLPANE",
+   "FURNIT",
+   "FIXTUR",
+   "DOOR",
+   "WINDOW",
+   "ELFITT",
+   "HVACFI",
+   "FPFITT",
+   "INFITT",
+   "HRGATE",
+   "RAILSE",
+   "HRTERM",
+   "HRPANE",
+   "HRPOST",
+   "CTRAY",
+   "CTJOIN",
+   "CTFEAT",
+   "SUBE",
+   "SUBS",
+   "FRMW",
+   "SBFR",
+   "CFLOOR",
+   "CSCREE",
+   "CWALL",
+   "GENSEC",
+   "WALL",
+   "FIXING",
+   "SDAFIX",
+   "MFIX",
+   "SCTN",
+   "STWALL",
+   "PJOI",
+   "PCOJ",
+   "SCOJ",
+   "SUBJ",
+   "FITT",
+   "CMFI",
+   "SJOI",
+   "PANE",
+   "SCREED",
+   "FLOOR",
+   "GWALL",
+   "PFIT",
+   "CMPF",
+   "SBFI",
+   "NOZZ",
+   "ELCONN",
+   "EQUCOM",
+   "TMAR"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "WORL": {
+  "hash": 781187,
+  "members": [
+   "SITE",
+   "GPWL",
+   "TPWL",
+   "BUWL",
+   "RLWL",
+   "DOWL",
+   "XPIWLD",
+   "DSIWLD",
+   "AREAWL",
+   "FMWL",
+   "GRIDWL",
+   "MWLWLD",
+   "STLNKW",
+   "HBLWLD",
+   "SSOWLD",
+   "RSOWLD",
+   "COMWLD",
+   "MOGWLD",
+   "STDWLD",
+   "GBLOCK",
+   "BLOCK",
+   "ASDFWL",
+   "ASSOWL",
+   "ASWL",
+   "APPLDW",
+   "SYGPWL",
+   "CYMWRL",
+   "ILPWRL",
+   "LINKWL",
+   "BBLOCK",
+   "HCMWLD",
+   "SPMSW",
+   "FEMWLD",
+   "HMKWLD",
+   "REVLWL",
+   "CMTWLD",
+   "DEMOWL",
+   "TRNWLD",
+   "DTWRLD",
+   "FNCAW",
+   "FNCCW",
+   "CURWLD",
+   "PNTWLD",
+   "CONWLD",
+   "FSPWRL",
+   "BMFWRL",
+   "WKPKWL",
+   "WKSWLD",
+   "IDLWLD",
+   "XPRDWL"
+  ],
+  "owners": [],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "GRUL": {
+  "hash": 783439,
+  "members": [],
+  "owners": [
+   "RLST"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "RLWL": {
+  "hash": 784746,
+  "members": [
+   "RLST"
+  ],
+  "owners": [
+   "WORL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "FMWL": {
+  "hash": 784761,
+  "members": [
+   "FMGRP"
+  ],
+  "owners": [
+   "WORL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "COWL": {
+  "hash": 784812,
+  "members": [
+   "PIPCA",
+   "SUBCOM",
+   "HVHACC",
+   "HVBRCO",
+   "HVFLAN",
+   "HVIDAM",
+   "HVSADD",
+   "HVSPLR",
+   "HVSTIF",
+   "HVTPPO",
+   "HVSKIR"
+  ],
+  "owners": [
+   "BRAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DOWL": {
+  "hash": 784813,
+  "members": [
+   "DOST"
+  ],
+  "owners": [
+   "WORL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "GPWL": {
+  "hash": 784843,
+  "members": [
+   "GROU",
+   "GPSET"
+  ],
+  "owners": [
+   "WORL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "TPWL": {
+  "hash": 784856,
+  "members": [
+   "TMAR",
+   "DDAR"
+  ],
+  "owners": [
+   "WORL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "ASWL": {
+  "hash": 784918,
+  "members": [
+   "ASMBLY"
+  ],
+  "owners": [
+   "WORL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "BUWL": {
+  "hash": 784973,
+  "members": [
+   "BUILD",
+   "BVIE"
+  ],
+  "owners": [
+   "WORL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "NCYL": {
+  "hash": 785957,
+  "members": [],
+  "owners": [
+   "PANE",
+   "SCREED",
+   "FLOOR",
+   "GWALL",
+   "CYLI",
+   "SLCY",
+   "SNOU",
+   "BOX",
+   "DISH",
+   "CONE",
+   "PYRA",
+   "CTOR",
+   "RTOR",
+   "EXTR",
+   "REVO",
+   "POLYHE",
+   "TMPL",
+   "BPANEL",
+   "TRNPRI"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "IDAM": {
+  "hash": 788166,
+  "members": [],
+  "owners": [
+   "BRAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "GRDM": {
+  "hash": 790729,
+  "members": [
+   "POGO",
+   "TEXT"
+  ],
+  "owners": [
+   "SITE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "ILIM": {
+  "hash": 794214,
+  "members": [
+   "PROTRC",
+   "LOCMDL",
+   "POSMDL"
+  ],
+  "owners": [
+   "IBNDRY"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "VOLM": {
+  "hash": 796495,
+  "members": [
+   "SVOLM",
+   "TEXT",
+   "CYLI",
+   "SLCY",
+   "SNOU",
+   "BOX",
+   "GENPRI",
+   "GENCUR",
+   "POLYHE",
+   "DISH",
+   "CONE",
+   "POHE",
+   "PYRA",
+   "CTOR",
+   "RTOR",
+   "DRAW",
+   "PVOL",
+   "RPLA",
+   "LOAP",
+   "EXTR",
+   "REVO",
+   "DPSE",
+   "DDSE",
+   "PORS"
+  ],
+  "owners": [
+   "ZONE",
+   "CONVEY"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PCOM": {
+  "hash": 798352,
+  "members": [
+   "PIPCA",
+   "SUBCOM",
+   "HVHACC",
+   "HVBRCO",
+   "HVFLAN",
+   "HVIDAM",
+   "HVSADD",
+   "HVSPLR",
+   "HVSTIF",
+   "HVTPPO",
+   "HVSKIR",
+   "PIGEN"
+  ],
+  "owners": [
+   "BRAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "ROOM": {
+  "hash": 798678,
+  "members": [
+   "RSTARE",
+   "OPENSP",
+   "RUTVOL",
+   "STRWEL",
+   "DETGRP",
+   "REFDAT",
+   "AREADE",
+   "BNDLIN",
+   "ACCSET",
+   "SPBSET",
+   "INVLST"
+  ],
+  "owners": [
+   "APPLDA",
+   "STRU",
+   "BLEVEL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "MNUM": {
+  "hash": 803020,
+  "members": [],
+  "owners": [],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HFAN": {
+  "hash": 807902,
+  "members": [
+   "PIPCA",
+   "SUBCOM",
+   "HVHACC",
+   "HVBRCO",
+   "HVFLAN",
+   "HVIDAM",
+   "HVSADD",
+   "HVSPLR",
+   "HVSTIF",
+   "HVTPPO",
+   "HVSKIR"
+  ],
+  "owners": [
+   "BRAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "FLAN": {
+  "hash": 808062,
+  "members": [
+   "PIPCA",
+   "SUBCOM",
+   "PIGEN",
+   "HVHACC",
+   "HVBRCO",
+   "HVFLAN",
+   "HVIDAM",
+   "HVSADD",
+   "HVSPLR",
+   "HVSTIF",
+   "HVTPPO",
+   "HVSKIR",
+   "PIBLK"
+  ],
+  "owners": [
+   "BRAN",
+   "TRUNNI"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "BRAN": {
+  "hash": 808220,
+  "members": [
+   "ELBO",
+   "BEND",
+   "TEE",
+   "VALV",
+   "REDU",
+   "FLAN",
+   "CROS",
+   "GASK",
+   "DUCT",
+   "VENT",
+   "FTUB",
+   "SHU",
+   "COUP",
+   "CLOS",
+   "OLET",
+   "LJSE",
+   "CAP",
+   "FBLI",
+   "VTWA",
+   "VFWA",
+   "TRAP",
+   "FILT",
+   "WELD",
+   "PCOM",
+   "UNIO",
+   "INST",
+   "ATTA",
+   "TAPE",
+   "TRNS",
+   "STRT",
+   "OFST",
+   "PLEN",
+   "PLAT",
+   "THRE",
+   "BRCO",
+   "MESH",
+   "GRIL",
+   "COWL",
+   "DAMP",
+   "HFAN",
+   "SILE",
+   "BATT",
+   "AHU",
+   "STIF",
+   "HACC",
+   "HSAD",
+   "IDAM",
+   "TP",
+   "SPLR",
+   "SKIR",
+   "FLEX",
+   "TUBI",
+   "PTAP"
+  ],
+  "owners": [
+   "PIPE",
+   "HVAC"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PLEN": {
+  "hash": 810988,
+  "members": [
+   "PIPCA",
+   "SUBCOM",
+   "HVHACC",
+   "HVBRCO",
+   "HVFLAN",
+   "HVIDAM",
+   "HVSADD",
+   "HVSPLR",
+   "HVSTIF",
+   "HVTPPO",
+   "HVSKIR"
+  ],
+  "owners": [
+   "BRAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "POIN": {
+  "hash": 813985,
+  "members": [],
+  "owners": [
+   "BOUN",
+   "POGO",
+   "POLPTL",
+   "DRAW"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HPIN": {
+  "hash": 814004,
+  "members": [],
+  "owners": [
+   "HANG",
+   "SUPC"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "TRNN": {
+  "hash": 817715,
+  "members": [],
+  "owners": [
+   "HANG",
+   "SUPC"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "NCON": {
+  "hash": 818033,
+  "members": [],
+  "owners": [
+   "PANE",
+   "SCREED",
+   "FLOOR",
+   "GWALL",
+   "CYLI",
+   "SLCY",
+   "SNOU",
+   "BOX",
+   "DISH",
+   "CONE",
+   "PYRA",
+   "CTOR",
+   "RTOR",
+   "EXTR",
+   "REVO",
+   "POLYHE",
+   "TMPL",
+   "BPANEL",
+   "TRNPRI"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SCTN": {
+  "hash": 821683,
+  "members": [
+   "SNOD",
+   "FITT",
+   "CMFI",
+   "SELJ",
+   "SPLO",
+   "SDLO",
+   "TMPL",
+   "DPSE",
+   "DDSE",
+   "PORS",
+   "LNKS",
+   "BFDT"
+  ],
+  "owners": [
+   "FRMW",
+   "SBFR",
+   "CFLOOR",
+   "CWALL",
+   "TMPL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "BOUN": {
+  "hash": 822719,
+  "members": [
+   "POIN",
+   "TANP",
+   "IPOI",
+   "TEXT"
+  ],
+  "owners": [
+   "SITE",
+   "ZONE",
+   "CONVEY"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "ELBO": {
+  "hash": 828473,
+  "members": [
+   "PIPCA",
+   "SUBCOM",
+   "HVHACC",
+   "HVBRCO",
+   "HVFLAN",
+   "HVIDAM",
+   "HVSADD",
+   "HVSPLR",
+   "HVSTIF",
+   "HVTPPO",
+   "HVSKIR",
+   "PIGEN"
+  ],
+  "owners": [
+   "BRAN",
+   "TRUNNI"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "BRCO": {
+  "hash": 829361,
+  "members": [],
+  "owners": [
+   "BRAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "POGO": {
+  "hash": 832210,
+  "members": [
+   "POIN",
+   "IPOI"
+  ],
+  "owners": [
+   "GRDM",
+   "POHE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "UNIO": {
+  "hash": 833646,
+  "members": [
+   "SUBCOM",
+   "HVHACC",
+   "HVBRCO",
+   "HVFLAN",
+   "HVIDAM",
+   "HVSADD",
+   "HVSPLR",
+   "HVSTIF",
+   "HVTPPO",
+   "HVSKIR",
+   "PIGEN"
+  ],
+  "owners": [
+   "BRAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SDLO": {
+  "hash": 835561,
+  "members": [],
+  "owners": [
+   "ISECT",
+   "GENSEC",
+   "SCTN",
+   "STWALL",
+   "PAVE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "NOLO": {
+  "hash": 835853,
+  "members": [],
+  "owners": [
+   "LOAP",
+   "INODE",
+   "PNOD",
+   "JLDATU",
+   "ENDATU",
+   "SNOD",
+   "FITT",
+   "CMFI",
+   "PAVE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SPLO": {
+  "hash": 835885,
+  "members": [],
+  "owners": [
+   "ISECT",
+   "GENSEC",
+   "SCTN",
+   "STWALL",
+   "PAVE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "NSNO": {
+  "hash": 837419,
+  "members": [],
+  "owners": [
+   "PANE",
+   "SCREED",
+   "FLOOR",
+   "GWALL",
+   "CYLI",
+   "SLCY",
+   "SNOU",
+   "BOX",
+   "DISH",
+   "CONE",
+   "PYRA",
+   "CTOR",
+   "RTOR",
+   "EXTR",
+   "REVO",
+   "POLYHE",
+   "TMPL",
+   "BPANEL",
+   "TRNPRI"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PLOO": {
+  "hash": 837961,
+  "members": [
+   "PAVE"
+  ],
+  "owners": [
+   "PANE",
+   "SCREED",
+   "FLOOR",
+   "GWALL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "GRSO": {
+  "hash": 841030,
+  "members": [
+   "GXTRAO",
+   "OBJHD"
+  ],
+  "owners": [
+   "RSOWLD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HRSO": {
+  "hash": 841031,
+  "members": [
+   "HRSOF",
+   "GOBELE"
+  ],
+  "owners": [
+   "RSOWLD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "NCTO": {
+  "hash": 841361,
+  "members": [],
+  "owners": [
+   "PANE",
+   "SCREED",
+   "FLOOR",
+   "GWALL",
+   "CYLI",
+   "SLCY",
+   "SNOU",
+   "BOX",
+   "DISH",
+   "CONE",
+   "PYRA",
+   "CTOR",
+   "RTOR",
+   "EXTR",
+   "REVO",
+   "POLYHE",
+   "TMPL",
+   "BPANEL",
+   "TRNPRI"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "NRTO": {
+  "hash": 841766,
+  "members": [],
+  "owners": [
+   "PANE",
+   "SCREED",
+   "FLOOR",
+   "GWALL",
+   "CYLI",
+   "SLCY",
+   "SNOU",
+   "BOX",
+   "DISH",
+   "CONE",
+   "PYRA",
+   "CTOR",
+   "RTOR",
+   "EXTR",
+   "REVO",
+   "POLYHE",
+   "TMPL",
+   "BPANEL",
+   "TRNPRI"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "REVO": {
+  "hash": 842877,
+  "members": [
+   "LOOP",
+   "NBOX",
+   "NPOLYH",
+   "NCYL",
+   "NSLC",
+   "NSNO",
+   "NDIS",
+   "NCON",
+   "NPYR",
+   "NCTO",
+   "NRTO",
+   "NXTR",
+   "NREV"
+  ],
+  "owners": [
+   "EQUI",
+   "PULLP",
+   "JNTBOX",
+   "VOLM",
+   "SVOLM",
+   "STRU",
+   "PTRA",
+   "SUBE",
+   "SUBS",
+   "TMPL",
+   "TRNPRI"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SMAP": {
+  "hash": 847468,
+  "members": [],
+  "owners": [],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "LOAP": {
+  "hash": 847515,
+  "members": [
+   "RELE",
+   "NODI",
+   "NOLO"
+  ],
+  "owners": [
+   "EQUI",
+   "PULLP",
+   "JNTBOX",
+   "VOLM",
+   "SVOLM",
+   "SUBE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "TRAP": {
+  "hash": 847604,
+  "members": [
+   "PIPCA",
+   "SUBCOM",
+   "HVHACC",
+   "HVBRCO",
+   "HVFLAN",
+   "HVIDAM",
+   "HVSADD",
+   "HVSPLR",
+   "HVSTIF",
+   "HVTPPO",
+   "HVSKIR",
+   "PIGEN"
+  ],
+  "owners": [
+   "BRAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HTAP": {
+  "hash": 847646,
+  "members": [],
+  "owners": [
+   "HPANEL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PTAP": {
+  "hash": 847654,
+  "members": [
+   "PIPCA"
+  ],
+  "owners": [
+   "BRAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DAMP": {
+  "hash": 855877,
+  "members": [
+   "PIPCA",
+   "SUBCOM",
+   "HVHACC",
+   "HVBRCO",
+   "HVFLAN",
+   "HVIDAM",
+   "HVSADD",
+   "HVSPLR",
+   "HVSTIF",
+   "HVTPPO",
+   "HVSKIR"
+  ],
+  "owners": [
+   "BRAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "TANP": {
+  "hash": 856622,
+  "members": [],
+  "owners": [
+   "BOUN",
+   "DRAW"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "LOOP": {
+  "hash": 857721,
+  "members": [
+   "VERT"
+  ],
+  "owners": [
+   "INSURQ",
+   "FLRCOV",
+   "EXTR",
+   "REVO",
+   "NXTR",
+   "NREV",
+   "AEXTR",
+   "AREVO",
+   "BNDLIN",
+   "DTPROF",
+   "DTPLAT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "LCSP": {
+  "hash": 860313,
+  "members": [],
+  "owners": [
+   "LNKI"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DPSP": {
+  "hash": 860656,
+  "members": [],
+  "owners": [
+   "DPSE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "COUP": {
+  "hash": 862086,
+  "members": [
+   "SUBCOM",
+   "HVHACC",
+   "HVBRCO",
+   "HVFLAN",
+   "HVIDAM",
+   "HVSADD",
+   "HVSPLR",
+   "HVSTIF",
+   "HVTPPO",
+   "HVSKIR",
+   "PIGEN"
+  ],
+  "owners": [
+   "BRAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DDAR": {
+  "hash": 886576,
+  "members": [
+   "DDSE"
+  ],
+  "owners": [
+   "APPLDW",
+   "TPWL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "TMAR": {
+  "hash": 886835,
+  "members": [
+   "TMPL"
+  ],
+  "owners": [
+   "TPWL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DPAR": {
+  "hash": 886900,
+  "members": [
+   "DPSE"
+  ],
+  "owners": [],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "BSAR": {
+  "hash": 886979,
+  "members": [
+   "CELL"
+  ],
+  "owners": [
+   "BARE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "BVAR": {
+  "hash": 887060,
+  "members": [
+   "BVSA",
+   "BVCL"
+  ],
+  "owners": [
+   "BVIE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SWBR": {
+  "hash": 887833,
+  "members": [],
+  "owners": [
+   "HANG",
+   "SUPC"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SBFR": {
+  "hash": 890182,
+  "members": [
+   "PNOD",
+   "SCTN",
+   "PANE",
+   "TEXT",
+   "PALJ",
+   "FIXING",
+   "TMPL",
+   "DPSE",
+   "DDSE",
+   "PORS",
+   "LNKS",
+   "GENSEC",
+   "STRTWR",
+   "STRFLT",
+   "LADDER",
+   "SLADDR",
+   "RLADDR",
+   "HANDRA",
+   "WALL",
+   "STWALL",
+   "GWALL",
+   "FLOOR",
+   "SCREED",
+   "BPANEL",
+   "SDAFIX"
+  ],
+  "owners": [
+   "FRMW"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SKIR": {
+  "hash": 892612,
+  "members": [],
+  "owners": [
+   "BRAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SPLR": {
+  "hash": 894934,
+  "members": [],
+  "owners": [
+   "BRAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DOOR": {
+  "hash": 897079,
+  "members": [
+   "TMPL",
+   "FIXING",
+   "DDSE",
+   "DPSE",
+   "PORS",
+   "LNKS"
+  ],
+  "owners": [
+   "DETGRP",
+   "WLOPEN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CPOR": {
+  "hash": 897105,
+  "members": [],
+  "owners": [
+   "CELL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CTOR": {
+  "hash": 897213,
+  "members": [
+   "NBOX",
+   "NPOLYH",
+   "NCYL",
+   "NSLC",
+   "NSNO",
+   "NDIS",
+   "NCON",
+   "NPYR",
+   "NCTO",
+   "NRTO",
+   "NXTR",
+   "NREV"
+  ],
+  "owners": [
+   "EQUI",
+   "PULLP",
+   "JNTBOX",
+   "VOLM",
+   "SVOLM",
+   "STRU",
+   "PTRA",
+   "SUBE",
+   "SUBS",
+   "TMPL",
+   "TRNPRI"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "RTOR": {
+  "hash": 897228,
+  "members": [
+   "NBOX",
+   "NPOLYH",
+   "NCYL",
+   "NSLC",
+   "NSNO",
+   "NDIS",
+   "NCON",
+   "NPYR",
+   "NCTO",
+   "NRTO",
+   "NXTR",
+   "NREV"
+  ],
+  "owners": [
+   "EQUI",
+   "PULLP",
+   "JNTBOX",
+   "VOLM",
+   "SVOLM",
+   "STRU",
+   "PTRA",
+   "SUBE",
+   "SUBS",
+   "TMPL",
+   "TRNPRI"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "VSPR": {
+  "hash": 897934,
+  "members": [],
+  "owners": [
+   "HANG",
+   "SUPC"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "EXTR": {
+  "hash": 900968,
+  "members": [
+   "LOOP",
+   "NBOX",
+   "NPOLYH",
+   "NCYL",
+   "NSLC",
+   "NSNO",
+   "NDIS",
+   "NCON",
+   "NPYR",
+   "NCTO",
+   "NRTO",
+   "NXTR",
+   "NREV"
+  ],
+  "owners": [
+   "EQUI",
+   "PULLP",
+   "JNTBOX",
+   "VOLM",
+   "SVOLM",
+   "STRU",
+   "PTRA",
+   "SUBE",
+   "SUBS",
+   "TMPL",
+   "TRNPRI"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "NXTR": {
+  "hash": 900977,
+  "members": [
+   "LOOP",
+   "DDSE"
+  ],
+  "owners": [
+   "PANE",
+   "SCREED",
+   "FLOOR",
+   "GWALL",
+   "CYLI",
+   "SLCY",
+   "SNOU",
+   "BOX",
+   "DISH",
+   "CONE",
+   "PYRA",
+   "CTOR",
+   "RTOR",
+   "EXTR",
+   "REVO",
+   "POLYHE",
+   "TMPL",
+   "BPANEL",
+   "TRNPRI"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "NPYR": {
+  "hash": 904406,
+  "members": [],
+  "owners": [
+   "PANE",
+   "SCREED",
+   "FLOOR",
+   "GWALL",
+   "CYLI",
+   "SLCY",
+   "SNOU",
+   "BOX",
+   "DISH",
+   "CONE",
+   "PYRA",
+   "CTOR",
+   "RTOR",
+   "EXTR",
+   "REVO",
+   "POLYHE",
+   "TMPL",
+   "BPANEL",
+   "TRNPRI"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SUBS": {
+  "hash": 907462,
+  "members": [
+   "TEXT",
+   "CYLI",
+   "SLCY",
+   "SNOU",
+   "BOX",
+   "POLYHE",
+   "GENPRI",
+   "GENCUR",
+   "DISH",
+   "CONE",
+   "POHE",
+   "PYRA",
+   "CTOR",
+   "RTOR",
+   "DRAW",
+   "PVOL",
+   "RPLA",
+   "EXTR",
+   "REVO",
+   "PANE",
+   "TMPL",
+   "DPSE",
+   "DDSE",
+   "PORS",
+   "LNKS",
+   "BPANEL",
+   "AIDGRO",
+   "DIMGRO"
+  ],
+  "owners": [
+   "STRU"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "NDIS": {
+  "hash": 912101,
+  "members": [],
+  "owners": [
+   "PANE",
+   "SCREED",
+   "FLOOR",
+   "GWALL",
+   "CYLI",
+   "SLCY",
+   "SNOU",
+   "BOX",
+   "DISH",
+   "CONE",
+   "PYRA",
+   "CTOR",
+   "RTOR",
+   "EXTR",
+   "REVO",
+   "POLYHE",
+   "TMPL",
+   "BPANEL",
+   "TRNPRI"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "LNKS": {
+  "hash": 913827,
+  "members": [
+   "LNKI"
+  ],
+  "owners": [
+   "SITE",
+   "ZONE",
+   "CONVEY",
+   "CNVCOM",
+   "EQUI",
+   "PULLP",
+   "JNTBOX",
+   "STRU",
+   "TREAD",
+   "RLGATE",
+   "CAGSEG",
+   "HOOPSE",
+   "LDRRUN",
+   "FURNIT",
+   "FIXTUR",
+   "DOOR",
+   "WINDOW",
+   "ELFITT",
+   "HVACFI",
+   "FPFITT",
+   "INFITT",
+   "HRGATE",
+   "HRTERM",
+   "HRPANE",
+   "HRPOST",
+   "PTRA",
+   "SUBE",
+   "SUBS",
+   "FRMW",
+   "SBFR",
+   "CFLOOR",
+   "CSCREE",
+   "CWALL",
+   "PNOD",
+   "GENSEC",
+   "WALL",
+   "PLDATU",
+   "ENDATU",
+   "FIXING",
+   "MFIX",
+   "SCTN",
+   "STWALL",
+   "PJOI",
+   "PCOJ",
+   "SNOD",
+   "SCOJ",
+   "SUBJ",
+   "FITT",
+   "CMFI",
+   "SJOI",
+   "PANE",
+   "SCREED",
+   "FLOOR",
+   "GWALL",
+   "PFIT",
+   "CMPF",
+   "SBFI",
+   "NOZZ",
+   "ELCONN",
+   "EQUCOM",
+   "TMPL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "STLS": {
+  "hash": 914725,
+  "members": [],
+  "owners": [
+   "HANG",
+   "SUPC"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "TRNS": {
+  "hash": 916130,
+  "members": [
+   "PIPCA",
+   "SUBCOM",
+   "HVHACC",
+   "HVBRCO",
+   "HVFLAN",
+   "HVIDAM",
+   "HVSADD",
+   "HVSPLR",
+   "HVSTIF",
+   "HVTPPO",
+   "HVSKIR"
+  ],
+  "owners": [
+   "BRAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CLOS": {
+  "hash": 916680,
+  "members": [
+   "PIPCA",
+   "SUBCOM",
+   "HVHACC",
+   "HVBRCO",
+   "HVFLAN",
+   "HVIDAM",
+   "HVSADD",
+   "HVSPLR",
+   "HVSTIF",
+   "HVTPPO",
+   "HVSKIR",
+   "PIGEN"
+  ],
+  "owners": [
+   "BRAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CROS": {
+  "hash": 916842,
+  "members": [
+   "SUBCOM",
+   "HVHACC",
+   "HVBRCO",
+   "HVFLAN",
+   "HVIDAM",
+   "HVSADD",
+   "HVSPLR",
+   "HVSTIF",
+   "HVTPPO",
+   "HVSKIR",
+   "PIGEN"
+  ],
+  "owners": [
+   "BRAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PORS": {
+  "hash": 918961,
+  "members": [
+   "PORI"
+  ],
+  "owners": [
+   "SITE",
+   "ZONE",
+   "CONVEY",
+   "CNVCOM",
+   "EQUI",
+   "PULLP",
+   "JNTBOX",
+   "VOLM",
+   "SVOLM",
+   "STRU",
+   "TREAD",
+   "RLGATE",
+   "CAGSEG",
+   "HOOPSE",
+   "LDRRUN",
+   "FURNIT",
+   "FIXTUR",
+   "DOOR",
+   "WINDOW",
+   "ELFITT",
+   "HVACFI",
+   "FPFITT",
+   "INFITT",
+   "HRGATE",
+   "HRTERM",
+   "HRPANE",
+   "HRPOST",
+   "PTRA",
+   "SUBE",
+   "SUBS",
+   "FRMW",
+   "SBFR",
+   "CFLOOR",
+   "CSCREE",
+   "CWALL",
+   "PNOD",
+   "GENSEC",
+   "WALL",
+   "PLDATU",
+   "ENDATU",
+   "FIXING",
+   "MFIX",
+   "SCTN",
+   "STWALL",
+   "PJOI",
+   "PCOJ",
+   "SNOD",
+   "SCOJ",
+   "SUBJ",
+   "FITT",
+   "CMFI",
+   "SJOI",
+   "PANE",
+   "SCREED",
+   "FLOOR",
+   "GWALL",
+   "PFIT",
+   "CMPF",
+   "SBFI",
+   "NOZZ",
+   "ELCONN",
+   "EQUCOM",
+   "TMPL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DDAT": {
+  "hash": 925942,
+  "members": [
+   "VVALUE",
+   "ATTRRL"
+  ],
+  "owners": [
+   "DDSE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PLAT": {
+  "hash": 926170,
+  "members": [
+   "PIPCA",
+   "SUBCOM",
+   "HVHACC",
+   "HVBRCO",
+   "HVFLAN",
+   "HVIDAM",
+   "HVSADD",
+   "HVSPLR",
+   "HVSTIF",
+   "HVTPPO",
+   "HVSKIR"
+  ],
+  "owners": [
+   "BRAN",
+   "TRUNNI"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DUCT": {
+  "hash": 927859,
+  "members": [
+   "SUBCOM",
+   "HVHACC",
+   "HVBRCO",
+   "HVFLAN",
+   "HVIDAM",
+   "HVSADD",
+   "HVSPLR",
+   "HVSTIF",
+   "HVTPPO",
+   "HVSKIR"
+  ],
+  "owners": [
+   "BRAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "ACDT": {
+  "hash": 928099,
+  "members": [],
+  "owners": [
+   "FITT",
+   "CMFI",
+   "PFIT",
+   "CMPF"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "BFDT": {
+  "hash": 928181,
+  "members": [],
+  "owners": [
+   "SCTN",
+   "STWALL",
+   "PANE",
+   "SCREED",
+   "FLOOR",
+   "GWALL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "OLET": {
+  "hash": 929085,
+  "members": [
+   "PIPCA",
+   "SUBCOM",
+   "HVHACC",
+   "HVBRCO",
+   "HVFLAN",
+   "HVIDAM",
+   "HVSADD",
+   "HVSPLR",
+   "HVSTIF",
+   "HVTPPO",
+   "HVSKIR",
+   "PIGEN"
+  ],
+  "owners": [
+   "BRAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PFIT": {
+  "hash": 931840,
+  "members": [
+   "TMPL",
+   "DPSE",
+   "DDSE",
+   "PORS",
+   "LNKS",
+   "ACDT",
+   "STWSET"
+  ],
+  "owners": [
+   "PANE",
+   "SCREED",
+   "FLOOR",
+   "GWALL",
+   "BPANEL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "BBLT": {
+  "hash": 933905,
+  "members": [],
+  "owners": [
+   "HANG",
+   "SUPC"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "FILT": {
+  "hash": 934098,
+  "members": [
+   "PIPCA",
+   "SUBCOM",
+   "HVHACC",
+   "HVBRCO",
+   "HVFLAN",
+   "HVIDAM",
+   "HVSADD",
+   "HVSPLR",
+   "HVSTIF",
+   "HVTPPO",
+   "HVSKIR",
+   "PIGEN"
+  ],
+  "owners": [
+   "BRAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "VENT": {
+  "hash": 935464,
+  "members": [
+   "SUBCOM",
+   "HVHACC",
+   "HVBRCO",
+   "HVFLAN",
+   "HVIDAM",
+   "HVSADD",
+   "HVSPLR",
+   "HVSTIF",
+   "HVTPPO",
+   "HVSKIR"
+  ],
+  "owners": [
+   "BRAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DPNT": {
+  "hash": 935743,
+  "members": [
+   "DCRDEX",
+   "DCRDGR"
+  ],
+  "owners": [
+   "DINTER",
+   "SPMCFB",
+   "DCLRFL",
+   "DCLROT",
+   "DCRDSY",
+   "DBOX",
+   "DOFSTP",
+   "DHOLE",
+   "DCORNR",
+   "DBNDRY",
+   "DPLATE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "EYNT": {
+  "hash": 935987,
+  "members": [],
+  "owners": [
+   "HANG",
+   "SUPC"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "VERT": {
+  "hash": 938380,
+  "members": [],
+  "owners": [
+   "LOOP"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "STRT": {
+  "hash": 938782,
+  "members": [
+   "PIPCA",
+   "SUBCOM",
+   "HVHACC",
+   "HVBRCO",
+   "HVFLAN",
+   "HVIDAM",
+   "HVSADD",
+   "HVSPLR",
+   "HVSTIF",
+   "HVTPPO",
+   "HVSKIR"
+  ],
+  "owners": [
+   "BRAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "REST": {
+  "hash": 939105,
+  "members": [
+   "HANG",
+   "SUPC",
+   "TRUNNI",
+   "LUG",
+   "STRU",
+   "TEXT"
+  ],
+  "owners": [
+   "ZONE",
+   "CONVEY",
+   "PIPE",
+   "HVAC",
+   "CLNPNG"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "OFST": {
+  "hash": 939129,
+  "members": [
+   "PIPCA",
+   "SUBCOM",
+   "HVHACC",
+   "HVBRCO",
+   "HVFLAN",
+   "HVIDAM",
+   "HVSADD",
+   "HVSPLR",
+   "HVSTIF",
+   "HVTPPO",
+   "HVSKIR"
+  ],
+  "owners": [
+   "BRAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "RLST": {
+  "hash": 939294,
+  "members": [
+   "GRUL"
+  ],
+  "owners": [
+   "RLWL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "INST": {
+  "hash": 939339,
+  "members": [
+   "PIPCA",
+   "SUBCOM",
+   "PIGEN",
+   "PEXSP",
+   "PWCHA",
+   "PWMAN",
+   "PIBLK",
+   "PGBOX",
+   "PIACT",
+   "HVHACC",
+   "HVBRCO",
+   "HVFLAN",
+   "HVIDAM",
+   "HVSADD",
+   "HVSPLR",
+   "HVSTIF",
+   "HVTPPO",
+   "HVSKIR"
+  ],
+  "owners": [
+   "BRAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DOST": {
+  "hash": 939361,
+  "members": [
+   "DOCU"
+  ],
+  "owners": [
+   "DOWL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "POST": {
+  "hash": 939373,
+  "members": [],
+  "owners": [
+   "HANG",
+   "SUPC"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SOST": {
+  "hash": 939376,
+  "members": [],
+  "owners": [
+   "HANG",
+   "SUPC"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "BATT": {
+  "hash": 939710,
+  "members": [
+   "PIPCA",
+   "SUBCOM",
+   "HVHACC",
+   "HVBRCO",
+   "HVFLAN",
+   "HVIDAM",
+   "HVSADD",
+   "HVSPLR",
+   "HVSTIF",
+   "HVTPPO",
+   "HVSKIR"
+  ],
+  "owners": [
+   "BRAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "FITT": {
+  "hash": 939930,
+  "members": [
+   "RELE",
+   "NOLO",
+   "NODI",
+   "TMPL",
+   "DPSE",
+   "DDSE",
+   "PORS",
+   "LNKS",
+   "ACDT"
+  ],
+  "owners": [
+   "SCTN",
+   "STWALL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HNUT": {
+  "hash": 940796,
+  "members": [],
+  "owners": [
+   "HANG",
+   "SUPC"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "TEXT": {
+  "hash": 942752,
+  "members": [],
+  "owners": [
+   "SITE",
+   "ZONE",
+   "CONVEY",
+   "BOUN",
+   "GRDM",
+   "EQUI",
+   "PULLP",
+   "JNTBOX",
+   "VOLM",
+   "SVOLM",
+   "PIPE",
+   "HVAC",
+   "STRU",
+   "PTRA",
+   "REST",
+   "SUPPO",
+   "SUBE",
+   "SUBS",
+   "FRMW",
+   "SBFR",
+   "CFLOOR",
+   "CSCREE",
+   "CWALL",
+   "TMPL",
+   "DRAW"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DOCU": {
+  "hash": 947380,
+  "members": [
+   "SUBD"
+  ],
+  "owners": [
+   "DOST"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "REDU": {
+  "hash": 947853,
+  "members": [
+   "PIPCA",
+   "SUBCOM",
+   "HVHACC",
+   "HVBRCO",
+   "HVFLAN",
+   "HVIDAM",
+   "HVSADD",
+   "HVSPLR",
+   "HVSTIF",
+   "HVTPPO",
+   "HVSKIR",
+   "PIGEN"
+  ],
+  "owners": [
+   "BRAN",
+   "TRUNNI"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CBOU": {
+  "hash": 955776,
+  "members": [],
+  "owners": [
+   "CELL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SNOU": {
+  "hash": 956116,
+  "members": [
+   "NBOX",
+   "NPOLYH",
+   "NCYL",
+   "NSLC",
+   "NSNO",
+   "NDIS",
+   "NCON",
+   "NPYR",
+   "NCTO",
+   "NRTO",
+   "NXTR",
+   "NREV"
+  ],
+  "owners": [
+   "EQUI",
+   "PULLP",
+   "JNTBOX",
+   "VOLM",
+   "SVOLM",
+   "STRU",
+   "PTRA",
+   "SUBE",
+   "SUBS",
+   "TMPL",
+   "TRNPRI"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "GROU": {
+  "hash": 956212,
+  "members": [],
+  "owners": [
+   "GPWL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "STRU": {
+  "hash": 958465,
+  "members": [
+   "TEXT",
+   "CYLI",
+   "SLCY",
+   "SNOU",
+   "BOX",
+   "POLYHE",
+   "GENPRI",
+   "GENCUR",
+   "DISH",
+   "CONE",
+   "POHE",
+   "PYRA",
+   "CTOR",
+   "RTOR",
+   "DRAW",
+   "PVOL",
+   "RPLA",
+   "SUBS",
+   "FRMW",
+   "RPLG",
+   "LCDE",
+   "EXTR",
+   "REVO",
+   "PANE",
+   "TMPL",
+   "DPSE",
+   "DDSE",
+   "PORS",
+   "LNKS",
+   "STRTWR",
+   "STRFLT",
+   "LADDER",
+   "SLADDR",
+   "RLADDR",
+   "HANDRA",
+   "CTWALL",
+   "PLTFRM",
+   "ROOM",
+   "BPANEL",
+   "AIDGRO",
+   "DIMGRO",
+   "SUBCNV"
+  ],
+  "owners": [
+   "ZONE",
+   "CONVEY",
+   "REST",
+   "SUPPO"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DATU": {
+  "hash": 959395,
+  "members": [],
+  "owners": [
+   "ZONE",
+   "CONVEY"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CLEV": {
+  "hash": 968439,
+  "members": [],
+  "owners": [
+   "HANG",
+   "SUPC"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "NREV": {
+  "hash": 968612,
+  "members": [
+   "LOOP"
+  ],
+  "owners": [
+   "PANE",
+   "SCREED",
+   "FLOOR",
+   "GWALL",
+   "CYLI",
+   "SLCY",
+   "SNOU",
+   "BOX",
+   "DISH",
+   "CONE",
+   "PYRA",
+   "CTOR",
+   "RTOR",
+   "EXTR",
+   "REVO",
+   "POLYHE",
+   "TMPL",
+   "BPANEL",
+   "TRNPRI"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "VALV": {
+  "hash": 973264,
+  "members": [
+   "PIPCA",
+   "SUBCOM",
+   "PIGEN",
+   "PEXSP",
+   "PWCHA",
+   "PWMAN",
+   "PIBLK",
+   "PGBOX",
+   "PIACT",
+   "HVHACC",
+   "HVBRCO",
+   "HVFLAN",
+   "HVIDAM",
+   "HVSADD",
+   "HVSPLR",
+   "HVSTIF",
+   "HVTPPO",
+   "HVSKIR"
+  ],
+  "owners": [
+   "BRAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CINV": {
+  "hash": 974919,
+  "members": [
+   "CINF"
+  ],
+  "owners": [
+   "CELL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DRAW": {
+  "hash": 985369,
+  "members": [
+   "POIN",
+   "TANP",
+   "IPOI",
+   "TEXT"
+  ],
+  "owners": [
+   "SITE",
+   "ZONE",
+   "CONVEY",
+   "EQUI",
+   "PULLP",
+   "JNTBOX",
+   "VOLM",
+   "SVOLM",
+   "STRU",
+   "PTRA",
+   "SUBE",
+   "SUBS",
+   "TMPL",
+   "REFDAT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "FRMW": {
+  "hash": 994119,
+  "members": [
+   "SBFR",
+   "TEXT",
+   "PNOD",
+   "SCTN",
+   "PANE",
+   "PALJ",
+   "FIXING",
+   "TMPL",
+   "DPSE",
+   "DDSE",
+   "PORS",
+   "LNKS",
+   "GENSEC",
+   "CWALL",
+   "CFLOOR",
+   "CSCREE",
+   "STRTWR",
+   "STRFLT",
+   "LADDER",
+   "SLADDR",
+   "RLADDR",
+   "HANDRA",
+   "WALL",
+   "STWALL",
+   "GWALL",
+   "FLOOR",
+   "SCREED",
+   "BPANEL",
+   "AIDGRO",
+   "DIMGRO",
+   "INODE",
+   "ISECT",
+   "SDAFIX"
+  ],
+  "owners": [
+   "STRU"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "FLEX": {
+  "hash": 1007808,
+  "members": [],
+  "owners": [
+   "BRAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "MFIX": {
+  "hash": 1010569,
+  "members": [
+   "TMPL",
+   "DPSE",
+   "DDSE",
+   "PORS",
+   "LNKS"
+  ],
+  "owners": [
+   "PLDATU"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "ABOX": {
+  "hash": 1014823,
+  "members": [],
+  "owners": [
+   "AREADE",
+   "DEMOPA"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DBOX": {
+  "hash": 1014826,
+  "members": [
+   "DPNT"
+  ],
+  "owners": [
+   "DCRCUR",
+   "DSEG",
+   "DINTER",
+   "SPMCON",
+   "SRFSUR",
+   "WKSUR",
+   "DPLIM",
+   "DEDGRS",
+   "DSEAM",
+   "DBNDRY",
+   "DSTIFF",
+   "DFCPLA",
+   "DPILLR",
+   "UPANEL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "NBOX": {
+  "hash": 1014836,
+  "members": [],
+  "owners": [
+   "PANE",
+   "SCREED",
+   "FLOOR",
+   "GWALL",
+   "CYLI",
+   "SLCY",
+   "SNOU",
+   "BOX",
+   "DISH",
+   "CONE",
+   "PYRA",
+   "CTOR",
+   "RTOR",
+   "EXTR",
+   "REVO",
+   "POLYHE",
+   "TMPL",
+   "BPANEL",
+   "TRNPRI"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CWAY": {
+  "hash": 1024869,
+  "members": [
+   "CWBRAN"
+  ],
+  "owners": [
+   "ZONE",
+   "CONVEY"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "LCCY": {
+  "hash": 1025796,
+  "members": [],
+  "owners": [
+   "LNKI"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SLCY": {
+  "hash": 1026046,
+  "members": [
+   "NBOX",
+   "NPOLYH",
+   "NCYL",
+   "NSLC",
+   "NSNO",
+   "NDIS",
+   "NCON",
+   "NPYR",
+   "NCTO",
+   "NRTO",
+   "NXTR",
+   "NREV"
+  ],
+  "owners": [
+   "EQUI",
+   "PULLP",
+   "JNTBOX",
+   "VOLM",
+   "SVOLM",
+   "STRU",
+   "PTRA",
+   "SUBE",
+   "SUBS",
+   "TMPL",
+   "TRNPRI"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DPCY": {
+  "hash": 1026139,
+  "members": [],
+  "owners": [
+   "DPSE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "NOZZ": {
+  "hash": 1062572,
+  "members": [
+   "TMPL",
+   "DPSE",
+   "DDSE",
+   "PORS",
+   "LNKS"
+  ],
+  "owners": [
+   "EQUI",
+   "SUBE",
+   "TMPL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PIPCA": {
+  "hash": 1133854,
+  "members": [],
+  "owners": [
+   "ELBO",
+   "BEND",
+   "TEE",
+   "VALV",
+   "REDU",
+   "TAPE",
+   "TRNS",
+   "STRT",
+   "OFST",
+   "PLEN",
+   "PLAT",
+   "FLAN",
+   "THRE",
+   "FTUB",
+   "CLOS",
+   "OLET",
+   "PTAP",
+   "LJSE",
+   "CAP",
+   "MESH",
+   "GRIL",
+   "COWL",
+   "FBLI",
+   "VTWA",
+   "VFWA",
+   "TRAP",
+   "FILT",
+   "PCOM",
+   "AHU",
+   "DAMP",
+   "HFAN",
+   "SILE",
+   "BATT",
+   "INST"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HIBEA": {
+  "hash": 1163006,
+  "members": [],
+  "owners": [
+   "HIPAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HISEA": {
+  "hash": 1175399,
+  "members": [],
+  "owners": [
+   "HIPAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PWCHA": {
+  "hash": 1223170,
+  "members": [],
+  "owners": [
+   "VALV",
+   "INST"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HIFLA": {
+  "hash": 1303703,
+  "members": [],
+  "owners": [
+   "HIPAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DGMLA": {
+  "hash": 1308748,
+  "members": [
+   "ARCHIV",
+   "DGTXTU",
+   "DTCMNT"
+  ],
+  "owners": [
+   "DGRAPH"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HIPLA": {
+  "hash": 1310993,
+  "members": [],
+  "owners": [
+   "HIPAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HIBRA": {
+  "hash": 1418885,
+  "members": [],
+  "owners": [
+   "HIPAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "APYRA": {
+  "hash": 1435834,
+  "members": [],
+  "owners": [
+   "AREADE",
+   "DEMOPA"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SPMSA": {
+  "hash": 1446787,
+  "members": [
+   "SPMSPC",
+   "SPMCAA",
+   "SPMLAA",
+   "SPMPAA",
+   "SPMBAA",
+   "SPMZAA",
+   "SPMGAA",
+   "SPMCAD"
+  ],
+  "owners": [
+   "SPMSW"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HATTA": {
+  "hash": 1471157,
+  "members": [],
+  "owners": [
+   "RUTVOL",
+   "CTWALL",
+   "RBRAN",
+   "HANDRA",
+   "CWBRAN",
+   "CABLE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "RATTA": {
+  "hash": 1471167,
+  "members": [],
+  "owners": [
+   "PLFEAT",
+   "OPENFE",
+   "WLFEAT",
+   "CONSEQ",
+   "HRFEAT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "TATTA": {
+  "hash": 1471169,
+  "members": [],
+  "owners": [
+   "RUTVOL",
+   "CTWALL",
+   "RBRAN",
+   "HANDRA",
+   "CWBRAN",
+   "CABLE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTJOB": {
+  "hash": 1897402,
+  "members": [
+   "DTGRID",
+   "DTJDAT",
+   "DTSTRU",
+   "DTPHSE",
+   "DTNODE",
+   "XGEOM",
+   "DTPLNE",
+   "DTCSTE",
+   "DTLOCA",
+   "DTPERS"
+  ],
+  "owners": [
+   "DTWRLD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "TRNCC": {
+  "hash": 2195525,
+  "members": [
+   "TRNCEL"
+  ],
+  "owners": [
+   "TRNMOD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "GENNC": {
+  "hash": 2411674,
+  "members": [
+   "GENNG",
+   "GENNC",
+   "GENNI"
+  ],
+  "owners": [
+   "GENPG",
+   "GENPC",
+   "GENPI",
+   "GENNG",
+   "GENNC",
+   "GENNI"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "ASSOC": {
+  "hash": 2435374,
+  "members": [
+   "ASSMBR",
+   "RESTRI",
+   "DERDAT",
+   "DATDEF",
+   "RESDEF",
+   "RESTGP",
+   "ASREQU",
+   "ASTATU",
+   "DDSE",
+   "DPSE"
+  ],
+  "owners": [
+   "ASSOGP"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "GENPC": {
+  "hash": 2451040,
+  "members": [
+   "GENPG",
+   "GENPC",
+   "GENPI",
+   "GENNG",
+   "GENNC",
+   "GENNI"
+  ],
+  "owners": [
+   "ZONE",
+   "CONVEY",
+   "GENPG",
+   "GENPC",
+   "GENPI"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DGARC": {
+  "hash": 2480980,
+  "members": [
+   "ARCHIV",
+   "DGTXTU",
+   "DTCMNT"
+  ],
+  "owners": [
+   "DGRAPH"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DINTC": {
+  "hash": 2529877,
+  "members": [
+   "DMODRF"
+  ],
+  "owners": [
+   "DSEG"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HBEAD": {
+  "hash": 2680595,
+  "members": [],
+  "owners": [
+   "HPANEL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "TREAD": {
+  "hash": 2681039,
+  "members": [
+   "GENSEC",
+   "PANE",
+   "DDSE",
+   "TMPL",
+   "DPSE",
+   "PORS",
+   "LNKS",
+   "BPANEL"
+  ],
+  "owners": [
+   "TREADS"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DGRAD": {
+  "hash": 2690203,
+  "members": [
+   "ARCHIV",
+   "DGTXTU",
+   "DTCMNT"
+  ],
+  "owners": [
+   "DGRAPH"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "OBJHD": {
+  "hash": 2822028,
+  "members": [
+   "OBJELE",
+   "ATTHD",
+   "HRDREF",
+   "SFTREF",
+   "HTPELE",
+   "CNGREQ",
+   "CNGFXD"
+  ],
+  "owners": [
+   "GXTRAO",
+   "GSUPFO",
+   "GIBLO",
+   "GIPPAN",
+   "GICPAN",
+   "GICSTI",
+   "GICPLA",
+   "GISPAN",
+   "FEMIMG",
+   "GBLOCK",
+   "GPANEL",
+   "GSUBPN",
+   "GCPANE",
+   "GSURF",
+   "GCURVE",
+   "GSEAM",
+   "GPROF",
+   "GPROTR",
+   "GSTIFF",
+   "GPLATE",
+   "GPLANE",
+   "GPOINT",
+   "GFCURV",
+   "GRSO",
+   "GCOMPT",
+   "GSTBRA",
+   "GBRAPN",
+   "MWLDTB",
+   "HMARK"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "ATTHD": {
+  "hash": 2829790,
+  "members": [
+   "ATTDAT"
+  ],
+  "owners": [
+   "OBJHD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "MWELD": {
+  "hash": 2897680,
+  "members": [],
+  "owners": [
+   "MWLDJT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "BUILD": {
+  "hash": 2900531,
+  "members": [
+   "BARE"
+  ],
+  "owners": [
+   "BUWL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PFACE": {
+  "hash": 3248602,
+  "members": [
+   "PFDEFI",
+   "PFCRVS",
+   "PFOUTC"
+  ],
+  "owners": [
+   "SSOWLD",
+   "WKSWLD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CNODE": {
+  "hash": 3278694,
+  "members": [],
+  "owners": [
+   "ZONE",
+   "CONVEY"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HNODE": {
+  "hash": 3278699,
+  "members": [],
+  "owners": [
+   "HTFEAT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "INODE": {
+  "hash": 3278700,
+  "members": [
+   "NODI",
+   "NOLO",
+   "RELE"
+  ],
+  "owners": [
+   "FRMW",
+   "ISTRUR"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "JNODE": {
+  "hash": 3278701,
+  "members": [],
+  "owners": [
+   "JNTBOX"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "RNODE": {
+  "hash": 3278709,
+  "members": [],
+  "owners": [
+   "RTFEAT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CTTEE": {
+  "hash": 3302184,
+  "members": [
+   "CTRAY",
+   "CTFEAT",
+   "CTJOIN"
+  ],
+  "owners": [
+   "CTMTRL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DEDGE": {
+  "hash": 3329482,
+  "members": [
+   "DEDGCT",
+   "DEDGFR",
+   "DEDGTO",
+   "DEDGBV",
+   "DEDGEX",
+   "DEDGGR",
+   "DEDGCP",
+   "DEDGST"
+  ],
+  "owners": [
+   "DBNDRY"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "IEDGE": {
+  "hash": 3329487,
+  "members": [
+   "PROTRC",
+   "LOCMDL",
+   "POSMDL"
+  ],
+  "owners": [
+   "IBNDRY"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CABLE": {
+  "hash": 3426330,
+  "members": [
+   "RPATH",
+   "HATTA",
+   "TATTA",
+   "CORE",
+   "SEGSEQ"
+  ],
+  "owners": [
+   "ZONE",
+   "CONVEY",
+   "BUNDLE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CHOLE": {
+  "hash": 3435996,
+  "members": [
+   "GOBELE"
+  ],
+  "owners": [
+   "CSURPX"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DHOLE": {
+  "hash": 3435997,
+  "members": [
+   "DLINE",
+   "DPNT",
+   "DMODRF"
+  ],
+  "owners": [
+   "DBNDRY",
+   "DPLATE",
+   "DBRCKT",
+   "DSTIFF",
+   "DFCPLA",
+   "DPILLR",
+   "UPANEL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HHOLE": {
+  "hash": 3436001,
+  "members": [],
+  "owners": [
+   "HPANEL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "IHOLE": {
+  "hash": 3436002,
+  "members": [
+   "PROTRC",
+   "LOCMDL",
+   "POSMDL"
+  ],
+  "owners": [
+   "UPANEL",
+   "IBRCKT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "IPANE": {
+  "hash": 3465378,
+  "members": [],
+  "owners": [
+   "ISTRUR"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DLINE": {
+  "hash": 3471097,
+  "members": [
+   "DCRDEX",
+   "DCRDGR"
+  ],
+  "owners": [
+   "DINTER",
+   "DCLROT",
+   "DCLTRA",
+   "DPLANE",
+   "DHOLE",
+   "DBNDRY",
+   "DPLATE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SPINE": {
+  "hash": 3471220,
+  "members": [
+   "POINSP",
+   "CURVE"
+  ],
+  "owners": [
+   "GENSEC",
+   "WALL",
+   "DTPROF"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "ACONE": {
+  "hash": 3475225,
+  "members": [],
+  "owners": [
+   "AREADE",
+   "DEMOPA"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PCDSE": {
+  "hash": 3565636,
+  "members": [
+   "CDSE"
+  ],
+  "owners": [
+   "GENPRI"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CURVE": {
+  "hash": 3635364,
+  "members": [],
+  "owners": [
+   "RPATH",
+   "SPINE",
+   "STWELD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTBMF": {
+  "hash": 3977968,
+  "members": [
+   "ARCHIV",
+   "DTBMFD",
+   "DTBMRV",
+   "DTBMFP"
+  ],
+  "owners": [
+   "DTBMFL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CPROF": {
+  "hash": 4028889,
+  "members": [
+   "CPROTR",
+   "GOBELE"
+  ],
+  "owners": [
+   "CSURPX"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "GPROF": {
+  "hash": 4028893,
+  "members": [
+   "OBJHD"
+  ],
+  "owners": [
+   "CSURPX"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HRSOF": {
+  "hash": 4029677,
+  "members": [
+   "HRSOL"
+  ],
+  "owners": [
+   "HRSO"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CSURF": {
+  "hash": 4090206,
+  "members": [
+   "GOBELE",
+   "CCURVE"
+  ],
+  "owners": [
+   "SSOWLD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "GSURF": {
+  "hash": 4090210,
+  "members": [
+   "GCURVE",
+   "GXTRAO",
+   "OBJHD"
+  ],
+  "owners": [
+   "SSOWLD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PSURF": {
+  "hash": 4090219,
+  "members": [
+   "PRIGEO",
+   "CRGCON",
+   "EXTCNT",
+   "SWECON",
+   "CYLCON",
+   "CONCON"
+  ],
+  "owners": [
+   "SSOWLD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "GENNG": {
+  "hash": 4537438,
+  "members": [
+   "GENNG",
+   "GENNC",
+   "GENNI"
+  ],
+  "owners": [
+   "GENPG",
+   "GENPC",
+   "GENPI",
+   "GENNG",
+   "GENNC",
+   "GENNI"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "GENPG": {
+  "hash": 4576804,
+  "members": [
+   "GENPG",
+   "GENPC",
+   "GENPI",
+   "GENNG",
+   "GENNC",
+   "GENNI"
+  ],
+  "owners": [
+   "ZONE",
+   "CONVEY",
+   "GENPG",
+   "GENPC",
+   "GENPI"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "ADISH": {
+  "hash": 5163616,
+  "members": [],
+  "owners": [
+   "AREADE",
+   "DEMOPA"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "RPATH": {
+  "hash": 5177808,
+  "members": [
+   "POINTR",
+   "CURVE",
+   "EXTGEO",
+   "RSECT"
+  ],
+  "owners": [
+   "STRFLT",
+   "STRLNG",
+   "RUTVOL",
+   "CTWALL",
+   "PLTFRM",
+   "PLOPEN",
+   "WLOPEN",
+   "RBRAN",
+   "HANDRA",
+   "CWBRAN",
+   "CABLE",
+   "STWELD",
+   "BPANEL",
+   "BPOPEN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HANCI": {
+  "hash": 5383700,
+  "members": [],
+  "owners": [
+   "HANG",
+   "GENSEC"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "ACYLI": {
+  "hash": 5568913,
+  "members": [],
+  "owners": [
+   "AREADE",
+   "DEMOPA"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "GENNI": {
+  "hash": 5600320,
+  "members": [
+   "GENNG",
+   "GENNC",
+   "GENNI"
+  ],
+  "owners": [
+   "GENPG",
+   "GENPC",
+   "GENPI",
+   "GENNG",
+   "GENNC",
+   "GENNI"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HIPOI": {
+  "hash": 5621570,
+  "members": [],
+  "owners": [
+   "HIPAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "GENPI": {
+  "hash": 5639686,
+  "members": [
+   "GENPG",
+   "GENPC",
+   "GENPI",
+   "GENNG",
+   "GENNC",
+   "GENNI"
+  ],
+  "owners": [
+   "ZONE",
+   "CONVEY",
+   "GENPG",
+   "GENPC",
+   "GENPI"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HISTI": {
+  "hash": 5722172,
+  "members": [],
+  "owners": [
+   "HIPAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "BLOCK": {
+  "hash": 6447602,
+  "members": [
+   "CPANEL",
+   "HPANEL",
+   "GOBELE"
+  ],
+  "owners": [
+   "WORL",
+   "HBLWLD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PIBLK": {
+  "hash": 6615205,
+  "members": [],
+  "owners": [
+   "VALV",
+   "FLAN",
+   "INST"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HMARK": {
+  "hash": 6732674,
+  "members": [
+   "GOBELE",
+   "OBJHD"
+  ],
+  "owners": [
+   "HMKWLD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "FMWSK": {
+  "hash": 6768393,
+  "members": [],
+  "owners": [
+   "FMWELD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DINCL": {
+  "hash": 6978235,
+  "members": [],
+  "owners": [
+   "DSTIFF",
+   "DFCPLA"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "BEVEL": {
+  "hash": 7023323,
+  "members": [
+   "ARCHIV",
+   "BEVSEG",
+   "DTCMNT"
+  ],
+  "owners": [
+   "DTPLAT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HIPIL": {
+  "hash": 7097795,
+  "members": [],
+  "owners": [
+   "HIPAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CWALL": {
+  "hash": 7146282,
+  "members": [
+   "PNOD",
+   "SCTN",
+   "PANE",
+   "TEXT",
+   "PALJ",
+   "FIXING",
+   "TMPL",
+   "DPSE",
+   "DDSE",
+   "PORS",
+   "LNKS",
+   "GENSEC",
+   "WALL",
+   "STWALL",
+   "GWALL",
+   "BPANEL"
+  ],
+  "owners": [
+   "FRMW"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "GWALL": {
+  "hash": 7146286,
+  "members": [
+   "PLOO",
+   "PFIT",
+   "CMPF",
+   "COFI",
+   "PALJ",
+   "DPSE",
+   "DDSE",
+   "PORS",
+   "LNKS",
+   "BFDT",
+   "NBOX",
+   "NPOLYH",
+   "NCYL",
+   "NSLC",
+   "NSNO",
+   "NDIS",
+   "NCON",
+   "NPYR",
+   "NCTO",
+   "NRTO",
+   "NXTR",
+   "NREV",
+   "TMPL"
+  ],
+  "owners": [
+   "FRMW",
+   "SBFR",
+   "CWALL",
+   "TMPL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "XCELL": {
+  "hash": 7148679,
+  "members": [],
+  "owners": [
+   "XCELS"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HIHOL": {
+  "hash": 7210061,
+  "members": [],
+  "owners": [
+   "HIPAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HRSOL": {
+  "hash": 7218323,
+  "members": [],
+  "owners": [
+   "HRSOF"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CSEAM": {
+  "hash": 7464018,
+  "members": [
+   "GOBELE"
+  ],
+  "owners": [
+   "CSURPX"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DSEAM": {
+  "hash": 7464019,
+  "members": [
+   "DBOX",
+   "DPLANE",
+   "DMODRF",
+   "DOFSTP",
+   "DENDFR",
+   "DENDTO"
+  ],
+  "owners": [
+   "DBNDRY"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "GSEAM": {
+  "hash": 7464022,
+  "members": [
+   "OBJHD"
+  ],
+  "owners": [
+   "CSURPX"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HSEAM": {
+  "hash": 7464023,
+  "members": [],
+  "owners": [
+   "HPANEL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "ISEAM": {
+  "hash": 7464024,
+  "members": [
+   "PROTRC",
+   "LOCMDL",
+   "LIMMDL",
+   "POSMDL"
+  ],
+  "owners": [
+   "UPANEL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DPLIM": {
+  "hash": 7626505,
+  "members": [
+   "DBOX",
+   "DPLANE",
+   "DMODRF",
+   "DOFSTP"
+  ],
+  "owners": [
+   "DCRCUR",
+   "SRFDEF",
+   "DBNDRY"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SVOLM": {
+  "hash": 7687918,
+  "members": [
+   "TEXT",
+   "CYLI",
+   "SLCY",
+   "SNOU",
+   "BOX",
+   "POLYHE",
+   "GENPRI",
+   "GENCUR",
+   "DISH",
+   "CONE",
+   "POHE",
+   "PYRA",
+   "CTOR",
+   "RTOR",
+   "DRAW",
+   "PVOL",
+   "RPLA",
+   "LOAP",
+   "EXTR",
+   "REVO",
+   "DPSE",
+   "DDSE",
+   "PORS"
+  ],
+  "owners": [
+   "VOLM"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "XGEOM": {
+  "hash": 7739277,
+  "members": [
+   "XCLTN",
+   "DPSE"
+  ],
+  "owners": [
+   "ZONE",
+   "CONVEY",
+   "DTJOB"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PWMAN": {
+  "hash": 8001412,
+  "members": [],
+  "owners": [
+   "VALV",
+   "INST"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HIPAN": {
+  "hash": 8003213,
+  "members": [
+   "HIBOU",
+   "HISEA",
+   "HIPLA",
+   "HIHOL",
+   "HINOT",
+   "HICUT",
+   "HISTI",
+   "HIFLA",
+   "HIPIL",
+   "HIBRA",
+   "HIDOU",
+   "HIPOI",
+   "HICUR",
+   "HIBEA",
+   "GOBELE"
+  ],
+  "owners": [
+   "HIBLO"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "RBRAN": {
+  "hash": 8004492,
+  "members": [
+   "RPATH",
+   "HATTA",
+   "TATTA",
+   "CONSEQ",
+   "SEGSEQ"
+  ],
+  "owners": [
+   "ZONE",
+   "CONVEY"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PIGEN": {
+  "hash": 8075392,
+  "members": [],
+  "owners": [
+   "ELBO",
+   "BEND",
+   "TEE",
+   "VALV",
+   "REDU",
+   "FLAN",
+   "CROS",
+   "FTUB",
+   "COUP",
+   "CLOS",
+   "OLET",
+   "LJSE",
+   "CAP",
+   "FBLI",
+   "VTWA",
+   "VFWA",
+   "TRAP",
+   "FILT",
+   "PCOM",
+   "UNIO",
+   "INST"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PULLN": {
+  "hash": 8217142,
+  "members": [],
+  "owners": [
+   "PULLP"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "XCLTN": {
+  "hash": 8374128,
+  "members": [
+   "XCELS"
+  ],
+  "owners": [
+   "XGEOM"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "GIBLO": {
+  "hash": 8740960,
+  "members": [
+   "GIPPAN",
+   "GICPAN",
+   "GISPAN",
+   "OBJHD"
+  ],
+  "owners": [
+   "FEMWLD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HIBLO": {
+  "hash": 8740961,
+  "members": [
+   "HIPAN",
+   "HICPAN",
+   "GOBELE"
+  ],
+  "owners": [
+   "FEMWLD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SUPPO": {
+  "hash": 8830234,
+  "members": [
+   "HANG",
+   "SUPC",
+   "TRUNNI",
+   "LUG",
+   "STRU",
+   "TEXT"
+  ],
+  "owners": [
+   "ZONE",
+   "CONVEY"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "AREVO": {
+  "hash": 8940214,
+  "members": [
+   "LOOP"
+  ],
+  "owners": [
+   "AREADE",
+   "DEMOPA"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DCLIP": {
+  "hash": 9220477,
+  "members": [
+   "DPLAMT",
+   "DPLAPO"
+  ],
+  "owners": [
+   "DCTOUT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HCLIP": {
+  "hash": 9220481,
+  "members": [],
+  "owners": [
+   "HCTOUT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "ICLIP": {
+  "hash": 9220482,
+  "members": [
+   "PLAFAC",
+   "PLASOL",
+   "LOCMDL",
+   "LIMMDL",
+   "POSMDL"
+  ],
+  "owners": [
+   "UPANEL",
+   "IBRCKT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PULLP": {
+  "hash": 9280024,
+  "members": [
+   "TEXT",
+   "CYLI",
+   "SLCY",
+   "SNOU",
+   "BOX",
+   "POLYHE",
+   "GENPRI",
+   "GENCUR",
+   "DISH",
+   "CONE",
+   "POHE",
+   "PYRA",
+   "CTOR",
+   "RTOR",
+   "DRAW",
+   "PVOL",
+   "RPLA",
+   "LOAP",
+   "EXTR",
+   "REVO",
+   "PANE",
+   "TMPL",
+   "DPSE",
+   "DDSE",
+   "PORS",
+   "LNKS",
+   "ELCONN",
+   "EQUCOM",
+   "BPANEL",
+   "AIDGRO",
+   "DIMGRO",
+   "PULLN"
+  ],
+  "owners": [
+   "ZONE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "FMGRP": {
+  "hash": 9394251,
+  "members": [
+   "FMBEND",
+   "FMWELD",
+   "FMEXTR"
+  ],
+  "owners": [
+   "FMWL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DCURP": {
+  "hash": 9404185,
+  "members": [
+   "DMODRF"
+  ],
+  "owners": [
+   "DEPNT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PEXSP": {
+  "hash": 9426121,
+  "members": [],
+  "owners": [
+   "VALV",
+   "INST"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DPODR": {
+  "hash": 10187482,
+  "members": [],
+  "owners": [
+   "DCRPNT",
+   "DSEG"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "FLOOR": {
+  "hash": 10403889,
+  "members": [
+   "PLOO",
+   "PFIT",
+   "CMPF",
+   "COFI",
+   "PALJ",
+   "DPSE",
+   "DDSE",
+   "PORS",
+   "LNKS",
+   "BFDT",
+   "NBOX",
+   "NPOLYH",
+   "NCYL",
+   "NSLC",
+   "NSNO",
+   "NDIS",
+   "NCON",
+   "NPYR",
+   "NCTO",
+   "NRTO",
+   "NXTR",
+   "NREV",
+   "TMPL"
+  ],
+  "owners": [
+   "FRMW",
+   "SBFR",
+   "CFLOOR",
+   "TMPL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "ACTOR": {
+  "hash": 10407286,
+  "members": [],
+  "owners": [
+   "AREADE",
+   "DEMOPA"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "ARTOR": {
+  "hash": 10407691,
+  "members": [],
+  "owners": [
+   "AREADE",
+   "DEMOPA"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "TRNRR": {
+  "hash": 10462385,
+  "members": [],
+  "owners": [
+   "TRNDEF"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "AEXTR": {
+  "hash": 10508671,
+  "members": [
+   "LOOP"
+  ],
+  "owners": [
+   "AREADE",
+   "DEMOPA"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HICUR": {
+  "hash": 10513160,
+  "members": [],
+  "owners": [
+   "HIPAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "WKSUR": {
+  "hash": 10524893,
+  "members": [
+   "PFOUTC",
+   "SRFDEF",
+   "PRIGEO",
+   "DBOX"
+  ],
+  "owners": [
+   "WKSWLD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "XCELS": {
+  "hash": 10868766,
+  "members": [
+   "XCELL"
+  ],
+  "owners": [
+   "XCLTN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PIACT": {
+  "hash": 11220298,
+  "members": [],
+  "owners": [
+   "VALV",
+   "INST"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "ISECT": {
+  "hash": 11223477,
+  "members": [
+   "SPLO",
+   "SDLO"
+  ],
+  "owners": [
+   "FRMW",
+   "ISTRUR"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "RSECT": {
+  "hash": 11223486,
+  "members": [],
+  "owners": [
+   "RPATH"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "GPSET": {
+  "hash": 11272966,
+  "members": [
+   "GPITEM",
+   "GPSET"
+  ],
+  "owners": [
+   "GPWL",
+   "GPSET",
+   "CWAREA",
+   "WKPACK"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DEPNT": {
+  "hash": 11447626,
+  "members": [
+   "DCURP",
+   "DMODRF"
+  ],
+  "owners": [
+   "DCRPNT",
+   "DCRCUR",
+   "DSEG"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HINOT": {
+  "hash": 11465963,
+  "members": [],
+  "owners": [
+   "HIPAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HICUT": {
+  "hash": 11576042,
+  "members": [],
+  "owners": [
+   "HIPAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HIBOU": {
+  "hash": 11988656,
+  "members": [],
+  "owners": [
+   "HIPAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SPBOU": {
+  "hash": 11988856,
+  "members": [],
+  "owners": [],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HIDOU": {
+  "hash": 11990114,
+  "members": [],
+  "owners": [
+   "HIPAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "ASNOU": {
+  "hash": 11997667,
+  "members": [],
+  "owners": [
+   "AREADE",
+   "DEMOPA"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "ISTRU": {
+  "hash": 12061098,
+  "members": [
+   "ISTRUR"
+  ],
+  "owners": [
+   "IDLWLD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "FNCAW": {
+  "hash": 12776838,
+  "members": [
+   "FNCAAR",
+   "SPMGOB"
+  ],
+  "owners": [
+   "WORL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "FNCCW": {
+  "hash": 12816204,
+  "members": [
+   "FNCCAR",
+   "SPMGOB"
+  ],
+  "owners": [
+   "WORL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SPMSW": {
+  "hash": 13138489,
+  "members": [
+   "SPMSA",
+   "SPMGOB"
+  ],
+  "owners": [
+   "WORL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PGBOX": {
+  "hash": 13582933,
+  "members": [],
+  "owners": [
+   "VALV",
+   "INST"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CTRAY": {
+  "hash": 13850814,
+  "members": [
+   "DDSE",
+   "TMPL",
+   "CTSUPP"
+  ],
+  "owners": [
+   "CTSTRA",
+   "CTCOUP",
+   "CTBEND",
+   "CTRISE",
+   "CTTEE",
+   "CTCROS",
+   "CTREDU"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "ASLCY": {
+  "hash": 13885777,
+  "members": [],
+  "owners": [
+   "AREADE",
+   "DEMOPA"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SPMBAA": {
+  "hash": 15461083,
+  "members": [],
+  "owners": [
+   "SPMSA"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SPMCAA": {
+  "hash": 15480766,
+  "members": [],
+  "owners": [
+   "SPMSA"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SPMGAA": {
+  "hash": 15559498,
+  "members": [],
+  "owners": [
+   "SPMSA"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SPMLAA": {
+  "hash": 15657913,
+  "members": [],
+  "owners": [
+   "SPMSA"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SPMPAA": {
+  "hash": 15736645,
+  "members": [],
+  "owners": [
+   "SPMSA"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SPMZAA": {
+  "hash": 15933475,
+  "members": [],
+  "owners": [
+   "SPMSA"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTLOCA": {
+  "hash": 16779208,
+  "members": [
+   "DTADRE"
+  ],
+  "owners": [
+   "DTJOB",
+   "DTJDAT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SYSCDA": {
+  "hash": 17079706,
+  "members": [],
+  "owners": [
+   "SYSGRP"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "APPLDA": {
+  "hash": 17254405,
+  "members": [
+   "ZONE",
+   "DPSE",
+   "DDSE",
+   "ROOM"
+  ],
+  "owners": [
+   "APPDAR"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SYSMDA": {
+  "hash": 17276536,
+  "members": [
+   "DDSE"
+  ],
+  "owners": [
+   "SYSGRP"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CWAREA": {
+  "hash": 17893200,
+  "members": [
+   "WKPACK",
+   "GPSET"
+  ],
+  "owners": [
+   "WKPKWL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "FNCTEA": {
+  "hash": 17933784,
+  "members": [],
+  "owners": [
+   "FNCBRN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SPMBFA": {
+  "hash": 18118288,
+  "members": [],
+  "owners": [
+   "SPMFAC"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SPMCFA": {
+  "hash": 18137971,
+  "members": [],
+  "owners": [
+   "SPMFAC"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "GRIDFA": {
+  "hash": 18154780,
+  "members": [
+   "GRIDPL",
+   "GRIDCY"
+  ],
+  "owners": [
+   "REFGRD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SPMGFA": {
+  "hash": 18216703,
+  "members": [],
+  "owners": [
+   "FNCLIM",
+   "SPMFAC"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SPMLFA": {
+  "hash": 18315118,
+  "members": [],
+  "owners": [
+   "SPMFAC"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SPMPFA": {
+  "hash": 18393850,
+  "members": [],
+  "owners": [
+   "SPMFAC"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SPMZFA": {
+  "hash": 18590680,
+  "members": [],
+  "owners": [
+   "SPMFAC"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTRELA": {
+  "hash": 21369721,
+  "members": [],
+  "owners": [
+   "DTJREL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HBRFLA": {
+  "hash": 21388922,
+  "members": [
+   "HPREND"
+  ],
+  "owners": [
+   "HBRCKT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DFCPLA": {
+  "hash": 21574921,
+  "members": [
+   "DBOX",
+   "DBRCKT",
+   "DCTOUT",
+   "DENDFR",
+   "DENDTO",
+   "DFPPOS",
+   "DHOLE",
+   "DINCL",
+   "DMODRF",
+   "DNOTCH",
+   "DPLATE",
+   "DPROMT"
+  ],
+  "owners": [
+   "UPANEL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "IFCPLA": {
+  "hash": 21574926,
+  "members": [
+   "PROCRO",
+   "PROTRC",
+   "LOCMDL",
+   "LIMMDL",
+   "IENDFR",
+   "IENDTO",
+   "POSMDL"
+  ],
+  "owners": [
+   "UPANEL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "GICPLA": {
+  "hash": 21575005,
+  "members": [
+   "OBJHD"
+  ],
+  "owners": [
+   "GICPAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HICPLA": {
+  "hash": 21575006,
+  "members": [
+   "GOBELE"
+  ],
+  "owners": [
+   "HICPAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HDOPLA": {
+  "hash": 21583619,
+  "members": [],
+  "owners": [
+   "HPANEL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DEMOPA": {
+  "hash": 23688265,
+  "members": [
+   "ABOX",
+   "ACYLI",
+   "ASLCY",
+   "ASNOU",
+   "ADISH",
+   "ACONE",
+   "APYRA",
+   "ACTOR",
+   "ARTOR",
+   "AEXTR",
+   "AREVO",
+   "APOLYH"
+  ],
+  "owners": [
+   "DEMOSE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DBRARA": {
+  "hash": 24479149,
+  "members": [
+   "DMODRF",
+   "DBRTOE"
+  ],
+  "owners": [
+   "DBRCKT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "GSTBRA": {
+  "hash": 24500752,
+  "members": [
+   "OBJHD"
+  ],
+  "owners": [
+   "STDWLD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HSTBRA": {
+  "hash": 24500753,
+  "members": [
+   "GOBELE"
+  ],
+  "owners": [
+   "STDWLD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HANDRA": {
+  "hash": 24535259,
+  "members": [
+   "RPATH",
+   "HATTA",
+   "TATTA",
+   "HRPNSE",
+   "HRKPSE",
+   "HRFEAT",
+   "RAILSE",
+   "POSTSE",
+   "DDSE"
+  ],
+  "owners": [
+   "SUBCNV",
+   "STRU",
+   "STRFLT",
+   "STRLNG",
+   "DETGRP",
+   "LADDER",
+   "PLTFRM",
+   "FRMW",
+   "SBFR"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DCLTRA": {
+  "hash": 24848779,
+  "members": [
+   "DCRDEX",
+   "DCRDGR",
+   "DLINE",
+   "DMODRF",
+   "DPLANE"
+  ],
+  "owners": [
+   "DCLONE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CTSTRA": {
+  "hash": 24854340,
+  "members": [
+   "CTRAY",
+   "CTFEAT",
+   "CTJOIN"
+  ],
+  "owners": [
+   "CTMTRL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SPMBSA": {
+  "hash": 25027021,
+  "members": [],
+  "owners": [
+   "SPMSPC"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SPMCSA": {
+  "hash": 25046704,
+  "members": [],
+  "owners": [
+   "SPMSPC"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "FNCGSA": {
+  "hash": 25118079,
+  "members": [],
+  "owners": [
+   "FNCARE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DEDGSA": {
+  "hash": 25118563,
+  "members": [],
+  "owners": [
+   "DEDGST",
+   "DEDGSS"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SPMGSA": {
+  "hash": 25125436,
+  "members": [],
+  "owners": [
+   "SPMSPC"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "FNCISA": {
+  "hash": 25157445,
+  "members": [],
+  "owners": [
+   "FNCARE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SPMLSA": {
+  "hash": 25223851,
+  "members": [],
+  "owners": [
+   "SPMSPC"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "FNCOSA": {
+  "hash": 25275543,
+  "members": [],
+  "owners": [
+   "FNCARE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "FNCPSA": {
+  "hash": 25295226,
+  "members": [],
+  "owners": [
+   "FNCARE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SPMPSA": {
+  "hash": 25302583,
+  "members": [],
+  "owners": [
+   "SPMSPC"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "FNCSSA": {
+  "hash": 25354275,
+  "members": [],
+  "owners": [
+   "FNCARE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "FNCTSA": {
+  "hash": 25373958,
+  "members": [],
+  "owners": [
+   "FNCBRN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SPMZSA": {
+  "hash": 25499413,
+  "members": [],
+  "owners": [
+   "SPMSPC"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DBMETA": {
+  "hash": 25617118,
+  "members": [
+   "DBMDAT"
+  ],
+  "owners": [],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SPMRCB": {
+  "hash": 31187800,
+  "members": [],
+  "owners": [
+   "SPMGOB"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SPMCFB": {
+  "hash": 32486878,
+  "members": [
+   "CRMREF",
+   "DPLANE",
+   "DPNT"
+  ],
+  "owners": [
+   "SPMCAD",
+   "SPMCON",
+   "SPMOPE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SPMPFB": {
+  "hash": 32742757,
+  "members": [],
+  "owners": [
+   "SPMGOB"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "FACELB": {
+  "hash": 35707182,
+  "members": [],
+  "owners": [
+   "IDINFO"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "ELEVLB": {
+  "hash": 36043547,
+  "members": [],
+  "owners": [
+   "IDINFO"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTASMB": {
+  "hash": 36513238,
+  "members": [
+   "DTGEOM",
+   "DTSHAP",
+   "DTGINF",
+   "DTCMNT",
+   "DTSTRC",
+   "DTSTEL",
+   "DTCSDF"
+  ],
+  "owners": [
+   "DTPHSE",
+   "DTMAIN",
+   "DTSUBM"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SPMGOB": {
+  "hash": 37348579,
+  "members": [
+   "SPMGSB",
+   "SPMRSB",
+   "SPMHSB",
+   "SPMPFB",
+   "SPMRCB",
+   "SPMGPB"
+  ],
+  "owners": [
+   "FNCAW",
+   "FNCCW",
+   "SPMSW"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SPMGPB": {
+  "hash": 37880020,
+  "members": [],
+  "owners": [
+   "SPMGOB"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DBRARB": {
+  "hash": 38828056,
+  "members": [
+   "DMODRF"
+  ],
+  "owners": [
+   "DBRCKT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DEDGSB": {
+  "hash": 39467470,
+  "members": [],
+  "owners": [
+   "DEDGST",
+   "DEDGSS"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SPMGSB": {
+  "hash": 39474343,
+  "members": [],
+  "owners": [
+   "SPMGOB"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SPMHSB": {
+  "hash": 39494026,
+  "members": [],
+  "owners": [
+   "SPMGOB"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SPMRSB": {
+  "hash": 39690856,
+  "members": [],
+  "owners": [
+   "SPMGOB"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "MWLDTB": {
+  "hash": 39946189,
+  "members": [
+   "OBJHD",
+   "MWLDJT",
+   "GOBELE"
+  ],
+  "owners": [
+   "MWLWLD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PLAFAC": {
+  "hash": 44228770,
+  "members": [
+   "ATTDAT",
+   "ARCHIV"
+  ],
+  "owners": [
+   "IPLATE",
+   "IBRCKT",
+   "ICLIP"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "POLFAC": {
+  "hash": 44236870,
+  "members": [
+   "POLOOP"
+  ],
+  "owners": [
+   "POLYHE",
+   "NPOLYH",
+   "APOLYH"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SPMFAC": {
+  "hash": 44237629,
+  "members": [
+   "SPMCFA",
+   "SPMLFA",
+   "SPMPFA",
+   "SPMBFA",
+   "SPMZFA",
+   "SPMGFA"
+  ],
+  "owners": [
+   "SPMSPC"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HVHACC": {
+  "hash": 45198602,
+  "members": [],
+  "owners": [
+   "ELBO",
+   "BEND",
+   "TEE",
+   "VALV",
+   "REDU",
+   "TAPE",
+   "TRNS",
+   "STRT",
+   "OFST",
+   "PLEN",
+   "PLAT",
+   "FLAN",
+   "CROS",
+   "THRE",
+   "DUCT",
+   "VENT",
+   "FTUB",
+   "SHU",
+   "COUP",
+   "CLOS",
+   "OLET",
+   "CAP",
+   "MESH",
+   "GRIL",
+   "COWL",
+   "FBLI",
+   "VTWA",
+   "VFWA",
+   "TRAP",
+   "FILT",
+   "PCOM",
+   "AHU",
+   "DAMP",
+   "HFAN",
+   "SILE",
+   "BATT",
+   "UNIO",
+   "INST"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "GENSEC": {
+  "hash": 46619692,
+  "members": [
+   "SPINE",
+   "JLDATU",
+   "COMFIX",
+   "ENDATU",
+   "HANCI",
+   "SPLO",
+   "SDLO",
+   "DPSE",
+   "DDSE",
+   "PORS",
+   "LNKS",
+   "TMPL",
+   "SELJ"
+  ],
+  "owners": [
+   "SUBCNV",
+   "TWRSTL",
+   "TREAD",
+   "INTLNG",
+   "TOPEXT",
+   "BOTEXT",
+   "STRSTR",
+   "STRLNG",
+   "SLRAIL",
+   "RLGATE",
+   "CAGSEG",
+   "HOOPSE",
+   "LDRSTR",
+   "LDRRUN",
+   "CLNLAT",
+   "EXTFRM",
+   "INTFRM",
+   "PLTGRD",
+   "HRGATE",
+   "HRTERM",
+   "HRPANE",
+   "HRPOST",
+   "CTFEAT",
+   "FRMW",
+   "SBFR",
+   "CFLOOR",
+   "CWALL",
+   "TMPL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTSSEC": {
+  "hash": 46623739,
+  "members": [],
+  "owners": [
+   "DTSEAM"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "TRNCLC": {
+  "hash": 50025215,
+  "members": [
+   "TRNCLS"
+  ],
+  "owners": [
+   "TRNMOD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SPMSPC": {
+  "hash": 52465123,
+  "members": [
+   "SPMCEL",
+   "SPMFAC",
+   "SPMCSA",
+   "SPMLSA",
+   "SPMPSA",
+   "SPMBSA",
+   "SPMZSA",
+   "SPMGSA",
+   "LIMMDL"
+  ],
+  "owners": [
+   "SPMSA"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "AIDARC": {
+  "hash": 53166943,
+  "members": [],
+  "owners": [
+   "AIDGRO"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PROTRC": {
+  "hash": 53549197,
+  "members": [
+   "ATTDAT",
+   "ARCHIV"
+  ],
+  "owners": [
+   "ILIM",
+   "IEDGE",
+   "ISTIFF",
+   "IFCPLA",
+   "IPILLR",
+   "ISEAM",
+   "IHOLE",
+   "ICTOUT",
+   "INOTCH"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTSTRC": {
+  "hash": 53552155,
+  "members": [
+   "DTGEOM",
+   "DTCMNT"
+  ],
+  "owners": [
+   "DTPHSE",
+   "DTASMB",
+   "DTMAIN",
+   "DTSUBM",
+   "DTSTEL",
+   "DTPROF",
+   "DTPLAT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "LNDESC": {
+  "hash": 53777262,
+  "members": [
+   "LNLINK"
+  ],
+  "owners": [
+   "LINKWL",
+   "LNFOLD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PFOUTC": {
+  "hash": 54631438,
+  "members": [
+   "GENPRI",
+   "GENCUR"
+  ],
+  "owners": [
+   "PFACE",
+   "SRFSUR",
+   "WKSUR"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "TRNCUC": {
+  "hash": 54808184,
+  "members": [
+   "TRNCUS"
+  ],
+  "owners": [
+   "TRNCEL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SPMCAD": {
+  "hash": 58527487,
+  "members": [
+   "ARCHIV",
+   "SPMCON",
+   "SPMCFB",
+   "SPMBOX",
+   "SPMSPH",
+   "SPMCYL",
+   "SPMCNE",
+   "SPMDIV",
+   "SPMOPE",
+   "SPMMRG",
+   "SPMPRG"
+  ],
+  "owners": [
+   "FNCAAR",
+   "FNCCAR",
+   "SPMSA"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DFNRAD": {
+  "hash": 58823176,
+  "members": [],
+  "owners": [
+   "DINTER"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HVSADD": {
+  "hash": 60086969,
+  "members": [],
+  "owners": [
+   "ELBO",
+   "BEND",
+   "TEE",
+   "VALV",
+   "REDU",
+   "TAPE",
+   "TRNS",
+   "STRT",
+   "OFST",
+   "PLEN",
+   "PLAT",
+   "FLAN",
+   "CROS",
+   "THRE",
+   "DUCT",
+   "VENT",
+   "FTUB",
+   "SHU",
+   "COUP",
+   "CLOS",
+   "OLET",
+   "CAP",
+   "MESH",
+   "GRIL",
+   "COWL",
+   "FBLI",
+   "VTWA",
+   "VFWA",
+   "TRAP",
+   "FILT",
+   "PCOM",
+   "AHU",
+   "DAMP",
+   "HFAN",
+   "SILE",
+   "BATT",
+   "UNIO",
+   "INST"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTWLDD": {
+  "hash": 60306340,
+  "members": [],
+  "owners": [
+   "DTWLDL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SCREED": {
+  "hash": 60695911,
+  "members": [
+   "PLOO",
+   "PFIT",
+   "CMPF",
+   "COFI",
+   "PALJ",
+   "DPSE",
+   "DDSE",
+   "PORS",
+   "LNKS",
+   "BFDT",
+   "NBOX",
+   "NPOLYH",
+   "NCYL",
+   "NSLC",
+   "NSNO",
+   "NDIS",
+   "NCON",
+   "NPYR",
+   "NCTO",
+   "NRTO",
+   "NXTR",
+   "NREV",
+   "TMPL"
+  ],
+  "owners": [
+   "FRMW",
+   "SBFR",
+   "CFLOOR",
+   "CSCREE",
+   "TMPL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "FEFRED": {
+  "hash": 60943083,
+  "members": [],
+  "owners": [
+   "FEMODL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTBMFD": {
+  "hash": 61373596,
+  "members": [],
+  "owners": [
+   "DTBMF"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTGRID": {
+  "hash": 63069979,
+  "members": [],
+  "owners": [
+   "DTJOB"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "FMWELD": {
+  "hash": 64419900,
+  "members": [
+   "FMWSK",
+   "FMWDIM",
+   "FMWCON"
+  ],
+  "owners": [
+   "FMGRP"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTWELD": {
+  "hash": 64420087,
+  "members": [
+   "DTGEOM",
+   "DTCMNT"
+  ],
+  "owners": [
+   "DTPHSE",
+   "DTMAIN",
+   "DTSUBM",
+   "DTSTEL",
+   "DTPROF",
+   "DTPLAT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "STWELD": {
+  "hash": 64420102,
+  "members": [
+   "RPATH",
+   "CURVE",
+   "POINTR"
+  ],
+  "owners": [
+   "STWSET"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "XPIFLD": {
+  "hash": 64429476,
+  "members": [
+   "XPIFLD",
+   "XPITEM"
+  ],
+  "owners": [
+   "XPIWLD",
+   "XPIFLD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CMTFLD": {
+  "hash": 64437393,
+  "members": [
+   "CMTFLD",
+   "CMTTHR"
+  ],
+  "owners": [
+   "CMTWLD",
+   "CMTFLD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "LNFOLD": {
+  "hash": 64604370,
+  "members": [
+   "LNCLAS",
+   "LNDESC",
+   "LNFOLD"
+  ],
+  "owners": [
+   "LINKWL",
+   "LNFOLD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTWRLD": {
+  "hash": 64675966,
+  "members": [
+   "DTJOB"
+  ],
+  "owners": [
+   "WORL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "TRNSLD": {
+  "hash": 64689050,
+  "members": [
+   "GENPRI"
+  ],
+  "owners": [
+   "TRNDEF"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "STDWLD": {
+  "hash": 64760545,
+  "members": [
+   "GSTBRA",
+   "HSTBRA",
+   "GBRAPN",
+   "HBRAPN",
+   "SUPNFO",
+   "GSUPFO"
+  ],
+  "owners": [
+   "WORL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "MOGWLD": {
+  "hash": 64762591,
+  "members": [
+   "GPLANE",
+   "GPOINT",
+   "GFCURV",
+   "CPLANE",
+   "CPOINT",
+   "GXTRAO",
+   "MOGOBJ"
+  ],
+  "owners": [
+   "WORL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "XPIWLD": {
+  "hash": 64764087,
+  "members": [
+   "XPIFLD"
+  ],
+  "owners": [
+   "WORL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DSIWLD": {
+  "hash": 64764148,
+  "members": [
+   "DSIGRO"
+  ],
+  "owners": [
+   "WORL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HMKWLD": {
+  "hash": 64765448,
+  "members": [
+   "HMARK"
+  ],
+  "owners": [
+   "WORL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HBLWLD": {
+  "hash": 64765880,
+  "members": [
+   "GBLOCK",
+   "BLOCK"
+  ],
+  "owners": [
+   "WORL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "IDLWLD": {
+  "hash": 64765935,
+  "members": [
+   "ISTRU"
+  ],
+  "owners": [
+   "WORL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "MWLWLD": {
+  "hash": 64766452,
+  "members": [
+   "MWLDTB"
+  ],
+  "owners": [
+   "WORL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HCMWLD": {
+  "hash": 64766636,
+  "members": [
+   "CSURPX"
+  ],
+  "owners": [
+   "WORL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "FEMWLD": {
+  "hash": 64766688,
+  "members": [
+   "GIBLO",
+   "HIBLO",
+   "FEMODL",
+   "FEMIMG",
+   "FEMZON",
+   "IDLSET"
+  ],
+  "owners": [
+   "WORL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "COMWLD": {
+  "hash": 64766955,
+  "members": [
+   "HCOMPT",
+   "GCOMPT"
+  ],
+  "owners": [
+   "WORL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CONWLD": {
+  "hash": 64767684,
+  "members": [
+   "CONGRP"
+  ],
+  "owners": [
+   "WORL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "TRNWLD": {
+  "hash": 64767782,
+  "members": [
+   "TRNSUR",
+   "TRNDEF"
+  ],
+  "owners": [
+   "WORL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "RSOWLD": {
+  "hash": 64768536,
+  "members": [
+   "GRSO",
+   "HRSO",
+   "GXTRAO"
+  ],
+  "owners": [
+   "WORL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SSOWLD": {
+  "hash": 64768537,
+  "members": [
+   "GSURF",
+   "CSURF",
+   "GXTRAO",
+   "CPOINS",
+   "CPLANS",
+   "PFACE",
+   "SCSURF",
+   "SRFSUR",
+   "ENVLOP",
+   "PSURF"
+  ],
+  "owners": [
+   "WORL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CURWLD": {
+  "hash": 64770762,
+  "members": [
+   "CRMCUR"
+  ],
+  "owners": [
+   "WORL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "WKSWLD": {
+  "hash": 64771241,
+  "members": [
+   "PFACE",
+   "WKSUR"
+  ],
+  "owners": [
+   "WORL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CMTWLD": {
+  "hash": 64772004,
+  "members": [
+   "CMTFLD"
+  ],
+  "owners": [
+   "WORL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PNTWLD": {
+  "hash": 64772044,
+  "members": [
+   "CRMPNT"
+  ],
+  "owners": [
+   "WORL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "FMBEND": {
+  "hash": 65467473,
+  "members": [
+   "FMBPLN",
+   "FMBDIM",
+   "FMBSST",
+   "FMSSBK"
+  ],
+  "owners": [
+   "FMGRP"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CTBEND": {
+  "hash": 65467659,
+  "members": [
+   "CTRAY",
+   "CTFEAT",
+   "CTJOIN"
+  ],
+  "owners": [
+   "CTMTRL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CPREND": {
+  "hash": 65479215,
+  "members": [],
+  "owners": [
+   "CSTIFF"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HPREND": {
+  "hash": 65479220,
+  "members": [],
+  "owners": [
+   "HBRFLA",
+   "HBRSTI",
+   "HFLANG",
+   "HPILLR",
+   "HSTIFF"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "TRNMOD": {
+  "hash": 66165275,
+  "members": [
+   "TRNCC",
+   "TRNCLC"
+  ],
+  "owners": [
+   "SITE",
+   "ZONE",
+   "CONVEY"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "REFGRD": {
+  "hash": 67635315,
+  "members": [
+   "GRIDEL",
+   "GRIDFA"
+  ],
+  "owners": [
+   "GRIDWL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PLTGRD": {
+  "hash": 67645708,
+  "members": [
+   "GENSEC",
+   "PANE",
+   "BPANEL"
+  ],
+  "owners": [
+   "PLTFRM"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTBLTD": {
+  "hash": 68794087,
+  "members": [],
+  "owners": [
+   "DTBLTL",
+   "DTBLDS"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CNGFXD": {
+  "hash": 70805235,
+  "members": [],
+  "owners": [
+   "OBJHD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PFFACE": {
+  "hash": 73894534,
+  "members": [
+   "PFILOO"
+  ],
+  "owners": [
+   "PFDEFI"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PPIECE": {
+  "hash": 73975723,
+  "members": [],
+  "owners": [
+   "PPLIST"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "AREADE": {
+  "hash": 74425555,
+  "members": [
+   "ABOX",
+   "ACYLI",
+   "ASLCY",
+   "ASNOU",
+   "ADISH",
+   "ACONE",
+   "APYRA",
+   "ACTOR",
+   "ARTOR",
+   "AEXTR",
+   "AREVO",
+   "APOLYH"
+  ],
+  "owners": [
+   "BBLOCK",
+   "BLEVEL",
+   "ROOM",
+   "OPENSP",
+   "RSTARE",
+   "STRWEL",
+   "CEILIN",
+   "AREASE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTNODE": {
+  "hash": 74707735,
+  "members": [
+   "DDSE",
+   "DTSTAT"
+  ],
+  "owners": [
+   "DTJOB",
+   "DTSTRU",
+   "DTPHSE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CSCREE": {
+  "hash": 75290178,
+  "members": [
+   "PANE",
+   "TEXT",
+   "PALJ",
+   "FIXING",
+   "TMPL",
+   "DPSE",
+   "DDSE",
+   "PORS",
+   "LNKS",
+   "SCREED",
+   "BPANEL"
+  ],
+  "owners": [
+   "FRMW"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SSREFE": {
+  "hash": 75576691,
+  "members": [],
+  "owners": [
+   "ANCI",
+   "TRANCI",
+   "LUANCI"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "OPENFE": {
+  "hash": 75744276,
+  "members": [
+   "RATTA"
+  ],
+  "owners": [
+   "PLOPEN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "RLCAGE": {
+  "hash": 76018275,
+  "members": [
+   "CAGSEG",
+   "RLGATE"
+  ],
+  "owners": [
+   "RLADDR"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PFEDGE": {
+  "hash": 76078618,
+  "members": [],
+  "owners": [
+   "PFDEFI"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "POLYHE": {
+  "hash": 77028748,
+  "members": [
+   "POLPTL",
+   "POLFAC",
+   "NBOX",
+   "NPOLYH",
+   "NCYL",
+   "NSLC",
+   "NSNO",
+   "NDIS",
+   "NCON",
+   "NPYR",
+   "NCTO",
+   "NRTO",
+   "NXTR",
+   "NREV"
+  ],
+  "owners": [
+   "EQUI",
+   "PULLP",
+   "JNTBOX",
+   "VOLM",
+   "SVOLM",
+   "STRU",
+   "PTRA",
+   "SUBE",
+   "SUBS",
+   "TMPL",
+   "TRNPRI"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "BUNDLE": {
+  "hash": 78742775,
+  "members": [
+   "CABLE"
+  ],
+  "owners": [
+   "ZONE",
+   "CONVEY"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "GOBELE": {
+  "hash": 78753553,
+  "members": [],
+  "owners": [
+   "MOGOBJ",
+   "SUPNFO",
+   "HRSO",
+   "HCOMPT",
+   "HIBLO",
+   "HICPAN",
+   "HICPLA",
+   "HICSTI",
+   "HICHOL",
+   "HIPAN",
+   "FEMIMG",
+   "CCURVE",
+   "CHOLE",
+   "CPANEL",
+   "CPLATE",
+   "CPLANE",
+   "CPOINT",
+   "CPROTR",
+   "CPROF",
+   "CSEAM",
+   "CSTIFF",
+   "CSURF",
+   "BLOCK",
+   "HBRAPN",
+   "HPANEL",
+   "HSTBRA",
+   "HSUBPN",
+   "MWLDTB",
+   "HMARK"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "OBJELE": {
+  "hash": 78759042,
+  "members": [
+   "OBJELH"
+  ],
+  "owners": [
+   "OBJHD",
+   "OBJELH"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HTPELE": {
+  "hash": 78763895,
+  "members": [
+   "CCHDAT"
+  ],
+  "owners": [
+   "OBJHD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "INVELE": {
+  "hash": 78768108,
+  "members": [],
+  "owners": [
+   "INVLST"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTHOLE": {
+  "hash": 78954889,
+  "members": [
+   "DTGEOM",
+   "DTCMNT",
+   "DTBLTS"
+  ],
+  "owners": [
+   "DTPHSE",
+   "DTMAIN",
+   "DTSUBM",
+   "DTSTEL",
+   "DTPROF",
+   "DTPLAT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CPLANE": {
+  "hash": 79745016,
+  "members": [
+   "GOBELE"
+  ],
+  "owners": [
+   "MOGWLD",
+   "CPLANS"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DPLANE": {
+  "hash": 79745017,
+  "members": [
+   "DLINE",
+   "DCRDEX",
+   "DCRDGR",
+   "DCRDSY"
+  ],
+  "owners": [
+   "DINTER",
+   "SPMDIV",
+   "SPMCFB",
+   "DCLRFL",
+   "DCLROT",
+   "DCLTRA",
+   "DENDFR",
+   "DENDTO",
+   "DPLIM",
+   "DEDGRS",
+   "DSEAM",
+   "DNOTCH",
+   "DSTIFF",
+   "DPILLR"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "GPLANE": {
+  "hash": 79745020,
+  "members": [
+   "OBJHD"
+  ],
+  "owners": [
+   "MOGWLD",
+   "CPLANS"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "GCPANE": {
+  "hash": 79747585,
+  "members": [
+   "OBJHD",
+   "GSTIFF"
+  ],
+  "owners": [
+   "GBLOCK"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "WLPANE": {
+  "hash": 79747844,
+  "members": [
+   "TMPL"
+  ],
+  "owners": [
+   "WLCOMP"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HRPANE": {
+  "hash": 79747991,
+  "members": [
+   "TMPL",
+   "DPSE",
+   "DDSE",
+   "PORS",
+   "LNKS",
+   "FIXING",
+   "PANE",
+   "GENSEC",
+   "BPANEL"
+  ],
+  "owners": [
+   "HRPNSE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SPMCNE": {
+  "hash": 79785127,
+  "members": [],
+  "owners": [
+   "SPMCAD",
+   "SPMCON",
+   "SPMOPE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "FMEDNE": {
+  "hash": 79798884,
+  "members": [],
+  "owners": [
+   "FMEXTR"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTPLNE": {
+  "hash": 79964554,
+  "members": [],
+  "owners": [
+   "DTJOB",
+   "DTJDAT",
+   "DTSTRU",
+   "DTPHSE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DCLONE": {
+  "hash": 80020228,
+  "members": [
+   "DCLRFL",
+   "DCLROT",
+   "DCLTRA",
+   "DCLREF"
+  ],
+  "owners": [
+   "CRMPNT",
+   "CRMCUR",
+   "SRFSUR",
+   "UPANEL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DBRTOE": {
+  "hash": 80654431,
+  "members": [
+   "DMODRF"
+  ],
+  "owners": [
+   "DBRARA"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "XSCOPE": {
+  "hash": 81077001,
+  "members": [
+   "XSCOPE",
+   "XSPROX",
+   "XPOSNO"
+  ],
+  "owners": [
+   "XPRDWL",
+   "XSCOPE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SPMOPE": {
+  "hash": 81084205,
+  "members": [
+   "SPMCFB",
+   "CRMREF",
+   "SPMBOX",
+   "SPMSPH",
+   "SPMCYL",
+   "SPMCNE",
+   "SPMPOI"
+  ],
+  "owners": [
+   "SPMCAD",
+   "SPMCON"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "FNCARE": {
+  "hash": 81864168,
+  "members": [
+   "FNCLIM",
+   "FNCGSA",
+   "FNCSSA",
+   "FNCOSA",
+   "FNCISA",
+   "FNCPSA",
+   "SPMCEL",
+   "LOCMDL",
+   "LIMMDL"
+  ],
+  "owners": [
+   "FNCAAR"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "RSTARE": {
+  "hash": 81876708,
+  "members": [
+   "AREADE",
+   "BNDLIN",
+   "ACCSET",
+   "SPBSET",
+   "INVLST"
+  ],
+  "owners": [
+   "BBLOCK",
+   "BLEVEL",
+   "ROOM",
+   "OPENSP"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTADRE": {
+  "hash": 81921919,
+  "members": [],
+  "owners": [
+   "DTCSTE",
+   "DTLOCA"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CMTPRE": {
+  "hash": 82171776,
+  "members": [
+   "ARCHIV"
+  ],
+  "owners": [
+   "CMTCAP"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "AREASE": {
+  "hash": 82397170,
+  "members": [
+   "AREADE",
+   "AREASE"
+  ],
+  "owners": [
+   "AREAWL",
+   "AREASE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "RUNGSE": {
+  "hash": 82521927,
+  "members": [
+   "LDRRUN",
+   "DDSE"
+  ],
+  "owners": [
+   "LADDER",
+   "RLADDR"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTPHSE": {
+  "hash": 82543027,
+  "members": [
+   "DTMAIN",
+   "DTASMB",
+   "DTSTEL",
+   "DTPROF",
+   "DTPLAT",
+   "DTADDM",
+   "DTBOLT",
+   "DTWELD",
+   "DTHOLE",
+   "DTSTRC",
+   "DGRAPH",
+   "DTPDEF",
+   "DTNODE",
+   "FSPINS",
+   "DTCSDF",
+   "DTPLNE",
+   "DTPERS"
+  ],
+  "owners": [
+   "DTJOB",
+   "DTSTRU"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CPNISE": {
+  "hash": 82561143,
+  "members": [],
+  "owners": [
+   "HICPAN",
+   "CPANEL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CTRISE": {
+  "hash": 82564167,
+  "members": [
+   "CTRAY",
+   "CTFEAT",
+   "CTJOIN"
+  ],
+  "owners": [
+   "CTMTRL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "RAILSE": {
+  "hash": 82616157,
+  "members": [
+   "RAIL",
+   "TMPL",
+   "HRTERM"
+  ],
+  "owners": [
+   "RUTVOL",
+   "HANDRA"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HRPNSE": {
+  "hash": 82661075,
+  "members": [
+   "HRPANE"
+  ],
+  "owners": [
+   "RUTVOL",
+   "HANDRA"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DEMOSE": {
+  "hash": 82678216,
+  "members": [
+   "DEMOPA"
+  ],
+  "owners": [
+   "DEMOWL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HRKPSE": {
+  "hash": 82696796,
+  "members": [
+   "KICKPL"
+  ],
+  "owners": [
+   "RUTVOL",
+   "HANDRA"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HOOPSE": {
+  "hash": 82699631,
+  "members": [
+   "GENSEC",
+   "TMPL",
+   "DPSE",
+   "DDSE",
+   "PORS",
+   "LNKS"
+  ],
+  "owners": [
+   "CAGSEG"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "TMRPSE": {
+  "hash": 82701776,
+  "members": [
+   "TMRREL"
+  ],
+  "owners": [
+   "TMPL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "WLPRSE": {
+  "hash": 82739660,
+  "members": [
+   "WLPROF"
+  ],
+  "owners": [
+   "CTWALL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "POSTSE": {
+  "hash": 82781287,
+  "members": [
+   "HRPOST"
+  ],
+  "owners": [
+   "RUTVOL",
+   "HANDRA"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "RLGATE": {
+  "hash": 82929924,
+  "members": [
+   "GENSEC",
+   "TMPL",
+   "PANE",
+   "DPSE",
+   "DDSE",
+   "PORS",
+   "LNKS",
+   "BPANEL"
+  ],
+  "owners": [
+   "RLCAGE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HRGATE": {
+  "hash": 82930076,
+  "members": [
+   "TMPL",
+   "DPSE",
+   "DDSE",
+   "PORS",
+   "LNKS",
+   "FIXING",
+   "GENSEC"
+  ],
+  "owners": [
+   "HRFEAT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CPLATE": {
+  "hash": 82933662,
+  "members": [
+   "GOBELE"
+  ],
+  "owners": [
+   "CSURPX"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DPLATE": {
+  "hash": 82933663,
+  "members": [
+   "DLINE",
+   "DPNT",
+   "DPLAMT",
+   "DPLAPO",
+   "DLOCTN",
+   "DBNDRY",
+   "DPLATE",
+   "DSTIFF",
+   "DNOTCH",
+   "DHOLE",
+   "DCTOUT"
+  ],
+  "owners": [
+   "DPLATE",
+   "DBRCKT",
+   "DSTIFF",
+   "DFCPLA",
+   "DPILLR",
+   "UPANEL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "GPLATE": {
+  "hash": 82933666,
+  "members": [
+   "OBJHD"
+  ],
+  "owners": [
+   "CSURPX"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HPLATE": {
+  "hash": 82933667,
+  "members": [],
+  "owners": [
+   "HPANEL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "IPLATE": {
+  "hash": 82933668,
+  "members": [
+   "PLAFAC",
+   "PLASOL",
+   "LOCMDL",
+   "LIMMDL",
+   "POSMDL"
+  ],
+  "owners": [
+   "UPANEL",
+   "IBRCKT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTCSTE": {
+  "hash": 83281504,
+  "members": [
+   "DTADRE",
+   "DTPERS"
+  ],
+  "owners": [
+   "DTJOB",
+   "DTJDAT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "VVALUE": {
+  "hash": 83673778,
+  "members": [],
+  "owners": [
+   "DDAT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CCURVE": {
+  "hash": 84337365,
+  "members": [
+   "GOBELE"
+  ],
+  "owners": [
+   "CSURF",
+   "CSURPX"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "GCURVE": {
+  "hash": 84337369,
+  "members": [
+   "OBJHD"
+  ],
+  "owners": [
+   "GSURF",
+   "CSURPX"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HCURVE": {
+  "hash": 84337370,
+  "members": [],
+  "owners": [
+   "HPANEL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTCSDF": {
+  "hash": 89127355,
+  "members": [
+   "ARCHIV"
+  ],
+  "owners": [
+   "DTPHSE",
+   "DTASMB",
+   "DTMAIN",
+   "DTSTEL",
+   "DTPROF",
+   "DTPLAT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SRFDEF": {
+  "hash": 89365699,
+  "members": [
+   "SRFLIM",
+   "RSFINS",
+   "SRFRFL",
+   "DLOCTN",
+   "DPLIM"
+  ],
+  "owners": [
+   "SRFSUR",
+   "WKSUR"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTFDEF": {
+  "hash": 89365738,
+  "members": [
+   "DTFSET",
+   "DTFEAT",
+   "DTFREF"
+  ],
+  "owners": [
+   "DTJDAT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "TRNDEF": {
+  "hash": 89371532,
+  "members": [
+   "TRNPRI",
+   "TRNRR",
+   "TRNSLD"
+  ],
+  "owners": [
+   "TRNWLD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "FSPDEF": {
+  "hash": 89373003,
+  "members": [
+   "DTGEOM",
+   "DTPROF",
+   "DTPLAT"
+  ],
+  "owners": [
+   "FSPWRL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTPDEF": {
+  "hash": 89373028,
+  "members": [
+   "DTPOIN"
+  ],
+  "owners": [
+   "DTPHSE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "MBRDEF": {
+  "hash": 89374009,
+  "members": [],
+  "owners": [
+   "RESDEF",
+   "DATDEF"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "RESDEF": {
+  "hash": 89374824,
+  "members": [
+   "MBRDEF",
+   "ASREQU",
+   "ASTATU",
+   "DDSE",
+   "DPSE"
+  ],
+  "owners": [
+   "ASSOC",
+   "ASDFGP",
+   "ASSDEF",
+   "RESTGP"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "ASSDEF": {
+  "hash": 89375185,
+  "members": [
+   "RESTRI",
+   "RESDEF",
+   "RESTGP",
+   "DERDAT",
+   "DATDEF"
+  ],
+  "owners": [
+   "ASDFGP"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DATDEF": {
+  "hash": 89375431,
+  "members": [
+   "MBRDEF",
+   "DDSE",
+   "DPSE"
+  ],
+  "owners": [
+   "ASSOC",
+   "ASDFGP",
+   "ASSDEF"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HRDREF": {
+  "hash": 89639792,
+  "members": [],
+  "owners": [
+   "OBJHD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTFREF": {
+  "hash": 89641300,
+  "members": [],
+  "owners": [
+   "DTFDEF"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DCLREF": {
+  "hash": 89645215,
+  "members": [
+   "DMODRF"
+  ],
+  "owners": [
+   "DCLONE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CRMREF": {
+  "hash": 89646348,
+  "members": [],
+  "owners": [
+   "SPMCON",
+   "SPMDIV",
+   "SPMCFB",
+   "SPMOPE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SFTREF": {
+  "hash": 89651143,
+  "members": [
+   "CCHDAT"
+  ],
+  "owners": [
+   "OBJHD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CSTIFF": {
+  "hash": 90005772,
+  "members": [
+   "CPRCUT",
+   "CPREND",
+   "CPRHOL",
+   "CPRMRK",
+   "CPRNOT",
+   "GOBELE"
+  ],
+  "owners": [
+   "CPANEL",
+   "CPROTR"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DSTIFF": {
+  "hash": 90005773,
+  "members": [
+   "DBOX",
+   "DPLANE",
+   "DMODRF",
+   "DOFSTP",
+   "DPROMT",
+   "DSTIPO",
+   "DINCL",
+   "DENDFR",
+   "DENDTO",
+   "DPLATE",
+   "DBRCKT",
+   "DHOLE",
+   "DNOTCH",
+   "DCTOUT"
+  ],
+  "owners": [
+   "DPLATE",
+   "DBRCKT",
+   "UPANEL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "GSTIFF": {
+  "hash": 90005776,
+  "members": [
+   "OBJHD"
+  ],
+  "owners": [
+   "GCPANE",
+   "CSURPX"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HSTIFF": {
+  "hash": 90005777,
+  "members": [
+   "HPRCUT",
+   "HPREND",
+   "HPRHOL",
+   "HPRNOT"
+  ],
+  "owners": [
+   "HPANEL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "ISTIFF": {
+  "hash": 90005778,
+  "members": [
+   "PROCRO",
+   "PROTRC",
+   "LOCMDL",
+   "LIMMDL",
+   "IENDFR",
+   "IENDTO",
+   "POSMDL"
+  ],
+  "owners": [
+   "UPANEL",
+   "IBRCKT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HVSTIF": {
+  "hash": 91815965,
+  "members": [],
+  "owners": [
+   "ELBO",
+   "BEND",
+   "TEE",
+   "VALV",
+   "REDU",
+   "TAPE",
+   "TRNS",
+   "STRT",
+   "OFST",
+   "PLEN",
+   "PLAT",
+   "FLAN",
+   "CROS",
+   "THRE",
+   "DUCT",
+   "VENT",
+   "FTUB",
+   "SHU",
+   "COUP",
+   "CLOS",
+   "OLET",
+   "CAP",
+   "MESH",
+   "GRIL",
+   "COWL",
+   "FBLI",
+   "VTWA",
+   "VFWA",
+   "TRAP",
+   "FILT",
+   "PCOM",
+   "AHU",
+   "DAMP",
+   "HFAN",
+   "SILE",
+   "BATT",
+   "UNIO",
+   "INST"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTGINF": {
+  "hash": 94247851,
+  "members": [
+   "ARCHIV"
+  ],
+  "owners": [
+   "DTASMB",
+   "DTSTEL",
+   "DTPROF",
+   "DTPLAT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "WLPROF": {
+  "hash": 94962803,
+  "members": [],
+  "owners": [
+   "WLPRSE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTPROF": {
+  "hash": 94963000,
+  "members": [
+   "DTGEOM",
+   "DTSHAP",
+   "DTGINF",
+   "DTSHPI",
+   "DTFABI",
+   "DTSEAM",
+   "DTCMNT",
+   "DDSE",
+   "DTFCSG",
+   "DTBOLT",
+   "DTHOLE",
+   "DTWELD",
+   "DTSTRC",
+   "DTSTEL",
+   "LOOP",
+   "DTCSDF",
+   "SPINE"
+  ],
+  "owners": [
+   "FSPDEF",
+   "DTPHSE",
+   "DTMAIN",
+   "DTSUBM"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DLOCRF": {
+  "hash": 96261133,
+  "members": [],
+  "owners": [
+   "DLOCTN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DMODRF": {
+  "hash": 96280843,
+  "members": [],
+  "owners": [
+   "DSEG",
+   "DEPNT",
+   "DINTER",
+   "DCURP",
+   "DINTC",
+   "DPLL",
+   "PROCUR",
+   "PTHCUR",
+   "DCLRFL",
+   "DCLROT",
+   "DCLTRA",
+   "DCLREF",
+   "DCRDGR",
+   "DLOCTN",
+   "DENDFR",
+   "DENDTO",
+   "DENDCT",
+   "DPLIM",
+   "DEDGST",
+   "DEDGCT",
+   "DEDGFR",
+   "DEDGTO",
+   "DEDGRS",
+   "DSEAM",
+   "DHOLE",
+   "DNOTCH",
+   "DCORNR",
+   "DCTOUT",
+   "DBNDRY",
+   "DBRARA",
+   "DBRARB",
+   "DBRTOE",
+   "DBRCKT",
+   "DSTIFF",
+   "DFCPLA",
+   "DPILLR"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SCSURF": {
+  "hash": 96618115,
+  "members": [
+   "PRIGEO",
+   "SCCRVS"
+  ],
+  "owners": [
+   "SSOWLD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "LDRCAG": {
+  "hash": 101577522,
+  "members": [
+   "CAGSEG"
+  ],
+  "owners": [
+   "LADDER"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CAGSEG": {
+  "hash": 104010105,
+  "members": [
+   "GENSEC",
+   "TMPL",
+   "DPSE",
+   "DDSE",
+   "PORS",
+   "LNKS",
+   "HOOPSE"
+  ],
+  "owners": [
+   "RLCAGE",
+   "LDRCAG"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "BEVSEG": {
+  "hash": 104021147,
+  "members": [],
+  "owners": [
+   "BEVEL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "TRNCLG": {
+  "hash": 107420843,
+  "members": [],
+  "owners": [
+   "TRNCLS"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "FEMIMG": {
+  "hash": 108069288,
+  "members": [
+   "GOBELE",
+   "OBJHD"
+  ],
+  "owners": [
+   "FEMWLD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HFLANG": {
+  "hash": 108442565,
+  "members": [
+   "HPREND"
+  ],
+  "owners": [
+   "HPANEL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "FIXING": {
+  "hash": 108608856,
+  "members": [
+   "FIXING",
+   "TMPL",
+   "DPSE",
+   "DDSE",
+   "STWSET",
+   "PORS",
+   "LNKS"
+  ],
+  "owners": [
+   "PLFEAT",
+   "FURNIT",
+   "FIXTUR",
+   "DOOR",
+   "WINDOW",
+   "ELFITT",
+   "HVACFI",
+   "FPFITT",
+   "INFITT",
+   "HRGATE",
+   "HRPANE",
+   "FRMW",
+   "SBFR",
+   "CFLOOR",
+   "CSCREE",
+   "CWALL",
+   "PNOD",
+   "PLDATU",
+   "ENDATU",
+   "FIXING",
+   "BPANEL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "STRLNG": {
+  "hash": 108663841,
+  "members": [
+   "RPATH",
+   "GENSEC",
+   "PANE",
+   "HANDRA",
+   "DDSE",
+   "BPANEL"
+  ],
+  "owners": [
+   "STRWEL",
+   "STRTWR"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "INTLNG": {
+  "hash": 108665127,
+  "members": [
+   "GENSEC",
+   "TMPL",
+   "PANE",
+   "DDSE",
+   "BPANEL"
+  ],
+  "owners": [
+   "STRFLT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CLNPNG": {
+  "hash": 108739425,
+  "members": [
+   "CLNLAT",
+   "CLNCGR",
+   "BNDLIN",
+   "REST"
+  ],
+  "owners": [
+   "CEILIN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SPMMRG": {
+  "hash": 110805535,
+  "members": [
+   "SPMPOI"
+  ],
+  "owners": [
+   "SPMCAD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SPMPRG": {
+  "hash": 110864584,
+  "members": [],
+  "owners": [
+   "SPMCAD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTFCSG": {
+  "hash": 111135136,
+  "members": [
+   "DTGEOM"
+  ],
+  "owners": [
+   "DTPROF",
+   "DTPLAT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTPNCH": {
+  "hash": 117204790,
+  "members": [],
+  "owners": [
+   "DTMAIN",
+   "DTSUBM"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DNOTCH": {
+  "hash": 117321997,
+  "members": [
+   "DMODRF",
+   "DPLANE",
+   "DCORNR"
+  ],
+  "owners": [
+   "DBNDRY",
+   "DPLATE",
+   "DBRCKT",
+   "DSTIFF",
+   "DFCPLA",
+   "DPILLR",
+   "UPANEL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HNOTCH": {
+  "hash": 117322001,
+  "members": [],
+  "owners": [
+   "HPANEL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "INOTCH": {
+  "hash": 117322002,
+  "members": [
+   "PROTRC",
+   "LOCMDL",
+   "LIMMDL",
+   "POSMDL"
+  ],
+  "owners": [
+   "UPANEL",
+   "IBRCKT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "OBJELH": {
+  "hash": 121805763,
+  "members": [
+   "OBJELE"
+  ],
+  "owners": [
+   "OBJELE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DGRAPH": {
+  "hash": 123858751,
+  "members": [
+   "DGTEXT",
+   "DGELEV",
+   "DGSSYM",
+   "DGARC",
+   "DGRAD",
+   "DGARCL",
+   "DGWELD",
+   "DGML",
+   "DGMLA",
+   "DGMLTR",
+   "DGPOLY"
+  ],
+  "owners": [
+   "DTPHSE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SPMSPH": {
+  "hash": 124209658,
+  "members": [],
+  "owners": [
+   "SPMCAD",
+   "SPMCON",
+   "SPMOPE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "APOLYH": {
+  "hash": 128856286,
+  "members": [
+   "POLPTL",
+   "POLFAC"
+  ],
+  "owners": [
+   "AREADE",
+   "DEMOPA"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "NPOLYH": {
+  "hash": 128856299,
+  "members": [
+   "POLPTL",
+   "POLFAC"
+  ],
+  "owners": [
+   "PANE",
+   "SCREED",
+   "FLOOR",
+   "GWALL",
+   "CYLI",
+   "SLCY",
+   "SNOU",
+   "BOX",
+   "DISH",
+   "CONE",
+   "PYRA",
+   "CTOR",
+   "RTOR",
+   "EXTR",
+   "REVO",
+   "POLYHE",
+   "TMPL",
+   "BPANEL",
+   "TRNPRI"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTFABI": {
+  "hash": 130759087,
+  "members": [],
+  "owners": [
+   "DTPROF",
+   "DTPLAT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HPANBI": {
+  "hash": 131011217,
+  "members": [],
+  "owners": [
+   "HPANBO"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "TRANCI": {
+  "hash": 131542724,
+  "members": [
+   "SSREFE"
+  ],
+  "owners": [
+   "TRUNNI"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "LUANCI": {
+  "hash": 131542797,
+  "members": [
+   "SSREFE"
+  ],
+  "owners": [
+   "LUG"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HVACFI": {
+  "hash": 132920630,
+  "members": [
+   "TMPL",
+   "FIXING",
+   "DDSE",
+   "DPSE",
+   "PORS",
+   "LNKS"
+  ],
+  "owners": [
+   "DETGRP",
+   "CEILIN",
+   "CLNCGR",
+   "CLNTIL",
+   "CGRDCP",
+   "CGRDLP",
+   "WLFITT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PFDEFI": {
+  "hash": 132961759,
+  "members": [
+   "PFFACE",
+   "PFEDGE",
+   "PFPOIN"
+  ],
+  "owners": [
+   "PFACE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DIMPLI": {
+  "hash": 136373548,
+  "members": [],
+  "owners": [
+   "LINDIM",
+   "MLABEL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "TRUNNI": {
+  "hash": 137403155,
+  "members": [
+   "ELBO",
+   "BEND",
+   "REDU",
+   "FLAN",
+   "WELD",
+   "ATTA",
+   "TUBI",
+   "TRANCI",
+   "PLAT",
+   "TRREDU"
+  ],
+  "owners": [
+   "REST",
+   "SUPPO"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "AIDPOI": {
+  "hash": 137961307,
+  "members": [],
+  "owners": [
+   "AIDGRO"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SPMPOI": {
+  "hash": 137968075,
+  "members": [],
+  "owners": [
+   "SPMCON",
+   "SPMOPE",
+   "SPMMRG"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTSHPI": {
+  "hash": 138346519,
+  "members": [],
+  "owners": [
+   "DTPROF",
+   "DTPLAT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "GENPRI": {
+  "hash": 139562818,
+  "members": [
+   "ATTDAT",
+   "ARCHIV",
+   "PCDSE"
+  ],
+  "owners": [
+   "EQUI",
+   "PULLP",
+   "JNTBOX",
+   "VOLM",
+   "SVOLM",
+   "STRU",
+   "PTRA",
+   "SUBE",
+   "SUBS",
+   "TMPL",
+   "PFOUTC",
+   "TRNSUR",
+   "TRNPRI",
+   "TRNSLD",
+   "TRNCEL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "TRNPRI": {
+  "hash": 139563182,
+  "members": [
+   "GENPRI",
+   "NBOX",
+   "NPOLYH",
+   "NCYL",
+   "NSLC",
+   "NSNO",
+   "NDIS",
+   "NCON",
+   "NPYR",
+   "NCTO",
+   "NRTO",
+   "NXTR",
+   "NREV",
+   "BOX",
+   "POLYHE",
+   "CYLI",
+   "SLCY",
+   "SNOU",
+   "DISH",
+   "CONE",
+   "PYRA",
+   "POHE",
+   "CTOR",
+   "RTOR",
+   "EXTR",
+   "REVO"
+  ],
+  "owners": [
+   "TRNDEF"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "RESTRI": {
+  "hash": 139645206,
+  "members": [
+   "MBRMAP",
+   "ASREQU",
+   "ASTATU",
+   "DDSE",
+   "DPSE",
+   "ASSMBR"
+  ],
+  "owners": [
+   "ASSOC",
+   "ASSDEF",
+   "RESTGP"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "GICSTI": {
+  "hash": 140676838,
+  "members": [
+   "OBJHD"
+  ],
+  "owners": [
+   "GICPAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HICSTI": {
+  "hash": 140676839,
+  "members": [
+   "GOBELE"
+  ],
+  "owners": [
+   "HICPAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HBRSTI": {
+  "hash": 140687585,
+  "members": [
+   "HPRCUT",
+   "HPREND",
+   "HPRHOL",
+   "HPRNOT"
+  ],
+  "owners": [
+   "HBRCKT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "MOGOBJ": {
+  "hash": 145384159,
+  "members": [
+   "GOBELE"
+  ],
+  "owners": [
+   "MOGWLD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "ILPOBJ": {
+  "hash": 145390635,
+  "members": [],
+  "owners": [
+   "ILPGRP"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTBMFJ": {
+  "hash": 147467038,
+  "members": [
+   "DTBMFL"
+  ],
+  "owners": [
+   "BMFWRL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "FMSSBK": {
+  "hash": 159820485,
+  "members": [],
+  "owners": [
+   "FMBEND"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "WKPACK": {
+  "hash": 159995408,
+  "members": [
+   "WKPACK",
+   "GPSET"
+  ],
+  "owners": [
+   "CWAREA",
+   "WKPACK"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "BBLOCK": {
+  "hash": 160267790,
+  "members": [
+   "BLEVEL",
+   "OPENSP",
+   "RSTARE",
+   "RUTVOL",
+   "STRWEL",
+   "BBLKDT",
+   "DETGRP",
+   "BNDLIN",
+   "AREADE"
+  ],
+  "owners": [
+   "WORL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "GBLOCK": {
+  "hash": 160267795,
+  "members": [
+   "GPANEL",
+   "GSUBPN",
+   "GCPANE",
+   "GXTRAO",
+   "OBJHD"
+  ],
+  "owners": [
+   "WORL",
+   "HBLWLD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "LNLINK": {
+  "hash": 165995877,
+  "members": [],
+  "owners": [
+   "LNDESC"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "STALNK": {
+  "hash": 166047076,
+  "members": [
+   "STAHIS"
+  ],
+  "owners": [
+   "STLNKS"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CYMLNK": {
+  "hash": 166055943,
+  "members": [
+   "CYMLNK"
+  ],
+  "owners": [
+   "CYMGRP",
+   "CYMLNK"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CMTLNK": {
+  "hash": 166060722,
+  "members": [],
+  "owners": [
+   "CMTTHR"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "REVLNK": {
+  "hash": 166061979,
+  "members": [
+   "REVISS"
+  ],
+  "owners": [
+   "REVLKS"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DSHRNK": {
+  "hash": 166170235,
+  "members": [],
+  "owners": [
+   "UPANEL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DGMARK": {
+  "hash": 167964709,
+  "members": [],
+  "owners": [],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CPRMRK": {
+  "hash": 168204792,
+  "members": [],
+  "owners": [
+   "CSTIFF"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DGARCL": {
+  "hash": 174667864,
+  "members": [
+   "ARCHIV",
+   "DGTXTU",
+   "DTCMNT"
+  ],
+  "owners": [
+   "DGRAPH"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTWLDL": {
+  "hash": 175097596,
+  "members": [
+   "DTWLDD"
+  ],
+  "owners": [
+   "DTJDAT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "LOCMDL": {
+  "hash": 175102572,
+  "members": [],
+  "owners": [
+   "ICRPNT",
+   "ICRCUR",
+   "FNCARE",
+   "FNCBRN",
+   "IBNDRY",
+   "ILIM",
+   "IEDGE",
+   "IPLATE",
+   "IBRCKT",
+   "ISTIFF",
+   "IFCPLA",
+   "IPILLR",
+   "ISEAM",
+   "IHOLE",
+   "ICTOUT",
+   "ICLIP",
+   "INOTCH"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "LIMMDL": {
+  "hash": 175109700,
+  "members": [],
+  "owners": [
+   "ICRCUR",
+   "FNCARE",
+   "FNCBRN",
+   "SPMSPC",
+   "SRFSUR",
+   "IBNDRY",
+   "IPLATE",
+   "IBRCKT",
+   "ISTIFF",
+   "IFCPLA",
+   "IPILLR",
+   "ISEAM",
+   "ICTOUT",
+   "ICLIP",
+   "INOTCH"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "POSMDL": {
+  "hash": 175114240,
+  "members": [],
+  "owners": [
+   "ICRPNT",
+   "ICRCUR",
+   "SRFSUR",
+   "IBNDRY",
+   "ILIM",
+   "IEDGE",
+   "IPLATE",
+   "IBRCKT",
+   "ISTIFF",
+   "IFCPLA",
+   "IPILLR",
+   "ISEAM",
+   "IHOLE",
+   "ICTOUT",
+   "ICLIP",
+   "INOTCH"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "FEMODL": {
+  "hash": 175148952,
+  "members": [
+   "FEBEAM",
+   "FEFRED",
+   "FESHEL",
+   "FETRUS"
+  ],
+  "owners": [
+   "FEMWLD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "MLABEL": {
+  "hash": 175415962,
+  "members": [
+   "DIMPOS",
+   "DIMPPT",
+   "DIMPLI"
+  ],
+  "owners": [
+   "DIMGRO"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "FNCCEL": {
+  "hash": 175437150,
+  "members": [
+   "ATTDAT",
+   "ARCHIV"
+  ],
+  "owners": [
+   "FNCBRN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SPMCEL": {
+  "hash": 175444507,
+  "members": [
+   "ATTDAT",
+   "ARCHIV"
+  ],
+  "owners": [
+   "FNCARE",
+   "SPMSPC"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "TRNCEL": {
+  "hash": 175445291,
+  "members": [
+   "GENPRI",
+   "TRNCUC"
+  ],
+  "owners": [
+   "TRNCC"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "GRIDEL": {
+  "hash": 175461316,
+  "members": [
+   "GRIDPL"
+  ],
+  "owners": [
+   "REFGRD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "FESHEL": {
+  "hash": 175546986,
+  "members": [],
+  "owners": [
+   "FEMODL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "BPANEL": {
+  "hash": 175652255,
+  "members": [
+   "RPATH",
+   "BPFEAT",
+   "PFIT",
+   "FIXING",
+   "NBOX",
+   "NPOLYH",
+   "NCYL",
+   "NSLC",
+   "NSNO",
+   "NDIS",
+   "NCON",
+   "NPYR",
+   "NCTO",
+   "NRTO",
+   "NXTR",
+   "NREV"
+  ],
+  "owners": [
+   "EQUI",
+   "PULLP",
+   "JNTBOX",
+   "STRU",
+   "TWRSTL",
+   "TREAD",
+   "INTLNG",
+   "TOPEXT",
+   "BOTEXT",
+   "STRSTR",
+   "STRLNG",
+   "SLRAIL",
+   "RLGATE",
+   "LDRSTR",
+   "LDRRUN",
+   "CEILIN",
+   "EXTFRM",
+   "INTFRM",
+   "PLTGRD",
+   "HRTERM",
+   "HRPANE",
+   "HRPOST",
+   "PTRA",
+   "SUBE",
+   "SUBS",
+   "FRMW",
+   "SBFR",
+   "CFLOOR",
+   "CSCREE",
+   "CWALL",
+   "TMPL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CPANEL": {
+  "hash": 175652256,
+  "members": [
+   "CPANBO",
+   "CPNISE",
+   "GOBELE",
+   "CSTIFF"
+  ],
+  "owners": [
+   "BLOCK"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "GPANEL": {
+  "hash": 175652260,
+  "members": [
+   "OBJHD"
+  ],
+  "owners": [
+   "GBLOCK"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HPANEL": {
+  "hash": 175652261,
+  "members": [
+   "HBEAD",
+   "HBRCKT",
+   "HCURVE",
+   "HDOPLA",
+   "HFLANG",
+   "HHOLE",
+   "HPANBO",
+   "HPILLR",
+   "HPLATE",
+   "HCTOUT",
+   "HNOTCH",
+   "HPOINT",
+   "HSEAM",
+   "HSTIFF",
+   "HSUBPN",
+   "HTAP",
+   "GOBELE"
+  ],
+  "owners": [
+   "BLOCK"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "UPANEL": {
+  "hash": 175652274,
+  "members": [
+   "DBNDRY",
+   "DBOX",
+   "DBRCKT",
+   "DCLONE",
+   "DCRCUR",
+   "DCRPNT",
+   "DCTOUT",
+   "DFCPLA",
+   "DHOLE",
+   "DLOCTN",
+   "DNOTCH",
+   "DPILLR",
+   "DPLATE",
+   "DSTIFF",
+   "IBNDRY",
+   "IBRCKT",
+   "ICLIP",
+   "ICRCUR",
+   "ICRPNT",
+   "ICTOUT",
+   "IFCPLA",
+   "IHOLE",
+   "INOTCH",
+   "IPILLR",
+   "IPLATE",
+   "ISEAM",
+   "ISTIFF",
+   "DSHRNK"
+  ],
+  "owners": [
+   "ZONE",
+   "FEMZON"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTJREL": {
+  "hash": 175737658,
+  "members": [
+   "DTRELA"
+  ],
+  "owners": [
+   "DTJDAT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "TMRREL": {
+  "hash": 175743317,
+  "members": [],
+  "owners": [
+   "TMRPSE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTSTEL": {
+  "hash": 175783585,
+  "members": [
+   "DTGEOM",
+   "DTSHAP",
+   "DTGINF",
+   "DTCMNT",
+   "DTBOLT",
+   "DTHOLE",
+   "DTWELD",
+   "DTSTRC",
+   "DTSTEL",
+   "DTCSDF"
+  ],
+  "owners": [
+   "DTPHSE",
+   "DTASMB",
+   "DTMAIN",
+   "DTSUBM",
+   "DTSTEL",
+   "DTPROF",
+   "DTPLAT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "BLEVEL": {
+  "hash": 175812527,
+  "members": [
+   "RSTARE",
+   "RUTVOL",
+   "STRWEL",
+   "ROOM",
+   "OPENSP",
+   "DETGRP",
+   "REFDAT",
+   "AREADE",
+   "BNDLIN",
+   "ACCSET",
+   "SPBSET",
+   "INVLST"
+  ],
+  "owners": [
+   "BBLOCK"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "STRWEL": {
+  "hash": 175841920,
+  "members": [
+   "STRTWR",
+   "STRFLT",
+   "STRLNG",
+   "DETGRP",
+   "AREADE",
+   "BNDLIN",
+   "ACCSET",
+   "SPBSET",
+   "INVLST",
+   "DDSE"
+  ],
+  "owners": [
+   "BBLOCK",
+   "BLEVEL",
+   "ROOM",
+   "OPENSP"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTBMFL": {
+  "hash": 176164852,
+  "members": [
+   "DTBMF",
+   "DTBMFL"
+  ],
+  "owners": [
+   "DTBMFJ",
+   "DTBMFL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SRFRFL": {
+  "hash": 176266144,
+  "members": [],
+  "owners": [
+   "SRFDEF",
+   "RSFINS"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DCLRFL": {
+  "hash": 176270098,
+  "members": [
+   "DMODRF",
+   "DPLANE",
+   "DPNT"
+  ],
+  "owners": [
+   "DCLONE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SLRAIL": {
+  "hash": 177534442,
+  "members": [
+   "GENSEC",
+   "PANE",
+   "DDSE",
+   "BPANEL"
+  ],
+  "owners": [
+   "SLADDR"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CLNTIL": {
+  "hash": 177905487,
+  "members": [
+   "TMPL",
+   "ELFITT",
+   "HVACFI",
+   "FPFITT",
+   "INFITT",
+   "HOLE"
+  ],
+  "owners": [
+   "CLNCGR"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CTWALL": {
+  "hash": 179132610,
+  "members": [
+   "RPATH",
+   "HATTA",
+   "TATTA",
+   "WLPRSE",
+   "WLJNTS",
+   "WLFEAT",
+   "WLCOMP"
+  ],
+  "owners": [
+   "STRU",
+   "DETGRP"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "STWALL": {
+  "hash": 179132626,
+  "members": [
+   "SNOD",
+   "FITT",
+   "CMFI",
+   "SELJ",
+   "SPLO",
+   "SDLO",
+   "TMPL",
+   "DPSE",
+   "DDSE",
+   "PORS",
+   "LNKS",
+   "BFDT"
+  ],
+  "owners": [
+   "FRMW",
+   "SBFR",
+   "CWALL",
+   "TMPL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HICHOL": {
+  "hash": 180849842,
+  "members": [
+   "GOBELE"
+  ],
+  "owners": [
+   "HICPAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CPRHOL": {
+  "hash": 180860961,
+  "members": [],
+  "owners": [
+   "CSTIFF"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HPRHOL": {
+  "hash": 180860966,
+  "members": [],
+  "owners": [
+   "HBRSTI",
+   "HSTIFF"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HSPOOL": {
+  "hash": 180997370,
+  "members": [],
+  "owners": [
+   "HSLIST"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PSPOOL": {
+  "hash": 180997378,
+  "members": [],
+  "owners": [
+   "PSLIST"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PLASOL": {
+  "hash": 181064986,
+  "members": [
+   "ATTDAT",
+   "ARCHIV"
+  ],
+  "owners": [
+   "IPLATE",
+   "IBRCKT",
+   "ICLIP"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "ECTSOL": {
+  "hash": 181078583,
+  "members": [
+   "ATTDAT",
+   "ARCHIV"
+  ],
+  "owners": [
+   "ECTGEO"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "RUTVOL": {
+  "hash": 181138131,
+  "members": [
+   "RPATH",
+   "HATTA",
+   "TATTA",
+   "HRFEAT",
+   "RAILSE",
+   "POSTSE",
+   "HRPNSE",
+   "HRKPSE"
+  ],
+  "owners": [
+   "BBLOCK",
+   "BLEVEL",
+   "ROOM",
+   "OPENSP"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "GRIDPL": {
+  "hash": 181307167,
+  "members": [
+   "REFGLN",
+   "REFGAR"
+  ],
+  "owners": [
+   "GRIDEL",
+   "GRIDFA"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "KICKPL": {
+  "hash": 181440335,
+  "members": [],
+  "owners": [
+   "HRKPSE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "FCUTPL": {
+  "hash": 181630437,
+  "members": [],
+  "owners": [
+   "FLRCOV"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "ATTRRL": {
+  "hash": 182653678,
+  "members": [],
+  "owners": [
+   "DDAT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CTMTRL": {
+  "hash": 182687943,
+  "members": [
+   "CTSTRA",
+   "CTRISE",
+   "CTBEND",
+   "CTTEE",
+   "CTCROS",
+   "CTREDU",
+   "CTCOUP"
+  ],
+  "owners": [
+   "CWBRAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "BMFWRL": {
+  "hash": 182741699,
+  "members": [
+   "DTBMFJ"
+  ],
+  "owners": [
+   "WORL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CYMWRL": {
+  "hash": 182747127,
+  "members": [
+   "CYMGRP"
+  ],
+  "owners": [
+   "WORL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "ILPWRL": {
+  "hash": 182748969,
+  "members": [
+   "ILPGRP"
+  ],
+  "owners": [
+   "WORL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "FSPWRL": {
+  "hash": 182749155,
+  "members": [
+   "FSPDEF"
+  ],
+  "owners": [
+   "WORL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTBLTL": {
+  "hash": 183585343,
+  "members": [
+   "DTBLTD",
+   "DTBLTS",
+   "DTBSPT",
+   "DTBLDS",
+   "DTBLSS"
+  ],
+  "owners": [
+   "DTJDAT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "POLPTL": {
+  "hash": 183671242,
+  "members": [
+   "POIN"
+  ],
+  "owners": [
+   "POLYHE",
+   "NPOLYH",
+   "APOLYH"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "TWRSTL": {
+  "hash": 183734885,
+  "members": [
+   "GENSEC",
+   "PANE",
+   "BPANEL"
+  ],
+  "owners": [
+   "STRTWR"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "AREAWL": {
+  "hash": 184965283,
+  "members": [
+   "AREASE"
+  ],
+  "owners": [
+   "WORL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "GRIDWL": {
+  "hash": 185027254,
+  "members": [
+   "GRIDSY",
+   "REFGRD",
+   "IDINFO"
+  ],
+  "owners": [
+   "WORL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "XPRDWL": {
+  "hash": 185033778,
+  "members": [
+   "XSCOPE"
+  ],
+  "owners": [
+   "WORL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "ASDFWL": {
+  "hash": 185062996,
+  "members": [
+   "ASDFGP"
+  ],
+  "owners": [
+   "WORL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "LINKWL": {
+  "hash": 185168442,
+  "members": [
+   "LNCLAS",
+   "LNDESC",
+   "LNFOLD"
+  ],
+  "owners": [
+   "WORL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "WKPKWL": {
+  "hash": 185169965,
+  "members": [
+   "CWAREA"
+  ],
+  "owners": [
+   "WORL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "REVLWL": {
+  "hash": 185193855,
+  "members": [
+   "REVLKS"
+  ],
+  "owners": [
+   "WORL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DEMOWL": {
+  "hash": 185246329,
+  "members": [
+   "DEMOSE"
+  ],
+  "owners": [
+   "WORL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "ASSOWL": {
+  "hash": 185251078,
+  "members": [
+   "ASSOGP"
+  ],
+  "owners": [
+   "WORL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SYGPWL": {
+  "hash": 185262193,
+  "members": [
+   "SYGPAR"
+  ],
+  "owners": [
+   "WORL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SPMCYL": {
+  "hash": 186073327,
+  "members": [],
+  "owners": [
+   "SPMCAD",
+   "SPMCON",
+   "SPMOPE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HVIDAM": {
+  "hash": 187684568,
+  "members": [],
+  "owners": [
+   "ELBO",
+   "BEND",
+   "TEE",
+   "VALV",
+   "REDU",
+   "TAPE",
+   "TRNS",
+   "STRT",
+   "OFST",
+   "PLEN",
+   "PLAT",
+   "FLAN",
+   "CROS",
+   "THRE",
+   "DUCT",
+   "VENT",
+   "FTUB",
+   "SHU",
+   "COUP",
+   "CLOS",
+   "OLET",
+   "CAP",
+   "MESH",
+   "GRIL",
+   "COWL",
+   "FBLI",
+   "VTWA",
+   "VFWA",
+   "TRAP",
+   "FILT",
+   "PCOM",
+   "AHU",
+   "DAMP",
+   "HFAN",
+   "SILE",
+   "BATT",
+   "UNIO",
+   "INST"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "FEBEAM": {
+  "hash": 187698687,
+  "members": [],
+  "owners": [
+   "FEMODL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTSEAM": {
+  "hash": 187711483,
+  "members": [
+   "DTSSEC",
+   "DTCMNT"
+  ],
+  "owners": [
+   "DTPROF"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTSUBM": {
+  "hash": 188557852,
+  "members": [
+   "DTSUBM",
+   "DTSTEL",
+   "DTPROF",
+   "DTPLAT",
+   "DTADDM",
+   "DTBOLT",
+   "DTHOLE",
+   "DTPNCH",
+   "DTWELD",
+   "DTSTRC",
+   "DTASMB",
+   "FSPINS",
+   "DTCMNT"
+  ],
+  "owners": [
+   "DTMAIN",
+   "DTSUBM"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTADDM": {
+  "hash": 189273001,
+  "members": [
+   "DTCMNT"
+  ],
+  "owners": [
+   "DTPHSE",
+   "DTMAIN",
+   "DTSUBM"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "GPITEM": {
+  "hash": 190125097,
+  "members": [],
+  "owners": [
+   "GPSET"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "XPITEM": {
+  "hash": 190125114,
+  "members": [],
+  "owners": [
+   "XPIFLD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "ASITEM": {
+  "hash": 190125172,
+  "members": [],
+  "owners": [
+   "ASMBLY"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "FMBDIM": {
+  "hash": 191930748,
+  "members": [],
+  "owners": [
+   "FMBEND"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "FMEDIM": {
+  "hash": 191932935,
+  "members": [],
+  "owners": [
+   "FMEXTR"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "LINDIM": {
+  "hash": 191939394,
+  "members": [
+   "DIMPOS",
+   "DIMPPT",
+   "DIMPLI"
+  ],
+  "owners": [
+   "DIMGRO"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "FMWDIM": {
+  "hash": 191946057,
+  "members": [],
+  "owners": [
+   "FMWELD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "FNCLIM": {
+  "hash": 192088968,
+  "members": [
+   "SPMGFA"
+  ],
+  "owners": [
+   "FNCARE",
+   "FNCBRN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SRFLIM": {
+  "hash": 192091276,
+  "members": [],
+  "owners": [
+   "SRFDEF"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SUBCOM": {
+  "hash": 195099940,
+  "members": [],
+  "owners": [
+   "ELBO",
+   "BEND",
+   "TEE",
+   "VALV",
+   "REDU",
+   "TAPE",
+   "TRNS",
+   "STRT",
+   "OFST",
+   "PLEN",
+   "PLAT",
+   "FLAN",
+   "CROS",
+   "THRE",
+   "DUCT",
+   "VENT",
+   "FTUB",
+   "SHU",
+   "COUP",
+   "CLOS",
+   "OLET",
+   "CAP",
+   "MESH",
+   "GRIL",
+   "COWL",
+   "FBLI",
+   "VTWA",
+   "VFWA",
+   "TRAP",
+   "FILT",
+   "PCOM",
+   "AHU",
+   "DAMP",
+   "HFAN",
+   "SILE",
+   "BATT",
+   "UNIO",
+   "INST"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "EQUCOM": {
+  "hash": 195113669,
+  "members": [
+   "TMPL",
+   "DPSE",
+   "DDSE",
+   "PORS",
+   "LNKS"
+  ],
+  "owners": [
+   "EQUI",
+   "PULLP",
+   "JNTBOX",
+   "SUBE",
+   "TMPL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CNVCOM": {
+  "hash": 195114315,
+  "members": [
+   "TMPL",
+   "DPSE",
+   "DDSE",
+   "PORS",
+   "LNKS"
+  ],
+  "owners": [
+   "SUBCNV"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTGEOM": {
+  "hash": 195142909,
+  "members": [
+   "ARCHIV"
+  ],
+  "owners": [
+   "FSPDEF",
+   "FSPINS",
+   "DTASMB",
+   "DTSTEL",
+   "DTBOLT",
+   "DTHOLE",
+   "DTWELD",
+   "DTPROF",
+   "DTPLAT",
+   "DTSTRC",
+   "DTFCSG"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HRTERM": {
+  "hash": 196746659,
+  "members": [
+   "TMPL",
+   "DPSE",
+   "DDSE",
+   "PORS",
+   "LNKS",
+   "PANE",
+   "GENSEC",
+   "BPANEL"
+  ],
+  "owners": [
+   "RAILSE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PLTFRM": {
+  "hash": 196766188,
+  "members": [
+   "RPATH",
+   "PLFEAT",
+   "EXTFRM",
+   "INTFRM",
+   "PLTGRD",
+   "HANDRA",
+   "DDSE"
+  ],
+  "owners": [
+   "STRU"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "INTFRM": {
+  "hash": 196766235,
+  "members": [
+   "GENSEC",
+   "PANE",
+   "BPANEL"
+  ],
+  "owners": [
+   "PLTFRM"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "EXTFRM": {
+  "hash": 196766501,
+  "members": [
+   "GENSEC",
+   "PANE",
+   "BPANEL"
+  ],
+  "owners": [
+   "PLTFRM"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CONITM": {
+  "hash": 197883813,
+  "members": [],
+  "owners": [
+   "HULCON"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DGSSYM": {
+  "hash": 200741278,
+  "members": [
+   "ARCHIV",
+   "DGTXTU",
+   "DTCMNT"
+  ],
+  "owners": [
+   "DGRAPH"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HVFLAN": {
+  "hash": 202188752,
+  "members": [],
+  "owners": [
+   "ELBO",
+   "BEND",
+   "TEE",
+   "VALV",
+   "REDU",
+   "TAPE",
+   "TRNS",
+   "STRT",
+   "OFST",
+   "PLEN",
+   "PLAT",
+   "FLAN",
+   "CROS",
+   "THRE",
+   "DUCT",
+   "VENT",
+   "FTUB",
+   "SHU",
+   "COUP",
+   "CLOS",
+   "OLET",
+   "CAP",
+   "MESH",
+   "GRIL",
+   "COWL",
+   "FBLI",
+   "VTWA",
+   "VFWA",
+   "TRAP",
+   "FILT",
+   "PCOM",
+   "AHU",
+   "DAMP",
+   "HFAN",
+   "SILE",
+   "BATT",
+   "UNIO",
+   "INST"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "GICPAN": {
+  "hash": 202264945,
+  "members": [
+   "OBJHD",
+   "GICSTI",
+   "GICPLA"
+  ],
+  "owners": [
+   "GIBLO"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HICPAN": {
+  "hash": 202264946,
+  "members": [
+   "CPANBO",
+   "CPNISE",
+   "GOBELE",
+   "HICSTI",
+   "HICPLA",
+   "HICHOL"
+  ],
+  "owners": [
+   "HIBLO"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "GIPPAN": {
+  "hash": 202274422,
+  "members": [
+   "OBJHD"
+  ],
+  "owners": [
+   "GIBLO"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "GISPAN": {
+  "hash": 202276609,
+  "members": [
+   "OBJHD"
+  ],
+  "owners": [
+   "GIBLO"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CWBRAN": {
+  "hash": 202303956,
+  "members": [
+   "RPATH",
+   "HATTA",
+   "TATTA",
+   "CONSEQ",
+   "SEGSEQ",
+   "CTMTRL",
+   "RTFEAT"
+  ],
+  "owners": [
+   "CWAY"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "ECTSCN": {
+  "hash": 203399105,
+  "members": [
+   "ATTDAT",
+   "ARCHIV"
+  ],
+  "owners": [
+   "ECTGEO"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PLOPEN": {
+  "hash": 204399547,
+  "members": [
+   "RPATH",
+   "OPENFE"
+  ],
+  "owners": [
+   "PLFEAT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "WLOPEN": {
+  "hash": 204399554,
+  "members": [
+   "RPATH",
+   "DOOR",
+   "WINDOW"
+  ],
+  "owners": [
+   "WLFEAT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "BPOPEN": {
+  "hash": 204399641,
+  "members": [
+   "RPATH"
+  ],
+  "owners": [
+   "BPFEAT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTMAIN": {
+  "hash": 206228812,
+  "members": [
+   "DTSUBM",
+   "DTSTEL",
+   "DTPROF",
+   "DTPLAT",
+   "DTADDM",
+   "DTBOLT",
+   "DTHOLE",
+   "DTPNCH",
+   "DTWELD",
+   "DTSTRC",
+   "DTASMB",
+   "FSPINS",
+   "DTCMNT",
+   "DTCSDF"
+  ],
+  "owners": [
+   "DTPHSE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "AIDLIN": {
+  "hash": 206438464,
+  "members": [],
+  "owners": [
+   "AIDGRO"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "BNDLIN": {
+  "hash": 206438600,
+  "members": [
+   "LOOP"
+  ],
+  "owners": [
+   "BBLOCK",
+   "BLEVEL",
+   "ROOM",
+   "OPENSP",
+   "RSTARE",
+   "STRWEL",
+   "CEILIN",
+   "CLNPNG"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CEILIN": {
+  "hash": 206442003,
+  "members": [
+   "CLNPNG",
+   "AREADE",
+   "BNDLIN",
+   "ELFITT",
+   "HVACFI",
+   "FPFITT",
+   "INFITT",
+   "HOLE",
+   "PANE",
+   "BPANEL"
+  ],
+  "owners": [
+   "DETGRP"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "WLJOIN": {
+  "hash": 206501990,
+  "members": [],
+  "owners": [
+   "WLJNTS"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CTJOIN": {
+  "hash": 206502186,
+  "members": [
+   "DDSE",
+   "TMPL"
+  ],
+  "owners": [
+   "CTSTRA",
+   "CTCOUP",
+   "CTBEND",
+   "CTRISE",
+   "CTTEE",
+   "CTCROS",
+   "CTREDU"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PFPOIN": {
+  "hash": 206506195,
+  "members": [],
+  "owners": [
+   "PFDEFI"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTPOIN": {
+  "hash": 206506561,
+  "members": [],
+  "owners": [
+   "DTPDEF"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "GRIDLN": {
+  "hash": 207879217,
+  "members": [],
+  "owners": [
+   "GRIDAX"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "REFGLN": {
+  "hash": 207935739,
+  "members": [],
+  "owners": [
+   "GRIDPL",
+   "GRIDCY"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "FMBPLN": {
+  "hash": 208110174,
+  "members": [],
+  "owners": [
+   "FMBEND"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "ELCONN": {
+  "hash": 209154074,
+  "members": [
+   "TMPL",
+   "DPSE",
+   "DDSE",
+   "PORS",
+   "LNKS"
+  ],
+  "owners": [
+   "EQUI",
+   "PULLP",
+   "JNTBOX",
+   "SUBE",
+   "TMPL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "STCONN": {
+  "hash": 209154304,
+  "members": [
+   "STCVER"
+  ],
+  "owners": [
+   "STCSET"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SWECON": {
+  "hash": 209451088,
+  "members": [
+   "PROCUR",
+   "PTHCUR"
+  ],
+  "owners": [
+   "PSURF"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CRGCON": {
+  "hash": 209452395,
+  "members": [],
+  "owners": [
+   "PSURF"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HULCON": {
+  "hash": 209456126,
+  "members": [
+   "CONITM"
+  ],
+  "owners": [
+   "CONGRP"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CYLCON": {
+  "hash": 209456229,
+  "members": [],
+  "owners": [
+   "PSURF"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SPMCON": {
+  "hash": 209456731,
+  "members": [
+   "SPMCFB",
+   "CRMREF",
+   "SPMBOX",
+   "SPMSPH",
+   "SPMCYL",
+   "SPMCNE",
+   "SPMOPE",
+   "SPMPOI",
+   "DBOX"
+  ],
+  "owners": [
+   "SPMCAD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CONCON": {
+  "hash": 209457417,
+  "members": [],
+  "owners": [
+   "PSURF"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTTCON": {
+  "hash": 209461927,
+  "members": [],
+  "owners": [
+   "DTJDAT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "FMWCON": {
+  "hash": 209463927,
+  "members": [],
+  "owners": [
+   "FMWELD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "FEMZON": {
+  "hash": 209909130,
+  "members": [
+   "UPANEL",
+   "IDLSET"
+  ],
+  "owners": [
+   "FEMWLD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "GBRAPN": {
+  "hash": 209952061,
+  "members": [
+   "OBJHD"
+  ],
+  "owners": [
+   "STDWLD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HBRAPN": {
+  "hash": 209952062,
+  "members": [
+   "GOBELE"
+  ],
+  "owners": [
+   "STDWLD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "GSUBPN": {
+  "hash": 209974390,
+  "members": [
+   "OBJHD"
+  ],
+  "owners": [
+   "GBLOCK"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HSUBPN": {
+  "hash": 209974391,
+  "members": [
+   "GOBELE"
+  ],
+  "owners": [
+   "HPANEL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "FNCBRN": {
+  "hash": 211024014,
+  "members": [
+   "FNCLIM",
+   "FNCTSA",
+   "FNCCEL",
+   "LOCMDL",
+   "LIMMDL",
+   "FNCTEA"
+  ],
+  "owners": [
+   "FNCCAR"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DLOCTN": {
+  "hash": 212115271,
+  "members": [
+   "DCRDSY",
+   "DMODRF",
+   "DLOCRF"
+  ],
+  "owners": [
+   "DCRPNT",
+   "DCRCUR",
+   "SRFDEF",
+   "DPLATE",
+   "DBRCKT",
+   "UPANEL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "LDRRUN": {
+  "hash": 212943936,
+  "members": [
+   "GENSEC",
+   "PANE",
+   "TMPL",
+   "DPSE",
+   "DDSE",
+   "PORS",
+   "LNKS",
+   "BPANEL"
+  ],
+  "owners": [
+   "LADDER",
+   "RUNGSE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "GXTRAO": {
+  "hash": 216666016,
+  "members": [
+   "OBJHD"
+  ],
+  "owners": [
+   "MOGWLD",
+   "SSOWLD",
+   "RSOWLD",
+   "GBLOCK",
+   "GSURF",
+   "GRSO"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HBRABO": {
+  "hash": 216860795,
+  "members": [],
+  "owners": [
+   "HBRCKT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CPANBO": {
+  "hash": 217104654,
+  "members": [],
+  "owners": [
+   "HICPAN",
+   "CPANEL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HPANBO": {
+  "hash": 217104659,
+  "members": [
+   "HPANBI"
+  ],
+  "owners": [
+   "HPANEL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HVBRCO": {
+  "hash": 217715723,
+  "members": [],
+  "owners": [
+   "ELBO",
+   "BEND",
+   "TEE",
+   "VALV",
+   "REDU",
+   "TAPE",
+   "TRNS",
+   "STRT",
+   "OFST",
+   "PLEN",
+   "PLAT",
+   "FLAN",
+   "CROS",
+   "THRE",
+   "DUCT",
+   "VENT",
+   "FTUB",
+   "SHU",
+   "COUP",
+   "CLOS",
+   "OLET",
+   "CAP",
+   "MESH",
+   "GRIL",
+   "COWL",
+   "FBLI",
+   "VTWA",
+   "VFWA",
+   "TRAP",
+   "FILT",
+   "PCOM",
+   "AHU",
+   "DAMP",
+   "HFAN",
+   "SILE",
+   "BATT",
+   "UNIO",
+   "INST"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PRIGEO": {
+  "hash": 218567095,
+  "members": [
+   "ATTDAT",
+   "ARCHIV"
+  ],
+  "owners": [
+   "PSURF",
+   "SCSURF",
+   "SRFSUR",
+   "WKSUR"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CURGEO": {
+  "hash": 218573724,
+  "members": [
+   "ATTDAT",
+   "ARCHIV"
+  ],
+  "owners": [
+   "ICRCUR",
+   "SCCURV",
+   "SRFCUR"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "ECTGEO": {
+  "hash": 218574698,
+  "members": [
+   "ECTSCN",
+   "ECTSOL"
+  ],
+  "owners": [
+   "IENDFR",
+   "IENDTO"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "EXTGEO": {
+  "hash": 218575265,
+  "members": [],
+  "owners": [
+   "RPATH"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "IDINFO": {
+  "hash": 219235932,
+  "members": [
+   "ELEVLB",
+   "FACELB"
+  ],
+  "owners": [
+   "GRIDWL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SUPNFO": {
+  "hash": 219241504,
+  "members": [
+   "GOBELE"
+  ],
+  "owners": [
+   "STDWLD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "GSUPFO": {
+  "hash": 219284449,
+  "members": [
+   "OBJHD"
+  ],
+  "owners": [
+   "STDWLD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "XPOSNO": {
+  "hash": 223590588,
+  "members": [
+   "XPPROX"
+  ],
+  "owners": [
+   "XSCOPE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PFILOO": {
+  "hash": 223979596,
+  "members": [],
+  "owners": [
+   "PFFACE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DPLAPO": {
+  "hash": 224296969,
+  "members": [],
+  "owners": [
+   "DCLIP",
+   "DPLATE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DSTIPO": {
+  "hash": 224460346,
+  "members": [],
+  "owners": [
+   "DSTIFF"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HVTPPO": {
+  "hash": 224598212,
+  "members": [],
+  "owners": [
+   "ELBO",
+   "BEND",
+   "TEE",
+   "VALV",
+   "REDU",
+   "TAPE",
+   "TRNS",
+   "STRT",
+   "OFST",
+   "PLEN",
+   "PLAT",
+   "FLAN",
+   "CROS",
+   "THRE",
+   "DUCT",
+   "VENT",
+   "FTUB",
+   "SHU",
+   "COUP",
+   "CLOS",
+   "OLET",
+   "CAP",
+   "MESH",
+   "GRIL",
+   "COWL",
+   "FBLI",
+   "VTWA",
+   "VFWA",
+   "TRAP",
+   "FILT",
+   "PCOM",
+   "AHU",
+   "DAMP",
+   "HFAN",
+   "SILE",
+   "BATT",
+   "UNIO",
+   "INST"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PROCRO": {
+  "hash": 225401470,
+  "members": [
+   "ATTDAT",
+   "ARCHIV"
+  ],
+  "owners": [
+   "ISTIFF",
+   "IFCPLA",
+   "IPILLR"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "AIDGRO": {
+  "hash": 225471925,
+  "members": [
+   "AIDLIN",
+   "AIDARC",
+   "AIDCIR",
+   "AIDPOI",
+   "AIDTEX"
+  ],
+  "owners": [
+   "SITE",
+   "ZONE",
+   "CONVEY",
+   "EQUI",
+   "PULLP",
+   "JNTBOX",
+   "STRU",
+   "SUBS",
+   "FRMW"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DSIGRO": {
+  "hash": 225475843,
+  "members": [
+   "DSINST"
+  ],
+  "owners": [
+   "DSIWLD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DIMGRO": {
+  "hash": 225478489,
+  "members": [
+   "LINDIM",
+   "MLABEL"
+  ],
+  "owners": [
+   "SITE",
+   "ZONE",
+   "CONVEY",
+   "EQUI",
+   "PULLP",
+   "JNTBOX",
+   "STRU",
+   "SUBS",
+   "FRMW"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DENDTO": {
+  "hash": 226482943,
+  "members": [
+   "DENDCT",
+   "DPLANE",
+   "DMODRF"
+  ],
+  "owners": [
+   "DCRCUR",
+   "DSEG",
+   "DINTER",
+   "DSEAM",
+   "DSTIFF",
+   "DFCPLA",
+   "DPILLR"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "IENDTO": {
+  "hash": 226482948,
+  "members": [
+   "ECTGEO"
+  ],
+  "owners": [
+   "ISTIFF",
+   "IFCPLA",
+   "IPILLR"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DEDGTO": {
+  "hash": 226534702,
+  "members": [
+   "DMODRF",
+   "DEDGRS"
+  ],
+  "owners": [
+   "DEDGE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CMTCAP": {
+  "hash": 230719377,
+  "members": [
+   "ARCHIV",
+   "CMTPRE"
+  ],
+  "owners": [
+   "CMTPOS"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTSHAP": {
+  "hash": 230817253,
+  "members": [
+   "ARCHIV"
+  ],
+  "owners": [
+   "DTASMB",
+   "DTSTEL",
+   "DTPROF",
+   "DTPLAT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "MBRMAP": {
+  "hash": 230914462,
+  "members": [],
+  "owners": [
+   "RESTRI",
+   "DERDAT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CGRDCP": {
+  "hash": 231800322,
+  "members": [
+   "ELFITT",
+   "HVACFI",
+   "FPFITT",
+   "INFITT",
+   "HOLE"
+  ],
+  "owners": [
+   "CLNCGR"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DEDGCP": {
+  "hash": 231849112,
+  "members": [],
+  "owners": [
+   "DEDGE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTBMFP": {
+  "hash": 233560480,
+  "members": [
+   "ARCHIV"
+  ],
+  "owners": [
+   "DTBMF"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "ASDFGP": {
+  "hash": 233955568,
+  "members": [
+   "ASSDEF",
+   "ASDFGP",
+   "RESDEF",
+   "DATDEF"
+  ],
+  "owners": [
+   "ASDFWL",
+   "ASDFGP"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "ASSOGP": {
+  "hash": 234143650,
+  "members": [
+   "ASSOC",
+   "ASSOGP"
+  ],
+  "owners": [
+   "ASSOWL",
+   "ASSOGP"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "RESTGP": {
+  "hash": 234241704,
+  "members": [
+   "RESTRI",
+   "RESDEF",
+   "RESTGP"
+  ],
+  "owners": [
+   "ASSOC",
+   "ASSDEF",
+   "RESTGP"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CGRDLP": {
+  "hash": 236583291,
+  "members": [
+   "ELFITT",
+   "HVACFI",
+   "FPFITT",
+   "INFITT",
+   "HOLE"
+  ],
+  "owners": [
+   "CLNCGR"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "WLCOMP": {
+  "hash": 237320465,
+  "members": [
+   "WLPANE"
+  ],
+  "owners": [
+   "CTWALL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "ENVLOP": {
+  "hash": 238338185,
+  "members": [
+   "ENVDAT",
+   "BOX"
+  ],
+  "owners": [
+   "SSOWLD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "POLOOP": {
+  "hash": 238389982,
+  "members": [
+   "LOOPTS"
+  ],
+  "owners": [
+   "POLFAC"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CTSUPP": {
+  "hash": 239044746,
+  "members": [],
+  "owners": [
+   "CTRAY"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CYMGRP": {
+  "hash": 239827827,
+  "members": [
+   "CYMGRP",
+   "CYMLNK"
+  ],
+  "owners": [
+   "CYMWRL",
+   "CYMGRP"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CONGRP": {
+  "hash": 239828286,
+  "members": [
+   "HULCON"
+  ],
+  "owners": [
+   "CONWLD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "ILPGRP": {
+  "hash": 239829669,
+  "members": [
+   "ILPGRP",
+   "ILPOBJ"
+  ],
+  "owners": [
+   "ILPWRL",
+   "ILPGRP"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SYSGRP": {
+  "hash": 239832217,
+  "members": [
+   "SYSGRP",
+   "SYSMDA",
+   "SYSCDA"
+  ],
+  "owners": [
+   "SYGPAR",
+   "SYSGRP"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DETGRP": {
+  "hash": 239832391,
+  "members": [
+   "CEILIN",
+   "WINDOW",
+   "DOOR",
+   "FLRCOV",
+   "INSURQ",
+   "FURNIT",
+   "FIXTUR",
+   "ELFITT",
+   "HVACFI",
+   "FPFITT",
+   "INFITT",
+   "HANDRA",
+   "LADDER",
+   "CTWALL"
+  ],
+  "owners": [
+   "BBLOCK",
+   "BLEVEL",
+   "ROOM",
+   "OPENSP",
+   "STRWEL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "OPENSP": {
+  "hash": 240490986,
+  "members": [
+   "RSTARE",
+   "RUTVOL",
+   "STRWEL",
+   "AREADE",
+   "DETGRP",
+   "REFDAT",
+   "BNDLIN",
+   "ACCSET",
+   "SPBSET",
+   "INVLST"
+  ],
+  "owners": [
+   "BBLOCK",
+   "BLEVEL",
+   "ROOM"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "POINSP": {
+  "hash": 240493876,
+  "members": [],
+  "owners": [
+   "SPINE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DOFSTP": {
+  "hash": 241121533,
+  "members": [
+   "DPNT"
+  ],
+  "owners": [
+   "DPLIM",
+   "DSEAM",
+   "DSTIFF"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CTCOUP": {
+  "hash": 241572189,
+  "members": [
+   "CTRAY",
+   "CTFEAT",
+   "CTJOIN"
+  ],
+  "owners": [
+   "CTMTRL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CNGREQ": {
+  "hash": 247479843,
+  "members": [],
+  "owners": [
+   "OBJHD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SEGSEQ": {
+  "hash": 247499299,
+  "members": [
+   "RSEG"
+  ],
+  "owners": [
+   "RBRAN",
+   "CWBRAN",
+   "CABLE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CONSEQ": {
+  "hash": 247504656,
+  "members": [
+   "RATTA"
+  ],
+  "owners": [
+   "RBRAN",
+   "CWBRAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "INSURQ": {
+  "hash": 254456379,
+  "members": [
+   "LOOP"
+  ],
+  "owners": [
+   "DETGRP"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "FNCAAR": {
+  "hash": 259365462,
+  "members": [
+   "FNCARE",
+   "SPMCAD"
+  ],
+  "owners": [
+   "FNCAW"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "FNCCAR": {
+  "hash": 259404828,
+  "members": [
+   "FNCBRN",
+   "SPMCAD"
+  ],
+  "owners": [
+   "FNCCW"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "APPDAR": {
+  "hash": 259434037,
+  "members": [
+   "APPLDA",
+   "APPDAR"
+  ],
+  "owners": [
+   "APPLDW",
+   "APPDAR"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "REFGAR": {
+  "hash": 259485516,
+  "members": [],
+  "owners": [
+   "GRIDPL",
+   "GRIDCY"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SYGPAR": {
+  "hash": 259663933,
+  "members": [
+   "SYSGRP",
+   "SYGPAR"
+  ],
+  "owners": [
+   "SYGPWL",
+   "SYGPAR"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "ASSMBR": {
+  "hash": 260144893,
+  "members": [
+   "ASREQU",
+   "DDSE",
+   "DPSE"
+  ],
+  "owners": [
+   "ASSOC",
+   "RESTRI",
+   "DERDAT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "RLADDR": {
+  "hash": 261017334,
+  "members": [
+   "RUNGSE",
+   "LDRSTR",
+   "RLCAGE"
+  ],
+  "owners": [
+   "STRU",
+   "FRMW",
+   "SBFR"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SLADDR": {
+  "hash": 261017335,
+  "members": [
+   "TREADS",
+   "STRSTR",
+   "DDSE",
+   "SLRAIL",
+   "TOPEXT"
+  ],
+  "owners": [
+   "STRU",
+   "FRMW",
+   "SBFR"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "LADDER": {
+  "hash": 261550659,
+  "members": [
+   "LDREXT",
+   "RUNGSE",
+   "LDRRUN",
+   "LDRSTR",
+   "LDRCAG",
+   "HANDRA",
+   "DDSE"
+  ],
+  "owners": [
+   "STRU",
+   "DETGRP",
+   "FRMW",
+   "SBFR"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DINTER": {
+  "hash": 261873085,
+  "members": [
+   "DBOX",
+   "DENDFR",
+   "DENDTO",
+   "DMODRF",
+   "DLINE",
+   "DPLANE",
+   "DPNT",
+   "DFNRAD"
+  ],
+  "owners": [
+   "DCRPNT",
+   "DCRCUR",
+   "DSEG"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "STCVER": {
+  "hash": 261904744,
+  "members": [],
+  "owners": [
+   "STCONN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DENDFR": {
+  "hash": 262089490,
+  "members": [
+   "DENDCT",
+   "DPLANE",
+   "DMODRF"
+  ],
+  "owners": [
+   "DCRCUR",
+   "DSEG",
+   "DINTER",
+   "DSEAM",
+   "DSTIFF",
+   "DFCPLA",
+   "DPILLR"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "IENDFR": {
+  "hash": 262089495,
+  "members": [
+   "ECTGEO"
+  ],
+  "owners": [
+   "ISTIFF",
+   "IFCPLA",
+   "IPILLR"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DEDGFR": {
+  "hash": 262141249,
+  "members": [
+   "DMODRF",
+   "DEDGRS"
+  ],
+  "owners": [
+   "DEDGE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SRFCGR": {
+  "hash": 262595782,
+  "members": [
+   "SRFCUR"
+  ],
+  "owners": [
+   "SRFSUR"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CLNCGR": {
+  "hash": 262601436,
+  "members": [
+   "CLNTIL",
+   "CGRDLP",
+   "CGRDCP",
+   "ELFITT",
+   "HVACFI",
+   "FPFITT",
+   "INFITT",
+   "HOLE"
+  ],
+  "owners": [
+   "CLNPNG"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DCRDGR": {
+  "hash": 262623793,
+  "members": [
+   "DMODRF"
+  ],
+  "owners": [
+   "DCLTRA",
+   "DPNT",
+   "DCRDSY",
+   "DLINE",
+   "DPLANE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DEDGGR": {
+  "hash": 262672690,
+  "members": [],
+  "owners": [
+   "DEDGE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CMTTHR": {
+  "hash": 263471889,
+  "members": [
+   "CMTPOS",
+   "CMTLNK"
+  ],
+  "owners": [
+   "CMTFLD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "AIDCIR": {
+  "hash": 263656945,
+  "members": [],
+  "owners": [
+   "AIDGRO"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HVSKIR": {
+  "hash": 263825702,
+  "members": [],
+  "owners": [
+   "ELBO",
+   "BEND",
+   "TEE",
+   "VALV",
+   "REDU",
+   "TAPE",
+   "TRNS",
+   "STRT",
+   "OFST",
+   "PLEN",
+   "PLAT",
+   "FLAN",
+   "CROS",
+   "THRE",
+   "DUCT",
+   "VENT",
+   "FTUB",
+   "SHU",
+   "COUP",
+   "CLOS",
+   "OLET",
+   "CAP",
+   "MESH",
+   "GRIL",
+   "COWL",
+   "FBLI",
+   "VTWA",
+   "VFWA",
+   "TRAP",
+   "FILT",
+   "PCOM",
+   "AHU",
+   "DAMP",
+   "HFAN",
+   "SILE",
+   "BATT",
+   "UNIO",
+   "INST"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DPILLR": {
+  "hash": 265432252,
+  "members": [
+   "DBOX",
+   "DBRCKT",
+   "DCTOUT",
+   "DENDFR",
+   "DENDTO",
+   "DHOLE",
+   "DMODRF",
+   "DNOTCH",
+   "DPIPOS",
+   "DPLANE",
+   "DPLATE",
+   "DPROMT"
+  ],
+  "owners": [
+   "UPANEL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HPILLR": {
+  "hash": 265432256,
+  "members": [
+   "HPREND"
+  ],
+  "owners": [
+   "HPANEL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "IPILLR": {
+  "hash": 265432257,
+  "members": [
+   "PROCRO",
+   "PROTRC",
+   "LOCMDL",
+   "LIMMDL",
+   "IENDFR",
+   "IENDTO",
+   "POSREF",
+   "POSMDL"
+  ],
+  "owners": [
+   "UPANEL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HVSPLR": {
+  "hash": 265518440,
+  "members": [],
+  "owners": [
+   "ELBO",
+   "BEND",
+   "TEE",
+   "VALV",
+   "REDU",
+   "TAPE",
+   "TRNS",
+   "STRT",
+   "OFST",
+   "PLEN",
+   "PLAT",
+   "FLAN",
+   "CROS",
+   "THRE",
+   "DUCT",
+   "VENT",
+   "FTUB",
+   "SHU",
+   "COUP",
+   "CLOS",
+   "OLET",
+   "CAP",
+   "MESH",
+   "GRIL",
+   "COWL",
+   "FBLI",
+   "VTWA",
+   "VFWA",
+   "TRAP",
+   "FILT",
+   "PCOM",
+   "AHU",
+   "DAMP",
+   "HFAN",
+   "SILE",
+   "BATT",
+   "UNIO",
+   "INST"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DCORNR": {
+  "hash": 266617255,
+  "members": [
+   "DMODRF",
+   "DPNT"
+  ],
+  "owners": [
+   "DNOTCH"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CFLOOR": {
+  "hash": 267087540,
+  "members": [
+   "PNOD",
+   "SCTN",
+   "PANE",
+   "TEXT",
+   "PALJ",
+   "FIXING",
+   "TMPL",
+   "DPSE",
+   "DDSE",
+   "PORS",
+   "LNKS",
+   "GENSEC",
+   "FLOOR",
+   "SCREED",
+   "BPANEL"
+  ],
+  "owners": [
+   "FRMW"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "IMSTOR": {
+  "hash": 267191253,
+  "members": [],
+  "owners": [
+   "ISTRUR"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DGMLTR": {
+  "hash": 269686453,
+  "members": [
+   "ARCHIV",
+   "DGTXTU",
+   "DTCMNT"
+  ],
+  "owners": [
+   "DGRAPH"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "POINTR": {
+  "hash": 269723131,
+  "members": [],
+  "owners": [
+   "RPATH",
+   "STWELD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CPROTR": {
+  "hash": 269749389,
+  "members": [
+   "CSTIFF",
+   "GOBELE"
+  ],
+  "owners": [
+   "CPROF"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "GPROTR": {
+  "hash": 269749393,
+  "members": [
+   "OBJHD"
+  ],
+  "owners": [
+   "CSURPX"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "LDRSTR": {
+  "hash": 269827806,
+  "members": [
+   "GENSEC",
+   "PANE",
+   "BPANEL"
+  ],
+  "owners": [
+   "LADDER",
+   "RLADDR"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "STRSTR": {
+  "hash": 269828245,
+  "members": [
+   "GENSEC",
+   "PANE",
+   "DDSE",
+   "BPANEL"
+  ],
+  "owners": [
+   "STRFLT",
+   "SLADDR"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "FMEXTR": {
+  "hash": 269916981,
+  "members": [
+   "FMEDIM",
+   "FMEDNE"
+  ],
+  "owners": [
+   "FMGRP"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SRFCUR": {
+  "hash": 270035956,
+  "members": [
+   "CURGEO"
+  ],
+  "owners": [
+   "SRFCGR"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PTHCUR": {
+  "hash": 270037465,
+  "members": [
+   "DMODRF"
+  ],
+  "owners": [
+   "SWECON"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CRMCUR": {
+  "hash": 270041043,
+  "members": [
+   "DCLONE",
+   "DCRCUR",
+   "ICRCUR"
+  ],
+  "owners": [
+   "CURWLD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "GENCUR": {
+  "hash": 270041425,
+  "members": [
+   "ATTDAT",
+   "ARCHIV"
+  ],
+  "owners": [
+   "EQUI",
+   "PULLP",
+   "JNTBOX",
+   "VOLM",
+   "SVOLM",
+   "STRU",
+   "PTRA",
+   "SUBE",
+   "SUBS",
+   "TMPL",
+   "PFOUTC"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "TRNCUR": {
+  "hash": 270041789,
+  "members": [],
+  "owners": [
+   "TRNCUS"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PROCUR": {
+  "hash": 270042514,
+  "members": [
+   "DMODRF"
+  ],
+  "owners": [
+   "EXTCNT",
+   "SWECON"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DCRCUR": {
+  "hash": 270044284,
+  "members": [
+   "DLOCTN",
+   "DBOX",
+   "DENDFR",
+   "DENDTO",
+   "DINTER",
+   "DEPNT",
+   "DSEG",
+   "DPLIM"
+  ],
+  "owners": [
+   "CRMCUR",
+   "UPANEL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "ICRCUR": {
+  "hash": 270044289,
+  "members": [
+   "CURGEO",
+   "LOCMDL",
+   "LIMMDL",
+   "POSMDL"
+  ],
+  "owners": [
+   "CRMCUR",
+   "UPANEL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "ISTRUR": {
+  "hash": 270341424,
+  "members": [
+   "ISECT",
+   "INODE",
+   "IPANE",
+   "IMSTOR"
+  ],
+  "owners": [
+   "ISTRU"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SRFSUR": {
+  "hash": 270350884,
+  "members": [
+   "PFOUTC",
+   "SRFDEF",
+   "SRFCGR",
+   "PRIGEO",
+   "DCLONE",
+   "LIMMDL",
+   "DBOX",
+   "POSMDL"
+  ],
+  "owners": [
+   "SSOWLD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "TRNSUR": {
+  "hash": 270356717,
+  "members": [
+   "GENPRI"
+  ],
+  "owners": [
+   "TRNWLD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "BOUSUR": {
+  "hash": 270361721,
+  "members": [
+   "ATTDAT",
+   "ARCHIV"
+  ],
+  "owners": [
+   "IBNDRY"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "FIXTUR": {
+  "hash": 270383433,
+  "members": [
+   "TMPL",
+   "FIXING",
+   "DDSE",
+   "DPSE",
+   "PORS",
+   "LNKS"
+  ],
+  "owners": [
+   "DETGRP",
+   "WLFITT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "STRTWR": {
+  "hash": 271442251,
+  "members": [
+   "STRFLT",
+   "STRLNG",
+   "TWRSTL",
+   "ACCSET",
+   "DDSE"
+  ],
+  "owners": [
+   "STRU",
+   "STRWEL",
+   "FRMW",
+   "SBFR"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "LNCLAS": {
+  "hash": 273930888,
+  "members": [],
+  "owners": [
+   "LINKWL",
+   "LNFOLD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "TREADS": {
+  "hash": 275310272,
+  "members": [
+   "TREAD",
+   "DDSE"
+  ],
+  "owners": [
+   "STRFLT",
+   "SLADDR"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTBLDS": {
+  "hash": 275524636,
+  "members": [
+   "DTBLTD"
+  ],
+  "owners": [
+   "DTBLTL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "STAHIS": {
+  "hash": 278102395,
+  "members": [],
+  "owners": [
+   "STALNK"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "REVLKS": {
+  "hash": 279258912,
+  "members": [
+   "REVLKS",
+   "REVLNK"
+  ],
+  "owners": [
+   "REVLWL",
+   "REVLKS"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "STLNKS": {
+  "hash": 279291394,
+  "members": [
+   "STLNKS",
+   "STALNK"
+  ],
+  "owners": [
+   "STLNKW",
+   "STLNKS"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "TRNCLS": {
+  "hash": 279607727,
+  "members": [
+   "TRNCLG"
+  ],
+  "owners": [
+   "TRNCLC"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CPLANS": {
+  "hash": 280629714,
+  "members": [
+   "CPLANE",
+   "GPLANE"
+  ],
+  "owners": [
+   "SSOWLD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "RSFINS": {
+  "hash": 280782900,
+  "members": [
+   "SRFRFL"
+  ],
+  "owners": [
+   "SRFDEF"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CPOINS": {
+  "hash": 280789365,
+  "members": [
+   "CPOINT",
+   "GPOINT"
+  ],
+  "owners": [
+   "SSOWLD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "FSPINS": {
+  "hash": 280790178,
+  "members": [
+   "DTGEOM"
+  ],
+  "owners": [
+   "DTPHSE",
+   "DTMAIN",
+   "DTSUBM"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DPIPOS": {
+  "hash": 281454214,
+  "members": [],
+  "owners": [
+   "DPILLR"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DIMPOS": {
+  "hash": 281456941,
+  "members": [],
+  "owners": [
+   "LINDIM",
+   "MLABEL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DFPPOS": {
+  "hash": 281459047,
+  "members": [],
+  "owners": [
+   "DFCPLA"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CMTPOS": {
+  "hash": 281462151,
+  "members": [
+   "CMTCAP",
+   "CMTATT"
+  ],
+  "owners": [
+   "CMTTHR"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CTCROS": {
+  "hash": 281489313,
+  "members": [
+   "CTRAY",
+   "CTFEAT",
+   "CTJOIN"
+  ],
+  "owners": [
+   "CTMTRL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTPERS": {
+  "hash": 282837235,
+  "members": [],
+  "owners": [
+   "DTJOB",
+   "DTJDAT",
+   "DTCSTE",
+   "DTSTRU",
+   "DTPHSE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DEDGRS": {
+  "hash": 282867448,
+  "members": [
+   "DMODRF",
+   "DPLANE",
+   "DBOX"
+  ],
+  "owners": [
+   "DEDGFR",
+   "DEDGTO"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DEDGSS": {
+  "hash": 283398889,
+  "members": [
+   "DEDGSA",
+   "DEDGSB"
+  ],
+  "owners": [
+   "DEDGST"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "REVISS": {
+  "hash": 283451391,
+  "members": [],
+  "owners": [
+   "REVLNK"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTBLSS": {
+  "hash": 283496251,
+  "members": [
+   "DTBLTS"
+  ],
+  "owners": [
+   "DTBLTL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTBLTS": {
+  "hash": 284027692,
+  "members": [
+   "DTBSPT"
+  ],
+  "owners": [
+   "DTBLTL",
+   "DTBLSS",
+   "DTBOLT",
+   "DTHOLE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "WLJNTS": {
+  "hash": 284072693,
+  "members": [
+   "WLJOIN"
+  ],
+  "owners": [
+   "CTWALL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "LOOPTS": {
+  "hash": 284115774,
+  "members": [],
+  "owners": [
+   "POLOOP"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTTXTS": {
+  "hash": 284277010,
+  "members": [],
+  "owners": [
+   "DTJDAT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "TRNCUS": {
+  "hash": 284390696,
+  "members": [
+   "TRNCUR"
+  ],
+  "owners": [
+   "TRNCUC"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "FETRUS": {
+  "hash": 284689950,
+  "members": [],
+  "owners": [
+   "FEMODL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SCCRVS": {
+  "hash": 285208957,
+  "members": [
+   "SCCURV"
+  ],
+  "owners": [
+   "SCSURF"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PFCRVS": {
+  "hash": 285209035,
+  "members": [
+   "PFCURV"
+  ],
+  "owners": [
+   "PFACE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "REFDAT": {
+  "hash": 288124281,
+  "members": [
+   "REFDAT",
+   "DRAW"
+  ],
+  "owners": [
+   "BLEVEL",
+   "ROOM",
+   "OPENSP",
+   "REFDAT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CCHDAT": {
+  "hash": 288125670,
+  "members": [],
+  "owners": [
+   "SFTREF",
+   "HTPELE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTJDAT": {
+  "hash": 288127588,
+  "members": [
+   "DTPLNE",
+   "DTFDEF",
+   "DTBLTL",
+   "DTWLDL",
+   "DTJREL",
+   "DTCSTE",
+   "DTLOCA",
+   "DTPERS",
+   "DTTCON",
+   "DTTXTS"
+  ],
+  "owners": [
+   "DTJOB"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DBMDAT": {
+  "hash": 288129289,
+  "members": [],
+  "owners": [
+   "DBMETA"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DERDAT": {
+  "hash": 288133015,
+  "members": [
+   "MBRMAP",
+   "DDSE",
+   "DPSE",
+   "ASSMBR"
+  ],
+  "owners": [
+   "ASSOC",
+   "ASSDEF"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "ATTDAT": {
+  "hash": 288134875,
+  "members": [],
+  "owners": [
+   "CURGEO",
+   "FNCCEL",
+   "SPMCEL",
+   "GENPRI",
+   "GENCUR",
+   "PRIGEO",
+   "ARCHIV",
+   "ATTHD",
+   "BOUSUR",
+   "PLAFAC",
+   "PLASOL",
+   "ECTSCN",
+   "ECTSOL",
+   "PROCRO",
+   "PROTRC"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "ENVDAT": {
+  "hash": 288136175,
+  "members": [],
+  "owners": [
+   "ENVLOP"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PLFEAT": {
+  "hash": 288144151,
+  "members": [
+   "PLOPEN",
+   "RATTA",
+   "FIXING"
+  ],
+  "owners": [
+   "PLTFRM"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "WLFEAT": {
+  "hash": 288144158,
+  "members": [
+   "WLFITT",
+   "WLOPEN",
+   "RATTA"
+  ],
+  "owners": [
+   "CTWALL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "BPFEAT": {
+  "hash": 288144245,
+  "members": [
+   "BPFITT",
+   "BPOPEN"
+  ],
+  "owners": [
+   "BPANEL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HRFEAT": {
+  "hash": 288144305,
+  "members": [
+   "HRGATE",
+   "RATTA"
+  ],
+  "owners": [
+   "RUTVOL",
+   "HANDRA"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CTFEAT": {
+  "hash": 288144354,
+  "members": [
+   "DDSE",
+   "TMPL",
+   "GENSEC"
+  ],
+  "owners": [
+   "CTSTRA",
+   "CTCOUP",
+   "CTBEND",
+   "CTRISE",
+   "CTTEE",
+   "CTCROS",
+   "CTREDU"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTFEAT": {
+  "hash": 288144355,
+  "members": [
+   "ARCHIV"
+  ],
+  "owners": [
+   "DTFDEF",
+   "DTFSET"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HTFEAT": {
+  "hash": 288144359,
+  "members": [
+   "HNODE"
+  ],
+  "owners": [],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "RTFEAT": {
+  "hash": 288144369,
+  "members": [
+   "RNODE"
+  ],
+  "owners": [
+   "CWBRAN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CLNLAT": {
+  "hash": 288287751,
+  "members": [
+   "GENSEC",
+   "HANGER"
+  ],
+  "owners": [
+   "CLNPNG"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTPLAT": {
+  "hash": 288289426,
+  "members": [
+   "DTGEOM",
+   "DTSHAP",
+   "DTGINF",
+   "DTSHPI",
+   "DTFABI",
+   "BEVEL",
+   "DTCMNT",
+   "DDSE",
+   "DTFCSG",
+   "DTBOLT",
+   "DTHOLE",
+   "DTWELD",
+   "DTSTRC",
+   "DTSTEL",
+   "LOOP",
+   "DTCSDF"
+  ],
+  "owners": [
+   "FSPDEF",
+   "DTPHSE",
+   "DTMAIN",
+   "DTSUBM"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTSTAT": {
+  "hash": 288449077,
+  "members": [],
+  "owners": [
+   "DTNODE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DENDCT": {
+  "hash": 289192981,
+  "members": [
+   "DVEC",
+   "DMODRF"
+  ],
+  "owners": [
+   "DENDFR",
+   "DENDTO"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DEDGCT": {
+  "hash": 289244740,
+  "members": [
+   "DMODRF"
+  ],
+  "owners": [
+   "DEDGE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "BRASET": {
+  "hash": 290541980,
+  "members": [],
+  "owners": [
+   "IDLSET"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SPBSET": {
+  "hash": 290542672,
+  "members": [
+   "BNDREF"
+  ],
+  "owners": [
+   "BLEVEL",
+   "ROOM",
+   "OPENSP",
+   "RSTARE",
+   "STRWEL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "ACCSET": {
+  "hash": 290543032,
+  "members": [
+   "ACCPNT"
+  ],
+  "owners": [
+   "BLEVEL",
+   "ROOM",
+   "OPENSP",
+   "RSTARE",
+   "STRWEL",
+   "STRTWR"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "STCSET": {
+  "hash": 290543509,
+  "members": [
+   "STCONN"
+  ],
+  "owners": [
+   "PANE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTFSET": {
+  "hash": 290545681,
+  "members": [
+   "DTFEAT"
+  ],
+  "owners": [
+   "DTFDEF"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "STISET": {
+  "hash": 290547883,
+  "members": [],
+  "owners": [
+   "IDLSET"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "IDLSET": {
+  "hash": 290549628,
+  "members": [
+   "PANSET",
+   "STISET",
+   "NOTSET",
+   "HOLSET",
+   "CUTSET",
+   "BRASET",
+   "FPLSET",
+   "PILSET"
+  ],
+  "owners": [
+   "FEMZON",
+   "FEMWLD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PILSET": {
+  "hash": 290549770,
+  "members": [],
+  "owners": [
+   "IDLSET"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HOLSET": {
+  "hash": 290549924,
+  "members": [],
+  "owners": [
+   "IDLSET"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "FPLSET": {
+  "hash": 290549949,
+  "members": [],
+  "owners": [
+   "IDLSET"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PANSET": {
+  "hash": 290551012,
+  "members": [],
+  "owners": [
+   "IDLSET"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "NOTSET": {
+  "hash": 290555762,
+  "members": [],
+  "owners": [
+   "IDLSET"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CUTSET": {
+  "hash": 290555913,
+  "members": [],
+  "owners": [
+   "IDLSET"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "STWSET": {
+  "hash": 290558089,
+  "members": [
+   "STWELD"
+  ],
+  "owners": [
+   "FIXING",
+   "PANE",
+   "PFIT",
+   "TMPL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "FURNIT": {
+  "hash": 292581807,
+  "members": [
+   "TMPL",
+   "FIXING",
+   "DDSE",
+   "DPSE",
+   "PORS",
+   "LNKS"
+  ],
+  "owners": [
+   "DETGRP",
+   "WLFITT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "MWLDJT": {
+  "hash": 292912105,
+  "members": [
+   "MWELD",
+   "MWPART"
+  ],
+  "owners": [
+   "MWLDTB"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DBRCKT": {
+  "hash": 293427661,
+  "members": [
+   "DBRARA",
+   "DBRARB",
+   "DLOCTN",
+   "DPLATE",
+   "DSTIFF",
+   "DNOTCH",
+   "DHOLE",
+   "DCTOUT",
+   "DMODRF"
+  ],
+  "owners": [
+   "DSTIFF",
+   "DFCPLA",
+   "DPILLR",
+   "UPANEL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HBRCKT": {
+  "hash": 293427665,
+  "members": [
+   "HBRABO",
+   "HBRFLA",
+   "HBRSTI"
+  ],
+  "owners": [
+   "HPANEL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "IBRCKT": {
+  "hash": 293427666,
+  "members": [
+   "PLAFAC",
+   "PLASOL",
+   "IHOLE",
+   "ICTOUT",
+   "ICLIP",
+   "INOTCH",
+   "IPLATE",
+   "ISTIFF",
+   "LOCMDL",
+   "LIMMDL",
+   "POSMDL"
+  ],
+  "owners": [
+   "UPANEL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "STRFLT": {
+  "hash": 294018652,
+  "members": [
+   "RPATH",
+   "STRSTR",
+   "TREADS",
+   "INTLNG",
+   "HANDRA",
+   "DDSE",
+   "TOPEXT",
+   "BOTEXT"
+  ],
+  "owners": [
+   "STRU",
+   "STRWEL",
+   "STRTWR",
+   "FRMW",
+   "SBFR"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTBOLT": {
+  "hash": 294184120,
+  "members": [
+   "DTGEOM",
+   "DTCMNT",
+   "DTBLTS"
+  ],
+  "owners": [
+   "DTPHSE",
+   "DTMAIN",
+   "DTSUBM",
+   "DTSTEL",
+   "DTPROF",
+   "DTPLAT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DPLAMT": {
+  "hash": 294447181,
+  "members": [],
+  "owners": [
+   "DCLIP",
+   "DPLATE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DPROMT": {
+  "hash": 294727117,
+  "members": [],
+  "owners": [
+   "DSTIFF",
+   "DFCPLA",
+   "DPILLR"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "EXTCNT": {
+  "hash": 295024037,
+  "members": [
+   "PROCUR"
+  ],
+  "owners": [
+   "PSURF"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CPOINT": {
+  "hash": 295138272,
+  "members": [
+   "GOBELE"
+  ],
+  "owners": [
+   "MOGWLD",
+   "CPOINS"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "GPOINT": {
+  "hash": 295138276,
+  "members": [
+   "OBJHD"
+  ],
+  "owners": [
+   "MOGWLD",
+   "CPOINS"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HPOINT": {
+  "hash": 295138277,
+  "members": [],
+  "owners": [
+   "HPANEL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTCMNT": {
+  "hash": 295208365,
+  "members": [],
+  "owners": [
+   "DTASMB",
+   "DTMAIN",
+   "DTSUBM",
+   "DTSTEL",
+   "DTBOLT",
+   "DTHOLE",
+   "DTWELD",
+   "DTPROF",
+   "DTSEAM",
+   "DTPLAT",
+   "BEVEL",
+   "DTADDM",
+   "DTSTRC",
+   "DGTEXT",
+   "DGSSYM",
+   "DGELEV",
+   "DGARC",
+   "DGRAD",
+   "DGARCL",
+   "DGML",
+   "DGMLA",
+   "DGMLTR",
+   "DGPOLY"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "ACCPNT": {
+  "hash": 295266952,
+  "members": [],
+  "owners": [
+   "ACCSET"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CRMPNT": {
+  "hash": 295274649,
+  "members": [
+   "DCLONE",
+   "DCRPNT",
+   "ICRPNT"
+  ],
+  "owners": [
+   "PNTWLD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DCRPNT": {
+  "hash": 295277890,
+  "members": [
+   "DLOCTN",
+   "DINTER",
+   "DEPNT",
+   "DPODR"
+  ],
+  "owners": [
+   "CRMPNT",
+   "UPANEL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "ICRPNT": {
+  "hash": 295277895,
+  "members": [
+   "ICRPNT",
+   "LOCMDL",
+   "POSMDL"
+  ],
+  "owners": [
+   "CRMPNT",
+   "ICRPNT",
+   "UPANEL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CPRNOT": {
+  "hash": 295770315,
+  "members": [],
+  "owners": [
+   "CSTIFF"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HPRNOT": {
+  "hash": 295770320,
+  "members": [],
+  "owners": [
+   "HBRSTI",
+   "HSTIFF"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DCLROT": {
+  "hash": 295844323,
+  "members": [
+   "DLINE",
+   "DMODRF",
+   "DPLANE",
+   "DPNT"
+  ],
+  "owners": [
+   "DCLONE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "GCOMPT": {
+  "hash": 296279539,
+  "members": [
+   "OBJHD"
+  ],
+  "owners": [
+   "COMWLD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HCOMPT": {
+  "hash": 296279540,
+  "members": [
+   "GOBELE"
+  ],
+  "owners": [
+   "COMWLD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DIMPPT": {
+  "hash": 296337289,
+  "members": [],
+  "owners": [
+   "LINDIM",
+   "MLABEL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTBSPT": {
+  "hash": 296388616,
+  "members": [],
+  "owners": [
+   "DTBLTL",
+   "DTBLTS"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "MWPART": {
+  "hash": 297107500,
+  "members": [],
+  "owners": [
+   "MWLDJT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DEDGST": {
+  "hash": 297747796,
+  "members": [
+   "DEDGSA",
+   "DEDGSB",
+   "DEDGSS",
+   "DMODRF"
+  ],
+  "owners": [
+   "DEDGE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PPLIST": {
+  "hash": 297793303,
+  "members": [
+   "PPIECE"
+  ],
+  "owners": [
+   "PIPE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HSLIST": {
+  "hash": 297793376,
+  "members": [
+   "HSPOOL"
+  ],
+  "owners": [
+   "HVAC"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PSLIST": {
+  "hash": 297793384,
+  "members": [
+   "PSPOOL"
+  ],
+  "owners": [
+   "PIPE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "INVLST": {
+  "hash": 297859581,
+  "members": [
+   "INVELE"
+  ],
+  "owners": [
+   "BLEVEL",
+   "ROOM",
+   "OPENSP",
+   "RSTARE",
+   "STRWEL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DSINST": {
+  "hash": 297889600,
+  "members": [],
+  "owners": [
+   "DSIGRO"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HRPOST": {
+  "hash": 297914363,
+  "members": [
+   "TMPL",
+   "DPSE",
+   "DDSE",
+   "PORS",
+   "LNKS",
+   "PANE",
+   "GENSEC",
+   "BPANEL"
+  ],
+  "owners": [
+   "POSTSE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "FMBSST": {
+  "hash": 297982752,
+  "members": [],
+  "owners": [
+   "FMBEND"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CMTATT": {
+  "hash": 298173018,
+  "members": [
+   "ARCHIV"
+  ],
+  "owners": [
+   "CMTPOS"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "ELFITT": {
+  "hash": 298320251,
+  "members": [
+   "TMPL",
+   "FIXING",
+   "DDSE",
+   "DPSE",
+   "PORS",
+   "LNKS"
+  ],
+  "owners": [
+   "DETGRP",
+   "CEILIN",
+   "CLNCGR",
+   "CLNTIL",
+   "CGRDCP",
+   "CGRDLP",
+   "WLFITT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "WLFITT": {
+  "hash": 298320269,
+  "members": [
+   "ELFITT",
+   "HVACFI",
+   "FPFITT",
+   "INFITT",
+   "FURNIT",
+   "FIXTUR"
+  ],
+  "owners": [
+   "WLFEAT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "INFITT": {
+  "hash": 298320309,
+  "members": [
+   "TMPL",
+   "FIXING",
+   "DDSE",
+   "DPSE",
+   "PORS",
+   "LNKS"
+  ],
+  "owners": [
+   "DETGRP",
+   "CEILIN",
+   "CLNCGR",
+   "CLNTIL",
+   "CGRDCP",
+   "CGRDLP",
+   "WLFITT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "BPFITT": {
+  "hash": 298320356,
+  "members": [],
+  "owners": [
+   "BPFEAT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "FPFITT": {
+  "hash": 298320360,
+  "members": [
+   "TMPL",
+   "FIXING",
+   "DDSE",
+   "DPSE",
+   "PORS",
+   "LNKS"
+  ],
+  "owners": [
+   "DETGRP",
+   "CEILIN",
+   "CLNCGR",
+   "CLNTIL",
+   "CGRDCP",
+   "CGRDLP",
+   "WLFITT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CPRCUT": {
+  "hash": 298742448,
+  "members": [],
+  "owners": [
+   "CSTIFF"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HPRCUT": {
+  "hash": 298742453,
+  "members": [],
+  "owners": [
+   "HBRSTI",
+   "HSTIFF"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DCTOUT": {
+  "hash": 298979752,
+  "members": [
+   "DMODRF",
+   "DCLIP"
+  ],
+  "owners": [
+   "DBNDRY",
+   "DPLATE",
+   "DBRCKT",
+   "DSTIFF",
+   "DFCPLA",
+   "DPILLR",
+   "UPANEL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "HCTOUT": {
+  "hash": 298979756,
+  "members": [
+   "HCLIP"
+  ],
+  "owners": [
+   "HPANEL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "ICTOUT": {
+  "hash": 298979757,
+  "members": [
+   "PROTRC",
+   "LOCMDL",
+   "LIMMDL",
+   "POSMDL"
+  ],
+  "owners": [
+   "UPANEL",
+   "IBRCKT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "TOPEXT": {
+  "hash": 300374669,
+  "members": [
+   "GENSEC",
+   "TMPL",
+   "PANE",
+   "DDSE",
+   "BPANEL"
+  ],
+  "owners": [
+   "STRFLT",
+   "SLADDR"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "LDREXT": {
+  "hash": 300375822,
+  "members": [],
+  "owners": [
+   "LADDER"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DGTEXT": {
+  "hash": 300377353,
+  "members": [
+   "ARCHIV",
+   "DGTXTU",
+   "DTCMNT"
+  ],
+  "owners": [
+   "DGRAPH"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "BOTEXT": {
+  "hash": 300377567,
+  "members": [
+   "GENSEC",
+   "TMPL",
+   "PANE",
+   "DDSE",
+   "BPANEL"
+  ],
+  "owners": [
+   "STRFLT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "TRREDU": {
+  "hash": 304096295,
+  "members": [],
+  "owners": [
+   "TRUNNI"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "CTREDU": {
+  "hash": 304096332,
+  "members": [
+   "CTRAY",
+   "CTFEAT",
+   "CTJOIN"
+  ],
+  "owners": [
+   "CTMTRL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "ASREQU": {
+  "hash": 311005036,
+  "members": [
+   "ASTATU",
+   "DPSE",
+   "DDSE"
+  ],
+  "owners": [
+   "ASSOC",
+   "ASSMBR",
+   "RESTRI",
+   "RESDEF"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTSTRU": {
+  "hash": 311832481,
+  "members": [
+   "DTPHSE",
+   "DTNODE",
+   "DTPLNE",
+   "DTPERS"
+  ],
+  "owners": [
+   "DTJOB"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "JLDATU": {
+  "hash": 312510241,
+  "members": [
+   "PLDATU",
+   "RELE",
+   "NOLO",
+   "NODI"
+  ],
+  "owners": [
+   "GENSEC",
+   "WALL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PLDATU": {
+  "hash": 312510247,
+  "members": [
+   "MFIX",
+   "FIXING",
+   "DPSE",
+   "DDSE",
+   "PORS",
+   "LNKS"
+  ],
+  "owners": [
+   "JLDATU"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "ENDATU": {
+  "hash": 312510290,
+  "members": [
+   "FIXING",
+   "RELE",
+   "NOLO",
+   "NODI",
+   "DPSE",
+   "DDSE",
+   "PORS",
+   "LNKS"
+  ],
+  "owners": [
+   "GENSEC"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "ASTATU": {
+  "hash": 312522085,
+  "members": [],
+  "owners": [
+   "ASSOC",
+   "RESTRI",
+   "RESDEF",
+   "ASREQU"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DGTXTU": {
+  "hash": 312974473,
+  "members": [],
+  "owners": [
+   "DGTEXT",
+   "DGSSYM",
+   "DGELEV",
+   "DGARC",
+   "DGRAD",
+   "DGARCL",
+   "DGML",
+   "DGMLA",
+   "DGMLTR",
+   "DGPOLY"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DEDGBV": {
+  "hash": 317411113,
+  "members": [],
+  "owners": [
+   "DEDGE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DGELEV": {
+  "hash": 319104634,
+  "members": [
+   "ARCHIV",
+   "DGTXTU",
+   "DTCMNT"
+  ],
+  "owners": [
+   "DGRAPH"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SPMDIV": {
+  "hash": 321079024,
+  "members": [
+   "CRMREF",
+   "DPLANE"
+  ],
+  "owners": [
+   "SPMCAD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "ARCHIV": {
+  "hash": 321150502,
+  "members": [
+   "ATTDAT"
+  ],
+  "owners": [
+   "CURGEO",
+   "FNCCEL",
+   "SPMCAD",
+   "SPMCEL",
+   "GENPRI",
+   "GENCUR",
+   "PRIGEO",
+   "BOUSUR",
+   "PLAFAC",
+   "PLASOL",
+   "ECTSCN",
+   "ECTSOL",
+   "PROCRO",
+   "PROTRC",
+   "DTBMF",
+   "DTBMFP",
+   "DTFEAT",
+   "DTGEOM",
+   "DTCSDF",
+   "DTSHAP",
+   "DTGINF",
+   "BEVEL",
+   "DGTEXT",
+   "DGSSYM",
+   "DGELEV",
+   "DGARC",
+   "DGRAD",
+   "DGARCL",
+   "DGML",
+   "DGMLA",
+   "DGMLTR",
+   "DGPOLY",
+   "CMTCAP",
+   "CMTPRE",
+   "CMTATT"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SUBCNV": {
+  "hash": 323708662,
+  "members": [
+   "GENSEC",
+   "TMPL",
+   "HANDRA",
+   "PANE",
+   "CNVCOM"
+  ],
+  "owners": [
+   "STRU"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "FLRCOV": {
+  "hash": 324251511,
+  "members": [
+   "FLRLAY",
+   "LOOP",
+   "FCUTPL"
+  ],
+  "owners": [
+   "DETGRP"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DTBMRV": {
+  "hash": 326031214,
+  "members": [],
+  "owners": [
+   "DTBMF"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "SCCURV": {
+  "hash": 326188963,
+  "members": [
+   "CURGEO"
+  ],
+  "owners": [
+   "SCCRVS"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "GFCURV": {
+  "hash": 326189032,
+  "members": [
+   "OBJHD"
+  ],
+  "owners": [
+   "MOGWLD"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "PFCURV": {
+  "hash": 326189041,
+  "members": [],
+  "owners": [
+   "PFCRVS"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "APPLDW": {
+  "hash": 332930359,
+  "members": [
+   "APPDAR",
+   "DDAR"
+  ],
+  "owners": [
+   "WORL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "STLNKW": {
+  "hash": 336687022,
+  "members": [
+   "STLNKS"
+  ],
+  "owners": [
+   "WORL"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "WINDOW": {
+  "hash": 338617121,
+  "members": [
+   "TMPL",
+   "FIXING",
+   "DDSE",
+   "DPSE",
+   "PORS",
+   "LNKS"
+  ],
+  "owners": [
+   "DETGRP",
+   "WLOPEN"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "GRIDAX": {
+  "hash": 345522436,
+  "members": [
+   "GRIDLN"
+  ],
+  "owners": [
+   "GRIDSY"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DCRDEX": {
+  "hash": 347654353,
+  "members": [],
+  "owners": [
+   "DCLTRA",
+   "DPNT",
+   "DVEC",
+   "DCRDSY",
+   "DLINE",
+   "DPLANE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ },
+ "DEDGEX": {
+  "hash": 347703250,
+  "members": [],
+  "owners": [
+   "DEDGE"
+  ],
+  "db": [
+   "desvir.dat"
+  ]
+ }
+}

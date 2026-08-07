@@ -3,8 +3,8 @@ pub mod csg;
 pub mod sweep_mesh;
 pub mod triangulation_helper;
 
-use crate::parsed_data::CateAxisParam;
 use crate::parsed_data::geo_params_data::PdmsGeoParam;
+use crate::parsed_data::{CateAxisParam, PlineSnapPoint};
 use crate::prim_geo::basic::{BOXI_GEO_HASH, TUBI_GEO_HASH};
 use crate::prim_geo::{SBox, SCylinder};
 use crate::shape::pdms_shape::{PlantMesh, RsVec3};
@@ -125,6 +125,8 @@ pub struct EleGeosInfo {
 
     #[serde(default)]
     pub ptset_map: BTreeMap<i32, CateAxisParam>,
+    #[serde(default)]
+    pub pline_snap_points: Vec<PlineSnapPoint>,
     pub has_cata_neg: bool,
     pub is_solid: bool,
     // pub dt: chrono::NaiveDateTime,
@@ -161,6 +163,10 @@ impl EleGeosInfo {
 
         json.remove(json.len() - 1);
         json.push_str(",");
+        json.push_str(&format!(
+            r#""pline_snap_points":{}, "#,
+            serde_json::to_string(&self.pline_snap_points).unwrap()
+        ));
         json.push_str(&format!(r#""id": inst_info:⟨{}⟩, "#, id));
         json.push_str("}");
         json
@@ -191,6 +197,11 @@ impl EleGeosInfo {
 
         // 移除最后的 } 并添加 id 字段
         json.pop();
+
+        json.push_str(&format!(
+            r#", "pline_snap_points":{}"#,
+            serde_json::to_string(&self.pline_snap_points).unwrap()
+        ));
 
         // 添加 tubi_info 关联（如果有）
         if let Some(tubi_id) = self.tubi.as_ref().and_then(|t| t.info_id.as_ref()) {
@@ -239,6 +250,11 @@ impl EleGeosInfo {
         let ptset_json = format!("[{}]", ptset_items.join(","));
 
         let mut json = format!(r#"{{"visible":{},"ptset":{}"#, self.visible, ptset_json);
+
+        json.push_str(&format!(
+            r#", "pline_snap_points":{}"#,
+            serde_json::to_string(&self.pline_snap_points).unwrap()
+        ));
 
         // 添加 tubi_info 关联（如果有）
         if let Some(tubi_id) = self.tubi.as_ref().and_then(|t| t.info_id.as_ref()) {
@@ -498,9 +514,10 @@ impl ShapeInstancesData {
             // content-addressed key：同 catalog 多 PE 会反复 insert。
             // 按 (geo_hash, transform) 去重合并，避免 geo_index 叠成 0..3N。
             for inst in geo.insts {
-                let dup = existing.insts.iter().any(|e| {
-                    e.geo_hash == inst.geo_hash && e.geo_transform == inst.geo_transform
-                });
+                let dup = existing
+                    .insts
+                    .iter()
+                    .any(|e| e.geo_hash == inst.geo_hash && e.geo_transform == inst.geo_transform);
                 if !dup {
                     existing.insts.push(inst);
                 }

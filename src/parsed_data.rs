@@ -23,6 +23,23 @@ pub struct CateGeomsInfo {
     /// 和dsign发生运算的负实体数据
     pub n_geometries: Vec<CateGeoParam>,
     pub axis_map: BTreeMap<i32, CateAxisParam>,
+    /// 当前 design 参数上下文求值后的 catalog PLIN 截面参考点。
+    pub plin_points: Vec<ResolvedPlinePoint>,
+}
+
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+pub struct ResolvedPlinePoint {
+    pub pkey: String,
+    pub position: Vec2,
+}
+
+#[derive(
+    Clone, Debug, Default, Serialize, Deserialize, rkyv::Archive, rkyv::Deserialize, rkyv::Serialize,
+)]
+pub struct PlineSnapPoint {
+    pub pkey: String,
+    pub kind: String,
+    pub point: [f32; 3],
 }
 
 #[derive(Clone, PartialEq, Debug)]

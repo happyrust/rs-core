@@ -2,8 +2,10 @@ use crate::plant_transform::Transform;
 use std::default;
 use std::f32::consts::{FRAC_PI_2, PI};
 
+use crate::geometry::sweep_mesh::sweep_reference_endpoints;
+use crate::mesh_precision::LodMeshSettings;
 use crate::parsed_data::geo_params_data::{CateGeoParam, PdmsGeoParam};
-use crate::parsed_data::{CateGeomsInfo, CateProfileParam};
+use crate::parsed_data::{CateGeomsInfo, CateProfileParam, PlineSnapPoint};
 use crate::pdms_types::*;
 use crate::prim_geo::category::CateCsgShape;
 use crate::prim_geo::spine::{
@@ -179,6 +181,7 @@ pub async fn create_profile_geos(
     refno: RefnoEnum,
     geom_info: &CateGeomsInfo,
     csg_shapes_map: &CateCsgShapeMap,
+    pline_snap_map: &DashMap<RefnoEnum, Vec<PlineSnapPoint>>,
 ) -> anyhow::Result<bool> {
     let geos = &geom_info.geometries;
     if geos.len() == 0 {
@@ -594,6 +597,34 @@ pub async fn create_profile_geos(
                         scale: geo_transform.scale,
                     }
                 };
+
+                if !geom_info.plin_points.is_empty() && !pline_snap_map.contains_key(&refno) {
+                    let settings = LodMeshSettings::default();
+                    let points = geom_info
+                        .plin_points
+                        .iter()
+                        .filter_map(|pline| {
+                            let [start, end] =
+                                sweep_reference_endpoints(&loft, pline.position, &settings)?;
+                            let start = transform.transform_point(start);
+                            let end = transform.transform_point(end);
+                            Some([
+                                PlineSnapPoint {
+                                    pkey: pline.pkey.clone(),
+                                    kind: "pline_start".to_string(),
+                                    point: start.to_array(),
+                                },
+                                PlineSnapPoint {
+                                    pkey: pline.pkey.clone(),
+                                    kind: "pline_end".to_string(),
+                                    point: end.to_array(),
+                                },
+                            ])
+                        })
+                        .flatten()
+                        .collect::<Vec<_>>();
+                    pline_snap_map.insert(refno, points);
+                }
 
                 csg_shapes_map
                     .entry(refno)
